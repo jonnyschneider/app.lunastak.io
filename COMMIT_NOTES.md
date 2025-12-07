@@ -13,6 +13,11 @@
 - ✅ Created `readme/V4_DEVELOPMENT_PLAN.md` with architecture, marketing strategy, R&D tracking
 - ✅ Created `readme/PROJECT_STATUS.md` with phase tracking, session logs, Git branching strategy
 - ✅ Created `readme/FEATURE_BACKLOG.md` with validation-driven feature ideas
+- ✅ Created `COMMIT_NOTES.md` for manual git workflow
+- ✅ Created `.claude/README.md` - Session startup checklist and quick reference
+- ✅ Created `.claude/workflow.md` - Git/commit/session workflows
+- ✅ Created `.claude/architecture.md` - Full technical documentation
+- ✅ Created `docs/session-notes/2025-12-07_planning-phase.md` - Session archive template
 - ✅ Reviewed v3 code and documented reusable components
 - ✅ Documented architectural decisions for future flexibility
 
@@ -22,6 +27,9 @@
 - Defined two-branch Git strategy (development/main)
 - Captured feature ideas with validation methods (fake door tests)
 - Identified 80% code reuse from v3 (StrategyFlow, types, utils, Claude API)
+- Created `.claude/` docs for efficient session startup (~1200 tokens vs 5000+ for full repo scan)
+- Created workflow that keeps Jonny hands-on with Git (learning + control)
+- Prepared for superpowers plugin integration (baseline documentation)
 
 ### What's Deferred
 - Voice-to-text input (captured in backlog)
@@ -91,9 +99,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
    - Commit: `git commit -m "..."`
    - Push: `git push`
 
-4. **Clear for Next Session**
-   - Archive old notes to `readme/PROJECT_STATUS.md` session logs
-   - Clear "Current Session Notes" section
+4. **Archive Session Notes**
+   - Claude creates `docs/session-notes/YYYY-MM-DD_description.md`
+   - Copies the full session notes to the archive file
+   - You can add the commit hash to the archived notes after committing
+
+5. **Clear for Next Session**
+   - Claude clears "Current Session Notes" section back to template
+   - COMMIT_NOTES.md stays as working file (don't move it)
    - Ready for next session
 
 ### Why This Workflow?
