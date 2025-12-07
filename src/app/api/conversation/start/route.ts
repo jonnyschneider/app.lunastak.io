@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 
-export const runtime = 'edge';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const FIRST_QUESTION_PROMPT = `You are a strategic consultant helping someone articulate their business strategy.
 

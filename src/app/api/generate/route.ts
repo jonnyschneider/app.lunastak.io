@@ -4,8 +4,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, StrategyStatements, Trace } from '@/lib/types';
 
-export const runtime = 'edge';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const GENERATION_PROMPT = `Generate compelling strategy statements based on the business context provided.
 

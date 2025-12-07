@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { UserFeedback } from '@/lib/types';
 
-export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {

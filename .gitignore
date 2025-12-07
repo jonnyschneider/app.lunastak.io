@@ -76,3 +76,4 @@ logs
 !docs/session-notes/
 !readme/
 !.claude/
+.env*.local

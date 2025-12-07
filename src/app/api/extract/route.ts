@@ -4,8 +4,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message } from '@/lib/types';
 
-export const runtime = 'edge';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract structured information and assess confidence.
 
