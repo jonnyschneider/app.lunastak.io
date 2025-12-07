@@ -63,7 +63,7 @@ export interface Trace {
   timestamp: Date;
   extractedContext: ExtractedContext;
   output: StrategyStatements;
-  claudeThoughts: string;
+  claudeThoughts?: string;
   modelUsed: string;
   totalTokens: number;
   promptTokens: number;
