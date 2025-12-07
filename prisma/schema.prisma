@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  status    String   // 'in_progress' | 'completed' | 'abandoned'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  Message[]
+  traces    Trace[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // 'assistant' | 'user'
+  content        String   @db.Text
+  stepNumber     Int
+  timestamp      DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([timestamp])
+}
+
+model Trace {
+  id                  String   @id @default(cuid())
+  conversationId      String
+  userId              String
+  timestamp           DateTime @default(now())
+
+  // Extracted Context (stored as JSON)
+  extractedContext    Json
+
+  // Generated Output (stored as JSON)
+  output              Json
+  claudeThoughts      String?  @db.Text
+
+  // Metadata
+  modelUsed           String
+  totalTokens         Int
+  promptTokens        Int
+  completionTokens    Int
+  latencyMs           Int
+
+  // User Feedback
+  userFeedback        String?  // 'helpful' | 'not_helpful'
+  feedbackTimestamp   DateTime?
+  refinementRequested Boolean  @default(false)
+
+  conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([userFeedback])
+}
