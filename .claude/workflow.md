@@ -291,23 +291,38 @@ Update: readme/PROJECT_STATUS.md > R&D Tax Tracking > Cost Log
 
 ---
 
-## Code Review Workflow (Before Committing)
+## Feature Development Workflow
 
-### Agent Self-Review Checklist
+### Use Superpowers Plugin
 
-Before suggesting commit:
+For systematic feature development, use the superpowers plugin:
+
+**Workflow:**
 ```markdown
-- [ ] No security vulnerabilities (XSS, SQL injection, etc.)
-- [ ] Error handling in place
-- [ ] No over-engineering (YAGNI principle)
-- [ ] No unnecessary abstractions
-- [ ] TypeScript types are correct
-- [ ] Following existing code patterns
-- [ ] No commented-out code or TODOs without context
-- [ ] Environment variables handled correctly
+1. /superpowers:brainstorm
+   - Interactive design refinement
+   - Clarify requirements
+   - BUT: Check .claude/ constraints first (no over-engineering, validated learning, etc.)
+
+2. /superpowers:write-plan
+   - Creates 2-5 minute task breakdown
+   - Review plan against .claude/architecture.md
+   - Ensure it respects Phase 0 scope and v3 reuse strategy
+
+3. /superpowers:execute-plan
+   - TDD workflow (RED-GREEN-REFACTOR)
+   - Automated code review
+   - BUT: STOP before auto-commit
+   - Follow COMMIT_NOTES.md workflow instead
+
+4. Update R&D tracking
+   - Log time in PROJECT_STATUS.md
+   - Document technical decisions in session notes
 ```
 
-### Quality Standards
+**See:** `.claude/superpowers-integration.md` for complete details
+
+### Quality Standards (For Non-Superpowers Work)
 
 **Do:**
 - Simple, focused solutions
@@ -321,18 +336,6 @@ Before suggesting commit:
 - Add error handling for impossible scenarios
 - Create abstractions for one-time use
 - Add backwards-compatibility hacks
-
----
-
-## Feature Development Workflow (Phase 1+)
-
-_Will be populated as patterns emerge_
-
-**Placeholder for:**
-- Feature validation (fake door tests)
-- User feedback integration
-- A/B testing with Statsig
-- Iterative refinement based on data
 
 ---
 

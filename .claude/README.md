@@ -97,8 +97,23 @@ dc-agent-v4-with-evals/
 
 ## 🔄 Key Workflows
 
+### Superpowers Plugin Integration
+
+**For feature development**, use the superpowers plugin:
+- **`/superpowers:brainstorm`** - Interactive design refinement and requirements clarification
+- **`/superpowers:write-plan`** - Create implementation plans (2-5 minute task chunks)
+- **`/superpowers:execute-plan`** - Execute with TDD, code review, systematic approach
+
+**Important integration points:**
+- ✅ Use superpowers for systematic feature development
+- ✅ Check `.claude/` constraints BEFORE planning (no over-engineering, validated learning, etc.)
+- ⚠️ **STOP before auto-commit** - Always use COMMIT_NOTES.md workflow instead
+- ✅ Update R&D tracking after superpowers sessions
+
+**See [superpowers-integration.md](superpowers-integration.md) for complete hybrid strategy**
+
 ### Commit Workflow
-**Important:** Jonny manages git manually (not automated by agent)
+**Important:** Jonny manages git manually (not automated by agent or superpowers)
 
 See [workflow.md](workflow.md) for detailed commit workflow using COMMIT_NOTES.md
 
@@ -201,6 +216,7 @@ This project follows Hamel Husain & Shreya Shankar's approach:
 
 ## 📚 Additional Documentation
 
+- **[superpowers-integration.md](superpowers-integration.md)** - Hybrid strategy for superpowers + .claude/ docs
 - **[workflow.md](workflow.md)** - Detailed Git and commit procedures
 - **[architecture.md](architecture.md)** - Full architecture documentation, v3 reuse notes
 
