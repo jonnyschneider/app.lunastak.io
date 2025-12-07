@@ -19,3 +19,57 @@ export interface EvaluationResponse {
   evaluation: "PASS" | "NEEDS_IMPROVEMENT" | "FAIL";
   feedback: string;
 }
+
+// Conversation types
+export type ConversationStatus = 'in_progress' | 'completed' | 'abandoned';
+
+export interface Conversation {
+  id: string;
+  userId: string;
+  status: ConversationStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type MessageRole = 'assistant' | 'user';
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  role: MessageRole;
+  content: string;
+  stepNumber: number;
+  timestamp: Date;
+}
+
+// Context extraction types
+export type ExtractionConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface ExtractedContext {
+  industry: string;
+  targetMarket: string;
+  uniqueValue: string;
+  extractionConfidence: ExtractionConfidence;
+  rawConversation: Message[];
+}
+
+// Trace types
+export type UserFeedback = 'helpful' | 'not_helpful';
+
+export interface Trace {
+  id: string;
+  conversationId: string;
+  userId: string;
+  timestamp: Date;
+  extractedContext: ExtractedContext;
+  output: StrategyStatements;
+  claudeThoughts: string;
+  modelUsed: string;
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+  latencyMs: number;
+  userFeedback?: UserFeedback;
+  feedbackTimestamp?: Date;
+  refinementRequested: boolean;
+}
