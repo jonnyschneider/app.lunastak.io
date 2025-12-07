@@ -308,16 +308,90 @@ _Will populate once Phase 0 is deployed_
 
 ---
 
+## Git Branching Strategy
+
+### Branch Structure
+
+We use a **two-branch strategy** for this project:
+
+```
+main (production-ready, deployed to users)
+  └─ Stable releases only
+  └─ Vercel auto-deploys from this branch
+  └─ Merge from development when ready for beta users
+
+development (active development)
+  └─ Daily work happens here
+  └─ WIP commits allowed
+  └─ Experimental features
+  └─ Can have broken code temporarily
+```
+
+### Workflow
+
+**Daily Development:**
+```bash
+# Work on development branch
+git checkout development
+
+# Make changes, commit often
+git add .
+git commit -m "Add chat interface component"
+git push
+
+# Development branch can have broken/incomplete code
+```
+
+**Deploying to Beta Users:**
+```bash
+# When feature is complete and tested
+git checkout main
+git merge development
+git push
+
+# Vercel will auto-deploy from main
+# Only merge to main when ready for users to see it
+```
+
+### Branch Rules
+
+**Commit to `development` when:**
+- Daily progress on features
+- Experimental code
+- Work in progress (WIP)
+- Broken code that you're actively fixing
+- Testing new ideas
+
+**Merge to `main` when:**
+- Feature is complete and tested
+- Ready for beta users to see
+- Passing basic quality checks
+- No obvious bugs or crashes
+- Ready to deploy to production
+
+**Future: Feature Branches (Phase 2+)**
+- When building large features (multi-day work)
+- Create branch from `development`: `git checkout -b feature/voice-input`
+- Merge back to `development` when done
+- Not needed for Phase 0 (solo dev, fast iteration)
+
+### Current State
+- **Active Branch:** `development`
+- **Default Branch (GitHub):** `main`
+- **Deployment Source (Vercel):** `main`
+
+---
+
 ## Quick Reference
 
-**Current Working Directory:** `/Users/Jonny/Dev/humventures/agents/Decision Stack/decision-stack-v3-with-evals`
+**Current Working Directory:** `/Users/Jonny/Dev/humventures/agents/Decision Stack/dc-agent-v4-with-evals`
 **v3 Location:** `/Users/Jonny/Desktop/decision-stack-v3`
-**Repository:** TBD (local for now)
+**Repository:** `github.com/YOUR_USERNAME/dc-agent-v4-with-evals` (update after first push)
 
 **Key Contacts:**
 - Martin Eriksson (beta partnership)
 
 **Important Links:**
-- V4 Development Plan: `V4_DEVELOPMENT_PLAN.md`
-- Feature Backlog: `FEATURE_BACKLOG.md`
+- V4 Development Plan: `readme/V4_DEVELOPMENT_PLAN.md`
+- Feature Backlog: `readme/FEATURE_BACKLOG.md`
 - R&D Tracking: `docs/rd-tracking/`
