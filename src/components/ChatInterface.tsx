@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Message } from '@/lib/types';
+import { Message, ConversationPhase } from '@/lib/types';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
@@ -9,7 +9,7 @@ interface ChatInterfaceProps {
   onUserResponse: (response: string) => void;
   isLoading: boolean;
   isComplete: boolean;
-  currentPhase: string;
+  currentPhase: ConversationPhase;
 }
 
 export default function ChatInterface({
