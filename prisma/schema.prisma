@@ -13,6 +13,9 @@ model Conversation {
   status    String   // 'in_progress' | 'completed' | 'abandoned'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  currentPhase  String   @default("INITIAL") // INITIAL | LENS_SELECTION | QUESTIONING | EXTRACTION | GENERATION
+  selectedLens  String?  // A | B | C | D | E
+  questionCount Int      @default(0)
 
   messages  Message[]
   traces    Trace[]
@@ -28,6 +31,8 @@ model Message {
   content        String   @db.Text
   stepNumber     Int
   timestamp      DateTime @default(now())
+  confidenceScore     String?  // HIGH | MEDIUM | LOW
+  confidenceReasoning String?  @db.Text
 
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
