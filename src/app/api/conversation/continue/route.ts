@@ -225,6 +225,53 @@ async function handleQuestioning(
     throw new Error('Conversation not found');
   }
 
+  // Check if previous assistant message was an early exit offer
+  const lastAssistantMessage = conversation.messages
+    .filter(m => m.role === 'assistant')
+    .pop();
+
+  const previousUserMessage = conversation.messages
+    .filter(m => m.role === 'user')
+    .pop();
+
+  const isEarlyExitOffer = lastAssistantMessage?.content.includes('A) Continue exploring') &&
+                           lastAssistantMessage?.content.includes('B) Generate strategy');
+
+  if (isEarlyExitOffer && previousUserMessage) {
+    // Process early exit response
+    const userChoice = previousUserMessage.content.trim().toUpperCase();
+
+    if (userChoice === 'B') {
+      // User chose to generate strategy
+      return await moveToExtraction(conversationId, currentStep);
+    } else if (userChoice === 'A') {
+      // User chose to continue exploring - proceed with normal questioning flow
+      const questionCount = conversation.questionCount;
+      const selectedLens = conversation.selectedLens as StrategyLens;
+      return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
+    } else {
+      // Invalid choice - re-prompt
+      const errorMessage = 'Please type A to continue exploring or B to generate your strategy.';
+
+      await prisma.message.create({
+        data: {
+          conversationId,
+          role: 'assistant',
+          content: errorMessage,
+          stepNumber: currentStep + 1,
+        },
+      });
+
+      return NextResponse.json({
+        conversationId,
+        message: errorMessage,
+        nextPhase: 'QUESTIONING',
+        stepNumber: currentStep + 1,
+        earlyExitOffered: true,
+      });
+    }
+  }
+
   const questionCount = conversation.questionCount;
   const selectedLens = conversation.selectedLens as StrategyLens;
 
