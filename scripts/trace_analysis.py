@@ -242,3 +242,42 @@ class TraceAnalyzer:
             conn.execute(query, {'annotation': annotation, 'message_id': message_id})
 
         print(f"✅ Annotated message {message_id[:8]}...")
+
+    def get_coding_summary(self):
+        """
+        Summary statistics for error coding progress.
+
+        Returns:
+            Dict with total, coded, categorized counts and distribution
+        """
+        with self.engine.connect() as conn:
+            # Total traces
+            total = pd.read_sql_query('SELECT COUNT(*) as count FROM "Trace"', conn)
+
+            # Coded traces
+            coded = pd.read_sql_query(
+                'SELECT COUNT(*) as count FROM "Trace" WHERE "openCodingNotes" IS NOT NULL',
+                conn
+            )
+
+            # Categorized traces
+            categorized = pd.read_sql_query(
+                'SELECT COUNT(*) as count FROM "Trace" WHERE array_length("errorCategories", 1) > 0',
+                conn
+            )
+
+            # Category distribution
+            categories = pd.read_sql_query(text("""
+                SELECT unnest("errorCategories") as category, COUNT(*) as count
+                FROM "Trace"
+                WHERE array_length("errorCategories", 1) > 0
+                GROUP BY category
+                ORDER BY count DESC
+            """), conn)
+
+        return {
+            'total_traces': int(total.iloc[0]['count']),
+            'coded_traces': int(coded.iloc[0]['count']),
+            'categorized_traces': int(categorized.iloc[0]['count']),
+            'category_distribution': categories
+        }
