@@ -153,6 +153,7 @@ export default function Home() {
               onUserResponse={handleUserResponse}
               isLoading={isLoading}
               isComplete={false}
+              currentPhase="INITIAL"
             />
           </div>
         )}

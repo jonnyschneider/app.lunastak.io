@@ -9,6 +9,7 @@ interface ChatInterfaceProps {
   onUserResponse: (response: string) => void;
   isLoading: boolean;
   isComplete: boolean;
+  currentPhase: string;
 }
 
 export default function ChatInterface({
@@ -17,8 +18,16 @@ export default function ChatInterface({
   onUserResponse,
   isLoading,
   isComplete,
+  currentPhase,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
+
+  const getPlaceholderText = () => {
+    if (currentPhase === 'LENS_SELECTION') {
+      return 'Type A, B, C, D, or E...';
+    }
+    return 'Type your response...';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +75,7 @@ export default function ChatInterface({
               type="text"
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
-              placeholder="Type your response..."
+              placeholder={getPlaceholderText()}
               disabled={isLoading}
               className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
