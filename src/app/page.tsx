@@ -5,7 +5,7 @@ import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
-import { Message, ExtractedContext, StrategyStatements } from '@/lib/types';
+import { Message, ExtractedContext, EnhancedExtractedContext, StrategyStatements } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
 
@@ -15,7 +15,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [flowStep, setFlowStep] = useState<FlowStep>('chat');
-  const [extractedContext, setExtractedContext] = useState<ExtractedContext | null>(null);
+  const [extractedContext, setExtractedContext] = useState<EnhancedExtractedContext | null>(null);
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
   const [traceId, setTraceId] = useState<string>('');
@@ -117,15 +117,15 @@ export default function Home() {
     }
   };
 
-  const handleConfirmContext = async (context: ExtractedContext) => {
-    if (!conversationId) return;
+  const handleConfirmContext = async () => {
+    if (!conversationId || !extractedContext) return;
 
     setIsLoading(true);
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, extractedContext: context }),
+        body: JSON.stringify({ conversationId, extractedContext }),
       });
 
       const data = await response.json();
@@ -138,6 +138,11 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExplore = () => {
+    // Return to chat to continue exploring
+    setFlowStep('chat');
   };
 
   return (
@@ -162,7 +167,7 @@ export default function Home() {
           <ExtractionConfirm
             extractedContext={extractedContext}
             onConfirm={handleConfirmContext}
-            onEdit={() => {}} // TODO: implement edit flow
+            onExplore={handleExplore}
           />
         )}
 
