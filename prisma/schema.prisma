@@ -34,6 +34,9 @@ model Message {
   confidenceScore     String?  // HIGH | MEDIUM | LOW
   confidenceReasoning String?  @db.Text
 
+  // Phase 2: Message-level annotations
+  annotations         String?  @db.Text
+
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
@@ -64,6 +67,12 @@ model Trace {
   userFeedback        String?  // 'helpful' | 'not_helpful'
   feedbackTimestamp   DateTime?
   refinementRequested Boolean  @default(false)
+
+  // Phase 2: Error coding fields
+  openCodingNotes     String?  @db.Text
+  errorCategories     String[] @default([])
+  reviewedAt          DateTime?
+  reviewedBy          String?
 
   conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
