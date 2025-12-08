@@ -5,7 +5,7 @@ import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
-import { Message, ExtractedContext, EnhancedExtractedContext, StrategyStatements } from '@/lib/types';
+import { Message, ExtractedContext, EnhancedExtractedContext, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
 
@@ -19,6 +19,7 @@ export default function Home() {
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
   const [traceId, setTraceId] = useState<string>('');
+  const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
 
   // Start conversation on mount
   useEffect(() => {
@@ -70,10 +71,19 @@ export default function Home() {
       const continueResponse = await fetch('/api/conversation/continue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, userResponse: response }),
+        body: JSON.stringify({
+          conversationId,
+          userResponse: response,
+          currentPhase,
+        }),
       });
 
       const data = await continueResponse.json();
+
+      // Update phase based on response
+      if (data.nextPhase) {
+        setCurrentPhase(data.nextPhase);
+      }
 
       if (data.complete) {
         // Move to extraction step
@@ -140,9 +150,23 @@ export default function Home() {
     }
   };
 
-  const handleExplore = () => {
+  const handleExplore = async () => {
     // Return to chat to continue exploring
+    setCurrentPhase('QUESTIONING');
     setFlowStep('chat');
+
+    // If there's a thought prompt from the reflective summary, add it as an assistant message
+    if (extractedContext?.reflective_summary.thought_prompt) {
+      const thoughtMessage: Message = {
+        id: `msg_${Date.now()}`,
+        conversationId: conversationId!,
+        role: 'assistant',
+        content: extractedContext.reflective_summary.thought_prompt,
+        stepNumber: messages.length + 1,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, thoughtMessage]);
+    }
   };
 
   return (
@@ -158,7 +182,7 @@ export default function Home() {
               onUserResponse={handleUserResponse}
               isLoading={isLoading}
               isComplete={false}
-              currentPhase="INITIAL"
+              currentPhase={currentPhase}
             />
           </div>
         )}
