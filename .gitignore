@@ -49,17 +49,18 @@ prisma/migrations
 *.tsbuildinfo
 next-env.d.ts
 
-# Python (for Jupyter in Phase 2+)
+# Python
+venv/
 __pycache__/
 *.py[cod]
 *$py.class
-.Python
 *.so
-.venv
-venv/
-ENV/
-env/
-.ipynb_checkpoints
+.Python
+*.egg-info/
+.ipynb_checkpoints/
+
+# Jupyter
+.jupyter/
 
 # Logs
 logs
