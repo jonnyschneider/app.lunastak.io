@@ -94,3 +94,93 @@ class TraceAnalyzer:
             df = pd.read_sql_query(text(query), conn, params=params)
 
         return df
+
+    def display_trace(self, trace_id):
+        """
+        Pretty-print a single trace for review.
+
+        Displays conversation, extraction, strategy output, and coding
+        """
+        query = """
+        SELECT
+            t.*,
+            c."selectedLens",
+            c."questionCount",
+            c."currentPhase",
+            json_agg(
+                json_build_object(
+                    'role', m.role,
+                    'content', m.content,
+                    'stepNumber', m."stepNumber",
+                    'confidenceScore', m."confidenceScore",
+                    'annotations', m.annotations
+                ) ORDER BY m."stepNumber"
+            ) as messages
+        FROM "Trace" t
+        JOIN "Conversation" c ON t."conversationId" = c.id
+        LEFT JOIN "Message" m ON m."conversationId" = c.id
+        WHERE t.id = :trace_id
+        GROUP BY t.id, c.id
+        """
+
+        with self.engine.connect() as conn:
+            result = pd.read_sql_query(text(query), conn, params={'trace_id': trace_id})
+
+        if result.empty:
+            print(f"Trace {trace_id} not found")
+            return
+
+        trace = result.iloc[0]
+
+        md = f"""
+# Trace: {trace['id'][:8]}...
+
+**Metadata:**
+- Lens: {trace['selectedLens']}
+- Questions: {trace['questionCount']}
+- Phase: {trace['currentPhase']}
+- Feedback: {trace.get('userFeedback', 'None')}
+- Reviewed: {trace.get('reviewedAt', 'Not yet')}
+
+---
+
+## Conversation
+
+"""
+        messages = json.loads(trace['messages'])
+        for msg in messages:
+            role = "🤖 Assistant" if msg['role'] == 'assistant' else "👤 User"
+            md += f"\n**{role}** (Step {msg['stepNumber']}):\n{msg['content']}\n"
+            if msg.get('confidenceScore'):
+                md += f"*Confidence: {msg['confidenceScore']}*\n"
+            if msg.get('annotations'):
+                md += f"📝 *Annotation: {msg['annotations']}*\n"
+            md += "\n"
+
+        md += "\n---\n\n## Extracted Context\n\n```json\n"
+        md += json.dumps(json.loads(trace['extractedContext']), indent=2)
+        md += "\n```\n\n---\n\n## Strategy Output\n\n"
+
+        output = json.loads(trace['output'])
+        md += f"**Vision:** {output.get('vision', 'N/A')}\n\n"
+        md += f"**Mission:** {output.get('mission', 'N/A')}\n\n"
+        md += "**Objectives:**\n"
+        for obj in output.get('objectives', []):
+            md += f"- {obj}\n"
+
+        if trace.get('claudeThoughts'):
+            md += f"\n**Claude's Thoughts:** {trace['claudeThoughts']}\n"
+
+        md += "\n---\n\n## Coding\n\n"
+
+        if trace.get('openCodingNotes'):
+            md += f"**Notes:**\n{trace['openCodingNotes']}\n\n"
+        else:
+            md += "*No notes yet*\n\n"
+
+        if trace.get('errorCategories') and len(trace['errorCategories']) > 0:
+            md += f"**Categories:** {', '.join(trace['errorCategories'])}\n"
+        else:
+            md += "*No categories yet*\n"
+
+        display(Markdown(md))
