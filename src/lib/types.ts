@@ -22,6 +22,9 @@ export interface EvaluationResponse {
 
 // Conversation types
 export type ConversationStatus = 'in_progress' | 'completed' | 'abandoned';
+export type ConversationPhase = 'INITIAL' | 'LENS_SELECTION' | 'QUESTIONING' | 'EXTRACTION' | 'GENERATION';
+export type StrategyLens = 'A' | 'B' | 'C' | 'D' | 'E';
+export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export interface Conversation {
   id: string;
@@ -29,6 +32,9 @@ export interface Conversation {
   status: ConversationStatus;
   createdAt: Date;
   updatedAt: Date;
+  currentPhase: ConversationPhase;
+  selectedLens?: StrategyLens;
+  questionCount: number;
 }
 
 export type MessageRole = 'assistant' | 'user';
@@ -40,6 +46,8 @@ export interface Message {
   content: string;
   stepNumber: number;
   timestamp: Date;
+  confidenceScore?: ConfidenceLevel;
+  confidenceReasoning?: string;
 }
 
 // Context extraction types
@@ -51,6 +59,31 @@ export interface ExtractedContext {
   uniqueValue: string;
   extractionConfidence: ExtractionConfidence;
   rawConversation: Message[];
+}
+
+export interface EnrichmentFields {
+  competitive_context?: string;
+  customer_segments?: string[];
+  operational_capabilities?: string;
+  technical_advantages?: string;
+  [key: string]: any; // Allow additional emergent fields
+}
+
+export interface ReflectiveSummary {
+  strengths: string[];
+  emerging: string[];
+  unexplored: string[];
+  thought_prompt?: string;
+}
+
+export interface EnhancedExtractedContext {
+  core: {
+    industry: string;
+    target_market: string;
+    unique_value: string;
+  };
+  enrichment: EnrichmentFields;
+  reflective_summary: ReflectiveSummary;
 }
 
 // Trace types
