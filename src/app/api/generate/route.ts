@@ -2,24 +2,40 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { ExtractedContext, StrategyStatements, Trace } from '@/lib/types';
+import { EnhancedExtractedContext, StrategyStatements, Trace } from '@/lib/types';
 
 export const maxDuration = 60;
 
-const GENERATION_PROMPT = `Generate compelling strategy statements based on the business context provided.
+const GENERATION_PROMPT = `Generate compelling strategy statements based on the comprehensive business context provided.
 
-Context:
+CORE CONTEXT:
 Industry: {industry}
-Target Market: {targetMarket}
-Unique Value: {uniqueValue}
+Target Market: {target_market}
+Unique Value: {unique_value}
+
+ENRICHMENT DETAILS:
+{enrichment}
+
+INSIGHTS FROM CONVERSATION:
+Strengths identified:
+{strengths}
+
+Emerging themes:
+{emerging}
+
+Areas to explore further:
+{unexplored}
 
 Guidelines:
+- Use the core context as foundation
+- Leverage enrichment details to add specificity and differentiation
+- Incorporate the strengths and emerging themes identified
 - Vision: Should be aspirational, future-focused, and memorable
 - Mission: Should be clear, actionable, and focused on current purpose
 - Objectives: Should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
 
 Format your response as:
-<thoughts>Your reasoning about the strategy</thoughts>
+<thoughts>Your reasoning about the strategy, referencing specific insights from the context</thoughts>
 <statements>
   <vision>The vision statement</vision>
   <mission>The mission statement</mission>
@@ -53,12 +69,38 @@ export async function POST(req: Request) {
       );
     }
 
-    const { industry, targetMarket, uniqueValue } = extractedContext as ExtractedContext;
+    const context = extractedContext as EnhancedExtractedContext;
+
+    // Format enrichment details
+    const enrichmentText = Object.entries(context.enrichment || {})
+      .filter(([_, value]) => value)
+      .map(([key, value]) => {
+        const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        return `${label}: ${Array.isArray(value) ? value.join(', ') : value}`;
+      })
+      .join('\n');
+
+    // Format reflective summary
+    const strengthsText = (context.reflective_summary?.strengths || [])
+      .map(s => `- ${s}`)
+      .join('\n');
+
+    const emergingText = (context.reflective_summary?.emerging || [])
+      .map(e => `- ${e}`)
+      .join('\n');
+
+    const unexploredText = (context.reflective_summary?.unexplored || [])
+      .map(u => `- ${u}`)
+      .join('\n');
 
     const prompt = GENERATION_PROMPT
-      .replace('{industry}', industry)
-      .replace('{targetMarket}', targetMarket)
-      .replace('{uniqueValue}', uniqueValue);
+      .replace('{industry}', context.core.industry)
+      .replace('{target_market}', context.core.target_market)
+      .replace('{unique_value}', context.core.unique_value)
+      .replace('{enrichment}', enrichmentText || 'None provided')
+      .replace('{strengths}', strengthsText || 'None identified')
+      .replace('{emerging}', emergingText || 'None identified')
+      .replace('{unexplored}', unexploredText || 'None identified');
 
     // Generate strategy
     const startTime = Date.now();

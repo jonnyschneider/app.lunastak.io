@@ -6,6 +6,54 @@
 
 ## Current Session Notes
 
+**Date:** 2025-12-09
+**Session:** Critical Bug Fix - Connect Enriched Context to Strategy Generation
+
+### URGENT BUG FIX
+
+**Issue Discovered:** After UAT testing, the adaptive conversation flow was successfully capturing enriched context and reflective summaries, but strategy generation was producing completely generic statements with warnings about missing topic areas.
+
+**Root Cause:** The generation API (`/api/generate/route.ts`) was still using the old `ExtractedContext` type with only 3 core fields (industry, targetMarket, uniqueValue). It was completely ignoring:
+- Enrichment fields (competitive_context, customer_segments, operational_capabilities, technical_advantages)
+- Reflective summary (strengths, emerging themes, unexplored gaps)
+- All the deep context gathered through 3-10 adaptive questions
+
+**Impact:** The entire adaptive conversation flow was essentially wasted - users went through thoughtful multi-layered exploration, but the generated strategy didn't leverage any of that depth.
+
+### Fix Applied
+
+**Changes Made:**
+- Updated `src/app/api/generate/route.ts` to use `EnhancedExtractedContext` type
+- Rewrote generation prompt to include:
+  - Core context (industry, target_market, unique_value)
+  - Enrichment details (formatted with labels)
+  - Insights from conversation (strengths, emerging themes, unexplored areas)
+- Updated prompt instructions to explicitly leverage enrichment and insights
+- Formatted all enrichment data and reflective summary for LLM consumption
+
+**Technical Details:**
+- Changed import from `ExtractedContext` to `EnhancedExtractedContext`
+- Added formatting logic for enrichment fields (dynamic based on what's present)
+- Added formatting for reflective summary arrays (strengths, emerging, unexplored)
+- Updated all template replacements to use nested structure (`context.core.*`)
+- Increased context richness from ~50 words to ~300+ words depending on conversation depth
+
+**Verification:**
+- ✅ TypeScript compilation successful (0 errors)
+- ✅ Build successful
+- ✅ All type references aligned
+- Ready for UAT re-testing
+
+**What This Enables:**
+- Strategy statements now grounded in specific customer insights
+- Vision/mission can reference competitive differentiation discussed
+- Objectives can target emerging themes and strengths identified
+- Generated strategy reflects the depth of conversation, not just 3 generic fields
+
+---
+
+## Previous Session Notes (2025-12-08)
+
 **Date:** 2025-12-08
 **Session:** Adaptive Conversation Flow Implementation Complete
 
