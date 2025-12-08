@@ -184,3 +184,61 @@ class TraceAnalyzer:
             md += "*No categories yet*\n"
 
         display(Markdown(md))
+
+    def annotate_trace(self, trace_id, notes):
+        """
+        Save open coding notes for a trace.
+
+        Args:
+            trace_id: Trace to annotate
+            notes: Freeform text observations
+        """
+        query = text("""
+        UPDATE "Trace"
+        SET "openCodingNotes" = :notes,
+            "reviewedAt" = NOW()
+        WHERE id = :trace_id
+        """)
+
+        with self.engine.begin() as conn:
+            conn.execute(query, {'notes': notes, 'trace_id': trace_id})
+
+        print(f"✅ Annotated trace {trace_id[:8]}...")
+
+    def categorize_trace(self, trace_id, categories):
+        """
+        Apply error categories after theme synthesis.
+
+        Args:
+            trace_id: Trace to categorize
+            categories: List like ['over-generalization', 'weak-objectives']
+        """
+        query = text("""
+        UPDATE "Trace"
+        SET "errorCategories" = :categories
+        WHERE id = :trace_id
+        """)
+
+        with self.engine.begin() as conn:
+            conn.execute(query, {'categories': categories, 'trace_id': trace_id})
+
+        print(f"✅ Categorized trace {trace_id[:8]}... with: {', '.join(categories)}")
+
+    def annotate_message(self, message_id, annotation):
+        """
+        Save annotation for specific message exchange.
+
+        Args:
+            message_id: Message to annotate
+            annotation: Freeform text note
+        """
+        query = text("""
+        UPDATE "Message"
+        SET annotations = :annotation
+        WHERE id = :message_id
+        """)
+
+        with self.engine.begin() as conn:
+            conn.execute(query, {'annotation': annotation, 'message_id': message_id})
+
+        print(f"✅ Annotated message {message_id[:8]}...")
