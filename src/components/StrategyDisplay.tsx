@@ -1,7 +1,6 @@
 'use client';
 
 import { StrategyStatements } from '@/lib/types';
-import StrategyFlow from './StrategyFlow';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -11,39 +10,56 @@ interface StrategyDisplayProps {
 export default function StrategyDisplay({ strategy, thoughts }: StrategyDisplayProps) {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Thoughts (optional) */}
+      {/* Thoughts Section - Greyscale */}
       {thoughts && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">Strategic Thinking:</h3>
-          <p className="text-blue-800 whitespace-pre-wrap">{thoughts}</p>
+        <div className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+          <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+            Strategic Thinking
+          </h3>
+          <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap text-sm">
+            {thoughts}
+          </p>
         </div>
       )}
 
-      {/* Strategy Statements */}
-      <div className="bg-white border rounded-lg p-6 shadow-sm space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Vision</h3>
-          <p className="text-lg text-gray-900">{strategy.vision}</p>
+      {/* Decision Stack */}
+      <div className="space-y-4">
+        {/* Vision Card */}
+        <div className="bg-zinc-800 dark:bg-zinc-700 rounded-lg p-6 shadow-sm">
+          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">
+            Vision
+          </h3>
+          <p className="text-lg font-medium text-white leading-relaxed">
+            {strategy.vision}
+          </p>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Mission</h3>
-          <p className="text-lg text-gray-900">{strategy.mission}</p>
+        {/* Mission Card */}
+        <div className="bg-zinc-700 dark:bg-zinc-600 rounded-lg p-6 shadow-sm">
+          <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+            Mission
+          </h3>
+          <p className="text-lg font-medium text-white leading-relaxed">
+            {strategy.mission}
+          </p>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">Objectives</h3>
-          <ul className="list-disc list-inside space-y-1">
-            {strategy.objectives.map((objective, index) => (
-              <li key={index} className="text-gray-900">{objective}</li>
-            ))}
-          </ul>
+        {/* Objectives Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {strategy.objectives.map((objective, index) => (
+            <div
+              key={index}
+              className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6 shadow-sm"
+            >
+              <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
+                Objective {index + 1}
+              </h3>
+              <p className="text-base text-zinc-900 dark:text-zinc-100 leading-relaxed">
+                {objective}
+              </p>
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* ReactFlow Visualization */}
-      <div className="bg-white border rounded-lg shadow-sm" style={{ height: '600px' }}>
-        <StrategyFlow strategy={strategy} />
       </div>
     </div>
   );
