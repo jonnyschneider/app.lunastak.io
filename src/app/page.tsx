@@ -5,6 +5,7 @@ import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
+import { AppLayout } from '@/components/layout/app-layout';
 import { Message, ExtractedContext, EnhancedExtractedContext, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
@@ -183,38 +184,38 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-center mb-8">Decision Stack</h1>
+    <AppLayout>
+      <main className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+        <div className="container mx-auto py-8">
+          {flowStep === 'chat' && (
+            <div className="h-[600px]">
+              <ChatInterface
+                conversationId={conversationId}
+                messages={messages}
+                onUserResponse={handleUserResponse}
+                isLoading={isLoading}
+                isComplete={false}
+                currentPhase={currentPhase}
+              />
+            </div>
+          )}
 
-        {flowStep === 'chat' && (
-          <div className="h-[600px]">
-            <ChatInterface
-              conversationId={conversationId}
-              messages={messages}
-              onUserResponse={handleUserResponse}
-              isLoading={isLoading}
-              isComplete={false}
-              currentPhase={currentPhase}
+          {flowStep === 'extraction' && extractedContext && (
+            <ExtractionConfirm
+              extractedContext={extractedContext}
+              onConfirm={handleConfirmContext}
+              onExplore={handleExplore}
             />
-          </div>
-        )}
+          )}
 
-        {flowStep === 'extraction' && extractedContext && (
-          <ExtractionConfirm
-            extractedContext={extractedContext}
-            onConfirm={handleConfirmContext}
-            onExplore={handleExplore}
-          />
-        )}
-
-        {flowStep === 'strategy' && strategy && (
-          <>
-            <StrategyDisplay strategy={strategy} thoughts={thoughts} />
-            <FeedbackButtons traceId={traceId} />
-          </>
-        )}
-      </div>
-    </main>
+          {flowStep === 'strategy' && strategy && (
+            <>
+              <StrategyDisplay strategy={strategy} thoughts={thoughts} />
+              <FeedbackButtons traceId={traceId} />
+            </>
+          )}
+        </div>
+      </main>
+    </AppLayout>
   );
 }
