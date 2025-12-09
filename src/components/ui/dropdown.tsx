@@ -18,7 +18,7 @@ export function DropdownMenu({
   anchor = 'bottom',
   className,
   ...props
-}: Headless.MenuItemsProps & { anchor?: 'bottom' | 'top' | 'left' | 'right' }) {
+}: Headless.MenuItemsProps) {
   return (
     <Headless.MenuItems
       {...props}
