@@ -98,7 +98,7 @@ export async function POST(req: Request) {
 
     // Build conversation history
     const conversationHistory = conversation.messages
-      .map(m => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+      .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
       .join('\n\n');
 
     // Extract context

@@ -159,7 +159,7 @@ async function handleLensSelection(
   });
 
   const conversationHistory = conversation!.messages
-    .map(m => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+    .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
   // Generate first lens-framed question
@@ -335,7 +335,7 @@ async function continueQuestioning(
   });
 
   const conversationHistory = conversation!.messages
-    .map(m => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+    .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
   // Generate next question
