@@ -78,3 +78,67 @@ export function SidebarHeading({ className, ...props }: React.ComponentPropsWith
     />
   )
 }
+
+export const SidebarItem = forwardRef(function SidebarItem(
+  { current, className, children, ...props }: { current?: boolean; className?: string; children: React.ReactNode } & (
+    | Omit<Headless.ButtonProps, 'as' | 'className'>
+    | Omit<React.ComponentPropsWithoutRef<typeof Link>, 'className'>
+  ),
+  ref: React.ForwardedRef<HTMLAnchorElement | HTMLButtonElement>
+) {
+  const classes = clsx(
+    // Base
+    'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5',
+    // Leading icon/icon-only
+    'data-[slot=icon]:*:size-6 data-[slot=icon]:*:shrink-0 sm:data-[slot=icon]:*:size-5',
+    'data-[slot=icon]:*:fill-zinc-500',
+    // Trailing icon (down chevron or similar)
+    'data-[slot=icon]:last:*:ml-auto data-[slot=icon]:last:*:size-5 sm:data-[slot=icon]:last:*:size-4',
+    // Avatar
+    'data-[slot=avatar]:*:-m-0.5 data-[slot=avatar]:*:size-7 sm:data-[slot=avatar]:*:size-6',
+    'data-[slot=avatar]:*:[--ring-opacity:10%]',
+    // Hover
+    'data-[hover]:bg-zinc-950/5 data-[slot=icon]:*:data-[hover]:fill-zinc-950',
+    // Active
+    'data-[active]:bg-zinc-950/5 data-[slot=icon]:*:data-[active]:fill-zinc-950',
+    // Current
+    'data-[slot=icon]:*:data-[current]:fill-zinc-950',
+    // Dark mode
+    'dark:text-white',
+    'dark:data-[slot=icon]:*:fill-zinc-400',
+    'dark:data-[hover]:bg-white/5 dark:data-[slot=icon]:*:data-[hover]:fill-white',
+    'dark:data-[active]:bg-white/5 dark:data-[slot=icon]:*:data-[active]:fill-white',
+    'dark:data-[slot=icon]:*:data-[current]:fill-white'
+  )
+
+  return (
+    <span className={clsx(className, 'relative')}>
+      {current && (
+        <span className="absolute inset-y-2 -left-4 w-0.5 rounded-full bg-zinc-950 dark:bg-white" />
+      )}
+      {'href' in props ? (
+        <Link
+          {...props as any}
+          className={classes}
+          data-current={current ? 'true' : undefined}
+          ref={ref as React.ForwardedRef<HTMLAnchorElement>}
+        >
+          {children}
+        </Link>
+      ) : (
+        <Headless.Button
+          {...props as any}
+          className={clsx('cursor-default', classes)}
+          data-current={current ? 'true' : undefined}
+          ref={ref}
+        >
+          {children}
+        </Headless.Button>
+      )}
+    </span>
+  )
+})
+
+export function SidebarLabel({ className, ...props }: React.ComponentPropsWithoutRef<'span'>) {
+  return <span {...props} data-slot="label" className={clsx(className, 'truncate')} />
+}
