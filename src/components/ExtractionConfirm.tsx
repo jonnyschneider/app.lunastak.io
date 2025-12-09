@@ -19,7 +19,7 @@ export default function ExtractionConfirm({
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white border rounded-lg p-6 shadow-sm space-y-6">
+      <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 shadow-sm space-y-6">
 
         {/* Core Fields Section */}
         <div>
@@ -27,7 +27,7 @@ export default function ExtractionConfirm({
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                 Industry
               </label>
               {isEditing ? (
@@ -41,12 +41,12 @@ export default function ExtractionConfirm({
                   className="w-full px-3 py-2 border rounded-md"
                 />
               ) : (
-                <p className="text-gray-900">{extractedContext.core.industry}</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.industry}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                 Target Market
               </label>
               {isEditing ? (
@@ -60,12 +60,12 @@ export default function ExtractionConfirm({
                   className="w-full px-3 py-2 border rounded-md"
                 />
               ) : (
-                <p className="text-gray-900">{extractedContext.core.target_market}</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.target_market}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                 Unique Value
               </label>
               {isEditing ? (
@@ -79,7 +79,7 @@ export default function ExtractionConfirm({
                   className="w-full px-3 py-2 border rounded-md"
                 />
               ) : (
-                <p className="text-gray-900">{extractedContext.core.unique_value}</p>
+                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.unique_value}</p>
               )}
             </div>
           </div>
@@ -92,10 +92,10 @@ export default function ExtractionConfirm({
             <div className="space-y-3">
               {Object.entries(extractedContext.enrichment).map(([key, value]) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1 capitalize">
                     {key.replace(/_/g, ' ')}
                   </label>
-                  <p className="text-gray-900 text-sm">
+                  <p className="text-zinc-900 dark:text-zinc-100 text-sm">
                     {Array.isArray(value) ? value.join(', ') : value}
                   </p>
                 </div>
@@ -105,15 +105,15 @@ export default function ExtractionConfirm({
         )}
 
         {/* Reflective Summary Section */}
-        <div className="border-t pt-6 bg-blue-50 -m-6 p-6 rounded-b-lg">
-          <h3 className="text-lg font-medium mb-4">Reflection</h3>
+        <div className="border-t pt-6 bg-zinc-50 dark:bg-zinc-900 -m-6 p-6 rounded-b-lg">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-4">Reflection</h3>
 
           {extractedContext.reflective_summary.strengths.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">What&apos;s Clear</h4>
+              <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">What&apos;s Clear</h4>
               <ul className="list-disc list-inside space-y-1">
                 {extractedContext.reflective_summary.strengths.map((strength, idx) => (
-                  <li key={idx} className="text-sm text-gray-900">{strength}</li>
+                  <li key={idx} className="text-sm text-zinc-900 dark:text-zinc-100">{strength}</li>
                 ))}
               </ul>
             </div>
@@ -121,10 +121,10 @@ export default function ExtractionConfirm({
 
           {extractedContext.reflective_summary.emerging.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">What&apos;s Emerging</h4>
+              <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">What&apos;s Emerging</h4>
               <ul className="list-disc list-inside space-y-1">
                 {extractedContext.reflective_summary.emerging.map((area, idx) => (
-                  <li key={idx} className="text-sm text-gray-900">{area}</li>
+                  <li key={idx} className="text-sm text-zinc-900 dark:text-zinc-100">{area}</li>
                 ))}
               </ul>
             </div>
@@ -132,18 +132,18 @@ export default function ExtractionConfirm({
 
           {extractedContext.reflective_summary.unexplored.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">What&apos;s Unexplored</h4>
+              <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">What&apos;s Unexplored</h4>
               <ul className="list-disc list-inside space-y-1">
                 {extractedContext.reflective_summary.unexplored.map((gap, idx) => (
-                  <li key={idx} className="text-sm text-gray-900">{gap}</li>
+                  <li key={idx} className="text-sm text-zinc-900 dark:text-zinc-100">{gap}</li>
                 ))}
               </ul>
             </div>
           )}
 
           {extractedContext.reflective_summary.thought_prompt && (
-            <div className="bg-white border-l-4 border-blue-500 p-4 rounded">
-              <p className="text-sm font-medium text-gray-900">
+            <div className="bg-white dark:bg-zinc-800 border-l-4 border-zinc-400 dark:border-zinc-500 p-4 rounded">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                 {extractedContext.reflective_summary.thought_prompt}
               </p>
             </div>
@@ -154,15 +154,15 @@ export default function ExtractionConfirm({
         <div className="flex gap-3">
           <button
             onClick={onConfirm}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-6 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700"
           >
             Generate my strategy
           </button>
           <button
             onClick={onExplore}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-6 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
           >
-            Explore further
+            Keep Exploring
           </button>
         </div>
       </div>
