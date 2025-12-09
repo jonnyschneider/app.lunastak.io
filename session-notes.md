@@ -4,6 +4,49 @@ Development session summaries for Decision Stack project.
 
 ---
 
+## 2025-12-09 (Session 4): Greyscale UI Simplification
+
+### Overview
+Simplified entire UI to elegant monotone greyscale palette. Removed color inconsistencies and brand colors for clean wireframe-like aesthetic.
+
+### Changes
+- Removed all custom colors (blue, coral, red)
+- Standardized to greyscale palette using Tailwind zinc scale
+- Kept card-based Strategy Display layout
+- Removed ReactFlow dependency
+- Maintained keyboard letter input for chat options
+- Consistent styling across all components
+
+### Technical Details
+
+**Files Modified:**
+- `tailwind.config.ts` - Removed custom colors, kept only borderRadius
+- `src/components/ChatInterface.tsx` - Greyscale styling for messages, input, buttons
+- `src/components/StrategyDisplay.tsx` - Greyscale cards with Vision/Mission/Objectives
+- `src/components/ExtractionConfirm.tsx` - Greyscale styling
+- `src/components/FeedbackButtons.tsx` - Greyscale styling
+
+**Files Deleted:**
+- `src/components/StrategyFlow.tsx`
+
+**Dependencies Removed:**
+- reactflow
+- @reactflow/node-resizer
+
+**Color Palette:**
+- User messages: `bg-zinc-800 text-white`
+- Assistant messages: `bg-zinc-100 dark:bg-zinc-800`
+- Vision card: `bg-zinc-800` (dark grey)
+- Mission card: `bg-zinc-700` (medium grey)
+- Objective cards: `bg-white` (light cards with borders)
+- Primary buttons: `bg-zinc-800 hover:bg-zinc-700`
+- Secondary buttons: `border-zinc-300` with hover states
+
+### Hours
+~1.5 hours implementation + testing
+
+---
+
 ## 2025-12-09: Bug Fixes & Timeout Investigation
 
 ### Session Overview
