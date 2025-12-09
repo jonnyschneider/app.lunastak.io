@@ -147,7 +147,8 @@ class TraceAnalyzer:
 ## Conversation
 
 """
-        messages = json.loads(trace['messages'])
+        # messages is already a list from json_agg, not a JSON string
+        messages = trace['messages'] if isinstance(trace['messages'], list) else json.loads(trace['messages'])
         for msg in messages:
             role = "🤖 Assistant" if msg['role'] == 'assistant' else "👤 User"
             md += f"\n**{role}** (Step {msg['stepNumber']}):\n{msg['content']}\n"
@@ -158,10 +159,11 @@ class TraceAnalyzer:
             md += "\n"
 
         md += "\n---\n\n## Extracted Context\n\n```json\n"
-        md += json.dumps(json.loads(trace['extractedContext']), indent=2)
+        extracted_context = trace['extractedContext'] if isinstance(trace['extractedContext'], dict) else json.loads(trace['extractedContext'])
+        md += json.dumps(extracted_context, indent=2)
         md += "\n```\n\n---\n\n## Strategy Output\n\n"
 
-        output = json.loads(trace['output'])
+        output = trace['output'] if isinstance(trace['output'], dict) else json.loads(trace['output'])
         md += f"**Vision:** {output.get('vision', 'N/A')}\n\n"
         md += f"**Mission:** {output.get('mission', 'N/A')}\n\n"
         md += "**Objectives:**\n"
