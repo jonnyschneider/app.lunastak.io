@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;           /* white */
+    --foreground: 0 0% 9%;             /* zinc-900 */
+    --muted: 0 0% 96%;                 /* zinc-100 */
+    --muted-foreground: 0 0% 45%;      /* zinc-500 */
+    --border: 0 0% 90%;                /* zinc-200 */
+    --input: 0 0% 90%;                 /* zinc-200 */
+    --ring: 0 0% 9%;                   /* zinc-900 */
+  }
+
+  .dark {
+    --background: 0 0% 9%;             /* zinc-900 */
+    --foreground: 0 0% 98%;            /* zinc-50 */
+    --muted: 0 0% 15%;                 /* zinc-800 */
+    --muted-foreground: 0 0% 64%;      /* zinc-400 */
+    --border: 0 0% 27%;                /* zinc-700 */
+    --input: 0 0% 27%;                 /* zinc-700 */
+    --ring: 0 0% 83%;                  /* zinc-300 */
+  }
+}
