@@ -47,10 +47,15 @@ Format your response as:
 </statements>`;
 
 export async function POST(req: Request) {
+  const requestStartTime = Date.now();
+  console.log('[Generate API] Request started');
+
   try {
     const { conversationId, extractedContext } = await req.json();
+    console.log('[Generate API] Parsed request body, conversationId:', conversationId);
 
     if (!conversationId || !extractedContext) {
+      console.error('[Generate API] Missing required fields');
       return NextResponse.json(
         { error: 'conversationId and extractedContext are required' },
         { status: 400 }
@@ -63,12 +68,14 @@ export async function POST(req: Request) {
     });
 
     if (!conversation) {
+      console.error('[Generate API] Conversation not found:', conversationId);
       return NextResponse.json(
         { error: 'Conversation not found' },
         { status: 404 }
       );
     }
 
+    console.log('[Generate API] Conversation found, preparing context...');
     const context = extractedContext as EnhancedExtractedContext;
 
     // Format enrichment details
@@ -103,6 +110,8 @@ export async function POST(req: Request) {
       .replace('{unexplored}', unexploredText || 'None identified');
 
     // Generate strategy
+    console.log('[Generate API] Calling Claude API...');
+    console.log('[Generate API] Prompt length:', prompt.length, 'characters');
     const startTime = Date.now();
     const response = await anthropic.messages.create({
       model: CLAUDE_MODEL,
@@ -114,6 +123,7 @@ export async function POST(req: Request) {
       temperature: 0.7
     });
     const latency = Date.now() - startTime;
+    console.log(`[Generate API] Claude API responded in ${latency}ms`);
 
     const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
 
@@ -129,6 +139,7 @@ export async function POST(req: Request) {
     };
 
     // Save trace
+    console.log('[Generate API] Saving trace to database...');
     const trace = await prisma.trace.create({
       data: {
         conversationId,
@@ -143,6 +154,7 @@ export async function POST(req: Request) {
         latencyMs: latency,
       },
     });
+    console.log('[Generate API] Trace saved with ID:', trace.id);
 
     // Update conversation status
     await prisma.conversation.update({
@@ -150,15 +162,20 @@ export async function POST(req: Request) {
       data: { status: 'completed' },
     });
 
+    const totalTime = Date.now() - requestStartTime;
+    console.log(`[Generate API] Request completed successfully in ${totalTime}ms`);
+
     return NextResponse.json({
       traceId: trace.id,
       thoughts,
       statements,
     });
   } catch (error) {
-    console.error('Generate strategy error:', error);
+    const totalTime = Date.now() - requestStartTime;
+    console.error(`[Generate API] Error after ${totalTime}ms:`, error);
+    console.error('[Generate API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to generate strategy' },
+      { error: 'Failed to generate strategy', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

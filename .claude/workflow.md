@@ -1,6 +1,6 @@
 # Development Workflows
 
-**Last Updated:** 2025-12-07
+**Last Updated:** 2025-12-09
 
 ---
 
@@ -8,206 +8,168 @@
 
 ### Overview
 
-**Key Principle:** Jonny manages git manually. Agent assists with documentation.
+**New Approach (Streamlined):**
 
-**Process:**
-1. Agent updates `COMMIT_NOTES.md` during session
-2. Jonny reviews and edits notes
-3. Jonny executes git commands manually
-4. Agent archives session notes
-5. Agent clears `COMMIT_NOTES.md` for next session
+**Development Branch:**
+- Agent/Superpowers commits directly as work completes
+- No manual approval needed for dev commits
+- Good descriptive commit messages
+- Fast iteration, no bottlenecks
 
----
+**Main Branch:**
+- Jonny controls merges from dev → main
+- Review batch of work before merging
+- Write release notes summarizing what's shipping
+- Merge triggers Vercel deployment
 
-## Detailed Commit Workflow
-
-### During the Session
-
-**Agent's Role:**
-```markdown
-1. Work on tasks with Jonny
-2. Update COMMIT_NOTES.md > Current Session Notes with:
-   - Changes made
-   - Why these changes
-   - What's deferred
-   - Technical notes
-   - Suggested commit message
-3. Keep notes updated as session progresses
-```
-
-**File:** `COMMIT_NOTES.md` (root of project)
+**Session Tracking:**
+- Update `session-notes.md` throughout session
+- At end of session: Add summary of session's work
+- No batching into commits - session notes are separate documentation
 
 ---
 
-### Before Committing
+## Development Branch Workflow
 
-**Jonny's Role:**
+### During Development
+
+**Agent commits freely:**
 ```bash
-1. Review COMMIT_NOTES.md
-2. Add own observations and notes
-3. Edit commit message if desired
-4. Decide what to stage/commit
-```
-
-**Agent's Role:**
-- Ensure COMMIT_NOTES.md is complete and accurate
-- Answer questions about changes
-- Clarify technical decisions if needed
-
----
-
-### Executing the Commit
-
-**Jonny executes manually:**
-```bash
-# 1. Check status
-git status
-git branch  # Confirm on 'development'
-
-# 2. Stage files
+# Agent can run these commands directly when work is complete
 git add .
-# Or selectively: git add <specific-files>
-
-# 3. Commit (copy message from COMMIT_NOTES.md or write own)
-git commit -m "Your commit message here"
-
-# 4. Push
+git commit -m "feat: add diagnostic logging to generation API"
 git push
-# Or first time: git push -u origin development
 
-# 5. Optional: Note commit hash for session notes
-git log -1 --oneline
+# Or via superpowers auto-commit (now allowed)
 ```
+
+**Good commit messages:**
+- Describe what changed and why
+- Use conventional commit format if possible: `feat:`, `fix:`, `docs:`, `refactor:`
+- Examples:
+  - `feat: add adaptive conversation flow with confidence assessment`
+  - `fix: connect enriched context to strategy generation`
+  - `docs: update architecture to reflect current implementation`
+  - `refactor: extract lens selection into separate component`
+
+**No manual approval needed** - trust the agent/superpowers to commit when logical
 
 ---
 
-### After Committing
+## Main Branch Workflow
 
-**Agent's Role:**
-```markdown
-1. Create session archive file:
-   - Location: docs/session-notes/YYYY-MM-DD_description.md
-   - Content: Copy from COMMIT_NOTES.md Current Session Notes
-   - Include: Changes, reasoning, commit message used
-   - Add placeholder for commit hash
+### Merging to Production
 
-2. Clear COMMIT_NOTES.md:
-   - Remove Current Session Notes content
-   - Reset to template
-   - Keep "Instructions for Use" section intact
-   - Ready for next session
-```
+**When ready to deploy:**
 
-**Jonny's Role (optional):**
 ```bash
-# Add commit hash to archived session notes
-# Edit docs/session-notes/YYYY-MM-DD_description.md
-# Add hash from: git log -1 --oneline
+# 1. Review what's on development
+git checkout development
+git log main..development --oneline  # See what's new
+
+# 2. Test locally one more time
+npm run build
+npm run dev  # Smoke test
+
+# 3. Switch to main and merge
+git checkout main
+git pull
+git merge development --no-ff  # No fast-forward to preserve history
+
+# 4. Write release notes as merge commit message
+git commit --amend  # Edit merge commit message
+
+# 5. Push to trigger Vercel deployment
+git push
+
+# 6. Back to development
+git checkout development
 ```
+
+**Release Notes Format:**
+```
+Release: [Brief Title]
+
+Summary:
+- Major feature/change 1
+- Major feature/change 2
+- Bug fixes and improvements
+
+Details:
+[Brief description of what this batch delivers to users]
+
+Technical Notes:
+[Any important implementation details or breaking changes]
+```
+
+**Checklist before merging:**
+- [ ] All tests passing
+- [ ] Tested locally
+- [ ] No known critical bugs
+- [ ] Ready for beta users
+- [ ] Session notes updated
 
 ---
 
-## Branch Management Workflow
+## Session Documentation Workflow
+
+### During Session
+
+**Update session-notes.md throughout:**
+- What you're working on
+- Key decisions made
+- Issues encountered and fixed
+- Technical insights
+
+**No need for COMMIT_NOTES.md** - that file can be deleted
+
+### End of Session
+
+**Agent adds session summary:**
+```markdown
+1. Add new section to session-notes.md with today's date
+2. Summarize:
+   - What was accomplished
+   - Key technical details
+   - Outstanding issues
+   - Next steps
+   - Approximate hours spent
+3. Commit the session-notes.md update
+```
+
+**Session notes are separate from code commits** - they're documentation, not batched commit messages
+
+---
+
+## Branch Management
 
 ### Two-Branch Strategy
 
 ```
 main (production)
   └─ Stable, deployable code
-  └─ Vercel deploys from here
+  └─ Vercel deploys from here (configured in vercel.json)
   └─ Merge from development when ready
+  └─ Release notes in merge commits
 
 development (active work)
-  └─ Daily commits
+  └─ Frequent commits as work completes
   └─ WIP allowed
   └─ Experimental features
-  └─ Can be broken temporarily
+  └─ Can be temporarily broken
 ```
 
 ### Daily Work
 
-**Always work on `development`:**
 ```bash
-# Start session
+# Always work on development
 git checkout development
-git pull  # Get latest
-
-# Make changes, commit often
-git add .
-git commit -m "Work in progress: chat interface"
-git push
-
-# WIP commits are fine on development
-```
-
-### Deploying to Beta Users
-
-**When feature is complete:**
-```bash
-# 1. Ensure development is clean and pushed
-git checkout development
-git status  # Should be clean
-git push
-
-# 2. Switch to main
-git checkout main
 git pull
 
-# 3. Merge development
-git merge development
+# Make changes, agent commits as work completes
+# (no manual intervention needed)
 
-# 4. Push to trigger Vercel deployment
-git push
-
-# 5. Go back to development for next work
-git checkout development
-```
-
-**Checklist before merging to main:**
-- [ ] Feature is complete (not WIP)
-- [ ] No obvious bugs or crashes
-- [ ] Tested locally
-- [ ] Ready for beta users to see
-- [ ] Matches Phase acceptance criteria
-
----
-
-## Session End Workflow
-
-### Before Ending Session
-
-**Agent checklist:**
-```markdown
-1. ✅ All work committed?
-   - If yes: Archive session notes
-   - If no: Update COMMIT_NOTES.md with uncommitted work
-
-2. ✅ Update PROJECT_STATUS.md:
-   - Mark completed acceptance criteria
-   - Update R&D time tracking (hours spent)
-   - Add any new technical debt / learnings
-
-3. ✅ Update TodoWrite:
-   - Mark completed todos
-   - Add next session todos if clear
-
-4. ✅ Ask Jonny:
-   - "Ready to archive session notes?"
-   - "Anything else to capture before ending?"
-```
-
-**Jonny checklist:**
-```bash
-# Review uncommitted changes
-git status
-
-# Decide: commit now or leave for next session?
-# If leaving uncommitted:
-  - Ensure COMMIT_NOTES.md has notes
-  - Can continue next session
-
-# If committing:
-  - Follow commit workflow above
+# Continue iterating
 ```
 
 ---
@@ -218,143 +180,126 @@ git status
 
 **Agent's first steps:**
 ```markdown
-1. Read .claude/README.md (session startup checklist)
-2. Check git status
+1. Read .claude/readme.md (quick start checklist)
+2. Read session-notes.md (what's been built)
+3. Check git status
    git status
-   git branch
-3. Review COMMIT_NOTES.md
-   - Is there uncommitted work from last session?
-   - Or is it cleared and ready for new session?
-4. Review latest session notes
-   - Read docs/session-notes/[most recent].md
-   - Understand where we left off
-5. Check PROJECT_STATUS.md
-   - Current phase and acceptance criteria
-   - What's completed vs pending
-6. Initialize TodoWrite with session tasks
+   git branch  # Should be on development
+4. Review docs/issues-and-bugfixes.md (known issues)
+5. Ask Jonny what we're working on today
+6. Use TodoWrite if it's a multi-step task
 ```
 
-**Jonny's role:**
-```bash
-# Tell agent what we're working on today
-# Agent will update todos and start tracking in COMMIT_NOTES.md
-```
-
----
-
-## R&D Tax Tracking Workflow
-
-### Time Tracking
-
-**When to log:**
-- Planning sessions
-- Development work
-- Error analysis (Phase 2+)
-- Experimentation and testing
-
-**How to log:**
-```markdown
-Update: readme/PROJECT_STATUS.md > R&D Tax Tracking > Time Log
-
-| Date | Person | Hours | Activity | Category |
-|------|--------|-------|----------|----------|
-| YYYY-MM-DD | Jonny | X.X | Description | R&D |
-```
-
-**Agent's role:**
-- Remind Jonny to log time at session end
-- Suggest time estimate based on session length
-- Update totals
-
-### Cost Tracking
-
-**What to log:**
-- API costs (Anthropic, others)
-- Infrastructure (Vercel, database)
-- Tools and subscriptions
-
-**How to log:**
-```markdown
-Update: readme/PROJECT_STATUS.md > R&D Tax Tracking > Cost Log
-
-| Date | Item | Cost (AUD) | Category |
-|------|------|------------|----------|
-| YYYY-MM-DD | Anthropic API | $XX.XX | R&D |
-```
-
-### Technical Documentation
-
-**Captured automatically in:**
-- Session notes (docs/session-notes/)
-- Commit messages
-- PROJECT_STATUS.md (Why We Did It This Way sections)
+**No need to check COMMIT_NOTES.md** - session notes is the record
 
 ---
 
 ## Feature Development Workflow
 
-### Use Superpowers Plugin
-
-For systematic feature development, use the superpowers plugin:
+### Using Superpowers
 
 **Workflow:**
 ```markdown
 1. /superpowers:brainstorm
    - Interactive design refinement
    - Clarify requirements
-   - BUT: Check .claude/ constraints first (no over-engineering, validated learning, etc.)
+   - Check .claude/readme.md constraints first
 
 2. /superpowers:write-plan
-   - Creates 2-5 minute task breakdown
-   - Review plan against .claude/architecture.md
-   - Ensure it respects Phase 0 scope and v3 reuse strategy
+   - Creates bite-sized task breakdown
+   - Review plan against constraints
+   - Ensure it fits architecture
 
 3. /superpowers:execute-plan
    - TDD workflow (RED-GREEN-REFACTOR)
    - Automated code review
-   - BUT: STOP before auto-commit
-   - Follow COMMIT_NOTES.md workflow instead
+   - Auto-commit is NOW ALLOWED
+   - Commits happen as tasks complete
 
-4. Update R&D tracking
-   - Log time in PROJECT_STATUS.md
-   - Document technical decisions in session notes
+4. Update session-notes.md
+   - Summarize what superpowers built
+   - Link to detailed plan docs if useful
+   - Note any deviations or decisions
 ```
 
-**See:** `.claude/superpowers-integration.md` for complete details
+**Superpowers generates detailed docs** - session notes summarize at higher level for consistency across all work (superpowers and non-superpowers)
 
-### Quality Standards (For Non-Superpowers Work)
+---
+
+## R&D Tax Tracking
+
+### Time Tracking
+
+**At end of each session:**
+- Add hours estimate to session-notes.md entry
+- Agent can estimate based on conversation length
+- Don't need precise tracking, rough estimates fine
+
+**Format in session notes:**
+```markdown
+## 2025-12-09: Session Title
+
+[Session content...]
+
+### Hours
+Approximately 2-3 hours of focused development work.
+```
+
+### Technical Documentation
+
+**Automatically captured in:**
+- `session-notes.md` - Session summaries
+- `docs/issues-and-bugfixes.md` - Problem-solving record
+- `docs/plans/` - Implementation plans from superpowers
+- Git commit messages - What changed
+- `readme/CURRENT_ARCHITECTURE.md` - System design
+
+**This provides comprehensive R&D documentation** for tax purposes
+
+---
+
+## Quality Standards
+
+### For All Work (Superpowers or Not)
 
 **Do:**
 - Simple, focused solutions
 - Direct implementations
-- Trust internal code and framework guarantees
-- Validate only at system boundaries
+- Trust framework guarantees
+- Validate only at boundaries
+- Good commit messages
 
 **Don't:**
 - Add features beyond what's asked
-- Refactor surrounding code unnecessarily
-- Add error handling for impossible scenarios
-- Create abstractions for one-time use
+- Refactor unnecessarily
+- Over-engineer
+- Add abstractions for one-time use
 - Add backwards-compatibility hacks
 
----
-
-## Error Analysis Workflow (Phase 2+)
-
-_Will be populated in Phase 2_
-
-**Placeholder for:**
-- Trace export to CSV
-- Manual open coding process
-- Axial coding with Claude
-- Building LLM judges
-- Measuring improvement
+**Philosophy:** Build what's needed, ship quickly, iterate based on learning
 
 ---
 
-## Notes
+## Summary: What Changed
 
-- This is a living document
-- Update as workflows evolve
-- Keep it practical and actionable
-- Remove ceremony that doesn't add value
+### Old Way (Slow)
+- Agent updates COMMIT_NOTES.md
+- Jonny reviews and manually commits
+- Agent archives to session-notes/
+- Lots of manual steps, batching
+
+### New Way (Fast)
+- Agent commits directly to development
+- Agent updates session-notes.md throughout
+- Jonny controls dev → main merges
+- Jonny writes release notes for deployments
+- Much faster iteration
+
+### Key Insight
+**Development commits ≠ Release notes**
+
+Development commits are frequent, detailed, technical. Release notes are batched, high-level, user-focused. Session notes are comprehensive documentation for R&D and continuity. These serve different purposes.
+
+---
+
+_This is a living document. Update as workflows evolve._

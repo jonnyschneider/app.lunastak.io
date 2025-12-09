@@ -1,191 +1,252 @@
-# Decision Stack v4 - Claude Code Instructions
+# Decision Stack v4 - Developer Guide
 
-**Last Updated:** 2025-12-07
-**Current Phase:** Phase 0 - Foundation
+**Last Updated:** 2025-12-09
+**Current Status:** Phase 1 Implementation - Adaptive Conversation Flow
 **Active Branch:** development
 
 ---
 
-## 🚀 Session Startup Checklist
+## 🚀 Quick Start for New Sessions
 
-Follow these steps at the start of each session:
-
-### 1. Review Planning Documentation
+### 1. Read Current State (Start Here!)
 ```bash
-# Read these files to understand current state
-- readme/V4_DEVELOPMENT_PLAN.md    # Overall plan, phases, architecture
-- readme/PROJECT_STATUS.md         # Current phase, acceptance criteria, branching strategy
-- readme/FEATURE_BACKLOG.md        # Feature ideas and validation methods
+# Understand what exists NOW
+- session-notes.md                    # What's been built (chronological)
+- readme/CURRENT_ARCHITECTURE.md      # System as implemented
+- docs/issues-and-bugfixes.md         # Known issues and fixes
 ```
 
-### 2. Check Git Status
+### 2. Check Active Work
 ```bash
-# Verify current branch and status
-git status
-git branch  # Should show: development (active branch)
+# What's in progress
+- git status                          # Any uncommitted changes
+- git log -5 --oneline                # Recent commits
 ```
 
-### 3. Review Latest Session
+### 3. Review Historical Context (Optional)
 ```bash
-# Read the most recent session notes
-- docs/session-notes/[latest].md   # Last session's work
-- COMMIT_NOTES.md                  # Current session's working notes
-```
-
-### 4. Check Phase Progress
-```bash
-# Review acceptance criteria for current phase
-- See readme/PROJECT_STATUS.md > Phase 0: Foundation > Acceptance Criteria Progress
-- Note what's complete vs. pending
-```
-
-### 5. Update Todo List
-```bash
-# Use TodoWrite tool to track tasks for this session
-# Review existing todos and update status
+# Where we started vs where we ended up
+- readme/archive/original-plan/       # Initial planning docs (outdated but useful context)
+- docs/plans/                         # Implementation plans from recent work
 ```
 
 ---
 
-## 📋 Quick Reference
+## 📊 Current State (As Built)
 
-### Project Locations
-- **Current Working Directory:** `/Users/Jonny/Dev/humventures/agents/Decision Stack/dc-agent-v4-with-evals`
-- **v3 Code (for reference):** `/Users/Jonny/Desktop/decision-stack-v3/web`
-- **Planning Docs:** `readme/*.md`
-- **Session Archives:** `docs/session-notes/`
-- **Active Session Notes:** `COMMIT_NOTES.md`
+### What Exists Now
 
-### Key Contacts
-- Martin Eriksson (beta partnership)
+**Adaptive Conversation Flow** ✅
+- 3-10 question adaptive flow with confidence-based stopping
+- 6 strategic lenses for targeted depth exploration
+- Multi-phase conversation: INITIAL → EXPLORING → LENS_SELECTION → QUESTIONING → COMPLETE
+- Real-time confidence assessment (HIGH/MEDIUM/LOW)
+- Enhanced context extraction with enrichment + reflective summary
 
-### Repository Info
-- **GitHub:** github.com/[USERNAME]/dc-agent-v4-with-evals (update after first push)
-- **Deployment:** Vercel (from `main` branch)
-- **Branch Strategy:** Two-branch (development/main) - see [workflow.md](workflow.md)
+**Database Schema** ✅
+- Conversation tracking with phase management
+- Message history with confidence scores
+- Comprehensive trace logging
+- Error coding fields for Phase 2 analysis
 
----
+**API Routes** ✅
+- `/api/conversation/start` - Initialize conversation
+- `/api/conversation/continue` - Multi-phase flow with lens selection
+- `/api/conversation/assess-confidence` - Real-time confidence scoring
+- `/api/extract` - Enhanced context extraction (core + enrichment + reflective summary)
+- `/api/generate` - Strategy generation using enriched context
+- `/api/feedback` - User feedback collection
 
-## 🏗️ Architecture Overview
+**UI Components** ✅
+- ChatInterface - Phase-aware conversation UI
+- LensSelector - Strategic lens selection
+- ExtractionConfirm - Context review with "Generate" or "Keep Exploring"
+- StrategyDisplay - ReactFlow visualization of strategy
+- FeedbackButtons - Simple helpful/not helpful buttons
 
-### Tech Stack (Phase 0)
-- **Frontend:** Next.js 14 + TypeScript + Tailwind CSS
+**Trace Review System** ✅ (Phase 2 prep)
+- Jupyter-based workflow for error analysis
+- Python helper library (`scripts/trace_analysis.py`)
+- Database schema for open coding annotations
+- Starter notebook with examples
+
+### Tech Stack (As Implemented)
+
+- **Frontend:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
 - **Database:** Vercel Postgres + Prisma ORM
-- **Auth:** NextAuth.js with magic link email
-- **AI:** Claude API (@anthropic-ai/sdk)
-- **Deployment:** Vercel
-- **Analytics:** Vercel Analytics
+- **AI:** Claude API (claude-sonnet-4.5) via @anthropic-ai/sdk
+- **Visualization:** ReactFlow
+- **Deployment:** Vercel (main branch only via vercel.json)
+- **Analysis Tools:** Python + Jupyter + pandas + SQLAlchemy
 
-### Project Structure
+---
+
+## 🎯 Active Work & Outstanding Issues
+
+### Currently In Progress
+
+**Generation Timeout Investigation** 🔍
+- Issue: Strategy generation times out after user clicks "Generate my strategy"
+- Status: Diagnostic logging added to frontend + backend
+- Next: UAT testing with logging to identify exact failure point
+- See: `docs/issues-and-bugfixes.md` for full details
+
+### Known Issues
+
+1. **Generation Timeout** - Investigation in progress
+2. **No authentication yet** - Using temp user IDs for now
+3. **No deployment to Vercel yet** - Configured but not deployed
+
+### Next Steps
+
+1. Complete generation timeout fix
+2. Full UAT testing of adaptive conversation flow
+3. Deploy to Vercel for beta testing
+4. Implement authentication (NextAuth magic links)
+5. Begin Phase 2 error analysis with trace review system
+
+---
+
+## 🏗️ Architecture
+
+### Database Schema
+
+**Conversation Model:**
+- Tracks user conversations with phase management
+- Fields: `id`, `userId`, `status`, `currentPhase`, `selectedLens`, `questionCount`
+- Phases: INITIAL | EXPLORING | LENS_SELECTION | QUESTIONING | COMPLETE
+
+**Message Model:**
+- Stores conversation history
+- Fields: `id`, `conversationId`, `role`, `content`, `stepNumber`, `confidenceScore`, `confidenceReasoning`
+- Includes message-level annotations for Phase 2
+
+**Trace Model:**
+- Comprehensive logging for evals
+- Stores: extracted context (JSON), generated output (JSON), Claude thoughts
+- Metrics: tokens, latency, model used
+- Feedback: user rating, refinement requests
+- Phase 2: open coding notes, error categories, review metadata
+
+### API Architecture
+
+**Conversation Flow:**
+1. `POST /api/conversation/start` - Initialize with opening question
+2. `POST /api/conversation/continue` - Handle responses, phase transitions, lens selection
+3. `POST /api/conversation/assess-confidence` - Real-time confidence assessment
+4. `POST /api/extract` - Extract enhanced context when ready
+5. `POST /api/generate` - Generate strategy from enriched context
+6. `POST /api/feedback` - Collect user feedback
+
+**Context Types:**
+- `ExtractedContext` (legacy) - 3 fields: industry, targetMarket, uniqueValue
+- `EnhancedExtractedContext` (current) - core + enrichment + reflective_summary
+  - Core: industry, target_market, unique_value
+  - Enrichment: competitive_context, customer_segments, operational_capabilities, technical_advantages
+  - Reflective Summary: strengths, emerging themes, unexplored gaps, thought prompts
+
+### Component Structure
+
 ```
-dc-agent-v4-with-evals/
-├── .claude/                  # Claude Code instructions (this folder)
-├── docs/
-│   ├── session-notes/       # Archived session notes
-│   └── rd-tracking/         # R&D tax claim documentation
-├── readme/
-│   ├── V4_DEVELOPMENT_PLAN.md
-│   ├── PROJECT_STATUS.md
-│   └── FEATURE_BACKLOG.md
-├── COMMIT_NOTES.md          # Working file for current session
-└── [Next.js project files - to be created]
+src/
+├── app/
+│   ├── page.tsx                    # Main orchestration (chat → extraction → strategy)
+│   └── api/                        # API routes
+├── components/
+│   ├── ChatInterface.tsx           # Phase-aware conversation
+│   ├── LensSelector.tsx            # Strategic lens selection
+│   ├── ExtractionConfirm.tsx       # Context review
+│   ├── StrategyDisplay.tsx         # ReactFlow visualization
+│   └── FeedbackButtons.tsx         # User feedback
+└── lib/
+    ├── types.ts                    # TypeScript definitions
+    ├── db.ts                       # Prisma client
+    ├── claude.ts                   # Claude API client
+    └── utils.ts                    # XML parsing, etc.
 ```
 
-**Detailed architecture:** See [architecture.md](architecture.md)
+**See `readme/CURRENT_ARCHITECTURE.md` for complete details**
 
 ---
 
 ## 🔄 Key Workflows
 
-### Superpowers Plugin Integration
-
-**For feature development**, use the superpowers plugin:
-- **`/superpowers:brainstorm`** - Interactive design refinement and requirements clarification
-- **`/superpowers:write-plan`** - Create implementation plans (2-5 minute task chunks)
-- **`/superpowers:execute-plan`** - Execute with TDD, code review, systematic approach
-
-**Important integration points:**
-- ✅ Use superpowers for systematic feature development
-- ✅ Check `.claude/` constraints BEFORE planning (no over-engineering, validated learning, etc.)
-- ⚠️ **STOP before auto-commit** - Always use COMMIT_NOTES.md workflow instead
-- ✅ Update R&D tracking after superpowers sessions
-
-**See [superpowers-integration.md](superpowers-integration.md) for complete hybrid strategy**
-
-### Commit Workflow
-**Important:** Jonny manages git manually (not automated by agent or superpowers)
-
-See [workflow.md](workflow.md) for detailed commit workflow using COMMIT_NOTES.md
-
-**Summary:**
-1. Agent updates COMMIT_NOTES.md with session notes
-2. Jonny reviews and edits
-3. Jonny executes git commands manually
-4. Agent archives session notes to docs/session-notes/
-5. Agent clears COMMIT_NOTES.md for next session
-
 ### Development Workflow
-- Work on `development` branch (WIP code allowed)
-- Merge to `main` when ready for beta users
-- Vercel deploys from `main` only
 
----
+**Git Strategy:**
+- Work on `development` branch (WIP allowed)
+- **Agent commits directly** as work completes (no approval needed)
+- Jonny controls `development` → `main` merges
+- Vercel auto-deploys only from `main` (configured in vercel.json)
 
-## 🎯 Current Phase: Phase 0 - Foundation
+**Commit Workflow:**
+1. Agent commits to development when work is done
+2. Good descriptive commit messages (feat:, fix:, docs:, etc.)
+3. Update `session-notes.md` throughout session
+4. At session end: Add summary to `session-notes.md`
 
-### Goal
-Build v4 with comprehensive logging and conversation flow
+**Release Workflow:**
+1. Jonny reviews development branch when ready
+2. Jonny merges to main with release notes
+3. Push to main triggers Vercel deployment
 
-### Acceptance Criteria
-See `readme/PROJECT_STATUS.md` for full checklist
+**Why this way:** Fast iteration on dev, controlled releases to production
 
-**Key deliverables:**
-- [ ] Conversational chat interface (3-question flow)
-- [ ] Database layer (Prisma + Postgres)
-- [ ] Context extraction step
-- [ ] Strategy generation with ReactFlow visualization
-- [ ] Comprehensive trace logging
-- [ ] User feedback UI (buttons only)
+### Superpowers Integration
 
-### Next Steps (Pending)
-1. Initialize Next.js 14 project structure
-2. Set up Prisma with database schema
-3. Configure NextAuth with magic link
-4. Build chat interface components
-5. Implement extraction flow
-6. Add comprehensive logging
+**For Feature Development:**
+- `/superpowers:brainstorm` - Design refinement and requirements
+- `/superpowers:write-plan` - Create implementation plans (bite-sized tasks)
+- `/superpowers:execute-plan` - Execute with TDD, code review, systematic approach
+
+**Important:**
+- ✅ Use superpowers for systematic feature development
+- ✅ Check constraints below BEFORE planning
+- ✅ Auto-commit is now ALLOWED - commits to development automatically
+- ✅ Update session-notes.md to summarize what was built
+
+### Testing & Debugging
+
+**Local Development:**
+```bash
+npm run dev          # Start dev server (http://localhost:3000)
+npx prisma studio    # View database
+npm run build        # Test production build
+```
+
+**Logging:**
+- Frontend: Check browser DevTools console for `[Generate]` and other logs
+- Backend: Check terminal running `npm run dev` for `[API]` logs
+- Database: Use Prisma Studio or `scripts/trace_analysis.py`
 
 ---
 
 ## ⚠️ Important Constraints
 
-### Manual Git Management
-- **Do NOT** run git commands automatically
-- **Do** draft commit messages in COMMIT_NOTES.md
-- **Do** let Jonny execute all git operations
-- **Why:** Learning process + manual control preferred
+### Git Management (Updated)
+- **Do** commit directly to development branch as work completes
+- **Do** write good descriptive commit messages
+- **Do NOT** merge to main or push main - Jonny controls releases
 
 ### R&D Tax Documentation
-- **Do** track time spent in PROJECT_STATUS.md > R&D Tax Tracking
-- **Do** document technical decisions and reasoning
-- **Do** note experiments and their outcomes
+- **Do** track time and decisions in session-notes.md
+- **Do** document technical reasoning and experiments
 - **Why:** Australian R&D tax claim requirements
 
 ### Validated Learning
 - **Do NOT** build features without validation
 - **Do** use fake door tests for feature ideas
-- **Do** prioritize based on user data (Phase 2+)
-- **Do** capture ideas in FEATURE_BACKLOG.md
-- **Why:** Build what users actually want, not assumptions
+- **Do** capture ideas in readme/archive/original-plan/FEATURE_BACKLOG.md
+- **Why:** Build what users want, not assumptions
 
 ### Architecture Flexibility
-- **Do** use flexible JSON schemas (avoid rigid structures)
-- **Do NOT** commit to specific frameworks prematurely
+- **Do** use flexible JSON schemas (extractedContext, output)
+- **Do NOT** commit to rigid structures prematurely
 - **Do** design for iteration and evolution
-- **Why:** Strategic analysis will expand beyond initial 3 fields
+- **Why:** Strategic analysis will expand beyond current fields
 
 ### Simplicity First
-- **Do NOT** over-engineer Phase 0
+- **Do NOT** over-engineer
 - **Do** ship working product quickly
 - **Do** embrace "good enough for beta"
 - **Why:** Learning project, iterate based on real data
@@ -194,31 +255,53 @@ See `readme/PROJECT_STATUS.md` for full checklist
 
 ## 🎓 Domain Knowledge
 
-### Strategy Frameworks (Future Consideration)
-- Hamilton Helmer's 7 Powers
-- Porter's 5 Forces
-- Decision Stack framework (Vision → Mission → Objectives → Initiatives)
+### Strategic Lenses (Implemented)
 
-**Current scope:** Vision → Mission → Objectives only (top half of Decision Stack)
+1. **Competitive Advantage** - Market position and differentiation
+2. **Customer-Centric** - User needs and value delivery
+3. **Innovation-Driven** - Novel approaches and capabilities
+4. **Operations Excellence** - Efficiency and execution
+5. **Growth & Scale** - Expansion and scalability
+6. **Resource Optimization** - Efficiency with constraints
 
-### Evals Methodology
-This project follows Hamel Husain & Shreya Shankar's approach:
+### Strategy Output (Current Scope)
+
+- **Vision** - Aspirational future state
+- **Mission** - Current purpose and focus
+- **Objectives** - SMART goals (3 per strategy)
+
+**Future:** May expand to full Decision Stack (Vision → Mission → Objectives → Initiatives)
+
+### Evals Methodology (Phase 2)
+
+Following Hamel Husain & Shreya Shankar's approach:
 1. Error Analysis First (manual review of traces)
 2. Open Coding (label failures manually)
 3. Axial Coding (group into categories)
-4. LLM-as-Judge (automate detection of top failures)
+4. LLM-as-Judge (automate detection)
 5. Continuous Improvement (weekly cycle)
 
-**Phase 0-1:** Focus on data collection
-**Phase 2+:** Implement evals methodology
+**Current Phase:** Data collection with comprehensive trace logging
+**Phase 2:** Implement open coding workflow with Jupyter + Python
 
 ---
 
-## 📚 Additional Documentation
+## 📚 Documentation Map
 
-- **[superpowers-integration.md](superpowers-integration.md)** - Hybrid strategy for superpowers + .claude/ docs
-- **[workflow.md](workflow.md)** - Detailed Git and commit procedures
-- **[architecture.md](architecture.md)** - Full architecture documentation, v3 reuse notes
+### Session & Historical Context
+- `session-notes.md` - Chronological session summaries (START HERE)
+- `COMMIT_NOTES.md` - Current session working notes
+- `readme/archive/original-plan/` - Initial planning docs (outdated but useful context)
+
+### Technical Documentation
+- `readme/CURRENT_ARCHITECTURE.md` - Complete system architecture as built
+- `docs/issues-and-bugfixes.md` - Rolling record of issues and fixes
+- `docs/plans/` - Implementation plans for recent features
+
+### Process Documentation
+- `.claude/workflow.md` - Detailed commit and git procedures
+- `.claude/superpowers-integration.md` - Hybrid superpowers strategy
+- `.claude/architecture.md` - Original architecture doc (may be outdated)
 
 ---
 
@@ -231,28 +314,28 @@ This project follows Hamel Husain & Shreya Shankar's approach:
 - Disagree when necessary (rigorous standards)
 
 ### Tool Usage
-- Use TodoWrite frequently to track progress
+- Use TodoWrite for multi-step tasks
 - Prefer Read tool over bash for file operations
 - Use Task tool for complex exploration
-- Always call multiple independent tools in parallel
+- Always call multiple independent tools in parallel when possible
 
 ### Planning Without Timelines
 - Provide concrete steps, not time estimates
-- Never suggest "this will take 2-3 weeks"
+- Never suggest "this will take X weeks"
 - Focus on what needs to be done, not when
 - Let Jonny decide scheduling
 
 ---
 
-## 💡 Tips for Effective Sessions
+## 💡 Session Startup Checklist
 
-1. **Start each session** by reading this file
-2. **Check COMMIT_NOTES.md** to see if there's uncommitted work
-3. **Review latest session notes** to understand context
-4. **Use TodoWrite** to make progress visible
-5. **Update COMMIT_NOTES.md** before ending session
-6. **Ask clarifying questions** rather than assuming
+1. ✅ Read `session-notes.md` to understand what's been built
+2. ✅ Review `docs/issues-and-bugfixes.md` for known issues
+3. ✅ Check `git status` for current branch and uncommitted changes
+4. ✅ Review `readme/CURRENT_ARCHITECTURE.md` if touching core systems
+5. ✅ Use TodoWrite to track progress during session
+6. ✅ Update `session-notes.md` with session summary before ending
 
 ---
 
-_This is a living document. Update as workflows evolve and patterns emerge._
+_This is a living document. Update as implementation evolves._

@@ -132,19 +132,32 @@ export default function Home() {
 
     setIsLoading(true);
     try {
+      console.log('[Generate] Starting generation request...');
+      const startTime = Date.now();
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversationId, extractedContext }),
       });
 
+      console.log(`[Generate] Response received in ${Date.now() - startTime}ms, status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`Generation failed: ${response.status} - ${errorData.error || response.statusText}`);
+      }
+
       const data = await response.json();
+      console.log('[Generate] Successfully parsed response data');
+
       setStrategy(data.statements);
       setThoughts(data.thoughts);
       setTraceId(data.traceId);
       setFlowStep('strategy');
     } catch (error) {
-      console.error('Failed to generate strategy:', error);
+      console.error('[Generate] Failed to generate strategy:', error);
+      alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
