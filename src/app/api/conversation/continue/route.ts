@@ -227,11 +227,11 @@ async function handleQuestioning(
 
   // Check if previous assistant message was an early exit offer
   const lastAssistantMessage = conversation.messages
-    .filter(m => m.role === 'assistant')
+    .filter((m: { role: string }) => m.role === 'assistant')
     .pop();
 
   const previousUserMessage = conversation.messages
-    .filter(m => m.role === 'user')
+    .filter((m: { role: string }) => m.role === 'user')
     .pop();
 
   const isEarlyExitOffer = lastAssistantMessage?.content.includes('A) Continue exploring') &&
@@ -289,7 +289,7 @@ async function handleQuestioning(
 
   // Update last user message with confidence
   const lastUserMessage = conversation.messages
-    .filter(m => m.role === 'user')
+    .filter((m: { role: string }) => m.role === 'user')
     .pop();
 
   if (lastUserMessage) {
