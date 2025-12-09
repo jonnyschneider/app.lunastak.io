@@ -16,11 +16,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html
+      lang="en"
+      className={`${inter.className} bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950`}
+    >
       <body suppressHydrationWarning={true}>
-        <div className="min-h-screen bg-white">
-          {children}
-        </div>
+        {children}
       </body>
     </html>
   )
