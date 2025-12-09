@@ -142,3 +142,44 @@ export const SidebarItem = forwardRef(function SidebarItem(
 export function SidebarLabel({ className, ...props }: React.ComponentPropsWithoutRef<'span'>) {
   return <span {...props} data-slot="label" className={clsx(className, 'truncate')} />
 }
+
+export function SidebarLayout({
+  navbar,
+  sidebar,
+  children,
+}: React.PropsWithChildren<{ navbar: React.ReactNode; sidebar: React.ReactNode }>) {
+  return (
+    <div className="relative isolate flex min-h-svh w-full bg-white max-lg:flex-col lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
+      {/* Sidebar on desktop */}
+      <div className="fixed inset-y-0 left-0 w-64 max-lg:hidden">
+        <div className="flex h-full flex-col border-r border-zinc-950/5 bg-white dark:border-white/5 dark:bg-zinc-900">
+          {sidebar}
+        </div>
+      </div>
+
+      {/* Navbar on mobile */}
+      <div className="lg:hidden">
+        <Headless.Dialog open={false} onClose={() => {}}>
+          <Headless.DialogBackdrop
+            transition
+            className="fixed inset-0 bg-black/30 transition data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"
+          />
+          <Headless.DialogPanel
+            transition
+            className="fixed inset-y-0 left-0 w-full max-w-80 bg-white p-2 transition data-[closed]:-translate-x-full data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in dark:bg-zinc-900"
+          >
+            {sidebar}
+          </Headless.DialogPanel>
+        </Headless.Dialog>
+        <div className="sticky top-0 z-10 border-b border-zinc-950/5 bg-white px-4 dark:border-white/5 dark:bg-zinc-900">
+          {navbar}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <main className="flex flex-1 flex-col lg:pl-64">
+        {children}
+      </main>
+    </div>
+  )
+}
