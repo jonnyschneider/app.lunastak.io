@@ -17,14 +17,12 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
     "@prisma/client": "^5.22.0",
-    "@reactflow/node-resizer": "^2.1.0",
     "@vercel/analytics": "^1.1.1",
     "clsx": "^2.0.0",
     "next": "14.1.0",
     "next-auth": "^4.24.5",
     "react": "^18",
     "react-dom": "^18",
-    "reactflow": "^11.11.4",
     "tailwind-merge": "^2.2.0",
     "zod": "^3.22.4"
   },
