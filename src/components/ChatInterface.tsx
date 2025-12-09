@@ -49,8 +49,8 @@ export default function ChatInterface({
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
                 message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                  ? 'bg-zinc-800 text-white'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
               }`}
             >
               <p className="whitespace-pre-wrap">{message.content}</p>
@@ -60,8 +60,8 @@ export default function ChatInterface({
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg p-4">
-              <p className="text-gray-500">Thinking...</p>
+            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
+              <p className="text-zinc-500 dark:text-zinc-400">Thinking...</p>
             </div>
           </div>
         )}
@@ -69,7 +69,7 @@ export default function ChatInterface({
 
       {/* Input */}
       {!isComplete && (
-        <form onSubmit={handleSubmit} className="border-t p-4">
+        <form onSubmit={handleSubmit} className="border-t border-zinc-200 dark:border-zinc-700 p-4">
           <div className="flex gap-2">
             <input
               type="text"
@@ -77,12 +77,12 @@ export default function ChatInterface({
               onChange={(e) => setUserInput(e.target.value)}
               placeholder={getPlaceholderText()}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400"
             />
             <button
               type="submit"
               disabled={isLoading || !userInput.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send
             </button>
