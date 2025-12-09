@@ -11,10 +11,16 @@ import {
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const requestStartTime = Date.now();
+  console.log('[Continue API] Request started');
+
   try {
+    console.log('[Continue API] Parsing request body...');
     const { conversationId, userResponse, currentPhase } = await req.json();
+    console.log('[Continue API] Parsed request body:', { conversationId, currentPhase, userResponseLength: userResponse?.length });
 
     if (!conversationId || !userResponse) {
+      console.log('[Continue API] Missing required fields');
       return NextResponse.json(
         { error: 'conversationId and userResponse are required' },
         { status: 400 }
@@ -22,6 +28,7 @@ export async function POST(req: Request) {
     }
 
     // Get conversation and messages
+    console.log('[Continue API] Fetching conversation from database...');
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
@@ -30,8 +37,10 @@ export async function POST(req: Request) {
         },
       },
     });
+    console.log('[Continue API] Conversation found:', !!conversation, 'messages:', conversation?.messages.length);
 
     if (!conversation) {
+      console.log('[Continue API] Conversation not found');
       return NextResponse.json(
         { error: 'Conversation not found' },
         { status: 404 }
@@ -39,8 +48,10 @@ export async function POST(req: Request) {
     }
 
     const currentStep = conversation.messages.length + 1;
+    console.log('[Continue API] Current step:', currentStep);
 
     // Save user's response
+    console.log('[Continue API] Saving user message to database...');
     await prisma.message.create({
       data: {
         conversationId,
@@ -49,24 +60,32 @@ export async function POST(req: Request) {
         stepNumber: currentStep,
       },
     });
+    console.log('[Continue API] User message saved');
 
     // Route based on phase
     const phase = currentPhase as ConversationPhase;
+    console.log('[Continue API] Routing to phase handler:', phase);
 
     if (phase === 'INITIAL') {
+      console.log('[Continue API] Handling INITIAL phase');
       return await handleInitialPhase(conversation.id, userResponse, currentStep);
     } else if (phase === 'LENS_SELECTION') {
+      console.log('[Continue API] Handling LENS_SELECTION phase');
       return await handleLensSelection(conversation.id, userResponse, currentStep);
     } else if (phase === 'QUESTIONING') {
+      console.log('[Continue API] Handling QUESTIONING phase');
       return await handleQuestioning(conversation.id, currentStep);
     }
 
+    console.log('[Continue API] Invalid phase:', phase);
     return NextResponse.json({ error: 'Invalid phase' }, { status: 400 });
 
   } catch (error) {
-    console.error('Continue conversation error:', error);
+    console.error('[Continue API] Error caught:', error);
+    console.error('[Continue API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error(`[Continue API] Request failed after ${Date.now() - requestStartTime}ms`);
     return NextResponse.json(
-      { error: 'Failed to continue conversation' },
+      { error: 'Failed to continue conversation', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -77,8 +96,10 @@ async function handleInitialPhase(
   userResponse: string,
   currentStep: number
 ) {
+  console.log('[Continue API - INITIAL] Starting initial phase handler');
   // Generate acknowledgment
   const startTime = Date.now();
+  console.log('[Continue API - INITIAL] Calling Claude API for acknowledgment...');
   const response = await anthropic.messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 150,
@@ -92,11 +113,13 @@ async function handleInitialPhase(
   const acknowledgment = response.content[0]?.type === 'text'
     ? response.content[0].text
     : 'Thanks for sharing that.';
+  console.log(`[Continue API - INITIAL] Claude responded in ${Date.now() - startTime}ms`);
 
   // Combine acknowledgment with lens selection
   const fullMessage = `${acknowledgment}\n\n${LENS_SELECTION_TEXT}`;
 
   // Save assistant's message
+  console.log('[Continue API - INITIAL] Saving assistant message...');
   await prisma.message.create({
     data: {
       conversationId,
@@ -107,11 +130,13 @@ async function handleInitialPhase(
   });
 
   // Update conversation phase
+  console.log('[Continue API - INITIAL] Updating conversation phase...');
   await prisma.conversation.update({
     where: { id: conversationId },
     data: { currentPhase: 'LENS_SELECTION' },
   });
 
+  console.log('[Continue API - INITIAL] Phase handler complete');
   return NextResponse.json({
     conversationId,
     message: fullMessage,
@@ -125,9 +150,12 @@ async function handleLensSelection(
   userResponse: string,
   currentStep: number
 ) {
+  console.log('[Continue API - LENS] Starting lens selection handler');
   // Validate lens choice
   const lens = userResponse.trim().toUpperCase();
+  console.log('[Continue API - LENS] User selected lens:', lens);
   if (!['A', 'B', 'C', 'D', 'E'].includes(lens)) {
+    console.log('[Continue API - LENS] Invalid lens choice');
     const errorMessage = 'Please type A, B, C, D, or E to select your lens.';
 
     await prisma.message.create({
@@ -149,6 +177,7 @@ async function handleLensSelection(
   }
 
   // Get conversation history for context
+  console.log('[Continue API - LENS] Fetching conversation for context...');
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
@@ -164,6 +193,7 @@ async function handleLensSelection(
 
   // Generate first lens-framed question
   const startTime = Date.now();
+  console.log('[Continue API - LENS] Calling Claude API for first question...');
   const response = await anthropic.messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 200,
@@ -177,8 +207,10 @@ async function handleLensSelection(
   const firstQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text
     : 'Tell me more about your business.';
+  console.log(`[Continue API - LENS] Claude responded in ${Date.now() - startTime}ms`);
 
   // Save question
+  console.log('[Continue API - LENS] Saving first question...');
   await prisma.message.create({
     data: {
       conversationId,
@@ -189,6 +221,7 @@ async function handleLensSelection(
   });
 
   // Update conversation with lens and phase
+  console.log('[Continue API - LENS] Updating conversation with lens and phase...');
   await prisma.conversation.update({
     where: { id: conversationId },
     data: {
@@ -198,6 +231,7 @@ async function handleLensSelection(
     },
   });
 
+  console.log('[Continue API - LENS] Phase handler complete');
   return NextResponse.json({
     conversationId,
     message: firstQuestion,
@@ -211,7 +245,9 @@ async function handleQuestioning(
   conversationId: string,
   currentStep: number
 ) {
+  console.log('[Continue API - QUESTIONING] Starting questioning phase handler');
   // Get conversation with full context
+  console.log('[Continue API - QUESTIONING] Fetching conversation...');
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
@@ -222,8 +258,10 @@ async function handleQuestioning(
   });
 
   if (!conversation) {
+    console.log('[Continue API - QUESTIONING] Conversation not found');
     throw new Error('Conversation not found');
   }
+  console.log('[Continue API - QUESTIONING] Conversation found, questionCount:', conversation.questionCount);
 
   // Check if previous assistant message was an early exit offer
   const lastAssistantMessage = conversation.messages
@@ -236,20 +274,25 @@ async function handleQuestioning(
 
   const isEarlyExitOffer = lastAssistantMessage?.content.includes('A) Continue exploring') &&
                            lastAssistantMessage?.content.includes('B) Generate strategy');
+  console.log('[Continue API - QUESTIONING] Early exit offer check:', isEarlyExitOffer);
 
   if (isEarlyExitOffer && previousUserMessage) {
     // Process early exit response
     const userChoice = previousUserMessage.content.trim().toUpperCase();
+    console.log('[Continue API - QUESTIONING] Processing early exit response:', userChoice);
 
     if (userChoice === 'B') {
       // User chose to generate strategy
+      console.log('[Continue API - QUESTIONING] User chose to generate strategy');
       return await moveToExtraction(conversationId, currentStep);
     } else if (userChoice === 'A') {
       // User chose to continue exploring - proceed with normal questioning flow
+      console.log('[Continue API - QUESTIONING] User chose to continue exploring');
       const questionCount = conversation.questionCount;
       const selectedLens = conversation.selectedLens as StrategyLens;
       return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
     } else {
+      console.log('[Continue API - QUESTIONING] Invalid early exit choice');
       // Invalid choice - re-prompt
       const errorMessage = 'Please type A to continue exploring or B to generate your strategy.';
 
@@ -274,8 +317,10 @@ async function handleQuestioning(
 
   const questionCount = conversation.questionCount;
   const selectedLens = conversation.selectedLens as StrategyLens;
+  console.log('[Continue API - QUESTIONING] QuestionCount:', questionCount, 'SelectedLens:', selectedLens);
 
   // Call confidence assessment
+  console.log('[Continue API - QUESTIONING] Calling confidence assessment...');
   const confidenceResponse = await fetch(
     `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/conversation/assess-confidence`,
     {
@@ -286,6 +331,7 @@ async function handleQuestioning(
   );
 
   const { confidenceScore, confidenceReasoning } = await confidenceResponse.json();
+  console.log('[Continue API - QUESTIONING] Confidence assessment complete:', confidenceScore);
 
   // Update last user message with confidence
   const lastUserMessage = conversation.messages
@@ -303,17 +349,22 @@ async function handleQuestioning(
   }
 
   // Decision logic
+  console.log('[Continue API - QUESTIONING] Evaluating decision logic...');
   if (questionCount < 3) {
     // Must ask minimum 3 questions
+    console.log('[Continue API - QUESTIONING] Decision: Continue questioning (min 3 questions)');
     return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
   } else if (questionCount >= 10) {
     // Max reached
+    console.log('[Continue API - QUESTIONING] Decision: Move to extraction (max 10 questions)');
     return await moveToExtraction(conversationId, currentStep);
   } else if (confidenceScore === 'HIGH') {
     // Offer early exit
+    console.log('[Continue API - QUESTIONING] Decision: Offer early exit (high confidence)');
     return await offerEarlyExit(conversationId, currentStep);
   } else {
     // Need more coverage/specificity
+    console.log('[Continue API - QUESTIONING] Decision: Continue questioning (need more depth)');
     return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
   }
 }
