@@ -1,4 +1,10 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 import { BusinessContext } from './types';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 export function extractXML(text: string, tag: string): string {
   const pattern = new RegExp(`<${tag}>(.*?)</${tag}>`, 's');
@@ -7,18 +13,18 @@ export function extractXML(text: string, tag: string): string {
 }
 
 export function buildPrompt(
-  prompt: string, 
-  context: BusinessContext, 
+  prompt: string,
+  context: BusinessContext,
   feedback?: string
 ): string {
   let fullPrompt = `${prompt}\nContext:\n`;
   fullPrompt += `Industry: ${context.industry}\n`;
   fullPrompt += `Target Market: ${context.targetMarket}\n`;
   fullPrompt += `Unique Value: ${context.uniqueValue}\n`;
-  
+
   if (feedback) {
     fullPrompt += `\nPrevious Feedback: ${feedback}`;
   }
-  
+
   return fullPrompt;
 }
