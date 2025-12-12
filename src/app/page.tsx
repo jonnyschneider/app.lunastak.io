@@ -128,7 +128,7 @@ export default function Home() {
     }
   };
 
-  const handleConfirmContext = async () => {
+  const handleGenerate = async () => {
     if (!conversationId || !extractedContext) return;
 
     setIsLoading(true);
@@ -164,7 +164,7 @@ export default function Home() {
     }
   };
 
-  const handleExplore = async () => {
+  const handleContinue = async () => {
     // Return to chat to continue exploring
     setCurrentPhase('QUESTIONING');
     setFlowStep('chat');
@@ -181,6 +181,18 @@ export default function Home() {
       };
       setMessages(prev => [...prev, thoughtMessage]);
     }
+  };
+
+  const handleFlagForLater = () => {
+    // Baseline: Just log the action (future: save to database for next session)
+    console.log('[Baseline] User flagged opportunities for later session');
+    alert('Opportunities flagged for your next session. (Feature coming soon)');
+  };
+
+  const handleDismiss = () => {
+    // Baseline: Just log the action
+    console.log('[Baseline] User dismissed opportunities');
+    // Do nothing else - user can proceed to generate
   };
 
   return (
@@ -203,8 +215,10 @@ export default function Home() {
           {flowStep === 'extraction' && extractedContext && (
             <ExtractionConfirm
               extractedContext={extractedContext}
-              onConfirm={handleConfirmContext}
-              onExplore={handleExplore}
+              onGenerate={handleGenerate}
+              onContinue={handleContinue}
+              onFlagForLater={handleFlagForLater}
+              onDismiss={handleDismiss}
             />
           )}
 

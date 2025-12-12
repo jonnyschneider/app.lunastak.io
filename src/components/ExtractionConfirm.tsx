@@ -5,14 +5,18 @@ import { EnhancedExtractedContext } from '@/lib/types';
 
 interface ExtractionConfirmProps {
   extractedContext: EnhancedExtractedContext;
-  onConfirm: () => void;
-  onExplore: () => void;
+  onGenerate: () => void;
+  onContinue: () => void;
+  onFlagForLater: () => void;
+  onDismiss: () => void;
 }
 
 export default function ExtractionConfirm({
   extractedContext,
-  onConfirm,
-  onExplore,
+  onGenerate,
+  onContinue,
+  onFlagForLater,
+  onDismiss,
 }: ExtractionConfirmProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedCore, setEditedCore] = useState(extractedContext.core);
@@ -130,12 +134,12 @@ export default function ExtractionConfirm({
             </div>
           )}
 
-          {extractedContext.reflective_summary.unexplored.length > 0 && (
+          {extractedContext.reflective_summary.opportunities_for_enrichment.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">What&apos;s Unexplored</h4>
+              <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Opportunities for Enrichment</h4>
               <ul className="list-disc list-inside space-y-1">
-                {extractedContext.reflective_summary.unexplored.map((gap, idx) => (
-                  <li key={idx} className="text-sm text-zinc-900 dark:text-zinc-100">{gap}</li>
+                {extractedContext.reflective_summary.opportunities_for_enrichment.map((opportunity, idx) => (
+                  <li key={idx} className="text-sm text-zinc-900 dark:text-zinc-100">{opportunity}</li>
                 ))}
               </ul>
             </div>
@@ -151,19 +155,45 @@ export default function ExtractionConfirm({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={onConfirm}
-            className="px-6 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700"
-          >
-            Generate my strategy
-          </button>
-          <button
-            onClick={onExplore}
-            className="px-6 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          >
-            Keep Exploring
-          </button>
+        <div className="space-y-4">
+          {/* Primary Action */}
+          <div>
+            <button
+              onClick={onGenerate}
+              className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 font-medium"
+            >
+              Generate my strategy
+            </button>
+          </div>
+
+          {/* Secondary Actions */}
+          {extractedContext.reflective_summary.opportunities_for_enrichment.length > 0 && (
+            <div className="border-t pt-4">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+                Or, explore opportunities for enrichment:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={onContinue}
+                  className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm"
+                >
+                  Continue now
+                </button>
+                <button
+                  onClick={onFlagForLater}
+                  className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm"
+                >
+                  Flag for next session
+                </button>
+                <button
+                  onClick={onDismiss}
+                  className="flex-1 px-4 py-2 text-zinc-500 dark:text-zinc-500 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,12 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { ConversationPhase, StrategyLens, ConfidenceLevel } from '@/lib/types';
-import {
-  LENS_SELECTION_TEXT,
-  getLensFramingPrompt,
-  getAcknowledgmentPrompt
-} from '@/lib/lens-prompts';
+import { ConversationPhase } from '@/lib/types';
 
 export const maxDuration = 60;
 
@@ -70,9 +65,6 @@ export async function POST(req: Request) {
     if (phase === 'INITIAL') {
       console.log('[Continue API] Handling INITIAL phase');
       return await handleInitialPhase(conversation.id, userResponse, currentStep);
-    } else if (phase === 'LENS_SELECTION') {
-      console.log('[Continue API] Handling LENS_SELECTION phase');
-      return await handleLensSelection(conversation.id, userResponse, currentStep);
     } else if (phase === 'QUESTIONING') {
       console.log('[Continue API] Handling QUESTIONING phase');
       return await handleQuestioning(conversation.id, currentStep);
@@ -98,87 +90,8 @@ async function handleInitialPhase(
   currentStep: number
 ) {
   console.log('[Continue API - INITIAL] Starting initial phase handler');
-  // Generate acknowledgment
-  const startTime = Date.now();
-  console.log('[Continue API - INITIAL] Calling Claude API for acknowledgment...');
-  const response = await anthropic.messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 150,
-    messages: [{
-      role: 'user',
-      content: getAcknowledgmentPrompt(userResponse)
-    }],
-    temperature: 0.7
-  });
-
-  const acknowledgment = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : 'Thanks for sharing that.';
-  console.log(`[Continue API - INITIAL] Claude responded in ${Date.now() - startTime}ms`);
-
-  // Combine acknowledgment with lens selection
-  const fullMessage = `${acknowledgment}\n\n${LENS_SELECTION_TEXT}`;
-
-  // Save assistant's message
-  console.log('[Continue API - INITIAL] Saving assistant message...');
-  await prisma.message.create({
-    data: {
-      conversationId,
-      role: 'assistant',
-      content: fullMessage,
-      stepNumber: currentStep + 1,
-    },
-  });
-
-  // Update conversation phase
-  console.log('[Continue API - INITIAL] Updating conversation phase...');
-  await prisma.conversation.update({
-    where: { id: conversationId },
-    data: { currentPhase: 'LENS_SELECTION' },
-  });
-
-  console.log('[Continue API - INITIAL] Phase handler complete');
-  return NextResponse.json({
-    conversationId,
-    message: fullMessage,
-    nextPhase: 'LENS_SELECTION',
-    stepNumber: currentStep + 1,
-  });
-}
-
-async function handleLensSelection(
-  conversationId: string,
-  userResponse: string,
-  currentStep: number
-) {
-  console.log('[Continue API - LENS] Starting lens selection handler');
-  // Validate lens choice
-  const lens = userResponse.trim().toUpperCase();
-  console.log('[Continue API - LENS] User selected lens:', lens);
-  if (!['A', 'B', 'C', 'D', 'E'].includes(lens)) {
-    console.log('[Continue API - LENS] Invalid lens choice');
-    const errorMessage = 'Please type A, B, C, D, or E to select your lens.';
-
-    await prisma.message.create({
-      data: {
-        conversationId,
-        role: 'assistant',
-        content: errorMessage,
-        stepNumber: currentStep + 1,
-      },
-    });
-
-    return NextResponse.json({
-      conversationId,
-      message: errorMessage,
-      nextPhase: 'LENS_SELECTION',
-      stepNumber: currentStep + 1,
-      error: 'Invalid lens choice',
-    });
-  }
 
   // Get conversation history for context
-  console.log('[Continue API - LENS] Fetching conversation for context...');
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
@@ -192,15 +105,28 @@ async function handleLensSelection(
     .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
-  // Generate first lens-framed question
+  // Generate first question directly (no lens selection)
+  const FIRST_QUESTION_PROMPT = `You are a strategic advisor helping develop a Decision Stack for a SaaS/digital business.
+
+The user just responded to your opening question with:
+"${userResponse}"
+
+Based on their response, ask a natural follow-up question that will help you extract information for:
+- Core context (industry, target market, unique value)
+- Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
+
+Keep the question warm, conversational, and specific to what they shared. Build naturally on their response.
+
+Return only the question, no preamble.`;
+
   const startTime = Date.now();
-  console.log('[Continue API - LENS] Calling Claude API for first question...');
+  console.log('[Continue API - INITIAL] Calling Claude API for first question...');
   const response = await anthropic.messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 200,
     messages: [{
       role: 'user',
-      content: getLensFramingPrompt(lens as StrategyLens, conversationHistory)
+      content: FIRST_QUESTION_PROMPT
     }],
     temperature: 0.7
   });
@@ -208,10 +134,10 @@ async function handleLensSelection(
   const firstQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text
     : 'Tell me more about your business.';
-  console.log(`[Continue API - LENS] Claude responded in ${Date.now() - startTime}ms`);
+  console.log(`[Continue API - INITIAL] Claude responded in ${Date.now() - startTime}ms`);
 
   // Save question
-  console.log('[Continue API - LENS] Saving first question...');
+  console.log('[Continue API - INITIAL] Saving first question...');
   await prisma.message.create({
     data: {
       conversationId,
@@ -221,26 +147,25 @@ async function handleLensSelection(
     },
   });
 
-  // Update conversation with lens and phase
-  console.log('[Continue API - LENS] Updating conversation with lens and phase...');
+  // Update conversation phase directly to QUESTIONING
+  console.log('[Continue API - INITIAL] Updating conversation phase...');
   await prisma.conversation.update({
     where: { id: conversationId },
     data: {
-      selectedLens: lens,
       currentPhase: 'QUESTIONING',
       questionCount: 1,
     },
   });
 
-  console.log('[Continue API - LENS] Phase handler complete');
+  console.log('[Continue API - INITIAL] Phase handler complete');
   return NextResponse.json({
     conversationId,
     message: firstQuestion,
     nextPhase: 'QUESTIONING',
     stepNumber: currentStep + 1,
-    selectedLens: lens,
   });
 }
+
 
 async function handleQuestioning(
   conversationId: string,
@@ -290,8 +215,7 @@ async function handleQuestioning(
       // User chose to continue exploring - proceed with normal questioning flow
       console.log('[Continue API - QUESTIONING] User chose to continue exploring');
       const questionCount = conversation.questionCount;
-      const selectedLens = conversation.selectedLens as StrategyLens;
-      return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
+      return await continueQuestioning(conversationId, questionCount, currentStep);
     } else {
       console.log('[Continue API - QUESTIONING] Invalid early exit choice');
       // Invalid choice - re-prompt
@@ -317,8 +241,7 @@ async function handleQuestioning(
   }
 
   const questionCount = conversation.questionCount;
-  const selectedLens = conversation.selectedLens as StrategyLens;
-  console.log('[Continue API - QUESTIONING] QuestionCount:', questionCount, 'SelectedLens:', selectedLens);
+  console.log('[Continue API - QUESTIONING] QuestionCount:', questionCount);
 
   // Call confidence assessment (inline to avoid serverless fetch issues)
   console.log('[Continue API - QUESTIONING] Calling confidence assessment...');
@@ -390,7 +313,7 @@ Return your assessment:
   if (questionCount < 3) {
     // Must ask minimum 3 questions
     console.log('[Continue API - QUESTIONING] Decision: Continue questioning (min 3 questions)');
-    return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
+    return await continueQuestioning(conversationId, questionCount, currentStep);
   } else if (questionCount >= 10) {
     // Max reached
     console.log('[Continue API - QUESTIONING] Decision: Move to extraction (max 10 questions)');
@@ -402,13 +325,12 @@ Return your assessment:
   } else {
     // Need more coverage/specificity
     console.log('[Continue API - QUESTIONING] Decision: Continue questioning (need more depth)');
-    return await continueQuestioning(conversationId, selectedLens, questionCount, currentStep);
+    return await continueQuestioning(conversationId, questionCount, currentStep);
   }
 }
 
 async function continueQuestioning(
   conversationId: string,
-  selectedLens: StrategyLens,
   questionCount: number,
   currentStep: number
 ) {
@@ -426,14 +348,27 @@ async function continueQuestioning(
     .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
-  // Generate next question
+  // Generate next question using general prompt (no lens)
+  const NEXT_QUESTION_PROMPT = `You are a strategic advisor helping develop a Decision Stack for a SaaS/digital business.
+
+Conversation so far:
+${conversationHistory}
+
+Based on the conversation, ask the next natural follow-up question that will help you extract information for:
+- Core context (industry, target market, unique value)
+- Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
+
+Keep the question warm, conversational, and build naturally on what's been discussed. Focus on areas not yet explored.
+
+Return only the question, no preamble.`;
+
   const startTime = Date.now();
   const response = await anthropic.messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 200,
     messages: [{
       role: 'user',
-      content: getLensFramingPrompt(selectedLens, conversationHistory)
+      content: NEXT_QUESTION_PROMPT
     }],
     temperature: 0.7
   });
