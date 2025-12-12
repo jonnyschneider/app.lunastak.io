@@ -23,9 +23,6 @@ export default function ChatInterface({
   const [userInput, setUserInput] = useState('');
 
   const getPlaceholderText = () => {
-    if (currentPhase === 'LENS_SELECTION') {
-      return 'Type A, B, C, D, or E...';
-    }
     return 'Type your response...';
   };
 

@@ -34,3 +34,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Flip Card 3D Animation */
+@layer components {
+  .flip-card-container {
+    perspective: 1000px;
+    cursor: pointer;
+  }
+
+  .flip-card-inner {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    backface-visibility: hidden;
+  }
+}

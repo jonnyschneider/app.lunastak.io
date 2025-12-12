@@ -101,7 +101,7 @@ export interface EnrichmentFields {
 export interface ReflectiveSummary {
   strengths: string[];
   emerging: string[];
-  unexplored: string[];
+  opportunities_for_enrichment: string[];
   thought_prompt?: string;
 }
 
