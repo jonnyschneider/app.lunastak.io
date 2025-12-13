@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         status: 'in_progress',
+        experimentVariant: 'baseline-v1', // Track experiment variant
       },
     });
 

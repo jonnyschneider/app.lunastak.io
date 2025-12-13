@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { EnhancedExtractedContext, StrategyStatements, Trace } from '@/lib/types';
+import { convertLegacyObjectives } from '@/lib/placeholders';
 
 export const maxDuration = 60;
 
@@ -96,8 +97,8 @@ export async function POST(req: Request) {
       .map(e => `- ${e}`)
       .join('\n');
 
-    const unexploredText = (context.reflective_summary?.unexplored || [])
-      .map(u => `- ${u}`)
+    const opportunitiesText = (context.reflective_summary?.opportunities_for_enrichment || [])
+      .map((opp: string) => `- ${opp}`)
       .join('\n');
 
     const prompt = GENERATION_PROMPT
@@ -107,7 +108,7 @@ export async function POST(req: Request) {
       .replace('{enrichment}', enrichmentText || 'None provided')
       .replace('{strengths}', strengthsText || 'None identified')
       .replace('{emerging}', emergingText || 'None identified')
-      .replace('{unexplored}', unexploredText || 'None identified');
+      .replace('{unexplored}', opportunitiesText || 'None identified');
 
     // Generate strategy
     console.log('[Generate API] Calling Claude API...');
@@ -130,12 +131,17 @@ export async function POST(req: Request) {
     const thoughts = extractXML(content, 'thoughts');
     const statementsXML = extractXML(content, 'statements');
 
+    // Extract objectives as strings and convert to new format
+    const objectiveStrings = extractXML(statementsXML, 'objectives')
+      .split('\n')
+      .filter(line => line.trim().length > 0);
+
     const statements: StrategyStatements = {
       vision: extractXML(statementsXML, 'vision'),
       mission: extractXML(statementsXML, 'mission'),
-      objectives: extractXML(statementsXML, 'objectives')
-        .split('\n')
-        .filter(line => line.trim().length > 0)
+      objectives: convertLegacyObjectives(objectiveStrings),
+      initiatives: [], // Will be generated as placeholders in UI
+      principles: []   // Will be generated as placeholders in UI
     };
 
     // Save trace

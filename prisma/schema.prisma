@@ -17,11 +17,16 @@ model Conversation {
   selectedLens  String?  // A | B | C | D | E
   questionCount Int      @default(0)
 
+  // Experiment tracking
+  experimentVariant String?  // baseline-v1, emergent-extraction, etc.
+
   messages  Message[]
   traces    Trace[]
+  events    Event[]
 
   @@index([userId])
   @@index([createdAt])
+  @@index([experimentVariant])
 }
 
 model Message {
@@ -68,6 +73,10 @@ model Trace {
   feedbackTimestamp   DateTime?
   refinementRequested Boolean  @default(false)
 
+  // Quality Rating (for experiments)
+  qualityRating       String?  // 'good' | 'bad'
+  qualityRatingTimestamp DateTime?
+
   // Phase 2: Error coding fields
   openCodingNotes     String?  @db.Text
   errorCategories     String[] @default([])
@@ -75,8 +84,29 @@ model Trace {
   reviewedBy          String?
 
   conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  events              Event[]
 
   @@index([userId])
   @@index([timestamp])
   @@index([userFeedback])
+  @@index([qualityRating])
+}
+
+model Event {
+  id             String   @id @default(cuid())
+  conversationId String
+  traceId        String?  // Nullable - some events happen before generation
+  timestamp      DateTime @default(now())
+
+  // Event classification
+  eventType      String   // 'fake_door_click', 'info_icon_view', 'extraction_choice', etc.
+  eventData      Json     // Flexible storage for event-specific data
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  trace          Trace?       @relation(fields: [traceId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([traceId])
+  @@index([eventType])
+  @@index([timestamp])
 }

@@ -4,6 +4,76 @@ Development session summaries for Decision Stack project.
 
 ---
 
+## 2025-12-10: Sidebar Layout & Tailwind Cleanup
+
+### Overview
+Modernized Tailwind setup and implemented Catalyst UI sidebar layout with minimal navigation structure. Cleaned up leftover ReactFlow styles, added CSS custom properties for greyscale theme, installed Headless UI dependencies, and created app shell with sidebar navigation.
+
+### Changes
+
+**Tailwind Modernization:**
+- Removed ReactFlow leftover CSS from globals.css
+- Added CSS custom properties in @layer base for greyscale theme (light/dark mode)
+- Updated tailwind.config.ts to reference CSS variables
+- Modern, maintainable theme system
+
+**Catalyst UI Integration:**
+- Installed @headlessui/react and @heroicons/react dependencies
+- Created src/components/ui/ directory for Catalyst components
+- Implemented: Button, Input, Avatar, Dropdown, Navbar, Sidebar components
+- Adapted colors to greyscale (zinc palette)
+
+**Layout Structure:**
+- Created AppLayout component wrapping SidebarLayout
+- "Decision Stack" branding in SidebarHeader
+- Anonymous user profile in SidebarFooter with logout dropdown
+- Responsive: sidebar on desktop, hamburger menu on mobile
+- Updated app/layout.tsx with Catalyst HTML background classes
+- Updated app/page.tsx to use AppLayout, removed duplicate h1 title
+
+**Component Organization:**
+- src/components/ui/ - Headless UI wrapper components
+- src/components/layout/ - App-specific layout components
+- Clean separation of concerns
+
+### Technical Details
+
+**Files Created:**
+- `src/components/ui/link.tsx`
+- `src/components/ui/button.tsx`
+- `src/components/ui/input.tsx`
+- `src/components/ui/avatar.tsx`
+- `src/components/ui/dropdown.tsx`
+- `src/components/ui/navbar.tsx`
+- `src/components/ui/sidebar.tsx`
+- `src/components/layout/app-layout.tsx`
+
+**Files Modified:**
+- `src/styles/globals.css` - Removed ReactFlow CSS, added CSS variables
+- `tailwind.config.ts` - Added CSS variable references
+- `src/app/layout.tsx` - Added Catalyst background classes
+- `src/app/page.tsx` - Integrated AppLayout, removed h1 title
+- `package.json` - Added @headlessui/react, @heroicons/react
+
+**Dependencies Added:**
+- @headlessui/react
+- @heroicons/react
+
+### Verification
+- ✅ Build succeeds
+- ✅ TypeScript compiles cleanly
+- ✅ Sidebar visible on desktop
+- ✅ Mobile hamburger menu works
+- ✅ User dropdown functional
+- ✅ Dark mode support
+- ✅ Existing conversation flow preserved
+- ✅ Greyscale aesthetic maintained
+
+### Hours
+~2 hours implementation + testing
+
+---
+
 ## 2025-12-09 (Session 4): Greyscale UI Simplification
 
 ### Overview

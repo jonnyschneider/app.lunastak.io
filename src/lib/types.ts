@@ -4,10 +4,39 @@ export interface BusinessContext {
   uniqueValue: string;
 }
 
+export interface ObjectiveMetric {
+  summary: string;        // "25%" or "Growth" - shown on front
+  full: string;          // "Increase revenue by 25% in Q1 2025"
+  category: string;      // "Revenue", "Customer", "Product", etc.
+}
+
+export interface Objective {
+  id: string;            // For filtering relationships
+  pithy: string;         // Short 1-2 sentence objective
+  metric: ObjectiveMetric;
+  explanation: string;   // Full detail for back of card
+  successCriteria: string; // What success looks like
+}
+
+export interface Initiative {
+  id: string;
+  title: string;
+  description: string;
+  objectiveIds: string[]; // References to objectives this supports
+}
+
+export interface Principle {
+  id: string;
+  title: string;
+  description: string;
+}
+
 export interface StrategyStatements {
   vision: string;
   mission: string;
-  objectives: string[];
+  objectives: Objective[];
+  initiatives: Initiative[];
+  principles: Principle[];
 }
 
 export interface GenerationResponse {
@@ -72,7 +101,7 @@ export interface EnrichmentFields {
 export interface ReflectiveSummary {
   strengths: string[];
   emerging: string[];
-  unexplored: string[];
+  opportunities_for_enrichment: string[];
   thought_prompt?: string;
 }
 

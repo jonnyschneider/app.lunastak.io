@@ -47,10 +47,10 @@ Provide:
     <area>Themes that started to surface</area>
   </emerging>
 
-  <unexplored>
-    <!-- 1-2 gaps or questions worth considering -->
-    <gap>Opportunities for deeper thinking</gap>
-  </unexplored>
+  <opportunities_for_enrichment>
+    <!-- 1-2 opportunities for further exploration -->
+    <opportunity>Areas that could benefit from deeper thinking</opportunity>
+  </opportunities_for_enrichment>
 
   <thought_prompt>Optional open-ended question to spark reflection</thought_prompt>
 </summary>`;
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
     const reflective_summary = {
       strengths: extractAllXML(summaryXML, 'strength'),
       emerging: extractAllXML(summaryXML, 'area'),
-      unexplored: extractAllXML(summaryXML, 'gap'),
+      opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
       thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
     };
 
