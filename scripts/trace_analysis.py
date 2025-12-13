@@ -51,10 +51,13 @@ class TraceAnalyzer:
             t."errorCategories",
             t."reviewedAt",
             t."userFeedback",
+            t."qualityRating",
+            t."qualityRatingTimestamp",
             c."selectedLens",
             c."questionCount",
             c."currentPhase",
             c.status,
+            c."experimentVariant",
             json_agg(
                 json_build_object(
                     'role', m.role,
@@ -95,6 +98,49 @@ class TraceAnalyzer:
 
         return df
 
+    def load_events(self, limit=1000, trace_id=None, conversation_id=None):
+        """
+        Load user interaction events.
+
+        Args:
+            limit: Max events to load (default 1000)
+            trace_id: Filter to specific trace (optional)
+            conversation_id: Filter to specific conversation (optional)
+
+        Returns:
+            DataFrame with event data
+        """
+        query = """
+        SELECT
+            e.id,
+            e."conversationId",
+            e."traceId",
+            e.timestamp,
+            e."eventType",
+            e."eventData"
+        FROM "Event" e
+        WHERE 1=1
+        """
+
+        params = {}
+        if trace_id:
+            query += ' AND e."traceId" = :trace_id'
+            params['trace_id'] = trace_id
+        if conversation_id:
+            query += ' AND e."conversationId" = :conversation_id'
+            params['conversation_id'] = conversation_id
+
+        query += """
+        ORDER BY e.timestamp DESC
+        LIMIT :limit
+        """
+        params['limit'] = limit
+
+        with self.engine.connect() as conn:
+            df = pd.read_sql_query(text(query), conn, params=params)
+
+        return df
+
     def display_trace(self, trace_id):
         """
         Pretty-print a single trace for review.
@@ -107,6 +153,7 @@ class TraceAnalyzer:
             c."selectedLens",
             c."questionCount",
             c."currentPhase",
+            c."experimentVariant",
             json_agg(
                 json_build_object(
                     'role', m.role,
@@ -136,10 +183,12 @@ class TraceAnalyzer:
 # Trace: {trace['id'][:8]}...
 
 **Metadata:**
+- Experiment Variant: {trace.get('experimentVariant', 'None')}
 - Lens: {trace['selectedLens']}
 - Questions: {trace['questionCount']}
 - Phase: {trace['currentPhase']}
 - Feedback: {trace.get('userFeedback', 'None')}
+- Quality Rating: {trace.get('qualityRating', 'None')}
 - Reviewed: {trace.get('reviewedAt', 'Not yet')}
 
 ---
