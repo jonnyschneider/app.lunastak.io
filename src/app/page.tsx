@@ -165,6 +165,19 @@ export default function Home() {
   };
 
   const handleContinue = async () => {
+    // Log extraction choice
+    if (conversationId) {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          eventType: 'extraction_choice',
+          eventData: { choice: 'continue' },
+        }),
+      }).catch(err => console.error('Failed to log event:', err));
+    }
+
     // Return to chat to continue exploring
     setCurrentPhase('QUESTIONING');
     setFlowStep('chat');
@@ -183,24 +196,48 @@ export default function Home() {
     }
   };
 
-  const handleFlagForLater = () => {
-    // Baseline: Just log the action (future: save to database for next session)
+  const handleFlagForLater = async () => {
+    // Log extraction choice
+    if (conversationId) {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          eventType: 'extraction_choice',
+          eventData: { choice: 'flag_for_later' },
+        }),
+      }).catch(err => console.error('Failed to log event:', err));
+    }
+
     console.log('[Baseline] User flagged opportunities for later session');
     alert('Opportunities flagged for your next session. (Feature coming soon)');
   };
 
-  const handleDismiss = () => {
-    // Baseline: Just log the action
+  const handleDismiss = async () => {
+    // Log extraction choice
+    if (conversationId) {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          eventType: 'extraction_choice',
+          eventData: { choice: 'dismiss' },
+        }),
+      }).catch(err => console.error('Failed to log event:', err));
+    }
+
     console.log('[Baseline] User dismissed opportunities');
     // Do nothing else - user can proceed to generate
   };
 
   return (
     <AppLayout>
-      <main className="min-h-screen bg-gray-50 dark:bg-zinc-900">
-        <div className="container mx-auto py-8">
+      <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
+        <div className="container mx-auto py-8 flex-1 flex flex-col">
           {flowStep === 'chat' && (
-            <div className="h-[600px]">
+            <div className="flex-1 min-h-0">
               <ChatInterface
                 conversationId={conversationId}
                 messages={messages}
@@ -222,9 +259,14 @@ export default function Home() {
             />
           )}
 
-          {flowStep === 'strategy' && strategy && (
+          {flowStep === 'strategy' && strategy && conversationId && (
             <>
-              <StrategyDisplay strategy={strategy} thoughts={thoughts} />
+              <StrategyDisplay
+                strategy={strategy}
+                thoughts={thoughts}
+                conversationId={conversationId}
+                traceId={traceId}
+              />
               <FeedbackButtons traceId={traceId} />
             </>
           )}

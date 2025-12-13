@@ -13,9 +13,11 @@ import {
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
   thoughts?: string;
+  conversationId: string;
+  traceId: string;
 }
 
-export default function StrategyDisplay({ strategy, thoughts }: StrategyDisplayProps) {
+export default function StrategyDisplay({ strategy, thoughts, conversationId, traceId }: StrategyDisplayProps) {
   // Handle legacy objectives (string[]) by converting to new format
   const objectives: Objective[] = useMemo(() => {
     if (strategy.objectives.length === 0) return [];
@@ -29,12 +31,37 @@ export default function StrategyDisplay({ strategy, thoughts }: StrategyDisplayP
     return convertLegacyObjectives(strategy.objectives as unknown as string[]);
   }, [strategy.objectives]);
 
-  const handleFakeDoor = (feature: string) => {
+  const handleFakeDoor = async (feature: string) => {
     console.log(`[Baseline] User clicked: ${feature}`);
+
+    // Log to database
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        traceId,
+        eventType: 'fake_door_click',
+        eventData: { feature },
+      }),
+    }).catch(err => console.error('Failed to log event:', err));
+
     alert(`${feature} feature coming soon!`);
   };
 
-  const showInfoModal = (element: string, content: string) => {
+  const showInfoModal = async (element: string, content: string) => {
+    // Log to database
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        traceId,
+        eventType: 'info_icon_view',
+        eventData: { element },
+      }),
+    }).catch(err => console.error('Failed to log event:', err));
+
     alert(content);
   };
 
