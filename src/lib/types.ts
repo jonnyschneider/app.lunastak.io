@@ -105,6 +105,40 @@ export interface ReflectiveSummary {
   thought_prompt?: string;
 }
 
+export interface EmergentTheme {
+  theme_name: string;
+  content: string;
+}
+
+export interface EmergentExtractedContext {
+  themes: EmergentTheme[];
+  reflective_summary: ReflectiveSummary;
+  extraction_approach: 'emergent';
+}
+
+export interface PrescriptiveExtractedContext {
+  core: {
+    industry: string;
+    target_market: string;
+    unique_value: string;
+  };
+  enrichment: EnrichmentFields;
+  reflective_summary: ReflectiveSummary;
+  extraction_approach: 'prescriptive';
+}
+
+// Union type for both approaches
+export type ExtractedContextVariant = EmergentExtractedContext | PrescriptiveExtractedContext;
+
+// Type guard
+export function isEmergentContext(context: ExtractedContextVariant): context is EmergentExtractedContext {
+  return context.extraction_approach === 'emergent';
+}
+
+export function isPrescriptiveContext(context: ExtractedContextVariant): context is PrescriptiveExtractedContext {
+  return context.extraction_approach === 'prescriptive';
+}
+
 export interface EnhancedExtractedContext {
   core: {
     industry: string;
