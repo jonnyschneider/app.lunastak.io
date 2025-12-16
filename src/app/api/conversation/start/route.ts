@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { getExperimentVariant } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -19,12 +20,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Determine experiment variant
+    const experimentVariant = await getExperimentVariant(userId);
+
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
         userId,
         status: 'in_progress',
-        experimentVariant: 'baseline-v1', // Track experiment variant
+        experimentVariant,
       },
     });
 
