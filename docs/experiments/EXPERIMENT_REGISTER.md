@@ -12,8 +12,8 @@
 
 | ID | Variant | Hypothesis | Status | Participants | Key Metrics | Outcome | One-Pager |
 |---|---|---|---|---|---|---|---|
-| **E0** | `baseline-v1` | Establishes normalized control for all future experiments | 🟢 Complete | TBD | Event logging, quality ratings, user feedback | ✅ Pass - Infrastructure ready | [View](./one-pagers/E0-baseline-v1.md) |
-| **E1** | `emergent-extraction` | Emergent theme extraction will produce less "wooden" outputs than prescriptive fields | ⚪ Planned | Target: 10-15 | Quality rating (good/bad %), user feedback (helpful %) | TBD | [View](./one-pagers/E1-emergent-extraction.md) |
+| **E0** | `baseline-v1` c018f2c | Establishes normalized control for all future experiments | 🟢 Complete | TBD | Event logging, quality ratings, user feedback | ✅ Pass - Infrastructure ready | [View](./one-pagers/E0-baseline-v1.md) |
+| **E1a** | `emergent-extraction-e1a` | Completely freeform extraction (no prescribed fields) will produce less "wooden" outputs while maintaining dimensional coverage | 🟡 Implementation Complete | Target: 10-15 | Quality rating (good/bad %), user feedback (helpful %), dimensional coverage (>80%) | TBD | [View](./one-pagers/E1a-emergent-extraction.md) |
 | **E2** | `energetic-prompts` | Energetic generation prompts will reduce generic corporate speak | ⚪ Planned | Target: 10-15 | Quality rating (good/bad %), specificity assessment | TBD | [View](./one-pagers/E2-energetic-prompts.md) |
 | **E3** | `lens-inference` | Inferring strategic focus from conversation beats explicit selection | ⚪ Planned | Target: 10-15 | Dimensional coverage, quality ratings | TBD | [View](./one-pagers/E3-lens-inference.md) |
 | **E4** | `dimensional-coverage` | Emergent extraction still captures all strategic dimensions needed | ⚪ Planned | Retrospective analysis | Coverage %, gaps analysis | TBD | TBD |
