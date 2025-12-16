@@ -6,7 +6,7 @@ import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Message, ExtractedContext, EnhancedExtractedContext, StrategyStatements, ConversationPhase } from '@/lib/types';
+import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
 
@@ -16,7 +16,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [flowStep, setFlowStep] = useState<FlowStep>('chat');
-  const [extractedContext, setExtractedContext] = useState<EnhancedExtractedContext | null>(null);
+  const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null);
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
   const [traceId, setTraceId] = useState<string>('');
