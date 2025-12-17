@@ -63,6 +63,7 @@ export async function POST(req: Request) {
       conversationId: conversation.id,
       message: firstQuestion,
       stepNumber: 1,
+      experimentVariant: conversation.experimentVariant,
     });
   } catch (error) {
     console.error('Start conversation error:', error);

@@ -27,11 +27,17 @@ import {
 } from '@/components/ui/dropdown'
 import { Avatar } from '@/components/ui/avatar'
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({
+  children,
+  experimentVariant = 'baseline-v1'
+}: {
+  children: React.ReactNode;
+  experimentVariant?: string;
+}) {
   return (
     <SidebarLayout
       navbar={<AppNavbar />}
-      sidebar={<AppSidebar />}
+      sidebar={<AppSidebar experimentVariant={experimentVariant} />}
     >
       {children}
     </SidebarLayout>
@@ -59,7 +65,7 @@ function AppNavbar() {
   )
 }
 
-function AppSidebar() {
+function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?: string }) {
   return (
     <Sidebar>
       <SidebarHeader>
@@ -81,7 +87,7 @@ function AppSidebar() {
         <Dropdown>
           <DropdownButton as={SidebarSection}>
             <div className="flex items-center gap-3">
-              <Avatar initials="AU" className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-900" />
+              <Avatar initials="AU" className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-909" />
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-zinc-950 dark:text-white">
                   Anonymous User
@@ -96,6 +102,11 @@ function AppSidebar() {
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>
+        <div className="px-4 py-2">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            {experimentVariant}
+          </p>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
