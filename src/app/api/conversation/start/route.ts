@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
@@ -11,17 +13,19 @@ Ask them to describe their business challenge or opportunity in their own words.
 
 export async function POST(req: Request) {
   try {
-    const { userId, variantOverride } = await req.json();
+    const { userId: tempUserId, variantOverride } = await req.json();
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    // Get session to check if user is authenticated
+    const session = await getServerSession(authOptions);
+
+    // Use authenticated user ID if available, otherwise use temp ID or null for guests
+    const userId = session?.user?.id || tempUserId || null;
+
+    // For statsig, use userId or temp ID (statsig needs an ID for variant assignment)
+    const statsigUserId = userId || tempUserId || `guest_${Date.now()}`;
 
     // Determine experiment variant (with optional override)
-    const experimentVariant = await getExperimentVariant(userId, variantOverride);
+    const experimentVariant = await getExperimentVariant(statsigUserId, variantOverride);
 
     // Create conversation
     const conversation = await prisma.conversation.create({
