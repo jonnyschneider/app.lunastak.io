@@ -6,6 +6,7 @@ import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
 import { AppLayout } from '@/components/layout/app-layout';
+import { IntroCard } from '@/components/IntroCard';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
@@ -22,11 +23,12 @@ export default function Home() {
   const [traceId, setTraceId] = useState<string>('');
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
+  const [showIntro, setShowIntro] = useState(true);
 
-  // Start conversation on mount
-  useEffect(() => {
+  const handleStartClick = () => {
+    setShowIntro(false);
     startConversation();
-  }, []);
+  };
 
   const startConversation = async () => {
     setIsLoading(true);
@@ -245,7 +247,11 @@ export default function Home() {
     <AppLayout experimentVariant={experimentVariant}>
       <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col">
-          {flowStep === 'chat' && (
+          {showIntro && (
+            <IntroCard onStartClick={handleStartClick} />
+          )}
+
+          {!showIntro && flowStep === 'chat' && (
             <div className="flex-1 min-h-0">
               <ChatInterface
                 conversationId={conversationId}
@@ -258,7 +264,7 @@ export default function Home() {
             </div>
           )}
 
-          {flowStep === 'extraction' && extractedContext && (
+          {!showIntro && flowStep === 'extraction' && extractedContext && (
             <ExtractionConfirm
               extractedContext={extractedContext}
               onGenerate={handleGenerate}
@@ -268,7 +274,7 @@ export default function Home() {
             />
           )}
 
-          {flowStep === 'strategy' && strategy && conversationId && (
+          {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
               <StrategyDisplay
                 strategy={strategy}
