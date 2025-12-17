@@ -31,6 +31,31 @@ Return your assessment:
   <reasoning>Brief explanation (1-2 sentences)</reasoning>
 </assessment>`;
 
+const EMERGENT_CONFIDENCE_ASSESSMENT_PROMPT = `Evaluate this business strategy conversation for readiness to generate quality strategy output.
+
+Conversation:
+{conversation}
+
+Assessment Criteria:
+
+1. STRATEGIC UNDERSTANDING - Do you have enough context to generate meaningful Vision/Mission/Objectives?
+   - Enough concrete detail about the business
+   - Clear understanding of what matters to them
+   - Sufficient context about their situation
+
+2. SPECIFICITY - Are responses concrete enough to work with?
+   - Specific enough to generate resonant strategy statements
+   - Clear enough to identify strengths and opportunities
+   - Sufficient for generating strategy that feels authentic to their business
+
+Remember: We're not checking if prescribed fields are filled. We're assessing if we understand their business well enough to generate strategy that will resonate.
+
+Return your assessment:
+<assessment>
+  <confidence>HIGH or MEDIUM or LOW</confidence>
+  <reasoning>Brief explanation (1-2 sentences) about strategic understanding</reasoning>
+</assessment>`;
+
 export async function POST(req: Request) {
   try {
     const { conversationId } = await req.json();
@@ -64,6 +89,12 @@ export async function POST(req: Request) {
       .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
       .join('\n\n');
 
+    // Determine assessment approach based on experiment variant
+    const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
+    const assessmentPrompt = isEmergent
+      ? EMERGENT_CONFIDENCE_ASSESSMENT_PROMPT.replace('{conversation}', conversationHistory)
+      : CONFIDENCE_ASSESSMENT_PROMPT.replace('{conversation}', conversationHistory);
+
     // Assess confidence
     const startTime = Date.now();
     const response = await anthropic.messages.create({
@@ -71,7 +102,7 @@ export async function POST(req: Request) {
       max_tokens: 300,
       messages: [{
         role: 'user',
-        content: CONFIDENCE_ASSESSMENT_PROMPT.replace('{conversation}', conversationHistory)
+        content: assessmentPrompt
       }],
       temperature: 0.3
     });

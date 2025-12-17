@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { EnhancedExtractedContext, StrategyStatements, Trace } from '@/lib/types';
+import { EnhancedExtractedContext, StrategyStatements, Trace, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 
 export const maxDuration = 60;
@@ -47,6 +47,40 @@ Format your response as:
   </objectives>
 </statements>`;
 
+const EMERGENT_GENERATION_PROMPT = `Generate compelling strategy statements based on the emergent themes from our conversation.
+
+EMERGENT THEMES:
+{themes}
+
+INSIGHTS FROM CONVERSATION:
+Strengths identified:
+{strengths}
+
+Emerging patterns:
+{emerging}
+
+Areas to explore further:
+{unexplored}
+
+Guidelines:
+- Use the emergent themes as your foundation - these represent what actually matters to this business
+- Vision: Should be aspirational, future-focused, and memorable
+- Mission: Should be clear, actionable, and focused on current purpose
+- Objectives: Should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+- Use their language and themes - make it feel authentic to their business, not generic corporate speak
+
+Format your response as:
+<thoughts>Your reasoning about the strategy, referencing specific themes that emerged</thoughts>
+<statements>
+  <vision>The vision statement</vision>
+  <mission>The mission statement</mission>
+  <objectives>
+  1. First objective
+  2. Second objective
+  3. Third objective
+  </objectives>
+</statements>`;
+
 export async function POST(req: Request) {
   const requestStartTime = Date.now();
   console.log('[Generate API] Request started');
@@ -77,38 +111,64 @@ export async function POST(req: Request) {
     }
 
     console.log('[Generate API] Conversation found, preparing context...');
-    const context = extractedContext as EnhancedExtractedContext;
+    const context = extractedContext as ExtractedContextVariant;
 
-    // Format enrichment details
-    const enrichmentText = Object.entries(context.enrichment || {})
-      .filter(([_, value]) => value)
-      .map(([key, value]) => {
-        const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        return `${label}: ${Array.isArray(value) ? value.join(', ') : value}`;
-      })
-      .join('\n');
+    let prompt: string;
 
-    // Format reflective summary
-    const strengthsText = (context.reflective_summary?.strengths || [])
-      .map(s => `- ${s}`)
-      .join('\n');
+    if (isEmergentContext(context)) {
+      // Emergent generation
+      const themesText = context.themes
+        .map(theme => `${theme.theme_name}:\n${theme.content}`)
+        .join('\n\n');
 
-    const emergingText = (context.reflective_summary?.emerging || [])
-      .map(e => `- ${e}`)
-      .join('\n');
+      const strengthsText = (context.reflective_summary?.strengths || [])
+        .map(s => `- ${s}`)
+        .join('\n');
 
-    const opportunitiesText = (context.reflective_summary?.opportunities_for_enrichment || [])
-      .map((opp: string) => `- ${opp}`)
-      .join('\n');
+      const emergingText = (context.reflective_summary?.emerging || [])
+        .map(e => `- ${e}`)
+        .join('\n');
 
-    const prompt = GENERATION_PROMPT
-      .replace('{industry}', context.core.industry)
-      .replace('{target_market}', context.core.target_market)
-      .replace('{unique_value}', context.core.unique_value)
-      .replace('{enrichment}', enrichmentText || 'None provided')
-      .replace('{strengths}', strengthsText || 'None identified')
-      .replace('{emerging}', emergingText || 'None identified')
-      .replace('{unexplored}', opportunitiesText || 'None identified');
+      const opportunitiesText = (context.reflective_summary?.opportunities_for_enrichment || [])
+        .map((opp: string) => `- ${opp}`)
+        .join('\n');
+
+      prompt = EMERGENT_GENERATION_PROMPT
+        .replace('{themes}', themesText)
+        .replace('{strengths}', strengthsText || 'None identified')
+        .replace('{emerging}', emergingText || 'None identified')
+        .replace('{unexplored}', opportunitiesText || 'None identified');
+    } else {
+      // Prescriptive generation (baseline-v1)
+      const enrichmentText = Object.entries(context.enrichment || {})
+        .filter(([_, value]) => value)
+        .map(([key, value]) => {
+          const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          return `${label}: ${Array.isArray(value) ? value.join(', ') : value}`;
+        })
+        .join('\n');
+
+      const strengthsText = (context.reflective_summary?.strengths || [])
+        .map(s => `- ${s}`)
+        .join('\n');
+
+      const emergingText = (context.reflective_summary?.emerging || [])
+        .map(e => `- ${e}`)
+        .join('\n');
+
+      const opportunitiesText = (context.reflective_summary?.opportunities_for_enrichment || [])
+        .map((opp: string) => `- ${opp}`)
+        .join('\n');
+
+      prompt = GENERATION_PROMPT
+        .replace('{industry}', context.core.industry)
+        .replace('{target_market}', context.core.target_market)
+        .replace('{unique_value}', context.core.unique_value)
+        .replace('{enrichment}', enrichmentText || 'None provided')
+        .replace('{strengths}', strengthsText || 'None identified')
+        .replace('{emerging}', emergingText || 'None identified')
+        .replace('{unexplored}', opportunitiesText || 'None identified');
+    }
 
     // Generate strategy
     console.log('[Generate API] Calling Claude API...');

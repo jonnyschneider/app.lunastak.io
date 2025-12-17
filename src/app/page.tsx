@@ -6,7 +6,7 @@ import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Message, ExtractedContext, EnhancedExtractedContext, StrategyStatements, ConversationPhase } from '@/lib/types';
+import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
 
@@ -16,11 +16,12 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [flowStep, setFlowStep] = useState<FlowStep>('chat');
-  const [extractedContext, setExtractedContext] = useState<EnhancedExtractedContext | null>(null);
+  const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null);
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
   const [traceId, setTraceId] = useState<string>('');
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
+  const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
 
   // Start conversation on mount
   useEffect(() => {
@@ -30,14 +31,22 @@ export default function Home() {
   const startConversation = async () => {
     setIsLoading(true);
     try {
+      // Check for variant override in URL query params
+      const params = new URLSearchParams(window.location.search);
+      const variantOverride = params.get('variant');
+
       const response = await fetch('/api/conversation/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({
+          userId,
+          ...(variantOverride && { variantOverride })
+        }),
       });
 
       const data = await response.json();
       setConversationId(data.conversationId);
+      setExperimentVariant(data.experimentVariant || 'baseline-v1');
       setMessages([{
         id: `msg_${Date.now()}`,
         conversationId: data.conversationId,
@@ -233,7 +242,7 @@ export default function Home() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout experimentVariant={experimentVariant}>
       <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col">
           {flowStep === 'chat' && (

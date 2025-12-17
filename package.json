@@ -1,6 +1,6 @@
 {
   "name": "decision-stack-v4",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -22,6 +22,9 @@
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-slot": "^1.2.4",
+    "@statsig/js-client": "^3.31.0",
+    "@statsig/session-replay": "^3.31.0",
+    "@statsig/web-analytics": "^3.31.0",
     "@vercel/analytics": "^1.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -30,6 +33,7 @@
     "next-auth": "^4.24.5",
     "react": "^18",
     "react-dom": "^18",
+    "statsig-node": "^6.5.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4"

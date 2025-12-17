@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { EnhancedExtractedContext } from '@/lib/types';
+import { ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 
 interface ExtractionConfirmProps {
-  extractedContext: EnhancedExtractedContext;
+  extractedContext: ExtractedContextVariant;
   onGenerate: () => void;
   onContinue: () => void;
   onFlagForLater: () => void;
@@ -18,97 +17,80 @@ export default function ExtractionConfirm({
   onFlagForLater,
   onDismiss,
 }: ExtractionConfirmProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedCore, setEditedCore] = useState(extractedContext.core);
+  const isEmergent = isEmergentContext(extractedContext);
 
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 shadow-sm space-y-6">
 
-        {/* Core Fields Section */}
+        {/* Header */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Here&apos;s what I understood:</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Industry
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedCore.industry}
-                  onChange={(e) => setEditedCore({
-                    ...editedCore,
-                    industry: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              ) : (
-                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.industry}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Target Market
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedCore.target_market}
-                  onChange={(e) => setEditedCore({
-                    ...editedCore,
-                    target_market: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              ) : (
-                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.target_market}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Unique Value
-              </label>
-              {isEditing ? (
-                <textarea
-                  value={editedCore.unique_value}
-                  onChange={(e) => setEditedCore({
-                    ...editedCore,
-                    unique_value: e.target.value
-                  })}
-                  rows={3}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              ) : (
-                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.unique_value}</p>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* Enrichment Fields Section */}
-        {Object.keys(extractedContext.enrichment).length > 0 && (
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium mb-3">Additional Context</h3>
-            <div className="space-y-3">
-              {Object.entries(extractedContext.enrichment).map(([key, value]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1 capitalize">
-                    {key.replace(/_/g, ' ')}
-                  </label>
-                  <p className="text-zinc-900 dark:text-zinc-100 text-sm">
-                    {Array.isArray(value) ? value.join(', ') : value}
-                  </p>
-                </div>
-              ))}
-            </div>
+        {/* Dynamic Content based on extraction approach */}
+        {isEmergent ? (
+          // Emergent themes display
+          <div className="space-y-4">
+            {extractedContext.themes.map((theme, idx) => (
+              <div key={idx} className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+                <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                  {theme.theme_name}
+                </h3>
+                <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                  {theme.content}
+                </p>
+              </div>
+            ))}
           </div>
+        ) : (
+          // Prescriptive fields display (baseline-v1)
+          <>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Industry
+                </label>
+                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.industry}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Target Market
+                </label>
+                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.target_market}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Unique Value
+                </label>
+                <p className="text-zinc-900 dark:text-zinc-100">{extractedContext.core.unique_value}</p>
+              </div>
+            </div>
+
+            {/* Enrichment Fields Section */}
+            {Object.keys(extractedContext.enrichment).length > 0 && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium mb-3">Additional Context</h3>
+                <div className="space-y-3">
+                  {Object.entries(extractedContext.enrichment).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1 capitalize">
+                        {key.replace(/_/g, ' ')}
+                      </label>
+                      <p className="text-zinc-900 dark:text-zinc-100 text-sm">
+                        {Array.isArray(value) ? value.join(', ') : value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Reflective Summary Section */}
+        {/* Reflective Summary Section - Same for both */}
         <div className="border-t pt-6 bg-zinc-50 dark:bg-zinc-900 -m-6 p-6 rounded-b-lg">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-4">Reflection</h3>
 
