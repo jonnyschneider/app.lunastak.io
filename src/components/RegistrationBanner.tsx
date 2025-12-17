@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 
 interface RegistrationBannerProps {
+  guestUserId: string
   onDismiss: () => void
 }
 
-export function RegistrationBanner({ onDismiss }: RegistrationBannerProps) {
+export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBannerProps) {
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
@@ -17,6 +18,10 @@ export function RegistrationBanner({ onDismiss }: RegistrationBannerProps) {
     setIsSubmitting(true)
 
     try {
+      // Store guest user ID in localStorage before signing in
+      // This will be used to transfer the session after authentication
+      localStorage.setItem('guestUserId', guestUserId)
+
       await signIn('email', { email, redirect: false })
       setEmailSent(true)
     } catch (error) {
