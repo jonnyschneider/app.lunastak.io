@@ -18,10 +18,11 @@ export async function POST(req: Request) {
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
 
-    // Use authenticated user ID if available, otherwise use temp ID or null for guests
-    const userId = session?.user?.id || tempUserId || null;
+    // Only use userId if user is authenticated (User exists in DB)
+    // For guests, userId will be null
+    const userId = session?.user?.id || null;
 
-    // For statsig, use userId or temp ID (statsig needs an ID for variant assignment)
+    // For statsig, use actual userId or temp ID for guests (statsig needs an ID for variant assignment)
     const statsigUserId = userId || tempUserId || `guest_${Date.now()}`;
 
     // Determine experiment variant (with optional override)
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
-        userId,
+        userId, // null for guests, real User.id for authenticated users
         status: 'in_progress',
         experimentVariant,
       },
