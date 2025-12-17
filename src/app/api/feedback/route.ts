@@ -1,41 +1,35 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { UserFeedback } from '@/lib/types';
+import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
 
+const prisma = new PrismaClient()
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { traceId, feedback } = await req.json();
+    const { traceId, userId, responseText } = await request.json()
 
-    if (!traceId || !feedback) {
+    // Validate required fields
+    if (!traceId || !responseText) {
       return NextResponse.json(
-        { error: 'traceId and feedback are required' },
+        { error: 'Missing required fields' },
         { status: 400 }
-      );
+      )
     }
 
-    if (feedback !== 'helpful' && feedback !== 'not_helpful') {
-      return NextResponse.json(
-        { error: 'feedback must be "helpful" or "not_helpful"' },
-        { status: 400 }
-      );
-    }
-
-    // Update trace with feedback
-    await prisma.trace.update({
-      where: { id: traceId },
+    // Create feedback record
+    const feedback = await prisma.feedback.create({
       data: {
-        userFeedback: feedback,
-        feedbackTimestamp: new Date(),
+        traceId,
+        userId: userId || null,
+        responseText,
       },
-    });
+    })
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, feedbackId: feedback.id })
   } catch (error) {
-    console.error('Feedback error:', error);
+    console.error('Failed to save feedback:', error)
     return NextResponse.json(
-      { error: 'Failed to save feedback' },
+      { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }

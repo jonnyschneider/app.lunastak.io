@@ -1,17 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
 import { AppLayout } from '@/components/layout/app-layout';
+import { IntroCard } from '@/components/IntroCard';
+import { RegistrationBanner } from '@/components/RegistrationBanner';
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
-type FlowStep = 'chat' | 'extraction' | 'strategy';
+type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
-  const [userId] = useState(() => `user_${Date.now()}`); // Temp user ID until auth
+  const { data: session } = useSession();
+  const [userId] = useState(() => {
+    // Get or create guest user ID
+    if (typeof window !== 'undefined') {
+      let guestId = localStorage.getItem('guestUserId');
+      if (!guestId) {
+        guestId = `guest_${Date.now()}`;
+        localStorage.setItem('guestUserId', guestId);
+      }
+      return guestId;
+    }
+    return `guest_${Date.now()}`;
+  });
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,11 +38,77 @@ export default function Home() {
   const [traceId, setTraceId] = useState<string>('');
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
+  const [showIntro, setShowIntro] = useState(true);
+  const [showRegistrationBanner, setShowRegistrationBanner] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
-  // Start conversation on mount
+  // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
+    if (flowStep === 'strategy' && !session) {
+      setShowRegistrationBanner(true);
+    }
+  }, [flowStep, session]);
+
+  // 90s idle timer for feedback modal
+  useEffect(() => {
+    if (flowStep !== 'strategy' || !traceId) return;
+
+    let idleTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        setShowFeedbackModal(true);
+      }, 90000); // 90 seconds
+    };
+
+    // Reset timer on any user activity
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer(); // Start initial timer
+
+    return () => {
+      clearTimeout(idleTimer);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [flowStep, traceId]);
+
+  // Transfer guest session when user signs in
+  useEffect(() => {
+    const transferSession = async () => {
+      if (!session?.user?.id) return;
+
+      const guestUserId = localStorage.getItem('guestUserId');
+      if (!guestUserId) return;
+
+      try {
+        const response = await fetch('/api/transfer-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guestUserId }),
+        });
+
+        if (response.ok) {
+          console.log('Session transferred successfully');
+          localStorage.removeItem('guestUserId');
+          setShowRegistrationBanner(false);
+        }
+      } catch (error) {
+        console.error('Failed to transfer session:', error);
+      }
+    };
+
+    transferSession();
+  }, [session]);
+
+  const handleStartClick = () => {
     startConversation();
-  }, []);
+  };
 
   const startConversation = async () => {
     setIsLoading(true);
@@ -55,6 +137,9 @@ export default function Home() {
         stepNumber: 1,
         timestamp: new Date(),
       }]);
+
+      // Hide intro and show chat interface now that we have the first message
+      setShowIntro(false);
     } catch (error) {
       console.error('Failed to start conversation:', error);
     } finally {
@@ -119,6 +204,7 @@ export default function Home() {
   const extractContext = async () => {
     if (!conversationId) return;
 
+    setFlowStep('extracting');
     setIsLoading(true);
     try {
       const response = await fetch('/api/extract', {
@@ -132,6 +218,7 @@ export default function Home() {
       setFlowStep('extraction');
     } catch (error) {
       console.error('Failed to extract context:', error);
+      setFlowStep('chat'); // Go back to chat on error
     } finally {
       setIsLoading(false);
     }
@@ -165,6 +252,11 @@ export default function Home() {
       setThoughts(data.thoughts);
       setTraceId(data.traceId);
       setFlowStep('strategy');
+
+      // Notify sidebar to refresh if user is logged in
+      if (session?.user?.id) {
+        window.dispatchEvent(new Event('strategySaved'));
+      }
     } catch (error) {
       console.error('[Generate] Failed to generate strategy:', error);
       alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -243,9 +335,13 @@ export default function Home() {
 
   return (
     <AppLayout experimentVariant={experimentVariant}>
-      <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
-        <div className="container mx-auto py-8 flex-1 flex flex-col">
-          {flowStep === 'chat' && (
+      <main className="h-full bg-gray-50 dark:bg-zinc-900 flex flex-col">
+        <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
+          {showIntro && (
+            <IntroCard onStartClick={handleStartClick} isLoading={isLoading} />
+          )}
+
+          {!showIntro && flowStep === 'chat' && (
             <div className="flex-1 min-h-0">
               <ChatInterface
                 conversationId={conversationId}
@@ -254,22 +350,49 @@ export default function Home() {
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}
+                traceId={traceId}
               />
             </div>
           )}
 
-          {flowStep === 'extraction' && extractedContext && (
+          {!showIntro && flowStep === 'extracting' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="max-w-md text-center">
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-8">
+                  <div className="animate-pulse mb-4">
+                    <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded w-3/4 mx-auto"></div>
+                    <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded w-1/2 mx-auto mt-2"></div>
+                  </div>
+                  <p className="text-zinc-700 dark:text-zinc-300 font-medium">
+                    Preparing your summary...
+                  </p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                    Synthesizing your responses
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!showIntro && flowStep === 'extraction' && extractedContext && (
             <ExtractionConfirm
               extractedContext={extractedContext}
               onGenerate={handleGenerate}
               onContinue={handleContinue}
               onFlagForLater={handleFlagForLater}
               onDismiss={handleDismiss}
+              isGenerating={isLoading}
             />
           )}
 
-          {flowStep === 'strategy' && strategy && conversationId && (
+          {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
+              {showRegistrationBanner && (
+                <RegistrationBanner
+                  guestUserId={userId}
+                  onDismiss={() => setShowRegistrationBanner(false)}
+                />
+              )}
               <StrategyDisplay
                 strategy={strategy}
                 thoughts={thoughts}
@@ -278,6 +401,13 @@ export default function Home() {
               />
               <FeedbackButtons traceId={traceId} />
             </>
+          )}
+
+          {showFeedbackModal && traceId && (
+            <FeedbackModal
+              traceId={traceId}
+              onClose={() => setShowFeedbackModal(false)}
+            />
           )}
         </div>
       </main>
