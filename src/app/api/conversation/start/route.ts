@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { getExperimentVariant } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -10,7 +11,7 @@ Ask them to describe their business challenge or opportunity in their own words.
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json();
+    const { userId, variantOverride } = await req.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -19,12 +20,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Determine experiment variant (with optional override)
+    const experimentVariant = await getExperimentVariant(userId, variantOverride);
+
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
         userId,
         status: 'in_progress',
-        experimentVariant: 'baseline-v1', // Track experiment variant
+        experimentVariant,
       },
     });
 
@@ -59,6 +63,7 @@ export async function POST(req: Request) {
       conversationId: conversation.id,
       message: firstQuestion,
       stepNumber: 1,
+      experimentVariant: conversation.experimentVariant,
     });
   } catch (error) {
     console.error('Start conversation error:', error);
