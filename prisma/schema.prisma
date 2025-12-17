@@ -9,7 +9,7 @@ datasource db {
 
 model Conversation {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String?  // Nullable for guest sessions
   status    String   // 'in_progress' | 'completed' | 'abandoned'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -20,6 +20,7 @@ model Conversation {
   // Experiment tracking
   experimentVariant String?  // baseline-v1, emergent-extraction, etc.
 
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  Message[]
   traces    Trace[]
   events    Event[]
@@ -51,7 +52,7 @@ model Message {
 model Trace {
   id                  String   @id @default(cuid())
   conversationId      String
-  userId              String
+  userId              String?  // Nullable for guests
   timestamp           DateTime @default(now())
 
   // Extracted Context (stored as JSON)
@@ -83,8 +84,10 @@ model Trace {
   reviewedAt          DateTime?
   reviewedBy          String?
 
+  user                User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   events              Event[]
+  feedbacks           Feedback[]
 
   @@index([userId])
   @@index([timestamp])
@@ -109,4 +112,69 @@ model Event {
   @@index([traceId])
   @@index([eventType])
   @@index([timestamp])
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  createdAt     DateTime @default(now())
+
+  conversations Conversation[]
+  traces        Trace[]
+  feedbacks     Feedback[]
+  accounts      Account[]
+  sessions      Session[]
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  traceId      String
+  userId       String?
+  responseText String   @db.Text
+  createdAt    DateTime @default(now())
+
+  trace        Trace    @relation(fields: [traceId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([traceId])
+  @@index([userId])
+  @@index([createdAt])
 }
