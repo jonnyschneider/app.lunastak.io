@@ -21,6 +21,7 @@ export default function Home() {
   const [thoughts, setThoughts] = useState<string>('');
   const [traceId, setTraceId] = useState<string>('');
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
+  const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
 
   // Start conversation on mount
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function Home() {
 
       const data = await response.json();
       setConversationId(data.conversationId);
+      setExperimentVariant(data.experimentVariant || 'baseline-v1');
       setMessages([{
         id: `msg_${Date.now()}`,
         conversationId: data.conversationId,
@@ -233,7 +235,7 @@ export default function Home() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout experimentVariant={experimentVariant}>
       <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col">
           {flowStep === 'chat' && (
