@@ -2,6 +2,101 @@
 
 ---
 
+## Foundation Features (2025-12-17)
+
+**Type:** Feature Release - Production Ready UI/UX
+**Status:** Production
+
+### Overview
+
+Transforms Lunastak from a functional prototype into a polished, production-ready application. This release focuses on essential UX improvements, authentication, and persistent storage - the foundation for long-term user engagement and experimentation.
+
+### What's New
+
+**Professional UI Components**
+
+- **Shadcn Sidebar** - Replaced custom implementation with robust sidebar component
+  - Keyboard shortcuts: Cmd+B / Ctrl+B to toggle
+  - Cookie-based state persistence
+  - Mobile-responsive with sheet overlay
+  - Displays user's recent strategies
+- **Conversational Intro** - Chat bubble style replaces stark desktop-app card
+  - "let's begin" button with smooth transition
+  - "Thinking..." affordance during load
+- **Monotone Design System** - Removed all colored elements (blue, green, red)
+  - Wireframey zinc palette throughout
+  - IBM Plex Sans typography
+  - Clean, professional aesthetic
+
+**Authentication & Persistence**
+
+- **Email Magic Links** - Passwordless authentication via Resend
+  - Custom sign-in pages using shadcn components
+  - Elegant email verification flow
+- **Guest User Support** - Seamless guest-to-authenticated transition
+  - Persistent guest IDs in localStorage
+  - Automatic session transfer on sign-in
+  - All guest conversations preserved
+- **Auto-Save** - Completed strategies automatically saved for authenticated users
+  - Real-time sidebar updates after generation
+  - Quick access to recent work
+
+**Loading States**
+
+- **Extraction Phase** - "Preparing your summary..." with animated pulse
+- **Generation Phase** - "Generating your strategy..." disabled button
+- **Clear Feedback** - Users know processing is happening and results coming soon
+
+**Branding & Content**
+
+- Lunastak logo in sidebar header
+- Updated all references from "Decision Stack" to "Lunastak"
+- Improved first question prompt (removed unnecessary preambles)
+- Fake door link with event tracking: "see other options to get started?"
+
+### Under the Hood
+
+**Database Schema**
+- Added `emailVerified` and `image` fields to User model (NextAuth compatibility)
+- Guest conversations store temporary user IDs (enables transfer)
+- Traces automatically linked to user accounts
+
+**Technical Improvements**
+- Fixed viewport height issues with proper flex container configuration
+- Custom event system for sidebar refresh (`strategySaved` event)
+- Improved error handling in session transfer logic
+- Type-safe guest user ID management
+
+### Migration
+
+```bash
+npx prisma db push         # Update database schema
+npx prisma generate        # Regenerate Prisma client
+npm run build              # Build with new dependencies
+```
+
+**Environment Variables Required:**
+```env
+RESEND_API_KEY=your_key_here
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+```
+
+### What's Fixed
+
+- Viewport height properly accounts for sidebar header (no more offscreen input)
+- Sign-in links now work correctly (explicit email provider specification)
+- NextAuth adapter compatibility with User model
+- Sidebar state persists across page refreshes
+
+### What's Coming Next
+
+- Strategy editing and refinement
+- Export and sharing capabilities
+- Conversation history and search
+- Team collaboration features
+
+---
+
 ## Baseline-v1 (2025-12-13)
 
 **Type:** Feature Release - Experimentation Foundation
