@@ -57,14 +57,14 @@ export default function QualityRating({ traceId }: QualityRatingProps) {
           <button
             onClick={() => handleRating('bad')}
             disabled={isSubmitting}
-            className="px-8 py-3 border-2 border-red-500 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            className="px-8 py-3 border-2 border-zinc-400 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
           >
             {isSubmitting ? 'Submitting...' : 'Not Good'}
           </button>
           <button
             onClick={() => handleRating('good')}
             disabled={isSubmitting}
-            className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            className="px-8 py-3 bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
           >
             {isSubmitting ? 'Submitting...' : 'Good'}
           </button>

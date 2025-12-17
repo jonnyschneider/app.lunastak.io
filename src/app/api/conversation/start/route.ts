@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
@@ -7,26 +9,30 @@ export const maxDuration = 60;
 
 const FIRST_QUESTION_PROMPT = `You are a strategic consultant helping someone articulate their business strategy.
 
-Ask them to describe their business challenge or opportunity in their own words. Keep it warm, conversational, and open-ended. Just ask the question, nothing else.`;
+Ask them to describe their business challenge or opportunity in their own words. Keep it warm, conversational, and open-ended.
+
+IMPORTANT: Output ONLY the question itself. No preambles like "I'm happy to help" or "I'd be glad to". Just the direct question.`;
 
 export async function POST(req: Request) {
   try {
-    const { userId, variantOverride } = await req.json();
+    const { userId: guestUserId, variantOverride } = await req.json();
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    // Get session to check if user is authenticated
+    const session = await getServerSession(authOptions);
+
+    // Use authenticated user ID if logged in, otherwise use guest ID for tracking
+    const userId = session?.user?.id || guestUserId || `guest_${Date.now()}`;
+
+    // For statsig, use the same userId
+    const statsigUserId = userId;
 
     // Determine experiment variant (with optional override)
-    const experimentVariant = await getExperimentVariant(userId, variantOverride);
+    const experimentVariant = await getExperimentVariant(statsigUserId, variantOverride);
 
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
-        userId,
+        userId, // Guest ID (e.g. "guest_1234567890") for guests, real User.id for authenticated users
         status: 'in_progress',
         experimentVariant,
       },

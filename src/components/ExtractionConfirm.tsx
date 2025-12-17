@@ -8,6 +8,7 @@ interface ExtractionConfirmProps {
   onContinue: () => void;
   onFlagForLater: () => void;
   onDismiss: () => void;
+  isGenerating?: boolean;
 }
 
 export default function ExtractionConfirm({
@@ -16,6 +17,7 @@ export default function ExtractionConfirm({
   onContinue,
   onFlagForLater,
   onDismiss,
+  isGenerating = false,
 }: ExtractionConfirmProps) {
   const isEmergent = isEmergentContext(extractedContext);
 
@@ -142,9 +144,10 @@ export default function ExtractionConfirm({
           <div>
             <button
               onClick={onGenerate}
-              className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 font-medium"
+              disabled={isGenerating}
+              className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-zinc-800"
             >
-              Generate my strategy
+              {isGenerating ? 'Generating your strategy...' : 'Generate my strategy'}
             </button>
           </div>
 
