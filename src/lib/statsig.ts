@@ -37,7 +37,20 @@ export async function checkFeatureGate(
   return result;
 }
 
-export async function getExperimentVariant(userId: string): Promise<string> {
+export async function getExperimentVariant(
+  userId: string,
+  variantOverride?: string
+): Promise<string> {
+  // Allow manual override via query parameter for testing/UAT
+  if (variantOverride) {
+    const validVariants = ['baseline-v1', 'emergent-extraction-e1a'];
+    if (validVariants.includes(variantOverride)) {
+      console.log(`[Statsig] Using variant override: ${variantOverride}`);
+      return variantOverride;
+    }
+    console.warn(`[Statsig] Invalid variant override: ${variantOverride}, ignoring`);
+  }
+
   const isEmergentEnabled = await checkFeatureGate(userId, 'emergent_extraction_e1a');
   return isEmergentEnabled ? 'emergent-extraction-e1a' : 'baseline-v1';
 }
