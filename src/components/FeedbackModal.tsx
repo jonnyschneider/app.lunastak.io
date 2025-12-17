@@ -44,18 +44,18 @@ export function FeedbackModal({ traceId, onClose }: FeedbackModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-bold text-gray-900">We'd love your feedback</h2>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">We'd love your feedback</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
           >
             ✕
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
           What could make this experience better? Any insights you share help us improve the tool.
         </p>
 
@@ -65,21 +65,21 @@ export function FeedbackModal({ traceId, onClose }: FeedbackModalProps) {
             onChange={(e) => setFeedback(e.target.value)}
             placeholder="Your thoughts..."
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400 mb-4"
           />
 
           <div className="flex gap-3 justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              className="px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition"
             >
               Skip
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !feedback.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition"
+              className="px-4 py-2 bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg font-semibold hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50 transition"
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>

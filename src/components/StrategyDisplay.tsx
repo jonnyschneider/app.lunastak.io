@@ -85,7 +85,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         </Accordion>
       )}
 
-      {/* Decision Stack */}
+      {/* Strategy Output */}
       <div className="space-y-4">
         {/* Vision Card */}
         <div className="bg-zinc-800 dark:bg-zinc-700 rounded-lg p-6 shadow-sm relative group">

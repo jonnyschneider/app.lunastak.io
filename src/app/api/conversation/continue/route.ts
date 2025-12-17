@@ -106,7 +106,7 @@ async function handleInitialPhase(
     .join('\n\n');
 
   // Generate first question directly (no lens selection)
-  const FIRST_QUESTION_PROMPT = `You are a strategic advisor helping develop a Decision Stack for a SaaS/digital business.
+  const FIRST_QUESTION_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
 
 The user just responded to your opening question with:
 "${userResponse}"
@@ -349,7 +349,7 @@ async function continueQuestioning(
     .join('\n\n');
 
   // Generate next question using general prompt (no lens)
-  const NEXT_QUESTION_PROMPT = `You are a strategic advisor helping develop a Decision Stack for a SaaS/digital business.
+  const NEXT_QUESTION_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
 
 Conversation so far:
 ${conversationHistory}

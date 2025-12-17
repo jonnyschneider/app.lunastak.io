@@ -12,11 +12,22 @@ import { RegistrationBanner } from '@/components/RegistrationBanner';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
-type FlowStep = 'chat' | 'extraction' | 'strategy';
+type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
   const { data: session } = useSession();
-  const [userId] = useState(() => `user_${Date.now()}`); // Temp user ID until auth
+  const [userId] = useState(() => {
+    // Get or create guest user ID
+    if (typeof window !== 'undefined') {
+      let guestId = localStorage.getItem('guestUserId');
+      if (!guestId) {
+        guestId = `guest_${Date.now()}`;
+        localStorage.setItem('guestUserId', guestId);
+      }
+      return guestId;
+    }
+    return `guest_${Date.now()}`;
+  });
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +107,6 @@ export default function Home() {
   }, [session]);
 
   const handleStartClick = () => {
-    setShowIntro(false);
     startConversation();
   };
 
@@ -127,6 +137,9 @@ export default function Home() {
         stepNumber: 1,
         timestamp: new Date(),
       }]);
+
+      // Hide intro and show chat interface now that we have the first message
+      setShowIntro(false);
     } catch (error) {
       console.error('Failed to start conversation:', error);
     } finally {
@@ -191,6 +204,7 @@ export default function Home() {
   const extractContext = async () => {
     if (!conversationId) return;
 
+    setFlowStep('extracting');
     setIsLoading(true);
     try {
       const response = await fetch('/api/extract', {
@@ -204,6 +218,7 @@ export default function Home() {
       setFlowStep('extraction');
     } catch (error) {
       console.error('Failed to extract context:', error);
+      setFlowStep('chat'); // Go back to chat on error
     } finally {
       setIsLoading(false);
     }
@@ -237,6 +252,11 @@ export default function Home() {
       setThoughts(data.thoughts);
       setTraceId(data.traceId);
       setFlowStep('strategy');
+
+      // Notify sidebar to refresh if user is logged in
+      if (session?.user?.id) {
+        window.dispatchEvent(new Event('strategySaved'));
+      }
     } catch (error) {
       console.error('[Generate] Failed to generate strategy:', error);
       alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -315,10 +335,10 @@ export default function Home() {
 
   return (
     <AppLayout experimentVariant={experimentVariant}>
-      <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
-        <div className="container mx-auto py-8 flex-1 flex flex-col">
+      <main className="h-full bg-gray-50 dark:bg-zinc-900 flex flex-col">
+        <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
           {showIntro && (
-            <IntroCard onStartClick={handleStartClick} />
+            <IntroCard onStartClick={handleStartClick} isLoading={isLoading} />
           )}
 
           {!showIntro && flowStep === 'chat' && (
@@ -330,7 +350,27 @@ export default function Home() {
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}
+                traceId={traceId}
               />
+            </div>
+          )}
+
+          {!showIntro && flowStep === 'extracting' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="max-w-md text-center">
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-8">
+                  <div className="animate-pulse mb-4">
+                    <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded w-3/4 mx-auto"></div>
+                    <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded w-1/2 mx-auto mt-2"></div>
+                  </div>
+                  <p className="text-zinc-700 dark:text-zinc-300 font-medium">
+                    Preparing your summary...
+                  </p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                    Synthesizing your responses
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -341,6 +381,7 @@ export default function Home() {
               onContinue={handleContinue}
               onFlagForLater={handleFlagForLater}
               onDismiss={handleDismiss}
+              isGenerating={isLoading}
             />
           )}
 

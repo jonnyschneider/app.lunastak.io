@@ -34,19 +34,19 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
 
   if (emailSent) {
     return (
-      <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-r-lg">
+      <div className="bg-zinc-100 dark:bg-zinc-800 border-l-4 border-zinc-400 dark:border-zinc-600 p-4 mb-6 rounded-r-lg">
         <div className="flex items-start">
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-green-800">
+            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
               Check your email
             </h3>
-            <p className="mt-2 text-sm text-green-700">
+            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
               We've sent a magic link to <strong>{email}</strong>. Click the link to sign in and save your strategy.
             </p>
           </div>
           <button
             onClick={onDismiss}
-            className="ml-4 text-green-600 hover:text-green-800"
+            className="ml-4 text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
           >
             ✕
           </button>
@@ -56,13 +56,13 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
   }
 
   return (
-    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg">
+    <div className="bg-zinc-100 dark:bg-zinc-800 border-l-4 border-zinc-400 dark:border-zinc-600 p-4 mb-6 rounded-r-lg">
       <div className="flex items-start">
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-blue-800">
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
             Save your strategy
           </h3>
-          <p className="mt-2 text-sm text-blue-700">
+          <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
             Enter your email to save this strategy and access it anytime.
           </p>
           <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
@@ -72,12 +72,12 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               required
-              className="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400"
             />
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition"
+              className="bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 px-4 py-2 rounded-lg font-semibold hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50 transition"
             >
               {isSubmitting ? 'Sending...' : 'Send Link'}
             </button>
@@ -85,7 +85,7 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
         </div>
         <button
           onClick={onDismiss}
-          className="ml-4 text-blue-600 hover:text-blue-800"
+          className="ml-4 text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
         >
           ✕
         </button>
