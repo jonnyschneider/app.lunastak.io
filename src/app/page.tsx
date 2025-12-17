@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
 import { AppLayout } from '@/components/layout/app-layout';
 import { IntroCard } from '@/components/IntroCard';
+import { RegistrationBanner } from '@/components/RegistrationBanner';
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'chat' | 'extraction' | 'strategy';
 
 export default function Home() {
+  const { data: session } = useSession();
   const [userId] = useState(() => `user_${Date.now()}`); // Temp user ID until auth
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,6 +28,44 @@ export default function Home() {
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
   const [showIntro, setShowIntro] = useState(true);
+  const [showRegistrationBanner, setShowRegistrationBanner] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
+  // Show registration banner when strategy is displayed and user is not authenticated
+  useEffect(() => {
+    if (flowStep === 'strategy' && !session) {
+      setShowRegistrationBanner(true);
+    }
+  }, [flowStep, session]);
+
+  // 90s idle timer for feedback modal
+  useEffect(() => {
+    if (flowStep !== 'strategy' || !traceId) return;
+
+    let idleTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        setShowFeedbackModal(true);
+      }, 90000); // 90 seconds
+    };
+
+    // Reset timer on any user activity
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer(); // Start initial timer
+
+    return () => {
+      clearTimeout(idleTimer);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [flowStep, traceId]);
 
   const handleStartClick = () => {
     setShowIntro(false);
@@ -276,6 +318,9 @@ export default function Home() {
 
           {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
+              {showRegistrationBanner && (
+                <RegistrationBanner onDismiss={() => setShowRegistrationBanner(false)} />
+              )}
               <StrategyDisplay
                 strategy={strategy}
                 thoughts={thoughts}
@@ -284,6 +329,13 @@ export default function Home() {
               />
               <FeedbackButtons traceId={traceId} />
             </>
+          )}
+
+          {showFeedbackModal && traceId && (
+            <FeedbackModal
+              traceId={traceId}
+              onClose={() => setShowFeedbackModal(false)}
+            />
           )}
         </div>
       </main>
