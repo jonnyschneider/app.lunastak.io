@@ -11,7 +11,7 @@ Ask them to describe their business challenge or opportunity in their own words.
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json();
+    const { userId, variantOverride } = await req.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -20,8 +20,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Determine experiment variant
-    const experimentVariant = await getExperimentVariant(userId);
+    // Determine experiment variant (with optional override)
+    const experimentVariant = await getExperimentVariant(userId, variantOverride);
 
     // Create conversation
     const conversation = await prisma.conversation.create({

@@ -31,10 +31,17 @@ export default function Home() {
   const startConversation = async () => {
     setIsLoading(true);
     try {
+      // Check for variant override in URL query params
+      const params = new URLSearchParams(window.location.search);
+      const variantOverride = params.get('variant');
+
       const response = await fetch('/api/conversation/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({
+          userId,
+          ...(variantOverride && { variantOverride })
+        }),
       });
 
       const data = await response.json();
