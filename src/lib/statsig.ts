@@ -8,11 +8,13 @@ export async function initializeStatsig() {
       console.log('[Statsig] Initializing with environment:', process.env.NODE_ENV || 'development');
       await Statsig.initialize(process.env.STATSIG_SERVER_SECRET_KEY, {
         environment: { tier: process.env.NODE_ENV || 'development' },
+        localMode: process.env.STATSIG_LOCAL_MODE === 'true', // For local development
       });
       statsigInitialized = true;
       console.log('[Statsig] Successfully initialized');
     } catch (error) {
       console.error('[Statsig] Initialization error:', error);
+      console.error('[Statsig] See https://docs.statsig.com/messages/serverSDKConnection for help');
     }
   } else if (!process.env.STATSIG_SERVER_SECRET_KEY) {
     console.log('[Statsig] No server secret key found in environment');
@@ -38,6 +40,12 @@ export async function checkFeatureGate(
 }
 
 export async function getExperimentVariant(userId: string): Promise<string> {
+  // Local development override - set FORCE_VARIANT in .env.local for testing
+  if (process.env.FORCE_VARIANT) {
+    console.log(`[Statsig] Using forced variant: ${process.env.FORCE_VARIANT}`);
+    return process.env.FORCE_VARIANT;
+  }
+
   const isEmergentEnabled = await checkFeatureGate(userId, 'emergent_extraction_e1a');
   return isEmergentEnabled ? 'emergent-extraction-e1a' : 'baseline-v1';
 }
