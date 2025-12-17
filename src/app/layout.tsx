@@ -1,14 +1,17 @@
 import React from 'react';
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { IBM_Plex_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
 
-const inter = Inter({ subsets: ['latin'] })
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700']
+})
 
 export const metadata: Metadata = {
-  title: 'Strategy Statement Generator',
-  description: 'Generate and visualize business strategy statements',
+  title: 'Lunastak - The Strategy App',
+  description: 'Crystallize your business thinking into clear strategic direction',
 }
 
 export default function RootLayout({
@@ -19,7 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.className} bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950`}
+      className={`${ibmPlexSans.className} bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950`}
     >
       <body suppressHydrationWarning={true}>
         <SessionProvider>

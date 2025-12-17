@@ -115,10 +115,12 @@ model Event {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
   name          String?
-  createdAt     DateTime @default(now())
+  image         String?
+  createdAt     DateTime  @default(now())
 
   conversations Conversation[]
   traces        Trace[]

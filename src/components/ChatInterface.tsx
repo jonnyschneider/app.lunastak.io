@@ -10,6 +10,7 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   isComplete: boolean;
   currentPhase: ConversationPhase;
+  traceId?: string;
 }
 
 export default function ChatInterface({
@@ -19,6 +20,7 @@ export default function ChatInterface({
   isLoading,
   isComplete,
   currentPhase,
+  traceId,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
 
@@ -34,24 +36,55 @@ export default function ChatInterface({
     setUserInput('');
   };
 
+  const handleFakeDoorClick = async () => {
+    // Log fake door click
+    if (conversationId) {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          ...(traceId && { traceId }),
+          eventType: 'fake_door_click',
+          eventData: { feature: 'alternate_start_options' },
+        }),
+      }).catch(err => console.error('Failed to log event:', err));
+    }
+
+    alert('Alternative start options coming soon!');
+  };
+
   return (
     <div className="flex flex-col h-full max-w-3xl mx-auto">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+          <div key={message.id}>
             <div
-              className={`max-w-[80%] rounded-lg p-4 ${
-                message.role === 'user'
-                  ? 'bg-zinc-800 text-white'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
-              }`}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              <div
+                className={`max-w-[80%] rounded-lg p-4 ${
+                  message.role === 'user'
+                    ? 'bg-zinc-800 text-white'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+                }`}
+              >
+                <p className="whitespace-pre-wrap">{message.content}</p>
+              </div>
             </div>
+
+            {/* Fake door link for first assistant message */}
+            {message.role === 'assistant' && message.stepNumber === 1 && (
+              <div className="flex justify-start mt-2">
+                <button
+                  onClick={handleFakeDoorClick}
+                  className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline ml-2"
+                >
+                  see other options to get started?
+                </button>
+              </div>
+            )}
           </div>
         ))}
 

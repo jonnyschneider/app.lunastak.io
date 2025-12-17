@@ -1,46 +1,47 @@
 'use client'
 
-import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface IntroCardProps {
   onStartClick: () => void
+  isLoading?: boolean
 }
 
-export function IntroCard({ onStartClick }: IntroCardProps) {
+export function IntroCard({ onStartClick, isLoading = false }: IntroCardProps) {
   return (
-    <Card className="p-8 max-w-2xl mx-auto mt-8">
-      <h1 className="text-3xl font-bold mb-6">Welcome to Decision Stack</h1>
+    <div className="flex flex-col h-full max-w-3xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Assistant intro message bubble */}
+        <div className="flex justify-start">
+          <div className="max-w-[80%] bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-lg p-4">
+            <p className="whitespace-pre-wrap">
+              I help founders and business leaders clarify their strategic thinking.
+              {'\n\n'}
+              Through a short conversation, I'll help you articulate your vision, mission, and strategic objectives.
+              {'\n\n'}
+              Ready when you are.
+            </p>
+          </div>
+        </div>
 
-      <div className="space-y-4 text-gray-600 mb-6">
-        <p>
-          I'm here to help you crystallize your business thinking into a clear strategic direction.
-        </p>
-
-        <p>
-          Through conversation, I'll understand your business context and generate:
-        </p>
-
-        <ul className="list-disc ml-6 space-y-2">
-          <li><strong>Vision:</strong> Your long-term aspirations</li>
-          <li><strong>Mission:</strong> How you'll serve customers and create value</li>
-          <li><strong>Strategic Objectives:</strong> What you need to focus on to get there</li>
-        </ul>
-
-        <p>
-          <strong>What to expect:</strong> I'll ask questions about your business, customers, value proposition, and competitive landscape. This usually takes 5-10 minutes.
-        </p>
-
-        <p className="text-sm text-gray-500">
-          <strong>Privacy:</strong> You can use this tool anonymously. If you'd like to save your strategies and return later, you can sign in with your email after we're done.
-        </p>
+        {/* Thinking state or button */}
+        {isLoading ? (
+          <div className="flex justify-start">
+            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
+              <p className="text-zinc-500 dark:text-zinc-400">Thinking...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-start">
+            <button
+              onClick={onStartClick}
+              className="px-6 py-3 border border-zinc-800 dark:border-zinc-300 text-zinc-800 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              let's begin
+            </button>
+          </div>
+        )}
       </div>
-
-      <button
-        onClick={onStartClick}
-        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-      >
-        Let's Begin
-      </button>
-    </Card>
+    </div>
   )
 }

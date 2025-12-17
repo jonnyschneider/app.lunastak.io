@@ -16,10 +16,10 @@ export const authOptions: NextAuthOptions = {
         await resend.emails.send({
           from: process.env.RESEND_FROM_EMAIL!,
           to: email,
-          subject: "Sign in to Decision Stack",
+          subject: "Sign in to Lunastak",
           html: `
             <p>Click the link below to sign in:</p>
-            <a href="${url}">Sign in to Decision Stack</a>
+            <a href="${url}">Sign in to Lunastak</a>
             <p>If you did not request this email, you can safely ignore it.</p>
           `,
         })
@@ -27,9 +27,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: "/", // Keep users on main page
-    verifyRequest: "/", // Stay on main page after email sent
-    error: "/", // Stay on main page on error
+    signIn: "/auth/signin",
+    verifyRequest: "/auth/verify-request",
   },
   callbacks: {
     async session({ session, user }) {

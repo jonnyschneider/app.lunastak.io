@@ -1,0 +1,223 @@
+import * as Headless from '@headlessui/react'
+import clsx from 'clsx'
+import React, { forwardRef, useState, useEffect } from 'react'
+import { Link } from './link'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+
+export function Sidebar({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div
+      {...props}
+      className={clsx(className, 'flex h-full flex-col p-4')}
+    />
+  )
+}
+
+export function SidebarHeader({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div
+      {...props}
+      className={clsx(className, 'mb-4')}
+    />
+  )
+}
+
+export function SidebarBody({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div
+      {...props}
+      className={clsx(className, 'flex flex-1 flex-col')}
+    />
+  )
+}
+
+export function SidebarFooter({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div
+      {...props}
+      className={clsx(className, 'mt-4 max-lg:hidden')}
+    />
+  )
+}
+
+export function SidebarSection({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div
+      {...props}
+      className={clsx(className, 'flex flex-col gap-0.5')}
+    />
+  )
+}
+
+export function SidebarDivider({ className, ...props }: React.ComponentPropsWithoutRef<'hr'>) {
+  return (
+    <hr
+      {...props}
+      className={clsx(className, 'my-4 border-t border-zinc-950/5 lg:-mx-4 dark:border-white/5')}
+    />
+  )
+}
+
+export function SidebarSpacer({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div
+      aria-hidden="true"
+      {...props}
+      className={clsx(className, 'mt-8 flex-1')}
+    />
+  )
+}
+
+export function SidebarHeading({ className, ...props }: React.ComponentPropsWithoutRef<'h3'>) {
+  return (
+    <h3
+      {...props}
+      className={clsx(
+        className,
+        'mb-1 px-2 text-xs/6 font-medium text-zinc-500 dark:text-zinc-400'
+      )}
+    />
+  )
+}
+
+export const SidebarItem = forwardRef(function SidebarItem(
+  { current, className, children, ...props }: { current?: boolean; className?: string; children: React.ReactNode } & (
+    | Omit<Headless.ButtonProps, 'as' | 'className'>
+    | Omit<React.ComponentPropsWithoutRef<typeof Link>, 'className'>
+  ),
+  ref: React.ForwardedRef<HTMLAnchorElement | HTMLButtonElement>
+) {
+  const classes = clsx(
+    // Base
+    'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5',
+    // Leading icon/icon-only
+    'data-[slot=icon]:*:size-6 data-[slot=icon]:*:shrink-0 sm:data-[slot=icon]:*:size-5',
+    'data-[slot=icon]:*:fill-zinc-500',
+    // Trailing icon (down chevron or similar)
+    'data-[slot=icon]:last:*:ml-auto data-[slot=icon]:last:*:size-5 sm:data-[slot=icon]:last:*:size-4',
+    // Avatar
+    'data-[slot=avatar]:*:-m-0.5 data-[slot=avatar]:*:size-7 sm:data-[slot=avatar]:*:size-6',
+    'data-[slot=avatar]:*:[--ring-opacity:10%]',
+    // Hover
+    'data-[hover]:bg-zinc-950/5 data-[slot=icon]:*:data-[hover]:fill-zinc-950',
+    // Active
+    'data-[active]:bg-zinc-950/5 data-[slot=icon]:*:data-[active]:fill-zinc-950',
+    // Current
+    'data-[slot=icon]:*:data-[current]:fill-zinc-950',
+    // Dark mode
+    'dark:text-white',
+    'dark:data-[slot=icon]:*:fill-zinc-400',
+    'dark:data-[hover]:bg-white/5 dark:data-[slot=icon]:*:data-[hover]:fill-white',
+    'dark:data-[active]:bg-white/5 dark:data-[slot=icon]:*:data-[active]:fill-white',
+    'dark:data-[slot=icon]:*:data-[current]:fill-white'
+  )
+
+  return (
+    <span className={clsx(className, 'relative')}>
+      {current && (
+        <span className="absolute inset-y-2 -left-4 w-0.5 rounded-full bg-zinc-950 dark:bg-white" />
+      )}
+      {'href' in props ? (
+        <Link
+          {...props as any}
+          className={classes}
+          data-current={current ? 'true' : undefined}
+          ref={ref as React.ForwardedRef<HTMLAnchorElement>}
+        >
+          {children}
+        </Link>
+      ) : (
+        <Headless.Button
+          {...props as any}
+          className={clsx('cursor-default', classes)}
+          data-current={current ? 'true' : undefined}
+          ref={ref}
+        >
+          {children}
+        </Headless.Button>
+      )}
+    </span>
+  )
+})
+
+export function SidebarLabel({ className, ...props }: React.ComponentPropsWithoutRef<'span'>) {
+  return <span {...props} data-slot="label" className={clsx(className, 'truncate')} />
+}
+
+export function SidebarLayout({
+  navbar,
+  sidebar,
+  children,
+}: React.PropsWithChildren<{ navbar: React.ReactNode; sidebar: React.ReactNode }>) {
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Load collapsed state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebar_collapsed')
+    if (savedState !== null) {
+      setCollapsed(savedState === 'true')
+    }
+  }, [])
+
+  // Save collapsed state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', collapsed.toString())
+  }, [collapsed])
+
+  return (
+    <div className="relative isolate flex min-h-svh w-full bg-white max-lg:flex-col lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
+      {/* Sidebar on desktop */}
+      <div
+        className={clsx(
+          "fixed inset-y-0 left-0 max-lg:hidden transition-all duration-200",
+          collapsed ? "w-0" : "w-64"
+        )}
+      >
+        <div className={clsx(
+          "flex h-full flex-col border-r border-zinc-950/5 bg-white dark:border-white/5 dark:bg-zinc-900 transition-transform duration-200",
+          collapsed && "-translate-x-full"
+        )}>
+          {/* Toggle button */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="absolute -right-3 top-4 z-50 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+          >
+            {collapsed ? (
+              <ChevronRightIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+            ) : (
+              <ChevronLeftIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+            )}
+          </button>
+          {sidebar}
+        </div>
+      </div>
+
+      {/* Navbar on mobile */}
+      <div className="lg:hidden">
+        <Headless.Dialog open={false} onClose={() => {}}>
+          <Headless.DialogBackdrop
+            transition
+            className="fixed inset-0 bg-black/30 transition data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"
+          />
+          <Headless.DialogPanel
+            transition
+            className="fixed inset-y-0 left-0 w-full max-w-80 bg-white p-2 transition data-[closed]:-translate-x-full data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in dark:bg-zinc-900"
+          >
+            {sidebar}
+          </Headless.DialogPanel>
+        </Headless.Dialog>
+        <div className="sticky top-0 z-10 border-b border-zinc-950/5 bg-white px-4 dark:border-white/5 dark:bg-zinc-900">
+          {navbar}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <main className={clsx(
+        "flex flex-1 flex-col transition-all duration-200",
+        collapsed ? "lg:pl-0" : "lg:pl-64"
+      )}>
+        {children}
+      </main>
+    </div>
+  )
+}
