@@ -67,6 +67,34 @@ export default function Home() {
     };
   }, [flowStep, traceId]);
 
+  // Transfer guest session when user signs in
+  useEffect(() => {
+    const transferSession = async () => {
+      if (!session?.user?.id) return;
+
+      const guestUserId = localStorage.getItem('guestUserId');
+      if (!guestUserId) return;
+
+      try {
+        const response = await fetch('/api/transfer-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guestUserId }),
+        });
+
+        if (response.ok) {
+          console.log('Session transferred successfully');
+          localStorage.removeItem('guestUserId');
+          setShowRegistrationBanner(false);
+        }
+      } catch (error) {
+        console.error('Failed to transfer session:', error);
+      }
+    };
+
+    transferSession();
+  }, [session]);
+
   const handleStartClick = () => {
     setShowIntro(false);
     startConversation();
@@ -319,7 +347,10 @@ export default function Home() {
           {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
               {showRegistrationBanner && (
-                <RegistrationBanner onDismiss={() => setShowRegistrationBanner(false)} />
+                <RegistrationBanner
+                  guestUserId={userId}
+                  onDismiss={() => setShowRegistrationBanner(false)}
+                />
               )}
               <StrategyDisplay
                 strategy={strategy}
