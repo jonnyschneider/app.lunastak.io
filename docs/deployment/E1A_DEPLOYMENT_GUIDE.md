@@ -1,5 +1,9 @@
 # E1a Deployment Guide
 
+**Release Version:** v1.1.0
+**Experiment:** E1a (`emergent-extraction-e1a`)
+**See:** [VERSION_MAPPING.md](../../VERSION_MAPPING.md) for version-to-experiment mapping
+
 ## Prerequisites
 
 1. **Statsig Account Setup**
