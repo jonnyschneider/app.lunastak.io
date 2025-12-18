@@ -16,18 +16,7 @@ type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
   const { data: session } = useSession();
-  const [userId] = useState(() => {
-    // Get or create guest user ID
-    if (typeof window !== 'undefined') {
-      let guestId = localStorage.getItem('guestUserId');
-      if (!guestId) {
-        guestId = `guest_${Date.now()}`;
-        localStorage.setItem('guestUserId', guestId);
-      }
-      return guestId;
-    }
-    return `guest_${Date.now()}`;
-  });
+  const [userId] = useState(() => `user_${Date.now()}`); // Temp user ID until auth
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
