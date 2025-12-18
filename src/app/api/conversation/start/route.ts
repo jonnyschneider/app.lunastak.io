@@ -15,16 +15,17 @@ IMPORTANT: Output ONLY the question itself. No preambles like "I'm happy to help
 
 export async function POST(req: Request) {
   try {
-    const { userId: guestUserId, variantOverride } = await req.json();
+    const { userId: tempUserId, variantOverride } = await req.json();
 
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
 
-    // Use authenticated user ID if logged in, otherwise use guest ID for tracking
-    const userId = session?.user?.id || guestUserId || `guest_${Date.now()}`;
+    // Only use userId if user is authenticated (User exists in DB)
+    // For guests, userId will be null
+    const userId = session?.user?.id || null;
 
-    // For statsig, use the same userId
-    const statsigUserId = userId;
+    // For statsig, use actual userId or temp ID for guests (statsig needs an ID for variant assignment)
+    const statsigUserId = userId || tempUserId || `guest_${Date.now()}`;
 
     // Determine experiment variant (with optional override)
     const experimentVariant = await getExperimentVariant(statsigUserId, variantOverride);
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
-        userId, // Guest ID (e.g. "guest_1234567890") for guests, real User.id for authenticated users
+        userId, // null for guests, real User.id for authenticated users
         status: 'in_progress',
         experimentVariant,
       },
