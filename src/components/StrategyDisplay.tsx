@@ -202,7 +202,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Objectives
               </h3>
               <button
-                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). Each should include a clear metric and target.\n\n**Like this...**\nImprove relevance by understanding content\n\n**Not this...**\nIncrease customer satisfaction')}
+                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging, tied to your mission. Add specificity with direction (↑/↓), metric name, and timeframe.\n\n**Like this...**\nImprove relevance by understanding content\n↑ Search accuracy  [12M]\n\n**Not this...**\nIncrease customer satisfaction')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Objectives"
               >
@@ -227,9 +227,22 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">
                   {objective.pithy}
                 </p>
+                {objective.metric.direction && objective.metric.metricName && objective.metric.timeframe && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      {objective.metric.direction === 'increase' ? '↑' : '↓'}
+                    </span>
+                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                      {objective.metric.metricName}
+                    </span>
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
+                      {objective.metric.timeframe}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
