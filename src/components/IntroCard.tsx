@@ -33,7 +33,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
             <p className="whitespace-pre-wrap">
               I help founders and business leaders clarify their strategic thinking.
               {'\n\n'}
-              Through a short conversation, I'll help you articulate your vision, mission, and strategic objectives.
+              Through a short conversation, I'll help you articulate your vision, strategy, and objectives.
               {'\n\n'}
               How would you like to start?
             </p>

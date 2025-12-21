@@ -37,7 +37,7 @@ export interface Principle {
 
 export interface StrategyStatements {
   vision: string;
-  mission: string;
+  strategy: string;
   objectives: Objective[];
   initiatives: Initiative[];
   principles: Principle[];
