@@ -30,8 +30,24 @@ async function regenerateRemote(traceId: string, baseUrl: string = 'http://local
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        const error = await response.json();
+        throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
+      } else {
+        const text = await response.text();
+        console.error('\nReceived HTML response (API route may not be deployed):');
+        console.error(text.substring(0, 500));
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - API route may not be deployed yet`);
+      }
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      const text = await response.text();
+      console.error('\nReceived non-JSON response:');
+      console.error(text.substring(0, 500));
+      throw new Error('API returned HTML instead of JSON - route may not be deployed');
     }
 
     const data = await response.json();
