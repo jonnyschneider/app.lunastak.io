@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FakeDoorDialog } from './FakeDoorDialog';
+import { InfoDialog } from './InfoDialog';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -24,6 +25,11 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
     name: string;
     description: string;
     feature: string;
+  } | null>(null);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [infoDialogConfig, setInfoDialogConfig] = useState<{
+    title: string;
+    content: string;
   } | null>(null);
 
   // Handle legacy objectives (string[]) by converting to new format
@@ -94,13 +100,12 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
       }),
     }).catch(err => console.error('Failed to log event:', err));
 
-    // Info modal - using fake door for now
-    setFakeDoorConfig({
-      name: element,
-      description: content,
-      feature: `info-${element}`,
+    // Show info dialog
+    setInfoDialogConfig({
+      title: element,
+      content: content,
     });
-    setFakeDoorOpen(true);
+    setInfoDialogOpen(true);
   };
 
   return (
@@ -308,6 +313,15 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           featureName={fakeDoorConfig.name}
           description={fakeDoorConfig.description}
           onInterest={handleFakeDoorInterest}
+        />
+      )}
+
+      {infoDialogConfig && (
+        <InfoDialog
+          open={infoDialogOpen}
+          onOpenChange={setInfoDialogOpen}
+          title={infoDialogConfig.title}
+          content={infoDialogConfig.content}
         />
       )}
     </div>
