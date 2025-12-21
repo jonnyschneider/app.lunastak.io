@@ -10,6 +10,10 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { IntroCard } from '@/components/IntroCard';
 import { RegistrationBanner } from '@/components/RegistrationBanner';
 import { FeedbackModal } from '@/components/FeedbackModal';
+import { DocumentUpload } from '@/components/DocumentUpload';
+import { DocumentSummary } from '@/components/DocumentSummary';
+import { EntryPointSelector } from '@/components/EntryPointSelector';
+import { FakeDoorDialog } from '@/components/FakeDoorDialog';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
@@ -434,8 +438,35 @@ export default function Home() {
     <AppLayout experimentVariant={experimentVariant}>
       <main className="h-full bg-gray-50 dark:bg-zinc-900 flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
-          {showIntro && (
-            <IntroCard onStartClick={handleStartClick} isLoading={isLoading} />
+          {showIntro && flowStep === 'intro' && (
+            <IntroCard onEntryPointSelect={handleEntryPointSelect} isLoading={isLoading} />
+          )}
+
+          {flowStep === 'upload' && (
+            <div className="flex-1 flex items-center justify-center">
+              <DocumentUpload
+                onUploadComplete={handleDocumentUploadComplete}
+                onError={handleDocumentUploadError}
+              />
+              {uploadError && (
+                <div className="mt-4 max-w-md mx-auto p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {uploadError}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {flowStep === 'document-summary' && documentSummary && (
+            <div className="flex-1 flex items-center justify-center">
+              <DocumentSummary
+                filename={documentContext?.filename || 'your document'}
+                summary={documentSummary}
+                onContinue={handleDocumentSummaryContinue}
+                onRetry={handleDocumentSummaryRetry}
+              />
+            </div>
           )}
 
           {!showIntro && flowStep === 'chat' && (
@@ -504,6 +535,16 @@ export default function Home() {
             <FeedbackModal
               traceId={traceId}
               onClose={() => setShowFeedbackModal(false)}
+            />
+          )}
+
+          {fakeDoorFeature && (
+            <FakeDoorDialog
+              open={fakeDoorOpen}
+              onOpenChange={setFakeDoorOpen}
+              featureName={fakeDoorFeature.name}
+              description={fakeDoorFeature.description}
+              onInterest={handleFakeDoorInterest}
             />
           )}
         </div>
