@@ -102,6 +102,8 @@ export function convertLegacyObjectives(legacyObjectives: string[]): Objective[]
     { direction: 'increase' as const, metricName: 'Market share', timeframe: '12M' as const },
     { direction: 'increase' as const, metricName: 'User engagement', timeframe: '3M' as const },
     { direction: 'decrease' as const, metricName: 'Cost per acquisition', timeframe: '6M' as const },
+    { direction: 'increase' as const, metricName: 'Partnerships', timeframe: '12M' as const },
+    { direction: 'increase' as const, metricName: 'Adjacent expansion', timeframe: '18M' as const },
   ];
 
   return legacyObjectives.map((obj, index) => {
