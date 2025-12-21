@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import {
@@ -9,6 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FakeDoorDialog } from './FakeDoorDialog';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -18,6 +19,13 @@ interface StrategyDisplayProps {
 }
 
 export default function StrategyDisplay({ strategy, thoughts, conversationId, traceId }: StrategyDisplayProps) {
+  const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
+  const [fakeDoorConfig, setFakeDoorConfig] = useState<{
+    name: string;
+    description: string;
+    feature: string;
+  } | null>(null);
+
   // Handle legacy objectives (string[]) by converting to new format
   const objectives: Objective[] = useMemo(() => {
     if (strategy.objectives.length === 0) return [];
@@ -34,7 +42,31 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
   const handleFakeDoor = async (feature: string) => {
     console.log(`[Baseline] User clicked: ${feature}`);
 
-    // Log to database
+    const featureConfig: Record<string, { name: string; description: string }> = {
+      'Edit Vision': {
+        name: 'Edit Vision',
+        description: 'Edit and refine your vision statement.\n\nThis feature would let you directly modify the vision and regenerate related elements.',
+      },
+      'Edit Mission': {
+        name: 'Edit Mission',
+        description: 'Edit and refine your mission statement.\n\nThis feature would let you directly modify the mission and regenerate related elements.',
+      },
+      'Edit Objective': {
+        name: 'Edit Objectives',
+        description: 'Edit and refine your strategic objectives.\n\nThis feature would let you modify, add, or remove objectives with smart regeneration.',
+      },
+    };
+
+    setFakeDoorConfig({
+      ...featureConfig[feature],
+      feature,
+    });
+    setFakeDoorOpen(true);
+  };
+
+  const handleFakeDoorInterest = async () => {
+    if (!fakeDoorConfig) return;
+
     await fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,11 +74,11 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         conversationId,
         traceId,
         eventType: 'fake_door_click',
-        eventData: { feature },
+        eventData: { feature: fakeDoorConfig.feature },
       }),
     }).catch(err => console.error('Failed to log event:', err));
 
-    alert(`${feature} feature coming soon!`);
+    console.log(`User interested in: ${fakeDoorConfig.name}`);
   };
 
   const showInfoModal = async (element: string, content: string) => {
@@ -62,7 +94,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
       }),
     }).catch(err => console.error('Failed to log event:', err));
 
-    alert(content);
+    // Info modal - using fake door for now
+    setFakeDoorConfig({
+      name: element,
+      description: content,
+      feature: `info-${element}`,
+    });
+    setFakeDoorOpen(true);
   };
 
   return (
@@ -262,6 +300,16 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           </div>
         </div>
       </div>
+
+      {fakeDoorConfig && (
+        <FakeDoorDialog
+          open={fakeDoorOpen}
+          onOpenChange={setFakeDoorOpen}
+          featureName={fakeDoorConfig.name}
+          description={fakeDoorConfig.description}
+          onInterest={handleFakeDoorInterest}
+        />
+      )}
     </div>
   );
 }
