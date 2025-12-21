@@ -166,6 +166,47 @@ export default function Home() {
     console.log(`User interested in: ${fakeDoorFeature.name}`);
   };
 
+  const handleDocumentUploadComplete = async (data: {
+    conversationId: string;
+    summary: string;
+    filename: string;
+  }) => {
+    // Store conversation ID and document data
+    setConversationId(data.conversationId);
+    setDocumentSummary(data.summary);
+    // Document context will be stored on server, we just need the summary for display
+    setFlowStep('document-summary');
+  };
+
+  const handleDocumentUploadError = (error: string) => {
+    setUploadError(error);
+    // Stay on upload screen, show error
+  };
+
+  const handleDocumentSummaryContinue = async () => {
+    // Move to chat with document context already loaded on server
+    setFlowStep('chat');
+
+    // Fetch first message (which will be context-aware based on document)
+    try {
+      const response = await fetch(`/api/conversation/${conversationId}/messages`);
+      const data = await response.json();
+
+      if (data.messages && data.messages.length > 0) {
+        setMessages(data.messages);
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  };
+
+  const handleDocumentSummaryRetry = () => {
+    // Go back to upload screen
+    setFlowStep('upload');
+    setDocumentSummary('');
+    setUploadError('');
+  };
+
   const startConversation = async () => {
     setIsLoading(true);
     try {
