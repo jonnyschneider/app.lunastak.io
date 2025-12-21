@@ -202,7 +202,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Objectives
               </h3>
               <button
-                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging, tied to your strategy. Add specificity with direction (↑/↓), metric name, and timeframe.\n\n**Like this...**\nImprove relevance by understanding content\n↑ Search accuracy  [12M]\n\n**Not this...**\nIncrease customer satisfaction')}
+                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging. The timeframe appears in the top-left corner. Metric details (direction, name, value) appear below.\n\n**Like this...**\n[12M] Improve relevance by understanding content\n↑ Search accuracy | 30% lift in user satisfaction\n\n**Not this...**\nIncrease search accuracy by 30% in 12 months')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Objectives"
               >
@@ -218,6 +218,14 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 key={objective.id}
                 className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative group"
               >
+                {/* Timeframe badge - top left */}
+                {objective.metric.timeframe && (
+                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
+                    {objective.metric.timeframe}
+                  </span>
+                )}
+
+                {/* Edit button - top right */}
                 <button
                   onClick={() => handleFakeDoor('Edit Objective')}
                   className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors opacity-0 group-hover:opacity-100"
@@ -227,20 +235,29 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">
+
+                {/* Objective text */}
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3 mt-6">
                   {objective.pithy}
                 </p>
-                {objective.metric.direction && objective.metric.metricName && objective.metric.timeframe && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-zinc-600 dark:text-zinc-400">
+
+                {/* Metric information */}
+                {objective.metric.direction && objective.metric.metricName && (
+                  <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                    <span>
                       {objective.metric.direction === 'increase' ? '↑' : '↓'}
                     </span>
-                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                    <span className="font-medium">
                       {objective.metric.metricName}
                     </span>
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
-                      {objective.metric.timeframe}
-                    </span>
+                    {objective.metric.metricValue && (
+                      <>
+                        <span>|</span>
+                        <span>
+                          {objective.metric.metricValue}
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

@@ -11,6 +11,7 @@ export interface ObjectiveMetric {
   // New format for cleaner display
   direction?: 'increase' | 'decrease';  // ↑ or ↓
   metricName?: string;   // "Revenue", "Customer churn", "Market share"
+  metricValue?: string;  // "from 20% to 35%", "Achieve profitability", "$10M ARR"
   timeframe?: '3M' | '6M' | '9M' | '12M' | '18M';  // Planning horizon
 }
 

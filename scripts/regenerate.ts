@@ -105,12 +105,9 @@ async function regenerate(traceId: string) {
   console.log('✓ Loaded original trace');
   console.log(`  Conversation: ${originalTrace.conversationId}`);
   console.log(`  Model: ${originalTrace.modelUsed}`);
-  if (originalTrace.createdAt) {
-    console.log(`  Created: ${originalTrace.createdAt.toISOString()}`);
-  }
   console.log();
 
-  const context = originalTrace.extractedContext as ExtractedContextVariant;
+  const context = originalTrace.extractedContext as unknown as ExtractedContextVariant;
   let prompt: string;
 
   // Build prompt based on context type
@@ -205,7 +202,7 @@ async function regenerate(traceId: string) {
     data: {
       conversationId: originalTrace.conversationId,
       userId: originalTrace.userId,
-      extractedContext: originalTrace.extractedContext,
+      extractedContext: originalTrace.extractedContext as any,
       output: statements as any,
       claudeThoughts: thoughts,
       modelUsed: CLAUDE_MODEL,
