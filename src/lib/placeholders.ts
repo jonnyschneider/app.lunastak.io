@@ -94,15 +94,33 @@ export function generatePlaceholderPrinciples(): Principle[] {
 }
 
 export function convertLegacyObjectives(legacyObjectives: string[]): Objective[] {
-  return legacyObjectives.map((obj, index) => ({
-    id: `obj-${index + 1}`,
-    pithy: obj,
-    metric: {
-      summary: '25%', // Placeholder
-      full: 'Increase by 25% within 6 months',
-      category: 'Growth',
-    },
-    explanation: `This objective focuses on ${obj.toLowerCase()}. It connects to our overall strategy by driving key outcomes that matter to stakeholders.`,
-    successCriteria: 'Achievement will be measured through quantifiable metrics and stakeholder feedback.',
-  }));
+  // Variety of metric configurations for realistic display
+  const metricConfigs = [
+    { direction: 'increase' as const, metricName: 'Revenue', timeframe: '12M' as const },
+    { direction: 'increase' as const, metricName: 'Customer acquisition', timeframe: '6M' as const },
+    { direction: 'decrease' as const, metricName: 'Customer churn', timeframe: '9M' as const },
+    { direction: 'increase' as const, metricName: 'Market share', timeframe: '12M' as const },
+    { direction: 'increase' as const, metricName: 'User engagement', timeframe: '3M' as const },
+    { direction: 'decrease' as const, metricName: 'Cost per acquisition', timeframe: '6M' as const },
+  ];
+
+  return legacyObjectives.map((obj, index) => {
+    const config = metricConfigs[index % metricConfigs.length];
+
+    return {
+      id: `obj-${index + 1}`,
+      pithy: obj,
+      metric: {
+        summary: '25%',
+        full: 'Increase by 25% within 6 months',
+        category: 'Growth',
+        // New visual format fields
+        direction: config.direction,
+        metricName: config.metricName,
+        timeframe: config.timeframe,
+      },
+      explanation: `This objective focuses on ${obj.toLowerCase()}. It connects to our overall strategy by driving key outcomes that matter to stakeholders.`,
+      successCriteria: 'Achievement will be measured through quantifiable metrics and stakeholder feedback.',
+    };
+  });
 }
