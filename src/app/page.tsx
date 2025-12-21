@@ -111,6 +111,61 @@ export default function Home() {
     startConversation();
   };
 
+  const handleEntryPointSelect = async (option: 'guided' | 'document' | 'canvas' | 'fast-track') => {
+    // Log entry point selection
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId: conversationId || 'no-conversation-yet',
+        eventType: 'entry_point_selected',
+        eventData: { option },
+      }),
+    }).catch(err => console.error('Failed to log event:', err));
+
+    if (option === 'guided') {
+      // Start normal conversation flow
+      startConversation();
+    } else if (option === 'document') {
+      // Show document upload
+      setFlowStep('upload');
+      setShowIntro(false);
+    } else {
+      // Fake doors (canvas or fast-track)
+      const fakeDoorConfig = {
+        canvas: {
+          name: 'Decision Stack Canvas',
+          description: 'Build your strategy using a blank Decision Stack template.\n\nThis feature would let you directly fill in Vision, Mission, Objectives, Initiatives, and Principles in a visual canvas interface.',
+          eventData: { feature: 'canvas' },
+        },
+        'fast-track': {
+          name: 'Fast Track',
+          description: 'Quick multiple choice questions with targeted follow-ups.\n\nThis feature would streamline the conversation with pre-defined options and smart branching.',
+          eventData: { feature: 'fast-track' },
+        },
+      };
+
+      setFakeDoorFeature(fakeDoorConfig[option]);
+      setFakeDoorOpen(true);
+    }
+  };
+
+  const handleFakeDoorInterest = async () => {
+    if (!fakeDoorFeature || !conversationId) return;
+
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        eventType: 'fake_door_click',
+        eventData: fakeDoorFeature.eventData,
+      }),
+    }).catch(err => console.error('Failed to log event:', err));
+
+    console.log(`User interested in: ${fakeDoorFeature.name}`);
+  };
+
   const startConversation = async () => {
     setIsLoading(true);
     try {
