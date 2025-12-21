@@ -138,7 +138,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => showInfoModal('Vision', 'A Vision statement describes your aspirational future state (3+ years). It should be customer-centric, specific, and inspiring but grounded in reality.\n\nGood: "To be the trusted platform that empowers 1M creators to build sustainable businesses"\nWooden: "To be the best-in-class solution provider"')}
+                onClick={() => showInfoModal('Vision', 'A Vision statement describes your aspirational future state (3+ years). It should be customer-centric, specific, and inspiring but grounded in reality.\n\n**Like this...**\nTo organize the world\'s information and make it universally accessible and useful\n\n**Not this...**\nTo be the best-in-class solution provider')}
                 className="text-zinc-500 hover:text-zinc-300 transition-colors"
                 title="Learn about Vision statements"
               >
@@ -170,7 +170,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => showInfoModal('Mission', 'A Mission statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\nGood: "Build systematic demand through expert evaluation, develop trusted partnerships for delivery, create predictable foundations"\nWooden: "Provide innovative solutions to customers"')}
+                onClick={() => showInfoModal('Mission', 'A Mission statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\n**Like this...**\nTo capture an unrivalled store of data, understand it, and leverage it to better deliver what users want, when they want it.\n\n**Not this...**\nProvide innovative solutions to customers')}
                 className="text-zinc-400 hover:text-zinc-200 transition-colors"
                 title="Learn about Mission statements"
               >
@@ -202,7 +202,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Objectives
               </h3>
               <button
-                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). Each should include a clear metric and target.\n\nGood: "100% of engagements address next-order strategic challenges"\nWooden: "Increase customer satisfaction"')}
+                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). Each should include a clear metric and target.\n\n**Like this...**\nImprove relevance by understanding content\n\n**Not this...**\nIncrease customer satisfaction')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Objectives"
               >
@@ -243,7 +243,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Initiatives
               </h3>
               <button
-                onClick={() => showInfoModal('Initiatives', 'Initiatives are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\nGood: "Launch Sniff Test offering (3 months) → Package, price <$1k, run 3-5 pilots"\nWooden: "Improve product features"')}
+                onClick={() => showInfoModal('Initiatives', 'Initiatives are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\n**Like this...**\nLaunch knowledge graph indexing (Q2) → Index 500M entities, integrate with search results, measure relevance lift\n\n**Not this...**\nImprove product features')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Initiatives"
               >
@@ -274,7 +274,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Principles
               </h3>
               <button
-                onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\nGood: "Strategic clients even over any paying client"\nWooden: "We value quality and excellence"')}
+                onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\n**Like this...**\nUser experience even over short-term revenue\n\n**Not this...**\nWe value quality and excellence')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Principles"
               >
