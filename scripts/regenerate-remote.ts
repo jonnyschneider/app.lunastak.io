@@ -12,6 +12,11 @@
  */
 
 async function regenerateRemote(traceId: string, baseUrl: string = 'http://localhost:3000') {
+  // Ensure URL has protocol
+  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    baseUrl = `https://${baseUrl}`;
+  }
+
   console.log(`\n🔄 Regenerating strategy from trace: ${traceId}`);
   console.log(`📡 Using endpoint: ${baseUrl}/api/admin/regenerate\n`);
 
