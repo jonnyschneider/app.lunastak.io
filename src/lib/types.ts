@@ -8,6 +8,10 @@ export interface ObjectiveMetric {
   summary: string;        // "25%" or "Growth" - shown on front
   full: string;          // "Increase revenue by 25% in Q1 2025"
   category: string;      // "Revenue", "Customer", "Product", etc.
+  // New format for cleaner display
+  direction?: 'increase' | 'decrease';  // ↑ or ↓
+  metricName?: string;   // "Revenue", "Customer churn", "Market share"
+  timeframe?: '3M' | '6M' | '9M' | '12M' | '18M';  // Planning horizon
 }
 
 export interface Objective {
