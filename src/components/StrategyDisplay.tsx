@@ -53,9 +53,9 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         name: 'Edit Vision',
         description: 'Edit and refine your vision statement.\n\nThis feature would let you directly modify the vision and regenerate related elements.',
       },
-      'Edit Mission': {
-        name: 'Edit Mission',
-        description: 'Edit and refine your mission statement.\n\nThis feature would let you directly modify the mission and regenerate related elements.',
+      'Edit Strategy': {
+        name: 'Edit Strategy',
+        description: 'Edit and refine your strategy statement.\n\nThis feature would let you directly modify the strategy and regenerate related elements.',
       },
       'Edit Objective': {
         name: 'Edit Objectives',
@@ -162,26 +162,26 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           </p>
         </div>
 
-        {/* Mission Card */}
+        {/* Strategy Card */}
         <div className="bg-zinc-700 dark:bg-zinc-600 rounded-lg p-6 shadow-sm relative group">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
-              Mission
+              Strategy
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => showInfoModal('Mission', 'A Mission statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\n**Like this...**\nTo capture an unrivalled store of data, understand it, and leverage it to better deliver what users want, when they want it.\n\n**Not this...**\nProvide innovative solutions to customers')}
+                onClick={() => showInfoModal('Strategy', 'A Strategy statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\n**Like this...**\nTo capture an unrivalled store of data, understand it, and leverage it to better deliver what users want, when they want it.\n\n**Not this...**\nProvide innovative solutions to customers')}
                 className="text-zinc-400 hover:text-zinc-200 transition-colors"
-                title="Learn about Mission statements"
+                title="Learn about Strategy statements"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </button>
               <button
-                onClick={() => handleFakeDoor('Edit Mission')}
+                onClick={() => handleFakeDoor('Edit Strategy')}
                 className="text-zinc-400 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
-                title="Edit Mission"
+                title="Edit Strategy"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -190,7 +190,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             </div>
           </div>
           <p className="text-lg font-medium text-white leading-relaxed">
-            {strategy.mission}
+            {strategy.strategy}
           </p>
         </div>
 
@@ -202,7 +202,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Objectives
               </h3>
               <button
-                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging, tied to your mission. Add specificity with direction (↑/↓), metric name, and timeframe.\n\n**Like this...**\nImprove relevance by understanding content\n↑ Search accuracy  [12M]\n\n**Not this...**\nIncrease customer satisfaction')}
+                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging, tied to your strategy. Add specificity with direction (↑/↓), metric name, and timeframe.\n\n**Like this...**\nImprove relevance by understanding content\n↑ Search accuracy  [12M]\n\n**Not this...**\nIncrease customer satisfaction')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Objectives"
               >

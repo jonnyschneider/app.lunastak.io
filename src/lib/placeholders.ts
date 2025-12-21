@@ -102,7 +102,7 @@ export function convertLegacyObjectives(legacyObjectives: string[]): Objective[]
       full: 'Increase by 25% within 6 months',
       category: 'Growth',
     },
-    explanation: `This objective focuses on ${obj.toLowerCase()}. It connects to our overall mission by driving key outcomes that matter to stakeholders.`,
+    explanation: `This objective focuses on ${obj.toLowerCase()}. It connects to our overall strategy by driving key outcomes that matter to stakeholders.`,
     successCriteria: 'Achievement will be measured through quantifiable metrics and stakeholder feedback.',
   }));
 }
