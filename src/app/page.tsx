@@ -12,7 +12,7 @@ import { RegistrationBanner } from '@/components/RegistrationBanner';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
-type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy';
+type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -20,7 +20,7 @@ export default function Home() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [flowStep, setFlowStep] = useState<FlowStep>('chat');
+  const [flowStep, setFlowStep] = useState<FlowStep>('intro');
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null);
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
