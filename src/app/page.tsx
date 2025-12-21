@@ -28,6 +28,18 @@ export default function Home() {
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
   const [showIntro, setShowIntro] = useState(true);
+  const [documentContext, setDocumentContext] = useState<{
+    extractedText: string;
+    filename: string;
+  } | null>(null);
+  const [documentSummary, setDocumentSummary] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
+  const [fakeDoorFeature, setFakeDoorFeature] = useState<{
+    name: string;
+    description: string;
+    eventData: Record<string, any>;
+  } | null>(null);
   const [showRegistrationBanner, setShowRegistrationBanner] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
