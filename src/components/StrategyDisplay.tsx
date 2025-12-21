@@ -227,16 +227,8 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
-                <div className="mb-3">
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded">
-                    {objective.metric.category}
-                  </span>
-                </div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {objective.pithy}
-                </p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 font-mono">
-                  {objective.metric.full}
                 </p>
               </div>
             ))}
