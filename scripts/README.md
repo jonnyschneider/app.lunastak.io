@@ -1,8 +1,16 @@
 # Development Scripts
 
-## regenerate.ts
+## Regeneration Scripts
 
-Regenerate strategy from existing trace context without going through the full conversation flow.
+Two ways to regenerate strategies from existing traces:
+
+### 1. regenerate.ts (Local Database)
+
+Direct database access for local development.
+
+### 2. regenerate-remote.ts (API Endpoint)
+
+Works with any environment (local, preview, production) via HTTP API.
 
 ### Use Cases
 
@@ -10,6 +18,12 @@ Regenerate strategy from existing trace context without going through the full c
 - **Model comparison**: Test different models against the same context
 - **Quick iteration**: Skip time-consuming Q&A and extractions during development
 - **A/B testing**: Generate multiple variations from the same context
+
+---
+
+## Local Regeneration (regenerate.ts)
+
+**When to use:** Local development with direct database access
 
 ### Usage
 
@@ -24,8 +38,49 @@ npx tsx scripts/regenerate.ts <traceId>
 ### Example
 
 ```bash
-npm run regen clxyz123abc456def789
+npm run regen cm59hqx9z0001v8rnc2xjt9l4
 ```
+
+---
+
+## Remote Regeneration (regenerate-remote.ts)
+
+**When to use:** Preview/production environments, or testing against deployed instances
+
+### Usage
+
+```bash
+# Local (default)
+npm run regen:remote <traceId>
+
+# Preview/Production
+npm run regen:remote <traceId> <baseUrl>
+```
+
+### Examples
+
+```bash
+# Local
+npm run regen:remote cm59hqx9z0001v8rnc2xjt9l4
+
+# Preview deployment
+npm run regen:remote cm59hqx9z0001v8rnc2xjt9l4 https://dc-agent-v4-git-development-jonnyschneider.vercel.app
+
+# Production
+npm run regen:remote cm59hqx9z0001v8rnc2xjt9l4 https://dc-agent-v4.vercel.app
+```
+
+### API Endpoint
+
+The remote script calls `POST /api/admin/regenerate`:
+
+```bash
+curl -X POST https://your-domain.com/api/admin/regenerate \
+  -H "Content-Type: application/json" \
+  -d '{"traceId": "cm59hqx9z0001v8rnc2xjt9l4"}'
+```
+
+---
 
 ### What it does
 
