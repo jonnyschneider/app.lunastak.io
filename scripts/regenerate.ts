@@ -105,7 +105,10 @@ async function regenerate(traceId: string) {
   console.log('✓ Loaded original trace');
   console.log(`  Conversation: ${originalTrace.conversationId}`);
   console.log(`  Model: ${originalTrace.modelUsed}`);
-  console.log(`  Created: ${originalTrace.createdAt.toISOString()}\n`);
+  if (originalTrace.createdAt) {
+    console.log(`  Created: ${originalTrace.createdAt.toISOString()}`);
+  }
+  console.log();
 
   const context = originalTrace.extractedContext as ExtractedContextVariant;
   let prompt: string;
