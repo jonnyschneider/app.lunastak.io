@@ -1,16 +1,32 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
+import { EntryPointSelector } from './EntryPointSelector';
+
+type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 
 interface IntroCardProps {
-  onStartClick: () => void
-  isLoading?: boolean
+  onEntryPointSelect: (option: EntryPoint) => void;
+  isLoading?: boolean;
 }
 
-export function IntroCard({ onStartClick, isLoading = false }: IntroCardProps) {
+export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardProps) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full max-w-3xl mx-auto">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex justify-start">
+            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
+              <p className="text-zinc-500 dark:text-zinc-400">Thinking...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full max-w-3xl mx-auto">
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Assistant intro message bubble */}
         <div className="flex justify-start">
           <div className="max-w-[80%] bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-lg p-4">
@@ -19,29 +35,18 @@ export function IntroCard({ onStartClick, isLoading = false }: IntroCardProps) {
               {'\n\n'}
               Through a short conversation, I'll help you articulate your vision, mission, and strategic objectives.
               {'\n\n'}
-              Ready when you are.
+              How would you like to start?
             </p>
           </div>
         </div>
 
-        {/* Thinking state or button */}
-        {isLoading ? (
-          <div className="flex justify-start">
-            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
-              <p className="text-zinc-500 dark:text-zinc-400">Thinking...</p>
-            </div>
+        {/* Entry point options */}
+        <div className="flex justify-start">
+          <div className="w-full max-w-2xl">
+            <EntryPointSelector onSelect={onEntryPointSelect} />
           </div>
-        ) : (
-          <div className="flex justify-start">
-            <button
-              onClick={onStartClick}
-              className="px-6 py-3 border border-zinc-800 dark:border-zinc-300 text-zinc-800 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-            >
-              let's begin
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
-  )
+  );
 }
