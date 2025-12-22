@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+---
+
+## [1.2.0] - 2025-12-22
+
+### Added - Cold Start Entry Points
+- **Four Entry Point Options** - Multiple on-ramps to solve cold start problem
+  - Guided Conversation (live) - Traditional Q&A flow
+  - Upload Document (live) - Extract from PDFs, DOCX, TXT, MD files
+  - Start from Canvas (fake door) - Visual strategy builder validation
+  - Fast Track (fake door) - Quick multiple choice validation
+- **Document Upload & Extraction** - unstructured.io integration
+  - Drag-and-drop file upload with validation (10MB max)
+  - AI-generated document summary before starting
+  - Context-aware first question based on uploaded content
+  - Document stored as system message for continuous reference
+- **Redesigned Objective Cards** - Cleaner, more engaging SMART goals
+  - Timeframe badge in top-left corner (3M/6M/9M/12M/18M)
+  - Objective text decoupled from metrics and timeframes
+  - Metric display: `↑ Market share | from 20% to 35%`
+  - Intelligent parser extracts metrics from Claude-generated text
+  - Supports flexible formats: percentages, currency, counts, qualitative
+- **Info Dialog Component** - Separated educational content from fake doors
+  - Bold text formatting support for markdown-style `**text**`
+  - Real Google Decision Stack examples
+  - No voting buttons (distinct from FakeDoorDialog)
+- **Regeneration Tools** - Developer productivity for testing
+  - Local script: `npm run regen <traceId>` for direct DB access
+  - Remote API: `npm run regen:remote <traceId> [baseUrl]` for preview/prod
+  - `/api/admin/regenerate` endpoint works on any deployment
+  - Perfect for testing prompt changes without redoing Q&A
+
+### Changed
+- **Terminology Correction** - Renamed "Mission" to "Strategy" throughout
+  - More accurate reflection of coherent choices concept
+  - Updated types, UI labels, API prompts, XML tags
+- **Enhanced Info Popovers** - Better examples and formatting
+  - "Like this..." and "Not this..." headings (was "Good/Wooden")
+  - Real-world Google examples for all Decision Stack elements
+
+### Technical
+- New dependencies: `unstructured-client`, `react-dropzone`, `tsx`
+- New components: EntryPointSelector, DocumentUpload, DocumentSummary, FakeDoorDialog, InfoDialog
+- New API routes: `/api/upload-document`, `/api/admin/regenerate`
+- Event tracking: `entry_point_selected`, `document_uploaded`
+- Environment: `UNSTRUCTURED_API_KEY` required for document upload
+- Type updates: Added `direction`, `metricName`, `metricValue`, `timeframe` to ObjectiveMetric
+
+---
+
 ## [1.1.0] - 2025-12-17
 
 ### Added - E1a: Emergent Extraction

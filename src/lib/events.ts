@@ -4,7 +4,9 @@ export type EventType =
   | 'fake_door_click'
   | 'info_icon_view'
   | 'extraction_choice'
-  | 'quality_rating';
+  | 'quality_rating'
+  | 'entry_point_selected'
+  | 'document_uploaded';
 
 interface LogEventParams {
   conversationId: string;

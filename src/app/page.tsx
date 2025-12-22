@@ -10,9 +10,13 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { IntroCard } from '@/components/IntroCard';
 import { RegistrationBanner } from '@/components/RegistrationBanner';
 import { FeedbackModal } from '@/components/FeedbackModal';
+import { DocumentUpload } from '@/components/DocumentUpload';
+import { DocumentSummary } from '@/components/DocumentSummary';
+import { EntryPointSelector } from '@/components/EntryPointSelector';
+import { FakeDoorDialog } from '@/components/FakeDoorDialog';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
-type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy';
+type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -20,7 +24,7 @@ export default function Home() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [flowStep, setFlowStep] = useState<FlowStep>('chat');
+  const [flowStep, setFlowStep] = useState<FlowStep>('intro');
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null);
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
@@ -28,6 +32,18 @@ export default function Home() {
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL');
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1');
   const [showIntro, setShowIntro] = useState(true);
+  const [documentContext, setDocumentContext] = useState<{
+    extractedText: string;
+    filename: string;
+  } | null>(null);
+  const [documentSummary, setDocumentSummary] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
+  const [fakeDoorFeature, setFakeDoorFeature] = useState<{
+    name: string;
+    description: string;
+    eventData: Record<string, any>;
+  } | null>(null);
   const [showRegistrationBanner, setShowRegistrationBanner] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
@@ -97,6 +113,102 @@ export default function Home() {
 
   const handleStartClick = () => {
     startConversation();
+  };
+
+  const handleEntryPointSelect = async (option: 'guided' | 'document' | 'canvas' | 'fast-track') => {
+    // Log entry point selection
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId: conversationId || 'no-conversation-yet',
+        eventType: 'entry_point_selected',
+        eventData: { option },
+      }),
+    }).catch(err => console.error('Failed to log event:', err));
+
+    if (option === 'guided') {
+      // Start normal conversation flow
+      startConversation();
+    } else if (option === 'document') {
+      // Show document upload
+      setFlowStep('upload');
+      setShowIntro(false);
+    } else {
+      // Fake doors (canvas or fast-track)
+      const fakeDoorConfig = {
+        canvas: {
+          name: 'Decision Stack Canvas',
+          description: 'Build your strategy using a blank Decision Stack template.\n\nThis feature would let you directly fill in Vision, Mission, Objectives, Initiatives, and Principles in a visual canvas interface.',
+          eventData: { feature: 'canvas' },
+        },
+        'fast-track': {
+          name: 'Fast Track',
+          description: 'Quick multiple choice questions with targeted follow-ups.\n\nThis feature would streamline the conversation with pre-defined options and smart branching.',
+          eventData: { feature: 'fast-track' },
+        },
+      };
+
+      setFakeDoorFeature(fakeDoorConfig[option]);
+      setFakeDoorOpen(true);
+    }
+  };
+
+  const handleFakeDoorInterest = async () => {
+    if (!fakeDoorFeature || !conversationId) return;
+
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        eventType: 'fake_door_click',
+        eventData: fakeDoorFeature.eventData,
+      }),
+    }).catch(err => console.error('Failed to log event:', err));
+
+    console.log(`User interested in: ${fakeDoorFeature.name}`);
+  };
+
+  const handleDocumentUploadComplete = async (data: {
+    conversationId: string;
+    summary: string;
+    filename: string;
+  }) => {
+    // Store conversation ID and document data
+    setConversationId(data.conversationId);
+    setDocumentSummary(data.summary);
+    // Document context will be stored on server, we just need the summary for display
+    setFlowStep('document-summary');
+  };
+
+  const handleDocumentUploadError = (error: string) => {
+    setUploadError(error);
+    // Stay on upload screen, show error
+  };
+
+  const handleDocumentSummaryContinue = async () => {
+    // Move to chat with document context already loaded on server
+    setFlowStep('chat');
+
+    // Fetch first message (which will be context-aware based on document)
+    try {
+      const response = await fetch(`/api/conversation/${conversationId}/messages`);
+      const data = await response.json();
+
+      if (data.messages && data.messages.length > 0) {
+        setMessages(data.messages);
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  };
+
+  const handleDocumentSummaryRetry = () => {
+    // Go back to upload screen
+    setFlowStep('upload');
+    setDocumentSummary('');
+    setUploadError('');
   };
 
   const startConversation = async () => {
@@ -326,8 +438,35 @@ export default function Home() {
     <AppLayout experimentVariant={experimentVariant}>
       <main className="h-full bg-gray-50 dark:bg-zinc-900 flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
-          {showIntro && (
-            <IntroCard onStartClick={handleStartClick} isLoading={isLoading} />
+          {showIntro && flowStep === 'intro' && (
+            <IntroCard onEntryPointSelect={handleEntryPointSelect} isLoading={isLoading} />
+          )}
+
+          {flowStep === 'upload' && (
+            <div className="flex-1 flex items-center justify-center">
+              <DocumentUpload
+                onUploadComplete={handleDocumentUploadComplete}
+                onError={handleDocumentUploadError}
+              />
+              {uploadError && (
+                <div className="mt-4 max-w-md mx-auto p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {uploadError}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {flowStep === 'document-summary' && documentSummary && (
+            <div className="flex-1 flex items-center justify-center">
+              <DocumentSummary
+                filename={documentContext?.filename || 'your document'}
+                summary={documentSummary}
+                onContinue={handleDocumentSummaryContinue}
+                onRetry={handleDocumentSummaryRetry}
+              />
+            </div>
           )}
 
           {!showIntro && flowStep === 'chat' && (
@@ -396,6 +535,16 @@ export default function Home() {
             <FeedbackModal
               traceId={traceId}
               onClose={() => setShowFeedbackModal(false)}
+            />
+          )}
+
+          {fakeDoorFeature && (
+            <FakeDoorDialog
+              open={fakeDoorOpen}
+              onOpenChange={setFakeDoorOpen}
+              featureName={fakeDoorFeature.name}
+              description={fakeDoorFeature.description}
+              onInterest={handleFakeDoorInterest}
             />
           )}
         </div>
