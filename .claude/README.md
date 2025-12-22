@@ -1,9 +1,9 @@
 # Decision Stack v4 - Developer Guide
 
-**Last Updated:** 2025-12-15
-**Current Status:** Baseline-v1 (Control Variant) - Production Deployment Complete
+**Last Updated:** 2025-12-22
+**Current Version:** v1.2.0 (unreleased - development branch)
 **Active Branch:** development
-**Production:** https://strategist.humventures.com.au
+**Production:** https://strategist.humventures.com.au (v1.1.0)
 
 ---
 
@@ -11,87 +11,86 @@
 
 ### 1. Read Current State (Start Here!)
 ```bash
-# Understand what exists NOW
-- docs/session-notes/_session-notes-combined.md  # What's been built (chronological)
-- docs/deployment/README.md                      # Deployment guide and current state
-- docs/experiments/EXPERIMENT_REGISTER.md        # Active experiments and variants
-- docs/journal/                                  # Research synthesis and learnings
+# Essential reading
+- CHANGELOG.md                           # What's been built (all versions)
+- CONTRIBUTING.md                        # Development workflow
+- docs/plans/                            # Recent design docs and implementation plans
 ```
 
 ### 2. Check Active Work
 ```bash
 # What's in progress
-- git status                          # Any uncommitted changes
-- git log -5 --online                # Recent commits
-- docs/experiments/EXPERIMENT_REGISTER.md  # Current experiment status
+- git status                             # Any uncommitted changes
+- git log -5 --oneline                  # Recent commits
+- CHANGELOG.md [Unreleased] section     # What's merged but not released
 ```
 
 ### 3. Review Historical Context (Optional)
 ```bash
-# Research and strategic thinking
-- docs/journal/                       # Synthesis journals (e.g., extraction-generation learnings)
-- docs/framework-reference/           # Quality criteria and Decision Stack examples
-- docs/plans/                         # Implementation plans from recent work
+# Deep dives on specific features
+- docs/session-notes/                    # Unplanned/iterative work notes
+- docs/experiments/EXPERIMENT_REGISTER.md # A/B test tracking
+- docs/journal/                          # Research synthesis
 ```
 
 ---
 
-## 📊 Current State (As Built)
+## 📊 Current State (v1.2.0 - Unreleased)
 
 ### What Exists Now
 
-**Baseline-v1 (Control Variant)** ✅
+**Cold Start Entry Points** ✅ (New in v1.2.0)
+- Four entry point options (Guided, Document Upload, Canvas, Fast Track)
+- Document upload with unstructured.io extraction (PDF, DOCX, TXT, MD)
+- AI-generated document summaries and context-aware first questions
+- Fake door validation for Canvas and Fast Track options
+- Separate InfoDialog for educational content vs FakeDoorDialog for feature validation
+
+**Redesigned Objective Display** ✅ (New in v1.2.0)
+- Timeframe badges in top-left (3M, 6M, 9M, 12M, 18M)
+- Objective text decoupled from metrics and timeframes
+- Visual metric display: `↑ Market share | from 20% to 35%`
+- Intelligent parser extracts metrics from Claude-generated text
+- Supports flexible formats (percentages, currency, counts, qualitative)
+
+**Developer Productivity Tools** ✅ (New in v1.2.0)
+- Regeneration scripts: `npm run regen <traceId>` for local testing
+- Remote API: `npm run regen:remote <traceId> [baseUrl]` for preview/prod
+- Perfect for testing prompt changes without redoing Q&A flow
+- Full documentation in `scripts/README.md`
+
+**Terminology Updates** ✅ (New in v1.2.0)
+- Renamed "Mission" to "Strategy" throughout codebase
+- Updated types, UI labels, API prompts, XML tags
+- Better reflects coherent choices concept
+
+**Baseline-v1 (Control Variant)** ✅ (v1.0.0)
 - Normalized, simplified conversation flow for systematic experimentation
 - 3-10 question adaptive flow with confidence-based stopping
-- Simplified multi-phase conversation: INITIAL → QUESTIONING → COMPLETE
 - Enhanced context extraction with enrichment + reflective summary
-- Honest UX about what we can generate (Vision, Mission, Objectives) vs future features (Initiatives, Principles)
+- Vision, Strategy, Objectives generation
+
+**E1a: Emergent Extraction** ✅ (v1.1.0)
+- Themes-based extraction (alternative to prescriptive fields)
+- Statsig feature flag integration for A/B testing
+- Dual schema support with type guards
+- Ready for data collection and comparison
 
 **Instrumentation & Measurement** ✅
-- Comprehensive event tracking (fake door clicks, info icon views, extraction choices)
+- Comprehensive event tracking (entry points, document uploads, fake doors, info views)
 - Quality rating system (researcher-only, binary good/bad)
-- Experiment variant tagging (baseline-v1, emergent-extraction, etc.)
-- User feedback (helpful/not helpful, separate from quality ratings)
+- Experiment variant tagging
+- User feedback (helpful/not helpful)
 - Jupyter notebook analysis workflow
-
-**Database Schema** ✅
-- Conversation tracking with phase management and variant tagging
-- Message history with confidence scores
-- Comprehensive trace logging with quality ratings
-- Event model for user interaction tracking
-
-**API Routes** ✅
-- `/api/conversation/start` - Initialize conversation with variant tagging
-- `/api/conversation/continue` - Simplified flow (INITIAL → QUESTIONING → COMPLETE)
-- `/api/conversation/assess-confidence` - Real-time confidence scoring
-- `/api/extract` - Enhanced context extraction (core + enrichment + reflective summary)
-- `/api/generate` - Strategy generation using enriched context
-- `/api/feedback` - User feedback collection (helpful/not helpful)
-- `/api/events` - Event logging for user interactions
-- `/api/quality-rating` - Researcher quality assessments (good/bad)
-
-**UI Components** ✅
-- ChatInterface - Multi-line conversation UI (8 rows, Cmd+Enter to send)
-- ExtractionConfirm - Context review with three-option UI (continue/flag for later/dismiss)
-- StrategyDisplay - Enhanced display with info icons, edit buttons (fake doors), accordion for Strategic Thinking
-- FeedbackButtons - Simple helpful/not helpful buttons
-- InfoModal - Educational content for Decision Stack elements
-- Simplified Objectives display (removed flip interaction, filter toggles)
-- Placeholder cards for Initiatives and Principles (fake door CTAs)
-
-**Analysis Workflow** ✅
-- Jupyter-based workflow for trace and event analysis
-- Python helper library (`scripts/trace_analysis.py`) with event loading
-- Starter notebook with experiment comparison examples
-- Quality rating and variant comparison capabilities
 
 ### Tech Stack (As Implemented)
 
 - **Frontend:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
 - **Database:** Vercel Postgres + Prisma ORM
 - **AI:** Claude API (claude-sonnet-4.5) via @anthropic-ai/sdk
-- **Visualization:** ReactFlow
-- **Deployment:** Vercel (main branch only via vercel.json)
+- **Document Processing:** unstructured.io API for file extraction
+- **Experiments:** Statsig for A/B testing
+- **Deployment:** Vercel (main branch auto-deploys)
 - **Analysis Tools:** Python + Jupyter + pandas + SQLAlchemy
 
 ---
@@ -100,34 +99,39 @@
 
 ### Current Status
 
-**Baseline-v1 Deployed** ✅
-- Production deployment at https://strategist.humventures.com.au
-- Comprehensive instrumentation and measurement in place
-- Ready for systematic experimentation
-- See: `docs/experiments/EXPERIMENT_REGISTER.md` for full experiment tracking
+**Development Branch** 🟡 In Progress
+- Cold start entry points complete and tested
+- Ready for squash merge to main
+- Will become v1.2.0 release
+- See: `CHANGELOG.md [Unreleased]` section
 
-### Active Experiments
+### Released Experiments
 
-**E0: Baseline-v1** 🟢 Complete
-- Status: Infrastructure validated through UAT, deployed to production
+**E0: Baseline-v1** 🟢 Complete (v1.0.0)
+- Status: Deployed to production
 - Purpose: Establishes normalized control for all future experiments
 - See: `docs/experiments/one-pagers/E0-baseline-v1.md`
 
-**E1: Emergent Extraction** ⚪ Planned (Next)
-- Hypothesis: Emergent theme extraction will produce less "wooden" outputs than prescriptive fields
-- Target: 10-15 participants for comparison with baseline-v1
+**E1a: Emergent Extraction** 🟢 Complete (v1.1.0)
+- Status: Deployed with Statsig feature flag
+- Hypothesis: Emergent theme extraction produces less "wooden" outputs
+- Target: 10-15 participants per variant
+- See: `docs/experiments/one-pagers/E1a-emergent-extraction.md`
+
+### Planned Experiments
 
 **E2: Energetic Prompts** ⚪ Planned
-- Hypothesis: Energetic generation prompts will reduce generic corporate speak
+- Hypothesis: Energetic generation prompts reduce generic corporate speak
 
 **E3: Lens Inference** ⚪ Planned
-- Hypothesis: Inferring strategic focus from conversation beats explicit selection
+- Hypothesis: Inferring strategic focus beats explicit lens selection
 
 ### Known Limitations
 
 1. **No authentication yet** - Using temp user IDs for now
-2. **Limited to Vision/Mission/Objectives** - Initiatives and Principles are fake doors
-3. **Single-session only** - Multi-session strategy development is future enhancement
+2. **Limited to Vision/Strategy/Objectives** - Initiatives and Principles are fake doors
+3. **Single-session only** - Multi-session development is future enhancement
+4. **Preview deployment protection** - Remote regeneration requires disabling auth wall or using production
 
 ---
 
@@ -139,7 +143,6 @@
 - Tracks user conversations with phase management and experiment variant tagging
 - Fields: `id`, `userId`, `status`, `currentPhase`, `questionCount`, `experimentVariant`
 - Phases: INITIAL | QUESTIONING | COMPLETE
-- Variant examples: `baseline-v1`, `emergent-extraction`, `energetic-prompts`
 
 **Message Model:**
 - Stores conversation history
@@ -149,126 +152,141 @@
 - Comprehensive logging for evals and quality assessment
 - Stores: extracted context (JSON), generated output (JSON), Claude thoughts
 - Metrics: tokens, latency, model used
-- Feedback: user rating (helpful/not helpful)
-- Quality: researcher rating (good/bad), rating timestamp
-- Events: related Event records for user interactions
+- Feedback: user rating, quality rating, timestamps
 
 **Event Model:**
 - Tracks user interactions for feature demand and behavior analysis
-- Fields: `id`, `conversationId`, `traceId`, `timestamp`, `eventType`, `eventData`
-- Event types: `fake_door_click`, `info_icon_view`, `extraction_choice`, `quality_rating`
+- Event types: `fake_door_click`, `info_icon_view`, `extraction_choice`, `quality_rating`, `entry_point_selected`, `document_uploaded`
 
-### API Architecture
+### API Routes
 
 **Conversation Flow:**
-1. `POST /api/conversation/start` - Initialize with opening question
-2. `POST /api/conversation/continue` - Handle responses, phase transitions, lens selection
-3. `POST /api/conversation/assess-confidence` - Real-time confidence assessment
-4. `POST /api/extract` - Extract enhanced context when ready
-5. `POST /api/generate` - Generate strategy from enriched context
-6. `POST /api/feedback` - Collect user feedback
+- `POST /api/conversation/start` - Initialize with opening question
+- `POST /api/conversation/continue` - Handle responses, phase transitions
+- `POST /api/conversation/assess-confidence` - Real-time confidence assessment
+- `POST /api/extract` - Extract enhanced context
+- `POST /api/generate` - Generate strategy from context
+- `POST /api/feedback` - Collect user feedback
 
-**Context Types:**
-- `EnhancedExtractedContext` (current) - core + enrichment + reflective_summary
-  - Core: industry, target_market, unique_value
-  - Enrichment: competitive_context, customer_segments, operational_capabilities, technical_advantages
-  - Reflective Summary: strengths, emerging themes, opportunities_for_enrichment (renamed from unexplored), thought prompts
+**New in v1.2.0:**
+- `POST /api/upload-document` - Handle file upload and extraction
+- `POST /api/admin/regenerate` - Regenerate strategies from existing traces
+
+**Event Tracking:**
+- `POST /api/events` - Log user interactions
+- `POST /api/quality-rating` - Researcher quality assessments
 
 ### Component Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                    # Main orchestration (chat → extraction → strategy)
+│   ├── page.tsx                    # Main orchestration
 │   └── api/                        # API routes
 ├── components/
-│   ├── ChatInterface.tsx           # Multi-line conversation UI
-│   ├── ExtractionConfirm.tsx       # Three-option context review
-│   ├── StrategyDisplay.tsx         # Enhanced display with info icons, fake doors
-│   ├── FeedbackButtons.tsx         # User feedback (helpful/not helpful)
-│   ├── InfoModal.tsx               # Educational content modal
-│   ├── FlipCard.tsx                # 3D flip card component
-│   └── ui/                         # shadcn/ui components (Accordion, Card, Badge)
+│   ├── IntroCard.tsx               # Welcome + entry point selection
+│   ├── EntryPointSelector.tsx     # 4 entry point options (NEW)
+│   ├── DocumentUpload.tsx         # File upload UI (NEW)
+│   ├── DocumentSummary.tsx        # AI summary display (NEW)
+│   ├── ChatInterface.tsx          # Multi-line conversation UI
+│   ├── ExtractionConfirm.tsx      # Context review
+│   ├── StrategyDisplay.tsx        # Enhanced display
+│   ├── InfoDialog.tsx             # Educational content (NEW)
+│   ├── FakeDoorDialog.tsx         # Feature validation (NEW)
+│   └── ui/                        # shadcn/ui components
 └── lib/
-    ├── types.ts                    # TypeScript definitions
-    ├── db.ts                       # Prisma client
-    ├── claude.ts                   # Claude API client
-    ├── events.ts                   # Event logging helpers
-    └── utils.ts                    # XML parsing, etc.
+    ├── types.ts                   # TypeScript definitions
+    ├── placeholders.ts            # Placeholder generators + metric parser
+    └── utils.ts                   # XML parsing, etc.
 ```
-
-**See `docs/deployment/README.md` for deployment guide and architecture notes**
 
 ---
 
 ## 🔄 Key Workflows
 
-### Development Workflow
+### Development Workflow (UPDATED)
 
 **Git Strategy:**
 - Work on `development` branch (WIP allowed)
 - **Agent commits directly** as work completes (no approval needed)
-- Jonny controls `development` → `main` merges
-- Vercel auto-deploys only from `main` (configured in vercel.json)
+- Jonny controls `development` → `main` merges (squash merge)
+- Vercel auto-deploys only from `main`
 
-**Commit Workflow:**
-1. Agent commits to development when work is done
-2. Good descriptive commit messages (feat:, fix:, docs:, etc.)
-3. Update `session-notes.md` throughout session
-4. At session end: Add summary to `session-notes.md`
+**For Planned Features (Superpowers Workflow):**
+1. `/superpowers:brainstorming` - Refine idea, explore alternatives
+2. `/superpowers:writing-plans` - Create design doc + implementation plan in `docs/plans/`
+3. `/superpowers:executing-plans` - Execute task-by-task with checkpoints
+4. Update `CHANGELOG.md [Unreleased]` section
+5. Commit to development throughout
+
+**For Iterative/Testing Discoveries:**
+1. Discover issue during testing
+2. Create session note in `docs/session-notes/YYYY-MM-DD_description.md`
+3. Fix and commit to development
+4. Update `CHANGELOG.md [Unreleased]` section
 
 **Release Workflow:**
-1. Jonny reviews development branch when ready
-2. Jonny merges to main with release notes
-3. Push to main triggers Vercel deployment
+1. Jonny reviews development branch
+2. Move `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD` in CHANGELOG
+3. Update `package.json` version
+4. Squash merge to main with release message
+5. Push to main triggers Vercel deployment
+6. Create git tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
 
-**Why this way:** Fast iteration on dev, controlled releases to production
-
-### Superpowers Integration
-
-**For Feature Development:**
-- `/superpowers:brainstorm` - Design refinement and requirements
-- `/superpowers:write-plan` - Create implementation plans (bite-sized tasks)
-- `/superpowers:execute-plan` - Execute with TDD, code review, systematic approach
-
-**Important:**
-- ✅ Use superpowers for systematic feature development
-- ✅ Check constraints below BEFORE planning
-- ✅ Auto-commit is now ALLOWED - commits to development automatically
-- ✅ Update session-notes.md to summarize what was built
+**See `CONTRIBUTING.md` for complete workflow documentation**
 
 ### Testing & Debugging
 
 **Local Development:**
 ```bash
-npm run dev          # Start dev server (http://localhost:3000)
-npx prisma studio    # View database
-npm run build        # Test production build
+npm run dev              # Start dev server (http://localhost:3000)
+npx prisma studio        # View database
+npm run type-check       # TypeScript validation
+npm run build            # Test production build
+```
+
+**Regeneration Scripts (Testing Productivity):**
+```bash
+# Local testing (direct DB access)
+npm run regen <traceId>
+
+# Remote testing (via API)
+npm run regen:remote <traceId>                                    # localhost
+npm run regen:remote <traceId> https://preview-url.vercel.app    # preview
+npm run regen:remote <traceId> https://dc-agent-v4.vercel.app    # production
 ```
 
 **Logging:**
-- Frontend: Check browser DevTools console for `[Generate]` and other logs
-- Backend: Check terminal running `npm run dev` for `[API]` logs
-- Database: Use Prisma Studio or `scripts/trace_analysis.py`
+- Frontend: Browser DevTools console
+- Backend: Terminal running `npm run dev`
+- Database: Prisma Studio or Jupyter notebooks
 
 ---
 
 ## ⚠️ Important Constraints
 
-### Git Management (Updated)
+### Git Management
 - **Do** commit directly to development branch as work completes
-- **Do** write good descriptive commit messages
+- **Do** write descriptive commit messages (feat:, fix:, docs:, etc.)
 - **Do NOT** merge to main or push main - Jonny controls releases
+- **Do** update CHANGELOG.md [Unreleased] section
+
+### Documentation
+- **Do** use `docs/plans/` for all superpowers sessions (design + implementation)
+- **Do** use `docs/session-notes/` only for unplanned/iterative work
+- **Do** update CHANGELOG.md as single source of truth for releases
+- **Do NOT** create redundant release notes files
+- **See:** `CONTRIBUTING.md` for full documentation workflow
 
 ### R&D Tax Documentation
-- **Do** track time and decisions in session-notes.md
+- **Do** track time and decisions in session notes (when applicable)
 - **Do** document technical reasoning and experiments
 - **Why:** Australian R&D tax claim requirements
 
 ### Validated Learning
 - **Do NOT** build features without validation
 - **Do** use fake door tests for feature ideas
-- **Do** capture ideas in readme/archive/original-plan/FEATURE_BACKLOG.md
+- **Do** capture ideas for evaluation
 - **Why:** Build what users want, not assumptions
 
 ### Architecture Flexibility
@@ -291,8 +309,14 @@ npm run build        # Test production build
 
 **Current Implementation:**
 - **Vision** - Aspirational future state (where we want to be)
-- **Mission** - Current purpose and focus (what we do now)
-- **Objectives** - SMART goals (3 per strategy, actionable and measurable)
+- **Strategy** - Coherent choices to achieve vision (what we focus on)
+- **Objectives** - SMART goals with visual metrics (3 per strategy)
+
+**Visual Metric Format (v1.2.0):**
+- Timeframe badge: 3M, 6M, 9M, 12M, 18M
+- Direction: ↑ (increase) or ↓ (decrease)
+- Metric name: Revenue, Market share, Customer churn, etc.
+- Metric value: "from 20% to 35%", "$10M ARR", "500 new customers"
 
 **Future Enhancements (Fake Doors):**
 - **Initiatives** - Key projects/workstreams that support objectives
@@ -303,50 +327,53 @@ npm run build        # Test production build
 ### Experimentation Methodology
 
 **Systematic A/B Testing:**
-1. Establish baseline with comprehensive measurement (E0: baseline-v1)
+1. Establish baseline with comprehensive measurement
 2. Test single variable changes in parallel experiments
-3. Compare quality ratings (good/bad %) and user feedback (helpful %)
-4. Merge successful variants to main, document failed experiments
+3. Compare quality ratings (good/bad %) and user feedback
+4. Merge successful variants, document failed experiments
 
 **Quality Assessment:**
 - Researcher ratings: Binary good/bad on strategy outputs
-- User feedback: Helpful/not helpful on generated strategies
+- User feedback: Helpful/not helpful
 - Event tracking: Feature demand via fake door clicks
 - Dimensional coverage: Ensure framework completeness
 
-**Current Focus:** Improving "wooden output" problem through extraction and generation experiments
+**Current Focus:** Multiple entry points, document-based starting context, improved objective display
 
 ---
 
-## 📚 Documentation Map
+## 📚 Documentation Map (UPDATED)
 
-### Session & Historical Context
-- `docs/session-notes/_session-notes-combined.md` - Chronological session summaries (START HERE)
-- `docs/session-notes/2025-12-13_baseline-v1-normalization-and-instrumentation.md` - Latest major session
-- `docs/journal/2025-12-12-extraction-generation-learnings.md` - Research synthesis on "wooden output" problem
+### Primary Documentation (Start Here)
+- **`CHANGELOG.md`** - All releases, version history, what's been built
+- **`CONTRIBUTING.md`** - Development workflow, documentation structure, git strategy
+- **`README.md`** - Project overview, current version, features
 
-### Deployment & Operations
-- `docs/deployment/README.md` - Deployment guide for production
-- `docs/deployment/RELEASE_NOTES.md` - Version history and release notes
-- `docs/deployment/DEVELOPMENT.md` - Development setup instructions
+### Design & Implementation
+- **`docs/plans/`** - Design docs and implementation plans for all planned features
+  - Format: `YYYY-MM-DD-feature-name-design.md` (problem, solution, rationale)
+  - Format: `YYYY-MM-DD-feature-name.md` (step-by-step implementation tasks)
+- **`docs/session-notes/`** - Notes from unplanned/iterative work only
+  - Only create when discovering issues during testing
+  - Documents deviations, gotchas, user feedback
 
-### Experiment Framework
-- `docs/experiments/EXPERIMENT_REGISTER.md` - Central index of all experiments
-- `docs/experiments/one-pagers/E0-baseline-v1.md` - Baseline variant documentation
-- Future one-pagers for E1-E5 experiments
+### Developer Tools
+- **`scripts/README.md`** - Regeneration scripts documentation
+- **`scripts/regenerate.ts`** - Local regeneration script
+- **`scripts/regenerate-remote.ts`** - Remote API regeneration
+
+### Experiments & Research
+- **`docs/experiments/EXPERIMENT_REGISTER.md`** - Central index of all experiments
+- **`docs/experiments/one-pagers/`** - One-pager per experiment
+- **`docs/journal/`** - Research synthesis and learnings
 
 ### Framework Reference
-- `docs/framework-reference/QUALITY_CRITERIA.md` - What makes good strategy outputs
-- `docs/framework-reference/example-humble-ventures-decision-stack.md` - Real Decision Stack example
-- `docs/framework-reference/original-product-vision-2025-02.md` - Original product thinking
-
-### Implementation Plans
-- `docs/plans/` - Detailed implementation plans for recent features
-- `docs/feature-backlog/` - Future feature ideas and validated learning notes
+- **`docs/framework-reference/QUALITY_CRITERIA.md`** - What makes good strategy outputs
+- **`docs/framework-reference/example-humble-ventures-decision-stack.md`** - Real examples
 
 ### Process Documentation
-- `.claude/workflow.md` - Detailed commit and git procedures
-- `.claude/superpowers-integration.md` - Hybrid superpowers strategy
+- **`.claude/workflow.md`** - Detailed commit and git procedures
+- **`.claude/superpowers-integration.md`** - Hybrid superpowers strategy
 
 ---
 
@@ -374,13 +401,15 @@ npm run build        # Test production build
 
 ## 💡 Session Startup Checklist
 
-1. ✅ Read `docs/session-notes/_session-notes-combined.md` to understand what's been built
-2. ✅ Review `docs/experiments/EXPERIMENT_REGISTER.md` for current experiment status
+1. ✅ Read `CHANGELOG.md` to understand what's been built and current status
+2. ✅ Review `CONTRIBUTING.md` if first session or workflow questions
 3. ✅ Check `git status` for current branch and uncommitted changes
-4. ✅ Review `docs/deployment/README.md` if touching deployment or architecture
+4. ✅ Review `docs/plans/` for recent design decisions (if relevant)
 5. ✅ Use TodoWrite to track progress during session
-6. ✅ Update session notes with session summary before ending (create new dated file in `docs/session-notes/`)
+6. ✅ Update `CHANGELOG.md [Unreleased]` section before ending
+7. ✅ Create session note in `docs/session-notes/` only if iterative/unplanned work
 
 ---
 
+**Version:** 2.0 (updated 2025-12-22)
 _This is a living document. Update as implementation evolves._
