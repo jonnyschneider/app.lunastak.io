@@ -265,17 +265,17 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           </div>
         </div>
 
-        {/* Initiatives Section - Blank with CTA */}
+        {/* Opportunities Section - Blank with CTA */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-                Initiatives
+                Opportunities
               </h3>
               <button
-                onClick={() => showInfoModal('Initiatives', 'Initiatives are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\n**Like this...**\nLaunch knowledge graph indexing (Q2) → Index 500M entities, integrate with search results, measure relevance lift\n\n**Not this...**\nImprove product features')}
+                onClick={() => showInfoModal('Opportunities', 'Opportunities are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\n**Like this...**\nLaunch knowledge graph indexing (Q2) → Index 500M entities, integrate with search results, measure relevance lift\n\n**Not this...**\nImprove product features')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                title="Learn about Initiatives"
+                title="Learn about Opportunities"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -285,13 +285,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           </div>
           <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-12 text-center">
             <p className="text-zinc-500 dark:text-zinc-400 mb-4">
-              Define initiatives that support your objectives
+              Define opportunities that support your objectives
             </p>
             <button
-              onClick={() => handleFakeDoor('Create Initiatives')}
+              onClick={() => handleFakeDoor('Create Opportunities')}
               className="px-6 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
             >
-              Create Initiatives
+              Create Opportunities
             </button>
           </div>
         </div>
