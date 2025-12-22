@@ -23,7 +23,7 @@ export interface Objective {
   successCriteria: string; // What success looks like
 }
 
-export interface Initiative {
+export interface Opportunity {
   id: string;
   title: string;
   description: string;
@@ -40,7 +40,7 @@ export interface StrategyStatements {
   vision: string;
   strategy: string;
   objectives: Objective[];
-  initiatives: Initiative[];
+  opportunities: Opportunity[];
   principles: Principle[];
 }
 

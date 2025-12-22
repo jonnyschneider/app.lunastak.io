@@ -193,7 +193,7 @@ async function regenerate(traceId: string) {
     vision: extractXML(statementsXML, 'vision'),
     strategy: extractXML(statementsXML, 'strategy'),
     objectives: convertLegacyObjectives(objectiveStrings),
-    initiatives: [],
+    opportunities: [],
     principles: []
   };
 

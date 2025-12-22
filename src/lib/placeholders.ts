@@ -1,6 +1,6 @@
-import { Objective, Initiative, Principle } from './types';
+import { Objective, Opportunity, Principle } from './types';
 
-export function generatePlaceholderInitiatives(objectives: Objective[]): Initiative[] {
+export function generatePlaceholderOpportunities(objectives: Objective[]): Opportunity[] {
   if (objectives.length === 0) {
     return [];
   }
@@ -9,38 +9,38 @@ export function generatePlaceholderInitiatives(objectives: Objective[]): Initiat
 
   // Helper to get random subset of objective IDs
   const getRandomObjectives = (): string[] => {
-    const count = Math.floor(Math.random() * 2) + 1; // 1-2 objectives per initiative
+    const count = Math.floor(Math.random() * 2) + 1; // 1-2 objectives per opportunity
     const shuffled = [...objectiveIds].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
   };
 
   return [
     {
-      id: 'init-1',
+      id: 'opp-1',
       title: 'Launch MVP Product',
       description: 'Develop and release minimum viable product to test market fit and gather user feedback.',
       objectiveIds: getRandomObjectives(),
     },
     {
-      id: 'init-2',
+      id: 'opp-2',
       title: 'Build Marketing Campaign',
       description: 'Create comprehensive marketing strategy targeting key customer segments.',
       objectiveIds: getRandomObjectives(),
     },
     {
-      id: 'init-3',
+      id: 'opp-3',
       title: 'Establish Sales Process',
       description: 'Define and implement repeatable sales methodology with clear qualification criteria.',
       objectiveIds: getRandomObjectives(),
     },
     {
-      id: 'init-4',
+      id: 'opp-4',
       title: 'Develop Partnership Strategy',
       description: 'Identify and engage strategic partners to expand market reach and capabilities.',
       objectiveIds: getRandomObjectives(),
     },
     {
-      id: 'init-5',
+      id: 'opp-5',
       title: 'Optimize Customer Onboarding',
       description: 'Streamline new customer experience to reduce time-to-value and increase retention.',
       objectiveIds: getRandomObjectives(),

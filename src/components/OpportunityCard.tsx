@@ -1,30 +1,30 @@
 'use client';
 
-import { Initiative, Objective } from '@/lib/types';
+import { Opportunity, Objective } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface InitiativeCardProps {
-  initiative: Initiative;
+interface OpportunityCardProps {
+  opportunity: Opportunity;
   objectives: Objective[];
 }
 
-export function InitiativeCard({ initiative, objectives }: InitiativeCardProps) {
+export function OpportunityCard({ opportunity, objectives }: OpportunityCardProps) {
   // Get objective names for badges
   const relatedObjectives = objectives.filter(obj =>
-    initiative.objectiveIds.includes(obj.id)
+    opportunity.objectiveIds.includes(obj.id)
   );
 
   return (
     <Card className="border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-shadow duration-200">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          {initiative.title}
+          {opportunity.title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-          {initiative.description}
+          {opportunity.description}
         </p>
 
         {/* Related Objectives Badges */}

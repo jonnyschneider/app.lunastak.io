@@ -193,7 +193,7 @@ export async function POST(req: Request) {
       vision: extractXML(statementsXML, 'vision'),
       strategy: extractXML(statementsXML, 'strategy'),
       objectives: convertLegacyObjectives(objectiveStrings),
-      initiatives: [],
+      opportunities: [],
       principles: []
     };
 
