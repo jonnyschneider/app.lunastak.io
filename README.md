@@ -1,14 +1,34 @@
 # Decision Coach Agent V4
 
-A conversational AI agent that helps users develop business strategies through adaptive questioning and context extraction.
+**Current Version:** v1.2.0
+
+A conversational AI agent that helps founders and business leaders develop strategic clarity through adaptive conversations, document analysis, and structured strategy generation.
 
 ## Features
 
-- Multi-lens decision-making framework (Lenses A-E)
-- Adaptive conversation flow based on confidence scoring
-- Context extraction and strategy generation
+### Cold Start Entry Points (v1.2.0)
+- **Guided Conversation** - Adaptive 3-10 question flow with confidence scoring
+- **Document Upload** - Extract context from PDFs, DOCX, TXT, MD files
+- **Start from Canvas** - Visual strategy builder (fake door validation)
+- **Fast Track** - Quick multiple choice (fake door validation)
+
+### Adaptive Conversation System
+- 3-10 questions based on confidence assessment
+- Multiple extraction approaches (prescriptive, emergent)
+- Experiment framework for A/B testing (Statsig integration)
+- Reflective summaries identify strengths and gaps
+
+### Strategy Output
+- Vision statements (aspirational, future-focused)
+- Strategy statements (coherent choices)
+- SMART objectives with visual metrics
+- Initiatives and principles (placeholder generation)
+
+### Developer Tools
+- Regeneration scripts for testing (`npm run regen`)
+- Remote API for preview/prod regeneration
 - Full conversation tracing and analytics
-- User feedback collection
+- Quality rating and feedback collection
 
 ## Getting Started
 
@@ -27,9 +47,16 @@ A conversational AI agent that helps users develop business strategies through a
 
 2. **Set up environment variables:**
    Create a `.env.local` file:
-   ```
+   ```bash
+   # Database
    DATABASE_URL=postgresql://...
-   ANTHROPIC_API_KEY=your_api_key_here
+
+   # AI Services
+   ANTHROPIC_API_KEY=your_anthropic_key
+   UNSTRUCTURED_API_KEY=your_unstructured_key  # For document upload
+
+   # Experiments (optional)
+   STATSIG_SERVER_SECRET_KEY=your_statsig_key  # For A/B testing
    ```
 
 3. **Initialize database:**
@@ -74,10 +101,18 @@ For qualitative analysis and error coding of conversation traces, see:
 
 ## Documentation
 
-- [Development Plan](readme/V4_DEVELOPMENT_PLAN.md)
-- [Project Status](readme/PROJECT_STATUS.md)
-- [Feature Backlog](readme/FEATURE_BACKLOG.md)
-- [Trace Analysis Guide](notebooks/README.md)
+### For Contributors
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development workflow, documentation structure, git strategy
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[scripts/README.md](scripts/README.md)** - Regeneration scripts and developer tools
+
+### Design & Implementation
+- **[docs/plans/](docs/plans/)** - Design docs and implementation plans for all features
+- **[docs/session-notes/](docs/session-notes/)** - Notes from unplanned/iterative work
+
+### Research & Analysis
+- **[Trace Analysis Guide](notebooks/README.md)** - Jupyter notebooks for qualitative analysis
+- **[Experiment Register](docs/experiments/EXPERIMENT_REGISTER.md)** - A/B test tracking
 
 ## License
 

@@ -34,7 +34,7 @@ interface SavedStrategy {
   createdAt: string
   output: {
     vision?: string
-    mission?: string
+    strategy?: string
   }
 }
 

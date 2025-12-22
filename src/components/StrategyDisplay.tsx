@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import {
@@ -9,6 +9,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FakeDoorDialog } from './FakeDoorDialog';
+import { InfoDialog } from './InfoDialog';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -18,6 +20,18 @@ interface StrategyDisplayProps {
 }
 
 export default function StrategyDisplay({ strategy, thoughts, conversationId, traceId }: StrategyDisplayProps) {
+  const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
+  const [fakeDoorConfig, setFakeDoorConfig] = useState<{
+    name: string;
+    description: string;
+    feature: string;
+  } | null>(null);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [infoDialogConfig, setInfoDialogConfig] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
+
   // Handle legacy objectives (string[]) by converting to new format
   const objectives: Objective[] = useMemo(() => {
     if (strategy.objectives.length === 0) return [];
@@ -34,7 +48,31 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
   const handleFakeDoor = async (feature: string) => {
     console.log(`[Baseline] User clicked: ${feature}`);
 
-    // Log to database
+    const featureConfig: Record<string, { name: string; description: string }> = {
+      'Edit Vision': {
+        name: 'Edit Vision',
+        description: 'Edit and refine your vision statement.\n\nThis feature would let you directly modify the vision and regenerate related elements.',
+      },
+      'Edit Strategy': {
+        name: 'Edit Strategy',
+        description: 'Edit and refine your strategy statement.\n\nThis feature would let you directly modify the strategy and regenerate related elements.',
+      },
+      'Edit Objective': {
+        name: 'Edit Objectives',
+        description: 'Edit and refine your strategic objectives.\n\nThis feature would let you modify, add, or remove objectives with smart regeneration.',
+      },
+    };
+
+    setFakeDoorConfig({
+      ...featureConfig[feature],
+      feature,
+    });
+    setFakeDoorOpen(true);
+  };
+
+  const handleFakeDoorInterest = async () => {
+    if (!fakeDoorConfig) return;
+
     await fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,11 +80,11 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         conversationId,
         traceId,
         eventType: 'fake_door_click',
-        eventData: { feature },
+        eventData: { feature: fakeDoorConfig.feature },
       }),
     }).catch(err => console.error('Failed to log event:', err));
 
-    alert(`${feature} feature coming soon!`);
+    console.log(`User interested in: ${fakeDoorConfig.name}`);
   };
 
   const showInfoModal = async (element: string, content: string) => {
@@ -62,7 +100,12 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
       }),
     }).catch(err => console.error('Failed to log event:', err));
 
-    alert(content);
+    // Show info dialog
+    setInfoDialogConfig({
+      title: element,
+      content: content,
+    });
+    setInfoDialogOpen(true);
   };
 
   return (
@@ -95,7 +138,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => showInfoModal('Vision', 'A Vision statement describes your aspirational future state (3+ years). It should be customer-centric, specific, and inspiring but grounded in reality.\n\nGood: "To be the trusted platform that empowers 1M creators to build sustainable businesses"\nWooden: "To be the best-in-class solution provider"')}
+                onClick={() => showInfoModal('Vision', 'A Vision statement describes your aspirational future state (3+ years). It should be customer-centric, specific, and inspiring but grounded in reality.\n\n**Like this...**\nTo organize the world\'s information and make it universally accessible and useful\n\n**Not this...**\nTo be the best-in-class solution provider')}
                 className="text-zinc-500 hover:text-zinc-300 transition-colors"
                 title="Learn about Vision statements"
               >
@@ -119,26 +162,26 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           </p>
         </div>
 
-        {/* Mission Card */}
+        {/* Strategy Card */}
         <div className="bg-zinc-700 dark:bg-zinc-600 rounded-lg p-6 shadow-sm relative group">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
-              Mission
+              Strategy
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => showInfoModal('Mission', 'A Mission statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\nGood: "Build systematic demand through expert evaluation, develop trusted partnerships for delivery, create predictable foundations"\nWooden: "Provide innovative solutions to customers"')}
+                onClick={() => showInfoModal('Strategy', 'A Strategy statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\n**Like this...**\nTo capture an unrivalled store of data, understand it, and leverage it to better deliver what users want, when they want it.\n\n**Not this...**\nProvide innovative solutions to customers')}
                 className="text-zinc-400 hover:text-zinc-200 transition-colors"
-                title="Learn about Mission statements"
+                title="Learn about Strategy statements"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </button>
               <button
-                onClick={() => handleFakeDoor('Edit Mission')}
+                onClick={() => handleFakeDoor('Edit Strategy')}
                 className="text-zinc-400 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
-                title="Edit Mission"
+                title="Edit Strategy"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -147,7 +190,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             </div>
           </div>
           <p className="text-lg font-medium text-white leading-relaxed">
-            {strategy.mission}
+            {strategy.strategy}
           </p>
         </div>
 
@@ -159,7 +202,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Objectives
               </h3>
               <button
-                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). Each should include a clear metric and target.\n\nGood: "100% of engagements address next-order strategic challenges"\nWooden: "Increase customer satisfaction"')}
+                onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging. The timeframe appears in the top-left corner. Metric details (direction, name, value) appear below.\n\n**Like this...**\n[12M] Improve relevance by understanding content\n↑ Search accuracy | 30% lift in user satisfaction\n\n**Not this...**\nIncrease search accuracy by 30% in 12 months')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Objectives"
               >
@@ -175,6 +218,14 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 key={objective.id}
                 className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative group"
               >
+                {/* Timeframe badge - top left */}
+                {objective.metric.timeframe && (
+                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
+                    {objective.metric.timeframe}
+                  </span>
+                )}
+
+                {/* Edit button - top right */}
                 <button
                   onClick={() => handleFakeDoor('Edit Objective')}
                   className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors opacity-0 group-hover:opacity-100"
@@ -184,17 +235,31 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </button>
-                <div className="mb-3">
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded">
-                    {objective.metric.category}
-                  </span>
-                </div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+
+                {/* Objective text */}
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3 mt-6">
                   {objective.pithy}
                 </p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 font-mono">
-                  {objective.metric.full}
-                </p>
+
+                {/* Metric information */}
+                {objective.metric.direction && objective.metric.metricName && (
+                  <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                    <span>
+                      {objective.metric.direction === 'increase' ? '↑' : '↓'}
+                    </span>
+                    <span className="font-medium">
+                      {objective.metric.metricName}
+                    </span>
+                    {objective.metric.metricValue && (
+                      <>
+                        <span>|</span>
+                        <span>
+                          {objective.metric.metricValue}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -208,7 +273,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Initiatives
               </h3>
               <button
-                onClick={() => showInfoModal('Initiatives', 'Initiatives are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\nGood: "Launch Sniff Test offering (3 months) → Package, price <$1k, run 3-5 pilots"\nWooden: "Improve product features"')}
+                onClick={() => showInfoModal('Initiatives', 'Initiatives are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\n**Like this...**\nLaunch knowledge graph indexing (Q2) → Index 500M entities, integrate with search results, measure relevance lift\n\n**Not this...**\nImprove product features')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Initiatives"
               >
@@ -239,7 +304,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 Principles
               </h3>
               <button
-                onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\nGood: "Strategic clients even over any paying client"\nWooden: "We value quality and excellence"')}
+                onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\n**Like this...**\nUser experience even over short-term revenue\n\n**Not this...**\nWe value quality and excellence')}
                 className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                 title="Learn about Principles"
               >
@@ -262,6 +327,25 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
           </div>
         </div>
       </div>
+
+      {fakeDoorConfig && (
+        <FakeDoorDialog
+          open={fakeDoorOpen}
+          onOpenChange={setFakeDoorOpen}
+          featureName={fakeDoorConfig.name}
+          description={fakeDoorConfig.description}
+          onInterest={handleFakeDoorInterest}
+        />
+      )}
+
+      {infoDialogConfig && (
+        <InfoDialog
+          open={infoDialogOpen}
+          onOpenChange={setInfoDialogOpen}
+          title={infoDialogConfig.title}
+          content={infoDialogConfig.content}
+        />
+      )}
     </div>
   );
 }

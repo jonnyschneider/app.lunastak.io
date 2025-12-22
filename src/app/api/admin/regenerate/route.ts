@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { EnhancedExtractedContext, StrategyStatements, Trace, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
+import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 
 export const maxDuration = 60;
@@ -82,41 +82,36 @@ Format your response as:
 </statements>`;
 
 export async function POST(req: Request) {
-  const requestStartTime = Date.now();
-  console.log('[Generate API] Request started');
-
   try {
-    const { conversationId, extractedContext } = await req.json();
-    console.log('[Generate API] Parsed request body, conversationId:', conversationId);
+    const { traceId } = await req.json();
 
-    if (!conversationId || !extractedContext) {
-      console.error('[Generate API] Missing required fields');
+    if (!traceId) {
       return NextResponse.json(
-        { error: 'conversationId and extractedContext are required' },
+        { error: 'traceId is required' },
         { status: 400 }
       );
     }
 
-    // Get conversation
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
+    console.log(`[Regenerate API] Processing trace: ${traceId}`);
+
+    // Load original trace
+    const originalTrace = await prisma.trace.findUnique({
+      where: { id: traceId },
+      include: { conversation: true },
     });
 
-    if (!conversation) {
-      console.error('[Generate API] Conversation not found:', conversationId);
+    if (!originalTrace) {
       return NextResponse.json(
-        { error: 'Conversation not found' },
+        { error: 'Trace not found' },
         { status: 404 }
       );
     }
 
-    console.log('[Generate API] Conversation found, preparing context...');
-    const context = extractedContext as ExtractedContextVariant;
-
+    const context = originalTrace.extractedContext as unknown as ExtractedContextVariant;
     let prompt: string;
 
+    // Build prompt based on context type
     if (isEmergentContext(context)) {
-      // Emergent generation
       const themesText = context.themes
         .map(theme => `${theme.theme_name}:\n${theme.content}`)
         .join('\n\n');
@@ -139,7 +134,6 @@ export async function POST(req: Request) {
         .replace('{emerging}', emergingText || 'None identified')
         .replace('{unexplored}', opportunitiesText || 'None identified');
     } else {
-      // Prescriptive generation (baseline-v1)
       const enrichmentText = Object.entries(context.enrichment || {})
         .filter(([_, value]) => value)
         .map(([key, value]) => {
@@ -170,10 +164,9 @@ export async function POST(req: Request) {
         .replace('{unexplored}', opportunitiesText || 'None identified');
     }
 
-    // Generate strategy
-    console.log('[Generate API] Calling Claude API...');
-    console.log('[Generate API] Prompt length:', prompt.length, 'characters');
+    console.log('[Regenerate API] Calling Claude API...');
     const startTime = Date.now();
+
     const response = await anthropic.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 1000,
@@ -183,15 +176,15 @@ export async function POST(req: Request) {
       }],
       temperature: 0.7
     });
+
     const latency = Date.now() - startTime;
-    console.log(`[Generate API] Claude API responded in ${latency}ms`);
+    console.log(`[Regenerate API] Claude responded in ${latency}ms`);
 
     const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
 
     const thoughts = extractXML(content, 'thoughts');
     const statementsXML = extractXML(content, 'statements');
 
-    // Extract objectives as strings and convert to new format
     const objectiveStrings = extractXML(statementsXML, 'objectives')
       .split('\n')
       .filter(line => line.trim().length > 0);
@@ -200,17 +193,16 @@ export async function POST(req: Request) {
       vision: extractXML(statementsXML, 'vision'),
       strategy: extractXML(statementsXML, 'strategy'),
       objectives: convertLegacyObjectives(objectiveStrings),
-      initiatives: [], // Will be generated as placeholders in UI
-      principles: []   // Will be generated as placeholders in UI
+      initiatives: [],
+      principles: []
     };
 
-    // Save trace
-    console.log('[Generate API] Saving trace to database...');
-    const trace = await prisma.trace.create({
+    // Save new trace
+    const newTrace = await prisma.trace.create({
       data: {
-        conversationId,
-        userId: conversation.userId,
-        extractedContext: extractedContext as any,
+        conversationId: originalTrace.conversationId,
+        userId: originalTrace.userId,
+        extractedContext: originalTrace.extractedContext as any,
         output: statements as any,
         claudeThoughts: thoughts,
         modelUsed: CLAUDE_MODEL,
@@ -220,28 +212,22 @@ export async function POST(req: Request) {
         latencyMs: latency,
       },
     });
-    console.log('[Generate API] Trace saved with ID:', trace.id);
 
-    // Update conversation status
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { status: 'completed' },
-    });
-
-    const totalTime = Date.now() - requestStartTime;
-    console.log(`[Generate API] Request completed successfully in ${totalTime}ms`);
+    console.log(`[Regenerate API] Created new trace: ${newTrace.id}`);
 
     return NextResponse.json({
-      traceId: trace.id,
-      thoughts,
+      success: true,
+      originalTraceId: traceId,
+      newTraceId: newTrace.id,
       statements,
+      thoughts,
+      url: `/strategy/${newTrace.id}`
     });
+
   } catch (error) {
-    const totalTime = Date.now() - requestStartTime;
-    console.error(`[Generate API] Error after ${totalTime}ms:`, error);
-    console.error('[Generate API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('[Regenerate API] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate strategy', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to regenerate strategy', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
