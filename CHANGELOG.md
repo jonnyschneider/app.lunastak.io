@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.2.0] - 2025-12-22
+
 ### Added - Cold Start Entry Points
 - **Four Entry Point Options** - Multiple on-ramps to solve cold start problem
   - Guided Conversation (live) - Traditional Q&A flow

@@ -119,10 +119,11 @@ docs/session-notes/
    - New features in quick reference
    - Updated screenshots/examples
 
-4. **Create git tag**
+4. **Commit and push to development**
    ```bash
-   git tag -a v1.2.0 -m "Release v1.2.0: Cold Start Entry Points"
-   git push origin v1.2.0
+   git add CHANGELOG.md package.json README.md
+   git commit -m "chore: prepare release v1.2.0"
+   git push origin development
    ```
 
 ### Phase 5: Merge & Deploy
@@ -130,8 +131,17 @@ docs/session-notes/
 1. **Squash and merge PR** to keep main branch clean
    - Use PR title format: "feat: cold start entry points with document upload"
    - Reference CHANGELOG in PR description
+   - Squash all development commits into single commit on main
 
-2. **Deploy to production**
+2. **Create git tag** (after merge to main)
+   ```bash
+   git checkout main
+   git pull
+   git tag -a v1.2.0 -m "Release v1.2.0: Cold Start Entry Points"
+   git push origin v1.2.0
+   ```
+
+3. **Deploy to production**
    - Vercel auto-deploys from main
    - Verify deployment in production
    - Monitor errors/issues
