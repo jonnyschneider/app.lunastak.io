@@ -200,7 +200,7 @@ export async function POST(req: Request) {
       vision: extractXML(statementsXML, 'vision'),
       strategy: extractXML(statementsXML, 'strategy'),
       objectives: convertLegacyObjectives(objectiveStrings),
-      initiatives: [], // Will be generated as placeholders in UI
+      opportunities: [], // Will be generated as placeholders in UI
       principles: []   // Will be generated as placeholders in UI
     };
 
