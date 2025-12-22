@@ -1,6 +1,6 @@
 # Decision Coach Agent V4
 
-**Current Version:** v1.2.0 (unreleased)
+**Current Version:** v1.2.0
 
 A conversational AI agent that helps founders and business leaders develop strategic clarity through adaptive conversations, document analysis, and structured strategy generation.
 

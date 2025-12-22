@@ -1,9 +1,9 @@
 # Decision Stack v4 - Developer Guide
 
 **Last Updated:** 2025-12-22
-**Current Version:** v1.2.0 (unreleased - development branch)
+**Current Version:** v1.2.0
 **Active Branch:** development
-**Production:** https://strategist.humventures.com.au (v1.1.0)
+**Production:** https://strategist.humventures.com.au (v1.2.0 pending deployment)
 
 ---
 
@@ -35,7 +35,7 @@
 
 ---
 
-## 📊 Current State (v1.2.0 - Unreleased)
+## 📊 Current State (v1.2.0)
 
 ### What Exists Now
 
@@ -99,11 +99,12 @@
 
 ### Current Status
 
-**Development Branch** 🟡 In Progress
+**Development Branch** 🟢 Ready for Merge
 - Cold start entry points complete and tested
+- Documentation consolidated and updated
+- Release preparation complete (v1.2.0)
 - Ready for squash merge to main
-- Will become v1.2.0 release
-- See: `CHANGELOG.md [Unreleased]` section
+- See: `CHANGELOG.md [1.2.0]` section
 
 ### Released Experiments
 
