@@ -145,6 +145,13 @@ export async function POST(req: Request) {
 
     // Determine extraction approach based on experiment variant
     const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
+    console.log('[Extract] Conversation details:', {
+      conversationId: conversation.id,
+      experimentVariant: conversation.experimentVariant,
+      isEmergent,
+      messageCount: conversation.messages.length,
+    });
+
     const extractionPrompt = isEmergent
       ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
       : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
@@ -254,6 +261,13 @@ export async function POST(req: Request) {
         extraction_approach: 'prescriptive',
       };
     }
+
+    console.log('[Extract] Returning extraction data:', {
+      extraction_approach: extractedContext.extraction_approach,
+      hasCore: 'core' in extractedContext,
+      hasThemes: 'themes' in extractedContext,
+      keys: Object.keys(extractedContext),
+    });
 
     return NextResponse.json({
       extractedContext,
