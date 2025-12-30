@@ -21,6 +21,20 @@ export default function ExtractionConfirm({
 }: ExtractionConfirmProps) {
   const isEmergent = isEmergentContext(extractedContext);
 
+  // Type guard to ensure we have the right structure
+  if (!isEmergent && !('core' in extractedContext)) {
+    console.error('Invalid prescriptive context structure:', extractedContext);
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <p className="text-red-600 dark:text-red-400">
+            Error: Invalid extraction data structure. Please try again.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 shadow-sm space-y-6">
