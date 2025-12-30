@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2] - 2025-12-30
+
+### Fixed
+- **React Hydration Error** - Fixed server/client mismatch in authentication state
+  - Fetch session server-side in layout.tsx using `getServerSession()`
+  - Pass session to SessionProvider to ensure consistent SSR/client rendering
+  - Removed `suppressHydrationWarning` workaround
+- **Foreign Key Constraint Error** - Fixed event logging timing issue
+  - Event logging now waits for conversation creation before attempting to log
+  - Prevents `'no-conversation-yet'` string from violating FK constraint
+- **Conversation Not Loading** - Fixed missing flowStep state transition
+  - Added `setFlowStep('chat')` when conversation starts
+  - Chat interface now renders correctly after conversation creation
+- **Defensive Error Handling** - Added validation for extractedContext structure
+  - Type guard checks for prescriptive vs emergent extraction formats
+  - User-friendly error message if invalid data structure received
+  - Diagnostic logging for debugging extraction issues
+
+### Technical
+- Enhanced logging in extract API and frontend for debugging
+- Improved type safety with runtime validation checks
+
+---
+
 ## [1.2.0] - 2025-12-22
 
 ### Added - Cold Start Entry Points

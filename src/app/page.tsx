@@ -116,20 +116,22 @@ export default function Home() {
   };
 
   const handleEntryPointSelect = async (option: 'guided' | 'document' | 'canvas' | 'fast-track') => {
-    // Log entry point selection
-    await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conversationId: conversationId || 'no-conversation-yet',
-        eventType: 'entry_point_selected',
-        eventData: { option },
-      }),
-    }).catch(err => console.error('Failed to log event:', err));
-
     if (option === 'guided') {
       // Start normal conversation flow
-      startConversation();
+      const newConversationId = await startConversation();
+
+      // Log entry point selection after conversation is created
+      if (newConversationId) {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationId: newConversationId,
+            eventType: 'entry_point_selected',
+            eventData: { option },
+          }),
+        }).catch(err => console.error('Failed to log event:', err));
+      }
     } else if (option === 'document') {
       // Show document upload
       setFlowStep('upload');
@@ -241,8 +243,12 @@ export default function Home() {
 
       // Hide intro and show chat interface now that we have the first message
       setShowIntro(false);
+      setFlowStep('chat');
+
+      return data.conversationId; // Return conversationId for logging
     } catch (error) {
       console.error('Failed to start conversation:', error);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -315,6 +321,13 @@ export default function Home() {
       });
 
       const data = await response.json();
+      console.log('[Extract] Received extraction data:', {
+        hasExtractedContext: !!data.extractedContext,
+        extraction_approach: data.extractedContext?.extraction_approach,
+        hasCore: 'core' in (data.extractedContext || {}),
+        hasThemes: 'themes' in (data.extractedContext || {}),
+        keys: Object.keys(data.extractedContext || {}),
+      });
       setExtractedContext(data.extractedContext);
       setFlowStep('extraction');
     } catch (error) {
