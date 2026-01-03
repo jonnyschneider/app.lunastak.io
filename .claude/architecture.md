@@ -706,6 +706,41 @@ npx prisma migrate deploy
 
 ---
 
+## Database Schema V1 (2026-01-03)
+
+### Core Entities
+
+- **Project**: Boundary for strategic understanding. One user can have multiple projects.
+- **Conversation**: Interactive questioning sessions (belongs to Project)
+- **Fragment**: Extracted themes/insights from conversations (belongs to Project)
+- **FragmentDimensionTag**: Tags fragments to Tier 1 dimensions
+- **DimensionalSynthesis**: Compressed understanding per dimension per project (11 per project)
+- **GeneratedOutput**: Decision Stack artifacts
+- **ExtractionRun**: Evaluation traces for A/B testing
+
+### Tier 1 Dimensions
+
+The 11 strategic dimensions for fragment tagging and synthesis:
+1. CUSTOMER_MARKET
+2. PROBLEM_OPPORTUNITY
+3. VALUE_PROPOSITION
+4. DIFFERENTIATION_ADVANTAGE
+5. COMPETITIVE_LANDSCAPE
+6. BUSINESS_MODEL_ECONOMICS
+7. GO_TO_MARKET
+8. PRODUCT_EXPERIENCE
+9. CAPABILITIES_ASSETS
+10. RISKS_CONSTRAINTS
+11. STRATEGIC_INTENT
+
+### Legacy
+
+- **Trace**: Deprecated, kept for historical data. New extractions use Fragment/ExtractionRun.
+
+See: `docs/plans/strategic/schema-design-summary.md` for full design docs.
+
+---
+
 ## Notes
 
 - This architecture is designed for Phase 0
@@ -713,4 +748,4 @@ npx prisma migrate deploy
 - Prioritize learning and iteration over perfect design
 - Update this document as architecture changes
 
-**Last major update:** Initial Phase 0 architecture (2025-12-07)
+**Last major update:** Schema V1 migration (2026-01-03)
