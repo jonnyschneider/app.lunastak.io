@@ -102,29 +102,55 @@ docs/session-notes/
 
 ### Phase 4: Release Preparation
 
+**CRITICAL:** This must be the last commit before merge to main.
+
 1. **Update CHANGELOG.md**
    - Move items from `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD`
+   - Add comprehensive release notes with features/fixes
    - Use semantic versioning:
      - Major (2.0.0): Breaking changes
      - Minor (1.X.0): New features, backward compatible
      - Patch (1.1.X): Bug fixes, backward compatible
 
-2. **Update package.json version**
+2. **Update VERSION_MAPPING.md**
+   - Add new version to "Active Versions" table
+   - Update status: 🟢 Production (or appropriate status)
+   - Add link to CHANGELOG entry
+   - Update "Current Production Version" at bottom
+
+3. **Update .claude/README.md**
+   - Update "Last Updated" date
+   - Update "Current Version" to new version
+   - Update "Production" URL status
+
+4. **Update package.json version**
    ```bash
    npm version patch|minor|major
    ```
 
-3. **Update README.md** (if needed)
+5. **Update README.md** (if needed)
    - Current version number
    - New features in quick reference
    - Updated screenshots/examples
 
-4. **Commit and push to development**
+6. **Commit as final step before merge**
    ```bash
-   git add CHANGELOG.md package.json README.md
-   git commit -m "chore: prepare release v1.2.0"
+   git add CHANGELOG.md VERSION_MAPPING.md .claude/README.md package.json README.md
+   git commit -m "chore: prepare release vX.Y.Z"
    git push origin development
    ```
+
+**Why this order matters:** This commit represents the "release state" and should be the last thing before merging to main. If you commit after this, those changes won't be documented in the release notes.
+
+**Pre-Release Checklist:**
+- [ ] CHANGELOG.md has `[X.Y.Z]` section with date
+- [ ] VERSION_MAPPING.md shows new version in table
+- [ ] VERSION_MAPPING.md "Current Production Version" updated
+- [ ] .claude/README.md "Current Version" updated
+- [ ] .claude/README.md "Last Updated" is today
+- [ ] package.json version matches
+- [ ] All changes committed
+- [ ] Ready to merge to main
 
 ### Phase 5: Merge & Deploy
 
