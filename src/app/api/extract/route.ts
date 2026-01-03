@@ -3,9 +3,27 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
-import { analyzeDimensionalCoverage } from '@/lib/dimensional-analysis';
+import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
+import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
+import { updateAllSyntheses } from '@/lib/synthesis';
 
 export const maxDuration = 60;
+
+// Progress step type for streaming updates
+type ProgressStep =
+  | 'starting'
+  | 'extracting_themes'
+  | 'analyzing_dimensions'
+  | 'generating_summary'
+  | 'saving_insights'
+  | 'complete'
+  | 'error';
+
+interface ProgressUpdate {
+  step: ProgressStep;
+  data?: any;
+  error?: string;
+}
 
 const EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract structured information with core fields and enrichment.
 
@@ -30,19 +48,30 @@ Extract the following:
   </enrichment>
 </extraction>`;
 
-const EMERGENT_EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract the key themes that emerged naturally from the discussion.
+const EMERGENT_EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract the key themes that emerged naturally from the discussion, and tag each theme with the strategic dimensions it relates to.
 
 Conversation:
 {conversation}
 
+STRATEGIC DIMENSIONS (tag each theme with 1-3 relevant dimensions):
+1. customer_market - Who we serve, their problems, buying behaviour, market dynamics
+2. problem_opportunity - The problem space, opportunity size, why now, market need
+3. value_proposition - What we offer, how it solves problems, why it matters
+4. differentiation_advantage - What makes us unique, defensibility, moats
+5. competitive_landscape - Who else plays, their strengths/weaknesses, positioning
+6. business_model_economics - How we create/capture value, unit economics, pricing
+7. go_to_market - Sales strategy, customer success, growth channels
+8. product_experience - The experience we're creating, usability, customer journey
+9. capabilities_assets - What we can do, team, technology, IP
+10. risks_constraints - What could go wrong, dependencies, limitations
+
 DO NOT force the conversation into predefined categories. Instead, identify 3-7 key themes that actually emerged and name them based on what was discussed.
 
 Examples of emergent themes (adapt to actual conversation):
-- "Customer Pain Points" if they discussed specific problems
-- "Market Positioning" if they discussed competitive landscape
-- "Technical Differentiation" if they discussed unique capabilities
-- "Growth Economics" if they discussed business model
-- "Operational Challenges" if they discussed execution concerns
+- "Customer Pain Points" → dimensions: customer_market, problem_opportunity
+- "Market Positioning" → dimensions: competitive_landscape, differentiation_advantage
+- "Technical Differentiation" → dimensions: capabilities_assets, differentiation_advantage
+- "Growth Economics" → dimensions: business_model_economics, go_to_market
 
 Format your extraction:
 
@@ -50,6 +79,10 @@ Format your extraction:
   <theme>
     <theme_name>Name that describes this theme</theme_name>
     <content>Detailed summary of what was discussed about this theme</content>
+    <dimensions>
+      <dimension name="dimension_key" confidence="high|medium|low"/>
+      <!-- Include 1-3 most relevant dimensions per theme -->
+    </dimensions>
   </theme>
   <!-- Repeat for each emergent theme (3-7 themes) -->
 </extraction>`;
@@ -93,8 +126,14 @@ function extractAllXML(xml: string, tag: string): string[] {
   return matches;
 }
 
-function parseEmergentThemes(xml: string): { theme_name: string; content: string }[] {
-  const themes: { theme_name: string; content: string }[] = [];
+interface ParsedTheme {
+  theme_name: string;
+  content: string;
+  dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[];
+}
+
+function parseEmergentThemes(xml: string): ParsedTheme[] {
+  const themes: ParsedTheme[] = [];
   const themeRegex = /<theme>([\s\S]*?)<\/theme>/g;
   let match;
 
@@ -103,8 +142,21 @@ function parseEmergentThemes(xml: string): { theme_name: string; content: string
     const theme_name = extractXML(themeXML, 'theme_name');
     const content = extractXML(themeXML, 'content');
 
+    // Parse inline dimensions
+    const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
+    const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g;
+    let dimMatch;
+
+    while ((dimMatch = dimensionRegex.exec(themeXML)) !== null) {
+      const name = dimMatch[1];
+      const confidence = dimMatch[2].toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW';
+      if (['HIGH', 'MEDIUM', 'LOW'].includes(confidence)) {
+        dimensions.push({ name, confidence });
+      }
+    }
+
     if (theme_name && content) {
-      themes.push({ theme_name, content });
+      themes.push({ theme_name, content, dimensions });
     }
   }
 
@@ -112,190 +164,243 @@ function parseEmergentThemes(xml: string): { theme_name: string; content: string
 }
 
 export async function POST(req: Request) {
-  try {
-    const { conversationId } = await req.json();
+  const { conversationId } = await req.json();
 
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: 'conversationId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Get conversation with messages
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        messages: {
-          orderBy: { stepNumber: 'asc' },
-        },
-      },
-    });
-
-    if (!conversation) {
-      return NextResponse.json(
-        { error: 'Conversation not found' },
-        { status: 404 }
-      );
-    }
-
-    // Build conversation history
-    const conversationHistory = conversation.messages
-      .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
-      .join('\n\n');
-
-    // Determine extraction approach based on experiment variant
-    const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
-    console.log('[Extract] Conversation details:', {
-      conversationId: conversation.id,
-      experimentVariant: conversation.experimentVariant,
-      isEmergent,
-      messageCount: conversation.messages.length,
-    });
-
-    const extractionPrompt = isEmergent
-      ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
-      : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
-
-    // Extract context
-    const startTime = Date.now();
-    const extractionResponse = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 800,
-      messages: [{
-        role: 'user',
-        content: extractionPrompt
-      }],
-      temperature: 0.3
-    });
-
-    const extractionContent = extractionResponse.content[0]?.type === 'text'
-      ? extractionResponse.content[0].text : '';
-
-    const extractionXML = extractXML(extractionContent, 'extraction');
-
-    let extractedContext: any;
-
-    if (isEmergent) {
-      // Parse emergent themes
-      const themes = parseEmergentThemes(extractionXML);
-
-      // Generate reflective summary (same for both approaches)
-      const summaryResponse = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
-        }],
-        temperature: 0.5
-      });
-
-      const summaryContent = summaryResponse.content[0]?.type === 'text'
-        ? summaryResponse.content[0].text : '';
-      const summaryXML = extractXML(summaryContent, 'summary');
-
-      const reflective_summary = {
-        strengths: extractAllXML(summaryXML, 'strength'),
-        emerging: extractAllXML(summaryXML, 'area'),
-        opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
-        thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
-      };
-
-      extractedContext = {
-        themes,
-        reflective_summary,
-        extraction_approach: 'emergent',
-      };
-    } else {
-      // Prescriptive extraction (baseline-v1)
-      const coreXML = extractXML(extractionXML, 'core');
-      const enrichmentXML = extractXML(extractionXML, 'enrichment');
-
-      const core = {
-        industry: extractXML(coreXML, 'industry'),
-        target_market: extractXML(coreXML, 'target_market'),
-        unique_value: extractXML(coreXML, 'unique_value'),
-      };
-
-      const enrichment: any = {};
-      if (enrichmentXML) {
-        const competitiveContext = extractXML(enrichmentXML, 'competitive_context');
-        if (competitiveContext) enrichment.competitive_context = competitiveContext;
-
-        const customerSegments = extractXML(enrichmentXML, 'customer_segments');
-        if (customerSegments) enrichment.customer_segments = customerSegments.split(',').map(s => s.trim());
-
-        const operationalCaps = extractXML(enrichmentXML, 'operational_capabilities');
-        if (operationalCaps) enrichment.operational_capabilities = operationalCaps;
-
-        const techAdvantages = extractXML(enrichmentXML, 'technical_advantages');
-        if (techAdvantages) enrichment.technical_advantages = techAdvantages;
-      }
-
-      // Generate reflective summary
-      const summaryResponse = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
-        }],
-        temperature: 0.5
-      });
-
-      const summaryContent = summaryResponse.content[0]?.type === 'text'
-        ? summaryResponse.content[0].text : '';
-      const summaryXML = extractXML(summaryContent, 'summary');
-
-      const reflective_summary = {
-        strengths: extractAllXML(summaryXML, 'strength'),
-        emerging: extractAllXML(summaryXML, 'area'),
-        opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
-        thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
-      };
-
-      extractedContext = {
-        core,
-        enrichment,
-        reflective_summary,
-        extraction_approach: 'prescriptive',
-      };
-    }
-
-    console.log('[Extract] Returning extraction data:', {
-      extraction_approach: extractedContext.extraction_approach,
-      hasCore: 'core' in extractedContext,
-      hasThemes: 'themes' in extractedContext,
-      keys: Object.keys(extractedContext),
-    });
-
-    // [E2] Run dimensional analysis for emergent extraction
-    let dimensionalCoverage = null;
-
-    if (isEmergentContext(extractedContext)) {
-      console.log('[Extract] Running dimensional analysis...');
-      dimensionalCoverage = await analyzeDimensionalCoverage(
-        extractedContext,
-        conversationHistory
-      );
-
-      console.log('[Extract] Dimensional coverage:', {
-        dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
-        coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
-        gaps: dimensionalCoverage.summary.gaps,
-      });
-    }
-
-    return NextResponse.json({
-      extractedContext,
-      dimensionalCoverage, // [E2] Include in response
-    });
-  } catch (error) {
-    console.error('Extract context error:', error);
+  if (!conversationId) {
     return NextResponse.json(
-      { error: 'Failed to extract context' },
-      { status: 500 }
+      { error: 'conversationId is required' },
+      { status: 400 }
     );
   }
+
+  // Get conversation with messages
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: {
+      messages: {
+        orderBy: { stepNumber: 'asc' },
+      },
+    },
+  });
+
+  if (!conversation) {
+    return NextResponse.json(
+      { error: 'Conversation not found' },
+      { status: 404 }
+    );
+  }
+
+  // Create a streaming response
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const sendProgress = (update: ProgressUpdate) => {
+        controller.enqueue(encoder.encode(JSON.stringify(update) + '\n'));
+      };
+
+      try {
+        // Build conversation history
+        const conversationHistory = conversation.messages
+          .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+          .join('\n\n');
+
+        // Determine extraction approach based on experiment variant
+        const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
+        console.log('[Extract] Conversation details:', {
+          conversationId: conversation.id,
+          experimentVariant: conversation.experimentVariant,
+          isEmergent,
+          messageCount: conversation.messages.length,
+        });
+
+        // Step 1: Extract themes
+        sendProgress({ step: 'extracting_themes' });
+
+        const extractionPrompt = isEmergent
+          ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
+          : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
+
+        const extractionResponse = await anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 2000, // Increased for inline dimensions
+          messages: [{
+            role: 'user',
+            content: extractionPrompt
+          }],
+          temperature: 0.3
+        });
+
+        const extractionContent = extractionResponse.content[0]?.type === 'text'
+          ? extractionResponse.content[0].text : '';
+
+        const extractionXML = extractXML(extractionContent, 'extraction');
+
+        let extractedContext: any;
+        let dimensionalCoverage: any = null;
+
+        if (isEmergent) {
+          // Parse emergent themes with inline dimensions
+          const themes = parseEmergentThemes(extractionXML);
+
+          // Compute dimensional coverage from inline dimensions (no Claude call needed!)
+          sendProgress({ step: 'analyzing_dimensions' });
+          dimensionalCoverage = computeDimensionalCoverageFromInline(themes);
+
+          // Generate reflective summary (only 1 Claude call now)
+          sendProgress({ step: 'generating_summary' });
+
+          const summaryResponse = await anthropic.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 600,
+            messages: [{
+              role: 'user',
+              content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
+            }],
+            temperature: 0.5
+          });
+
+          const summaryContent = summaryResponse.content[0]?.type === 'text'
+            ? summaryResponse.content[0].text : '';
+          const summaryXML = extractXML(summaryContent, 'summary');
+
+          const reflective_summary = {
+            strengths: extractAllXML(summaryXML, 'strength'),
+            emerging: extractAllXML(summaryXML, 'area'),
+            opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
+            thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
+          };
+
+          extractedContext = {
+            themes,
+            reflective_summary,
+            extraction_approach: 'emergent',
+          };
+        } else {
+          // Prescriptive extraction (baseline-v1)
+          const coreXML = extractXML(extractionXML, 'core');
+          const enrichmentXML = extractXML(extractionXML, 'enrichment');
+
+          const core = {
+            industry: extractXML(coreXML, 'industry'),
+            target_market: extractXML(coreXML, 'target_market'),
+            unique_value: extractXML(coreXML, 'unique_value'),
+          };
+
+          const enrichment: any = {};
+          if (enrichmentXML) {
+            const competitiveContext = extractXML(enrichmentXML, 'competitive_context');
+            if (competitiveContext) enrichment.competitive_context = competitiveContext;
+
+            const customerSegments = extractXML(enrichmentXML, 'customer_segments');
+            if (customerSegments) enrichment.customer_segments = customerSegments.split(',').map(s => s.trim());
+
+            const operationalCaps = extractXML(enrichmentXML, 'operational_capabilities');
+            if (operationalCaps) enrichment.operational_capabilities = operationalCaps;
+
+            const techAdvantages = extractXML(enrichmentXML, 'technical_advantages');
+            if (techAdvantages) enrichment.technical_advantages = techAdvantages;
+          }
+
+          // Generate reflective summary
+          sendProgress({ step: 'generating_summary' });
+
+          const summaryResponse = await anthropic.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 600,
+            messages: [{
+              role: 'user',
+              content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
+            }],
+            temperature: 0.5
+          });
+
+          const summaryContent = summaryResponse.content[0]?.type === 'text'
+            ? summaryResponse.content[0].text : '';
+          const summaryXML = extractXML(summaryContent, 'summary');
+
+          const reflective_summary = {
+            strengths: extractAllXML(summaryXML, 'strength'),
+            emerging: extractAllXML(summaryXML, 'area'),
+            opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
+            thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
+          };
+
+          extractedContext = {
+            core,
+            enrichment,
+            reflective_summary,
+            extraction_approach: 'prescriptive',
+          };
+        }
+
+        console.log('[Extract] Returning extraction data:', {
+          extraction_approach: extractedContext.extraction_approach,
+          hasCore: 'core' in extractedContext,
+          hasThemes: 'themes' in extractedContext,
+          keys: Object.keys(extractedContext),
+        });
+
+        // Step 4: Save insights (fragments)
+        // Use inline dimensions from extraction (more reliable than post-hoc matching)
+        if (isEmergentContext(extractedContext)) {
+          sendProgress({ step: 'saving_insights' });
+
+          if (dimensionalCoverage) {
+            console.log('[Extract] Dimensional coverage:', {
+              dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
+              coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
+              gaps: dimensionalCoverage.summary.gaps,
+            });
+          }
+
+          // Create fragments from themes with inline dimension tags
+          if (conversation.projectId) {
+            try {
+              // themes already have dimensions from parseEmergentThemes
+              const fragments = await createFragmentsFromThemes(
+                conversation.projectId,
+                conversationId,
+                extractedContext.themes as ThemeWithDimensions[]
+              );
+              console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
+
+              // Trigger synthesis update (async, don't block response)
+              updateAllSyntheses(conversation.projectId).catch(error => {
+                console.error('[Extract] Failed to update syntheses:', error);
+              });
+            } catch (error) {
+              // Log but don't fail extraction if fragment creation fails
+              console.error('[Extract] Failed to create fragments:', error);
+            }
+          }
+        }
+
+        // Step 5: Complete
+        sendProgress({
+          step: 'complete',
+          data: {
+            extractedContext,
+            dimensionalCoverage,
+          },
+        });
+
+        controller.close();
+      } catch (error) {
+        console.error('Extract context error:', error);
+        sendProgress({
+          step: 'error',
+          error: error instanceof Error ? error.message : 'Failed to extract context',
+        });
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+    },
+  });
 }

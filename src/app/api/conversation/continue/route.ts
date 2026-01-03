@@ -68,10 +68,39 @@ export async function POST(req: Request) {
     } else if (phase === 'QUESTIONING') {
       console.log('[Continue API] Handling QUESTIONING phase');
       return await handleQuestioning(conversation.id, currentStep);
+    } else if (phase === 'EXTRACTION') {
+      // Recovery: If we're in EXTRACTION phase but user is trying to continue,
+      // it means extraction failed/timed out. Reset to QUESTIONING and continue.
+      console.log('[Continue API] Handling EXTRACTION phase recovery - resetting to QUESTIONING');
+
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { currentPhase: 'QUESTIONING' },
+      });
+
+      // Generate a recovery message
+      const recoveryMessage = "It looks like we had a hiccup. Let's continue our conversation - I still have everything we've discussed. What else would you like to explore?";
+
+      await prisma.message.create({
+        data: {
+          conversationId,
+          role: 'assistant',
+          content: recoveryMessage,
+          stepNumber: currentStep + 1,
+        },
+      });
+
+      return NextResponse.json({
+        conversationId,
+        message: recoveryMessage,
+        nextPhase: 'QUESTIONING',
+        stepNumber: currentStep + 1,
+        recovered: true,
+      });
     }
 
     console.log('[Continue API] Invalid phase:', phase);
-    return NextResponse.json({ error: 'Invalid phase' }, { status: 400 });
+    return NextResponse.json({ error: `Invalid phase: ${phase}` }, { status: 400 });
 
   } catch (error) {
     console.error('[Continue API] Error caught:', error);

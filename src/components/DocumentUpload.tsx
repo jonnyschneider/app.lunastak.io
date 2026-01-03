@@ -9,6 +9,7 @@ interface DocumentUploadProps {
     conversationId: string;
     summary: string;
     filename: string;
+    guestUserId?: string;
   }) => void;
   onError: (error: string) => void;
 }
@@ -43,6 +44,7 @@ export function DocumentUpload({ onUploadComplete, onError }: DocumentUploadProp
         conversationId: data.conversationId,
         summary: data.summary,
         filename: file.name,
+        guestUserId: data.guestUserId,
       });
     } catch (error) {
       console.error('Upload error:', error);

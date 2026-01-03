@@ -3,18 +3,67 @@
  */
 
 import { prisma } from '@/lib/db'
+import { randomBytes } from 'crypto'
+
+/**
+ * Generate a random ID (similar to cuid but simpler)
+ */
+function generateId(): string {
+  return randomBytes(12).toString('hex')
+}
+
+/**
+ * Check if a user is a guest user by their email pattern
+ */
+export function isGuestUser(email: string): boolean {
+  return email.endsWith('@guest.lunastak.io')
+}
+
+/**
+ * Create a guest user with a unique email
+ */
+export async function createGuestUser() {
+  const guestId = generateId()
+  const guestEmail = `guest_${guestId}@guest.lunastak.io`
+
+  const user = await prisma.user.create({
+    data: {
+      email: guestEmail,
+    }
+  })
+
+  return user
+}
 
 /**
  * Get or create a default project for a user
- * Returns the first (oldest) project, or creates one if none exist
+ * For authenticated users: returns existing project or creates one
+ * For guests (userId is null): creates a new guest user and project
  */
-export async function getOrCreateDefaultProject(userId: string | null) {
+export async function getOrCreateDefaultProject(userId: string | null): Promise<{
+  userId: string
+  project: { id: string; name: string }
+  isGuest: boolean
+}> {
   if (!userId) {
-    // Guest user - return null, projectId will be null on conversation
-    return null
+    // Create guest user and project
+    const guestUser = await createGuestUser()
+    const project = await prisma.project.create({
+      data: {
+        userId: guestUser.id,
+        name: 'Guest Strategy',
+        status: 'active',
+      }
+    })
+
+    return {
+      userId: guestUser.id,
+      project,
+      isGuest: true,
+    }
   }
 
-  // Try to find existing project
+  // Authenticated user - try to find existing project
   let project = await prisma.project.findFirst({
     where: { userId },
     orderBy: { createdAt: 'asc' } // Get oldest (default) project
@@ -31,7 +80,11 @@ export async function getOrCreateDefaultProject(userId: string | null) {
     })
   }
 
-  return project
+  return {
+    userId,
+    project,
+    isGuest: false,
+  }
 }
 
 /**
