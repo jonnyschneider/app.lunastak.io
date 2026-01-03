@@ -16,10 +16,7 @@
     "prisma:studio": "prisma studio",
     "regen": "tsx scripts/regenerate.ts",
     "regen:remote": "tsx scripts/regenerate-remote.ts",
-    "linear:setup": "tsx scripts/linear-setup.ts",
-    "linear:issue": "tsx scripts/linear-create-issue.ts",
-    "linear:import": "tsx scripts/linear-import-history.ts",
-    "linear:test": "tsx scripts/test-linear-github.ts"
+    "linear:issue": "tsx scripts/linear-create-issue.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
