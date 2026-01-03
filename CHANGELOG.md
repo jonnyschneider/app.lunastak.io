@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.4.0] - 2026-01-04
+
 ### Added - Fragment Extraction & Synthesis Implementation
 
 **Overview:** Populates the new Schema V1 tables (Fragment, FragmentDimensionTag, DimensionalSynthesis, GeneratedOutput, ExtractionRun) by updating the extraction and generation flows.
@@ -30,10 +34,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Generation route (`/api/generate`) now creates GeneratedOutput and ExtractionRun records
   - Captures syntheses before/after for A/B evaluation
 
+- **Guest User Isolation (HUM-49)** - Full data tracking for unauthenticated users
+  - Guest sessions now create real User + Project records (`guest_<id>@guest.lunastak.io`)
+  - Enables fragment tracking and ExtractionRun creation for all users
+  - Session transfer moves all data (Projects, Conversations, Traces) when guest authenticates
+  - `src/lib/projects.ts` - `createGuestUser`, `isGuestUser`, updated `getOrCreateDefaultProject`
+  - `src/lib/transferSession.ts` - Now transfers Projects in addition to Conversations and Traces
+
+- **Inline Dimension Tagging (HUM-47)** - More reliable dimension extraction
+  - Dimensions tagged during theme extraction, not post-hoc matching
+  - Extraction prompt includes dimension definitions for Claude
+  - Eliminates fuzzy matching failures between theme names
+
+- **Streaming Extraction Progress** - Better UX during long operations
+  - `src/components/ExtractionProgress.tsx` - Step-by-step status display
+  - Extract API streams JSON progress updates
+  - Steps: extracting_themes → analyzing_dimensions → generating_summary → saving_insights
+
 **Testing & Verification:**
 - `scripts/test-fragment-flow.ts` - Integration test for fragment creation and synthesis
 - Updated `scripts/migrations/verify-migration.ts` with checks 5-8 (fragments, syntheses, outputs, runs)
-- All 36 existing tests pass, no TypeScript errors
+- `src/lib/__tests__/projects.test.ts` - 12 tests for guest user isolation
+- `src/lib/__tests__/dimensional-analysis.test.ts` - 7 tests for inline dimension coverage
+- All 55 tests pass, no TypeScript errors
 
 **Documentation:**
 - Updated `.claude/architecture.md` with Extraction → Fragment → Synthesis flow
@@ -55,8 +78,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Obsolete Test Folder** - Removed `/tests` directory
   - Contained only E1a manual test checklist (released in v1.1.0, Dec 2025)
   - UAT/testing now handled in implementation plans and PR descriptions
+- **Redundant Claude API Call** - Removed `analyzeDimensionalCoverage` from extraction
+  - Dimensional coverage now computed from inline dimensions (no separate Claude call)
+  - Reduces extraction time by ~15-20 seconds
 
 ### Fixed
+- **Extraction Timeout (HUM-48)** - Fixed 60s Vercel timeout during extraction
+  - Increased `max_tokens` from 800 to 2000 for inline dimension prompt
+  - Removed redundant dimensional analysis Claude call
+  - Added EXTRACTION phase recovery handler in continue API
 - **v1.3.0 Release Documentation** - Added missing release notes from 2026-01-03
   - Added v1.3.0 entry to CHANGELOG.md (E2 Dimensional Coverage Tracking)
   - Updated VERSION_MAPPING.md status: "Pending UAT" → "Production"
