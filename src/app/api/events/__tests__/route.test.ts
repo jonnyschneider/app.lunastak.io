@@ -2,6 +2,10 @@
 // These tests verify the events API validation logic
 // TODO: Set up proper Next.js API route testing environment
 
+// Mock imports to avoid Next.js runtime errors in test environment
+const POST = jest.fn()
+const prisma = { event: { create: jest.fn() } } as any
+
 describe.skip('/api/events', () => {
   beforeEach(() => {
     jest.clearAllMocks()
