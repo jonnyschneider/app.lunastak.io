@@ -739,6 +739,20 @@ The 11 strategic dimensions for fragment tagging and synthesis:
 
 See: `docs/plans/strategic/schema-design-summary.md` for full design docs.
 
+### Extraction → Fragment → Synthesis Flow
+
+1. **Extraction** (`/api/extract`) extracts emergent themes from conversation
+2. **Fragment Creation** creates Fragment records with dimension tags
+3. **Synthesis Update** runs full or incremental synthesis per dimension
+4. **Generation** (`/api/generate`) creates GeneratedOutput + ExtractionRun
+
+### Key Files
+
+- `src/lib/fragments.ts` - Fragment creation service
+- `src/lib/synthesis/` - Synthesis algorithm implementation
+- `src/lib/extraction-runs.ts` - ExtractionRun tracking
+- `src/lib/dimensional-analysis.ts` - Maps themes to dimensions
+
 ---
 
 ## Notes
@@ -748,4 +762,4 @@ See: `docs/plans/strategic/schema-design-summary.md` for full design docs.
 - Prioritize learning and iteration over perfect design
 - Update this document as architecture changes
 
-**Last major update:** Schema V1 migration (2026-01-03)
+**Last major update:** Fragment extraction & synthesis implementation (2026-01-04)

@@ -81,20 +81,47 @@ async function main() {
     console.log('  ✓ PASS: No orphaned authenticated conversations')
   }
 
+  // Check 5: Fragments exist
+  console.log('\nCheck 5: Fragments created')
+  const fragmentCount = await prisma.fragment.count()
+  const tagCount = await prisma.fragmentDimensionTag.count()
+  console.log(`  ℹ  INFO: ${fragmentCount} fragments, ${tagCount} dimension tags`)
+
+  // Check 6: Syntheses have been updated
+  console.log('\nCheck 6: Syntheses updated')
+  const updatedSyntheses = await prisma.dimensionalSynthesis.count({
+    where: { fragmentCount: { gt: 0 } }
+  })
+  console.log(`  ℹ  INFO: ${updatedSyntheses} syntheses have fragments`)
+
+  // Check 7: GeneratedOutputs exist
+  console.log('\nCheck 7: GeneratedOutputs created')
+  const outputCount = await prisma.generatedOutput.count()
+  console.log(`  ℹ  INFO: ${outputCount} generated outputs`)
+
+  // Check 8: ExtractionRuns exist
+  console.log('\nCheck 8: ExtractionRuns created')
+  const runCount = await prisma.extractionRun.count()
+  console.log(`  ℹ  INFO: ${runCount} extraction runs`)
+
   // Summary
   console.log('\n=== Summary ===')
   const totalProjects = await prisma.project.count()
   const totalConversations = await prisma.conversation.count()
   const totalFragments = await prisma.fragment.count()
   const totalSyntheses = await prisma.dimensionalSynthesis.count()
+  const totalOutputs = await prisma.generatedOutput.count()
+  const totalRuns = await prisma.extractionRun.count()
 
   console.log(`Projects: ${totalProjects}`)
   console.log(`Conversations: ${totalConversations}`)
   console.log(`  - With projectId: ${totalConversations - guestConversations}`)
   console.log(`  - Guest (no projectId): ${guestConversations}`)
   console.log(`Fragments: ${totalFragments}`)
-  console.log(`Syntheses: ${totalSyntheses}`)
+  console.log(`Syntheses: ${totalSyntheses} (${updatedSyntheses} with fragments)`)
   console.log(`Expected syntheses: ${totalProjects * 11}`)
+  console.log(`GeneratedOutputs: ${totalOutputs}`)
+  console.log(`ExtractionRuns: ${totalRuns}`)
 
   if (totalSyntheses === totalProjects * 11 &&
       usersWithoutProjects.length === 0 &&

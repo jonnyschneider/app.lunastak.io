@@ -4,6 +4,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { EnhancedExtractedContext, StrategyStatements, Trace, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
+import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
 
 export const maxDuration = 60;
 
@@ -204,7 +205,7 @@ export async function POST(req: Request) {
       principles: []   // Will be generated as placeholders in UI
     };
 
-    // Save trace
+    // Save trace (legacy - keeping for backward compatibility)
     console.log('[Generate API] Saving trace to database...');
     const trace = await prisma.trace.create({
       data: {
@@ -222,6 +223,60 @@ export async function POST(req: Request) {
       },
     });
     console.log('[Generate API] Trace saved with ID:', trace.id);
+
+    // Create GeneratedOutput (new schema)
+    let generatedOutput = null;
+    let extractionRun = null;
+
+    console.log('[Generate API] Checking projectId:', conversation.projectId);
+    if (conversation.projectId) {
+      try {
+        console.log('[Generate API] Creating GeneratedOutput for project:', conversation.projectId);
+        generatedOutput = await prisma.generatedOutput.create({
+          data: {
+            projectId: conversation.projectId,
+            userId: conversation.userId,
+            outputType: 'full_decision_stack',
+            version: 1,
+            content: statements as any,
+            modelUsed: CLAUDE_MODEL,
+            promptTokens: response.usage.input_tokens,
+            completionTokens: response.usage.output_tokens,
+            latencyMs: latency,
+          }
+        });
+        console.log('[Generate API] GeneratedOutput saved with ID:', generatedOutput.id);
+
+        // Get fragment IDs from this conversation
+        const fragments = await prisma.fragment.findMany({
+          where: { conversationId },
+          select: { id: true }
+        });
+        const fragmentIds = fragments.map(f => f.id);
+
+        // Create ExtractionRun for evaluation
+        extractionRun = await createExtractionRun({
+          projectId: conversation.projectId,
+          conversationId,
+          experimentVariant: conversation.experimentVariant || undefined,
+          fragmentIds,
+          modelUsed: CLAUDE_MODEL,
+          promptTokens: response.usage.input_tokens,
+          completionTokens: response.usage.output_tokens,
+          latencyMs: latency,
+          generatedOutputId: generatedOutput.id
+        });
+        console.log('[Generate API] ExtractionRun saved with ID:', extractionRun.id);
+
+        // Update with syntheses after (async)
+        updateExtractionRunWithSyntheses(extractionRun.id, conversation.projectId).catch(err => {
+          console.error('[Generate API] Failed to update extraction run with syntheses:', err);
+        });
+      } catch (error) {
+        console.error('[Generate API] Failed to create GeneratedOutput/ExtractionRun:', error);
+        // Continue - don't fail generation if new schema writes fail
+      }
+    }
 
     // Update conversation status
     await prisma.conversation.update({

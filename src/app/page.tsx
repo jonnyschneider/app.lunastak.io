@@ -14,13 +14,14 @@ import { DocumentUpload } from '@/components/DocumentUpload';
 import { DocumentSummary } from '@/components/DocumentSummary';
 import { EntryPointSelector } from '@/components/EntryPointSelector';
 import { FakeDoorDialog } from '@/components/FakeDoorDialog';
+import { ExtractionProgress, ExtractionStep } from '@/components/ExtractionProgress';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 
 type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
   const { data: session } = useSession();
-  const [userId] = useState(() => `user_${Date.now()}`); // Temp user ID until auth
+  const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +48,8 @@ export default function Home() {
   } | null>(null);
   const [showRegistrationBanner, setShowRegistrationBanner] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting');
+  const [extractionError, setExtractionError] = useState<string | undefined>();
 
   // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
@@ -177,10 +180,18 @@ export default function Home() {
     conversationId: string;
     summary: string;
     filename: string;
+    guestUserId?: string;
   }) => {
     // Store conversation ID and document data
     setConversationId(data.conversationId);
     setDocumentSummary(data.summary);
+
+    // Store guest user ID for session transfer when user authenticates
+    if (data.guestUserId) {
+      setGuestUserId(data.guestUserId);
+      localStorage.setItem('guestUserId', data.guestUserId);
+    }
+
     // Document context will be stored on server, we just need the summary for display
     setFlowStep('document-summary');
   };
@@ -225,7 +236,6 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           ...(variantOverride && { variantOverride })
         }),
       });
@@ -233,6 +243,13 @@ export default function Home() {
       const data = await response.json();
       setConversationId(data.conversationId);
       setExperimentVariant(data.experimentVariant || 'baseline-v1');
+
+      // Store guest user ID for session transfer when user authenticates
+      if (data.guestUserId) {
+        setGuestUserId(data.guestUserId);
+        localStorage.setItem('guestUserId', data.guestUserId);
+      }
+
       setMessages([{
         id: `msg_${Date.now()}`,
         conversationId: data.conversationId,
@@ -314,6 +331,9 @@ export default function Home() {
 
     setFlowStep('extracting');
     setIsLoading(true);
+    setExtractionStep('starting');
+    setExtractionError(undefined);
+
     try {
       const response = await fetch('/api/extract', {
         method: 'POST',
@@ -321,21 +341,70 @@ export default function Home() {
         body: JSON.stringify({ conversationId }),
       });
 
-      const data = await response.json();
-      console.log('[Extract] Received extraction data:', {
-        hasExtractedContext: !!data.extractedContext,
-        extraction_approach: data.extractedContext?.extraction_approach,
-        hasCore: 'core' in (data.extractedContext || {}),
-        hasThemes: 'themes' in (data.extractedContext || {}),
-        keys: Object.keys(data.extractedContext || {}),
-        hasDimensionalCoverage: !!data.dimensionalCoverage, // [E2] Log dimensional coverage
-      });
-      setExtractedContext(data.extractedContext);
-      setDimensionalCoverage(data.dimensionalCoverage); // [E2] Store dimensional coverage
-      setFlowStep('extraction');
+      if (!response.ok) {
+        throw new Error(`Extraction failed: ${response.status}`);
+      }
+
+      // Read the streaming response
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines (each update is a JSON line)
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          try {
+            const update = JSON.parse(line);
+            console.log('[Extract] Progress update:', update.step);
+
+            if (update.step === 'complete') {
+              // Final result
+              const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data;
+              console.log('[Extract] Received extraction data:', {
+                hasExtractedContext: !!ctx,
+                extraction_approach: ctx?.extraction_approach,
+                hasCore: 'core' in (ctx || {}),
+                hasThemes: 'themes' in (ctx || {}),
+                keys: Object.keys(ctx || {}),
+                hasDimensionalCoverage: !!coverage,
+              });
+              setExtractedContext(ctx);
+              setDimensionalCoverage(coverage);
+              setFlowStep('extraction');
+            } else if (update.step === 'error') {
+              throw new Error(update.error || 'Extraction failed');
+            } else {
+              // Progress update
+              setExtractionStep(update.step);
+            }
+          } catch (parseError) {
+            console.error('[Extract] Failed to parse progress update:', line, parseError);
+          }
+        }
+      }
     } catch (error) {
       console.error('Failed to extract context:', error);
-      setFlowStep('chat'); // Go back to chat on error
+      setExtractionStep('error');
+      setExtractionError(error instanceof Error ? error.message : 'Something went wrong');
+      // Reset both flowStep and currentPhase on error so user can continue
+      setTimeout(() => {
+        setFlowStep('chat');
+        setCurrentPhase('QUESTIONING');
+      }, 2000); // Give user time to see error
     } finally {
       setIsLoading(false);
     }
@@ -504,22 +573,10 @@ export default function Home() {
           )}
 
           {!showIntro && flowStep === 'extracting' && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="max-w-md text-center">
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-8">
-                  <div className="animate-pulse mb-4">
-                    <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded w-3/4 mx-auto"></div>
-                    <div className="h-2 bg-zinc-300 dark:bg-zinc-600 rounded w-1/2 mx-auto mt-2"></div>
-                  </div>
-                  <p className="text-zinc-700 dark:text-zinc-300 font-medium">
-                    Preparing your summary...
-                  </p>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                    Synthesizing your responses
-                  </p>
-                </div>
-              </div>
-            </div>
+            <ExtractionProgress
+              currentStep={extractionStep}
+              error={extractionError}
+            />
           )}
 
           {!showIntro && flowStep === 'extraction' && extractedContext && (
@@ -535,9 +592,9 @@ export default function Home() {
 
           {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
-              {showRegistrationBanner && (
+              {showRegistrationBanner && guestUserId && (
                 <RegistrationBanner
-                  guestUserId={userId}
+                  guestUserId={guestUserId}
                   onDismiss={() => setShowRegistrationBanner(false)}
                 />
               )}
