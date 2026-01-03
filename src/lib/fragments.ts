@@ -56,59 +56,59 @@ export async function createFragment(
 }
 
 /**
- * Normalize theme name for fuzzy matching
- * Handles variations like "The 6 PM Surge" vs "6 PM Surge" vs "6PM Surge"
+ * Map from extraction dimension keys to Tier 1 dimension constants
  */
-function normalizeThemeName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/^the\s+/i, '') // Remove leading "The "
-    .replace(/\s+/g, ' ')     // Normalize whitespace
-    .trim()
+const EXTRACTION_DIMENSION_MAP: Record<string, Tier1Dimension> = {
+  'customer_market': 'CUSTOMER_MARKET',
+  'problem_opportunity': 'PROBLEM_OPPORTUNITY',
+  'value_proposition': 'VALUE_PROPOSITION',
+  'differentiation_advantage': 'DIFFERENTIATION_ADVANTAGE',
+  'competitive_landscape': 'COMPETITIVE_LANDSCAPE',
+  'business_model_economics': 'BUSINESS_MODEL_ECONOMICS',
+  'go_to_market': 'GO_TO_MARKET',
+  'product_experience': 'PRODUCT_EXPERIENCE',
+  'capabilities_assets': 'CAPABILITIES_ASSETS',
+  'risks_constraints': 'RISKS_CONSTRAINTS',
 }
 
 /**
- * Find dimension tags for a theme using fuzzy matching
+ * Theme with inline dimension tags from extraction
  */
-function findDimensionTags(
-  themeName: string,
-  dimensionMappings: Map<string, DimensionTagInput[]>
-): DimensionTagInput[] {
-  // Try exact match first
-  const exactMatch = dimensionMappings.get(themeName)
-  if (exactMatch) return exactMatch
-
-  // Try normalized match
-  const normalizedTheme = normalizeThemeName(themeName)
-
-  const entries = Array.from(dimensionMappings.entries())
-  for (const [mappedName, tags] of entries) {
-    if (normalizeThemeName(mappedName) === normalizedTheme) {
-      return tags
-    }
-    // Also check if one contains the other (partial match)
-    const normalizedMapped = normalizeThemeName(mappedName)
-    if (normalizedTheme.includes(normalizedMapped) || normalizedMapped.includes(normalizedTheme)) {
-      return tags
-    }
-  }
-
-  return []
+export interface ThemeWithDimensions {
+  theme_name: string
+  content: string
+  dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[]
 }
 
 /**
- * Create multiple fragments from extraction themes
+ * Create multiple fragments from extraction themes with inline dimensions
  */
 export async function createFragmentsFromThemes(
   projectId: string,
   conversationId: string,
-  themes: { theme_name: string; content: string }[],
-  dimensionMappings: Map<string, DimensionTagInput[]>
+  themes: ThemeWithDimensions[]
 ) {
   const fragments = await Promise.all(
     themes.map(theme => {
-      const tags = findDimensionTags(theme.theme_name, dimensionMappings)
-      console.log(`[Fragments] Theme "${theme.theme_name}" matched ${tags.length} dimension tags`)
+      // Convert inline dimensions to DimensionTagInput[]
+      const tags: DimensionTagInput[] = theme.dimensions
+        .map(dim => {
+          const tier1Dimension = EXTRACTION_DIMENSION_MAP[dim.name]
+          if (!tier1Dimension) {
+            console.log(`[Fragments] Unknown dimension key: ${dim.name}`)
+            return null
+          }
+          return {
+            dimension: tier1Dimension,
+            confidence: dim.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
+            reasoning: 'Tagged during extraction',
+          } as DimensionTagInput
+        })
+        .filter((tag): tag is DimensionTagInput => tag !== null)
+
+      console.log(`[Fragments] Theme "${theme.theme_name}" has ${tags.length} dimension tags:`,
+        tags.map(t => t.dimension))
+
       return createFragment({
         projectId,
         conversationId,

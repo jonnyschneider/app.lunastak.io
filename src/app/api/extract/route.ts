@@ -3,8 +3,8 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
-import { analyzeDimensionalCoverage, convertCoverageToDimensionTags } from '@/lib/dimensional-analysis';
-import { createFragmentsFromThemes } from '@/lib/fragments';
+import { analyzeDimensionalCoverage } from '@/lib/dimensional-analysis';
+import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import { updateAllSyntheses } from '@/lib/synthesis';
 
 export const maxDuration = 60;
@@ -48,19 +48,30 @@ Extract the following:
   </enrichment>
 </extraction>`;
 
-const EMERGENT_EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract the key themes that emerged naturally from the discussion.
+const EMERGENT_EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract the key themes that emerged naturally from the discussion, and tag each theme with the strategic dimensions it relates to.
 
 Conversation:
 {conversation}
 
+STRATEGIC DIMENSIONS (tag each theme with 1-3 relevant dimensions):
+1. customer_market - Who we serve, their problems, buying behaviour, market dynamics
+2. problem_opportunity - The problem space, opportunity size, why now, market need
+3. value_proposition - What we offer, how it solves problems, why it matters
+4. differentiation_advantage - What makes us unique, defensibility, moats
+5. competitive_landscape - Who else plays, their strengths/weaknesses, positioning
+6. business_model_economics - How we create/capture value, unit economics, pricing
+7. go_to_market - Sales strategy, customer success, growth channels
+8. product_experience - The experience we're creating, usability, customer journey
+9. capabilities_assets - What we can do, team, technology, IP
+10. risks_constraints - What could go wrong, dependencies, limitations
+
 DO NOT force the conversation into predefined categories. Instead, identify 3-7 key themes that actually emerged and name them based on what was discussed.
 
 Examples of emergent themes (adapt to actual conversation):
-- "Customer Pain Points" if they discussed specific problems
-- "Market Positioning" if they discussed competitive landscape
-- "Technical Differentiation" if they discussed unique capabilities
-- "Growth Economics" if they discussed business model
-- "Operational Challenges" if they discussed execution concerns
+- "Customer Pain Points" → dimensions: customer_market, problem_opportunity
+- "Market Positioning" → dimensions: competitive_landscape, differentiation_advantage
+- "Technical Differentiation" → dimensions: capabilities_assets, differentiation_advantage
+- "Growth Economics" → dimensions: business_model_economics, go_to_market
 
 Format your extraction:
 
@@ -68,6 +79,10 @@ Format your extraction:
   <theme>
     <theme_name>Name that describes this theme</theme_name>
     <content>Detailed summary of what was discussed about this theme</content>
+    <dimensions>
+      <dimension name="dimension_key" confidence="high|medium|low"/>
+      <!-- Include 1-3 most relevant dimensions per theme -->
+    </dimensions>
   </theme>
   <!-- Repeat for each emergent theme (3-7 themes) -->
 </extraction>`;
@@ -111,8 +126,14 @@ function extractAllXML(xml: string, tag: string): string[] {
   return matches;
 }
 
-function parseEmergentThemes(xml: string): { theme_name: string; content: string }[] {
-  const themes: { theme_name: string; content: string }[] = [];
+interface ParsedTheme {
+  theme_name: string;
+  content: string;
+  dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[];
+}
+
+function parseEmergentThemes(xml: string): ParsedTheme[] {
+  const themes: ParsedTheme[] = [];
   const themeRegex = /<theme>([\s\S]*?)<\/theme>/g;
   let match;
 
@@ -121,8 +142,21 @@ function parseEmergentThemes(xml: string): { theme_name: string; content: string
     const theme_name = extractXML(themeXML, 'theme_name');
     const content = extractXML(themeXML, 'content');
 
+    // Parse inline dimensions
+    const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
+    const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g;
+    let dimMatch;
+
+    while ((dimMatch = dimensionRegex.exec(themeXML)) !== null) {
+      const name = dimMatch[1];
+      const confidence = dimMatch[2].toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW';
+      if (['HIGH', 'MEDIUM', 'LOW'].includes(confidence)) {
+        dimensions.push({ name, confidence });
+      }
+    }
+
     if (theme_name && content) {
-      themes.push({ theme_name, content });
+      themes.push({ theme_name, content, dimensions });
     }
   }
 
@@ -327,24 +361,26 @@ export async function POST(req: Request) {
         });
 
         // Step 4: Save insights (fragments)
-        if (isEmergentContext(extractedContext) && dimensionalCoverage) {
+        // Use inline dimensions from extraction (more reliable than post-hoc matching)
+        if (isEmergentContext(extractedContext)) {
           sendProgress({ step: 'saving_insights' });
 
-          console.log('[Extract] Dimensional coverage:', {
-            dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
-            coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
-            gaps: dimensionalCoverage.summary.gaps,
-          });
+          if (dimensionalCoverage) {
+            console.log('[Extract] Dimensional coverage:', {
+              dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
+              coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
+              gaps: dimensionalCoverage.summary.gaps,
+            });
+          }
 
-          // Create fragments from themes with dimension tags
+          // Create fragments from themes with inline dimension tags
           if (conversation.projectId) {
             try {
-              const dimensionTags = convertCoverageToDimensionTags(dimensionalCoverage);
+              // themes already have dimensions from parseEmergentThemes
               const fragments = await createFragmentsFromThemes(
                 conversation.projectId,
                 conversationId,
-                extractedContext.themes,
-                dimensionTags
+                extractedContext.themes as ThemeWithDimensions[]
               );
               console.log(`[Extract] Created ${fragments.length} fragments for project ${conversation.projectId}`);
 

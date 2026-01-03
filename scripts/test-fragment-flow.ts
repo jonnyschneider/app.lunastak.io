@@ -32,29 +32,25 @@ async function main() {
   }
   console.log(`Using conversation: ${conversation.id}`)
 
-  // 3. Create test fragments
+  // 3. Create test fragments with inline dimensions
   console.log('\n--- Creating Test Fragments ---')
   const testThemes = [
     {
       theme_name: 'Customer Pain Points',
-      content: 'Enterprise customers struggle with data integration across multiple SaaS tools. They spend hours manually moving data between systems.'
+      content: 'Enterprise customers struggle with data integration across multiple SaaS tools. They spend hours manually moving data between systems.',
+      dimensions: [{ name: 'customer_market', confidence: 'HIGH' as const }]
     },
     {
       theme_name: 'Market Opportunity',
-      content: 'The integration market is growing at 25% annually. Most solutions are too technical for non-developers.'
+      content: 'The integration market is growing at 25% annually. Most solutions are too technical for non-developers.',
+      dimensions: [{ name: 'problem_opportunity', confidence: 'MEDIUM' as const }]
     }
   ]
-
-  const dimensionMappings = new Map([
-    ['Customer Pain Points', [{ dimension: 'CUSTOMER_MARKET' as const, confidence: 'HIGH' as const }]],
-    ['Market Opportunity', [{ dimension: 'PROBLEM_OPPORTUNITY' as const, confidence: 'MEDIUM' as const }]]
-  ])
 
   const fragments = await createFragmentsFromThemes(
     project.id,
     conversation.id,
-    testThemes,
-    dimensionMappings
+    testThemes
   )
   console.log(`Created ${fragments.length} fragments`)
   fragments.forEach(f => {
