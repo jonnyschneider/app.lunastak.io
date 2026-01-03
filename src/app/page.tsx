@@ -21,7 +21,7 @@ type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' 
 
 export default function Home() {
   const { data: session } = useSession();
-  const [userId] = useState(() => `user_${Date.now()}`); // Temp user ID until auth
+  const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -180,10 +180,18 @@ export default function Home() {
     conversationId: string;
     summary: string;
     filename: string;
+    guestUserId?: string;
   }) => {
     // Store conversation ID and document data
     setConversationId(data.conversationId);
     setDocumentSummary(data.summary);
+
+    // Store guest user ID for session transfer when user authenticates
+    if (data.guestUserId) {
+      setGuestUserId(data.guestUserId);
+      localStorage.setItem('guestUserId', data.guestUserId);
+    }
+
     // Document context will be stored on server, we just need the summary for display
     setFlowStep('document-summary');
   };
@@ -228,7 +236,6 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           ...(variantOverride && { variantOverride })
         }),
       });
@@ -236,6 +243,13 @@ export default function Home() {
       const data = await response.json();
       setConversationId(data.conversationId);
       setExperimentVariant(data.experimentVariant || 'baseline-v1');
+
+      // Store guest user ID for session transfer when user authenticates
+      if (data.guestUserId) {
+        setGuestUserId(data.guestUserId);
+        localStorage.setItem('guestUserId', data.guestUserId);
+      }
+
       setMessages([{
         id: `msg_${Date.now()}`,
         conversationId: data.conversationId,
@@ -578,9 +592,9 @@ export default function Home() {
 
           {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
-              {showRegistrationBanner && (
+              {showRegistrationBanner && guestUserId && (
                 <RegistrationBanner
-                  guestUserId={userId}
+                  guestUserId={guestUserId}
                   onDismiss={() => setShowRegistrationBanner(false)}
                 />
               )}

@@ -22,23 +22,23 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
     // Only use userId if user is authenticated (User exists in DB)
-    // For guests, userId will be null
-    const userId = session?.user?.id || null;
+    // For guests, userId will be null initially
+    const authenticatedUserId = session?.user?.id || null;
 
     // For statsig, use actual userId or temp ID for guests (statsig needs an ID for variant assignment)
-    const statsigUserId = userId || tempUserId || `guest_${Date.now()}`;
+    const statsigUserId = authenticatedUserId || tempUserId || `guest_${Date.now()}`;
 
     // Determine experiment variant (with optional override)
     const experimentVariant = await getExperimentVariant(statsigUserId, variantOverride);
 
-    // Get or create default project for authenticated users
-    const project = await getOrCreateDefaultProject(userId);
+    // Get or create project (creates guest user + project for unauthenticated users)
+    const { userId, project, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
 
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
-        userId, // null for guests, real User.id for authenticated users
-        projectId: project?.id || null,
+        userId, // guest user ID or authenticated user ID
+        projectId: project.id,
         status: 'in_progress',
         experimentVariant,
       },
@@ -76,6 +76,8 @@ export async function POST(req: Request) {
       message: firstQuestion,
       stepNumber: 1,
       experimentVariant: conversation.experimentVariant,
+      // Include guestUserId for session transfer when guest authenticates
+      ...(isGuest && { guestUserId: userId }),
     });
   } catch (error) {
     console.error('Start conversation error:', error);

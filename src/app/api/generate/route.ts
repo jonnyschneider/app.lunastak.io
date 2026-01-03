@@ -228,8 +228,10 @@ export async function POST(req: Request) {
     let generatedOutput = null;
     let extractionRun = null;
 
+    console.log('[Generate API] Checking projectId:', conversation.projectId);
     if (conversation.projectId) {
       try {
+        console.log('[Generate API] Creating GeneratedOutput for project:', conversation.projectId);
         generatedOutput = await prisma.generatedOutput.create({
           data: {
             projectId: conversation.projectId,

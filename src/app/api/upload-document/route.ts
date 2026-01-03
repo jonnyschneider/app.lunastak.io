@@ -81,16 +81,16 @@ export async function POST(req: Request) {
 
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id || null;
+    const authenticatedUserId = session?.user?.id || null;
 
-    // Get or create default project for authenticated users
-    const project = await getOrCreateDefaultProject(userId);
+    // Get or create project (creates guest user + project for unauthenticated users)
+    const { userId, project, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
 
     // Create conversation with document context
     const conversation = await prisma.conversation.create({
       data: {
         userId,
-        projectId: project?.id || null,
+        projectId: project.id,
         status: 'in_progress',
         experimentVariant: 'baseline-v1', // Default variant for document uploads
       },
@@ -151,6 +151,8 @@ export async function POST(req: Request) {
       conversationId: conversation.id,
       summary,
       extractedText,
+      // Include guestUserId for session transfer when guest authenticates
+      ...(isGuest && { guestUserId: userId }),
     });
 
   } catch (error) {
