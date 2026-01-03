@@ -242,11 +242,7 @@ src/
 
 **Creating Issues:**
 ```bash
-# Create new issue
 npm run linear:issue -- --title "Feature name" --description "Details" --priority high --label chore
-
-# Import historical PRs (one-time setup)
-LINEAR_API_KEY=<key> npm run linear:import
 ```
 
 **GitHub Integration:** ✅ Working
