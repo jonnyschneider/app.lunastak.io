@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
-import { analyzeDimensionalCoverage } from '@/lib/dimensional-analysis';
+import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import { updateAllSyntheses } from '@/lib/synthesis';
 
@@ -243,10 +243,14 @@ export async function POST(req: Request) {
           // Parse emergent themes with inline dimensions
           const themes = parseEmergentThemes(extractionXML);
 
-          // Step 2 & 3: Run summary + dimensional analysis in parallel
+          // Compute dimensional coverage from inline dimensions (no Claude call needed!)
+          sendProgress({ step: 'analyzing_dimensions' });
+          dimensionalCoverage = computeDimensionalCoverageFromInline(themes);
+
+          // Generate reflective summary (only 1 Claude call now)
           sendProgress({ step: 'generating_summary' });
 
-          const summaryPromise = anthropic.messages.create({
+          const summaryResponse = await anthropic.messages.create({
             model: CLAUDE_MODEL,
             max_tokens: 600,
             messages: [{
@@ -255,27 +259,6 @@ export async function POST(req: Request) {
             }],
             temperature: 0.5
           });
-
-          // Start dimensional analysis
-          const tempContext = {
-            themes,
-            reflective_summary: { strengths: [], emerging: [], opportunities_for_enrichment: [] },
-            extraction_approach: 'emergent' as const,
-          };
-
-          // Send analyzing dimensions update after a small delay to show both steps
-          setTimeout(() => sendProgress({ step: 'analyzing_dimensions' }), 500);
-
-          const dimensionalPromise = analyzeDimensionalCoverage(
-            tempContext,
-            conversationHistory
-          );
-
-          // Await both in parallel
-          const [summaryResponse, dimensionalResult] = await Promise.all([
-            summaryPromise,
-            dimensionalPromise
-          ]);
 
           const summaryContent = summaryResponse.content[0]?.type === 'text'
             ? summaryResponse.content[0].text : '';
@@ -293,8 +276,6 @@ export async function POST(req: Request) {
             reflective_summary,
             extraction_approach: 'emergent',
           };
-
-          dimensionalCoverage = dimensionalResult;
         } else {
           // Prescriptive extraction (baseline-v1)
           const coreXML = extractXML(extractionXML, 'core');
