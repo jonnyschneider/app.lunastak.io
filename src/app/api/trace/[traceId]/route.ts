@@ -38,6 +38,7 @@ export async function GET(
       conversationId: trace.conversationId,
       output: trace.output,
       claudeThoughts: trace.claudeThoughts,
+      dimensionalCoverage: trace.dimensionalCoverage, // [E2] Include dimensional coverage
       timestamp: trace.timestamp,
     })
   } catch (error) {
