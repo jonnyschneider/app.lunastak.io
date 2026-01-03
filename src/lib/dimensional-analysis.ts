@@ -204,7 +204,10 @@ export function convertCoverageToDimensionTags(
     if (!dimValue.covered) continue
 
     const tier1Dimension = DIMENSION_NAME_MAP[dimKey]
-    if (!tier1Dimension) continue
+    if (!tier1Dimension) {
+      console.log(`[DimensionalAnalysis] No mapping for dimension: ${dimKey}`)
+      continue
+    }
 
     for (const themeName of dimValue.themes) {
       const existingTags = themeToTags.get(themeName) || []
@@ -216,6 +219,9 @@ export function convertCoverageToDimensionTags(
       themeToTags.set(themeName, existingTags)
     }
   }
+
+  console.log(`[DimensionalAnalysis] Created dimension tags for ${themeToTags.size} themes:`,
+    Array.from(themeToTags.keys()))
 
   return themeToTags
 }

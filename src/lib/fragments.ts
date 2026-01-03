@@ -56,6 +56,47 @@ export async function createFragment(
 }
 
 /**
+ * Normalize theme name for fuzzy matching
+ * Handles variations like "The 6 PM Surge" vs "6 PM Surge" vs "6PM Surge"
+ */
+function normalizeThemeName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/^the\s+/i, '') // Remove leading "The "
+    .replace(/\s+/g, ' ')     // Normalize whitespace
+    .trim()
+}
+
+/**
+ * Find dimension tags for a theme using fuzzy matching
+ */
+function findDimensionTags(
+  themeName: string,
+  dimensionMappings: Map<string, DimensionTagInput[]>
+): DimensionTagInput[] {
+  // Try exact match first
+  const exactMatch = dimensionMappings.get(themeName)
+  if (exactMatch) return exactMatch
+
+  // Try normalized match
+  const normalizedTheme = normalizeThemeName(themeName)
+
+  const entries = Array.from(dimensionMappings.entries())
+  for (const [mappedName, tags] of entries) {
+    if (normalizeThemeName(mappedName) === normalizedTheme) {
+      return tags
+    }
+    // Also check if one contains the other (partial match)
+    const normalizedMapped = normalizeThemeName(mappedName)
+    if (normalizedTheme.includes(normalizedMapped) || normalizedMapped.includes(normalizedTheme)) {
+      return tags
+    }
+  }
+
+  return []
+}
+
+/**
  * Create multiple fragments from extraction themes
  */
 export async function createFragmentsFromThemes(
@@ -66,7 +107,8 @@ export async function createFragmentsFromThemes(
 ) {
   const fragments = await Promise.all(
     themes.map(theme => {
-      const tags = dimensionMappings.get(theme.theme_name) || []
+      const tags = findDimensionTags(theme.theme_name, dimensionMappings)
+      console.log(`[Fragments] Theme "${theme.theme_name}" matched ${tags.length} dimension tags`)
       return createFragment({
         projectId,
         conversationId,
