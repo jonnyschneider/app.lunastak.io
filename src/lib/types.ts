@@ -174,3 +174,49 @@ export interface Trace {
   feedbackTimestamp?: Date;
   refinementRequested: boolean;
 }
+
+// Strategic Dimensions (Experiment 2: Dimensional Coverage Tracking)
+export const STRATEGIC_DIMENSIONS = [
+  'customer_and_market',
+  'problem_and_opportunity',
+  'value_proposition',
+  'differentiation_and_advantage',
+  'competitive_landscape',
+  'business_model_and_economics',
+  'go_to_market',
+  'product_experience',
+  'capabilities_and_assets',
+  'risks_and_constraints',
+] as const;
+
+export type StrategicDimension = typeof STRATEGIC_DIMENSIONS[number];
+
+export const STRATEGIC_INTENT = 'strategic_intent';
+
+// Dimensional Coverage Types
+export type CoverageConfidence = 'high' | 'medium' | 'low';
+
+export interface DimensionCoverage {
+  covered: boolean;
+  confidence: CoverageConfidence;
+  themes: string[];  // Which emergent theme(s) mapped to this dimension
+}
+
+export interface DimensionalCoverage {
+  // Coverage by dimension
+  dimensions: {
+    [K in StrategicDimension]: DimensionCoverage;
+  };
+
+  // Summary metrics
+  summary: {
+    dimensionsCovered: number;  // out of 10
+    coveragePercentage: number; // 0-100
+    gaps: StrategicDimension[];  // dimensions with no coverage
+    primaryDimensions: StrategicDimension[];  // dimensions with high confidence
+  };
+
+  // Metadata
+  analysisTimestamp: string;
+  modelUsed: string;
+}

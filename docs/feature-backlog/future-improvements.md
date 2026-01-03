@@ -123,3 +123,97 @@
 - Requires authentication and access control
 
 **Date noted:** 2025-12-12
+
+---
+
+## Domain-Specific Strategic Models (Premium Feature)
+
+**Context:** From taxonomy design session (2026-01-03). The universal strategic dimensions work for general product strategy, but high-value assessments (e.g., VC due diligence, industry-specific evaluations) require bespoke domain models.
+
+**Observation:** Jonny's consulting work includes domain-specific evaluation frameworks (e.g., 4PL logistics maturity model, retail media competitive evaluation). These take 2-3 days of consulting work to develop and provide significantly deeper, more relevant assessment than generic frameworks.
+
+**Proposed Model:**
+
+1. **Premium Consulting Service:** Jonny leads research to develop domain-specific model for a vertical (e.g., HealthTech, FinTech, Logistics SaaS)
+
+2. **Side-load to Lunastak:** Domain model becomes available as a "lens" or "mode" within the app, enabling:
+   - Domain-specific questioning (e.g., "Carrier integration depth" for logistics)
+   - Domain-aware extraction (maps to industry-specific dimensions)
+   - Domain-relevant generation (benchmarks against industry norms)
+
+3. **User Experience:**
+   - User selects or is detected as being in a specific domain
+   - Conversation, extraction, and generation adapt accordingly
+   - Outputs include domain-specific assessments and benchmarks
+
+**Examples from existing work:**
+- **4PL Logistics:** Areas of Value (Cost Optimisation, E2E Orchestration, Visibility, Customer Success, Data)
+- **Product Maturity:** People & Team, Value Aligned Delivery, Technical Architecture dimensions with Level 0-5 rubrics
+- **VC Diligence:** Strategic Clarity, Customer Fit, Product Economics, Unfair Advantage
+
+**Technical Requirements:**
+- Domain model schema (dimensions, sub-dimensions, assessment criteria)
+- Model loading/selection mechanism
+- Domain-aware prompt templates (questioning, extraction, generation)
+- Benchmark data storage (optional, for comparative assessment)
+
+**Business Model:**
+- Premium tier feature (not available in free/standard)
+- Consulting engagement to develop model ($X,XXX)
+- Ongoing access via subscription or per-use
+- Potential: Marketplace for domain models (contributed by domain experts)
+
+**Priority:** Future enhancement (after core taxonomy and multi-session are proven)
+
+**Date noted:** 2026-01-03
+
+---
+
+## Voice Memo Capture & Takeover UI
+
+**Context:** From taxonomy design session (2026-01-03). Leaders have strategic thoughts at unexpected moments (in the car, running, shower). Current app requires active conversation sessions, missing these valuable fragments.
+
+**Core Insight:** Strategy development is fragmented and iterative. Leaders percolate, hear something that sparks a thought, and later connect dots in unexpected ways. We need to capture this thinking when it happens.
+
+**Proposed Features:**
+
+### 1. Voice Memo Capture
+- User records voice memo at any time (mobile-first)
+- Transcription via speech-to-text
+- Model analyses and tags to strategic dimensions
+- Fragment added to user's strategic context corpus
+- Synthesis updated asynchronously
+
+### 2. "Takeover" UI Experience
+- Proactive engagement: app poses 1 approachable question
+- User records voice response
+- Transcribe → Extract → Synthesise → Capture
+- Next question "riffs" on previous response (dynamic chaining)
+
+**Technical Challenge:** Real-time dynamic questioning is hard (transcribe + extract + synthesise + generate question). 
+
+**Alternative:** "Canned questions" designed to elicit different types of information mapped to taxonomy dimensions:
+- "Tell me about a recent customer conversation that surprised you" → Customer & Market
+- "What's the one thing competitors can't easily copy?" → Differentiation & Advantage  
+- "What keeps you up at night about this business?" → Risks & Constraints
+- "If you had unlimited resources, what would you build first?" → Strategic Intent
+
+### 3. Unstructured "Record Now" Option
+- For unplanned epiphanies
+- No prompt, just capture
+- Model tags and categorises after the fact
+
+**Dependencies:**
+- Baseline taxonomy must be established first
+- Multi-session state persistence
+- Speech-to-text integration
+- Mobile-friendly UI
+
+**Validation Approach:**
+- Fake door test for demand
+- Prototype with small user group
+- Measure: Do people actually use it? Does it improve synthesis quality?
+
+**Priority:** Future enhancement (after core taxonomy proven with conversation-based capture)
+
+**Date noted:** 2026-01-03

@@ -1,8 +1,9 @@
-# Experiment E1a: Emergent Extraction
+# Experiment 1: Emergent Extraction
 
-**Status:** 🟡 Implementation Complete, Awaiting Data Collection
-**Variant ID:** `emergent-extraction-e1a`
+**Status:** 🟢 Complete (Validated via Dogfooding)
+**Variant ID:** `emergent-extraction`
 **Date:** 2025-12-17
+**Completed:** 2026-01-03
 
 ---
 
@@ -82,7 +83,23 @@ Emergent theme extraction will produce less "wooden" outputs than prescriptive f
 - Theme diversity across conversations
 - Coverage gaps analysis
 
-**Sample Size:** 10-15 participants for E1a, 10-15 for baseline-v1
+**Sample Size:** Dogfooding (internal testing)
+
+---
+
+## Outcome
+
+**Status:** ✅ Pass
+
+**Key Findings:**
+- Emergent themes produced richer, more contextual outputs than prescriptive fields
+- Themes naturally captured user's strategic perspective without forced categorization
+- Reflective summary effectively surfaced gaps and opportunities
+- Dogfooding revealed need for dimensional coverage tracking (led to Experiment 2)
+
+**Next Evolution:**
+- Experiment 2 adds dimensional coverage tracking to validate theme→dimension mapping
+- See `docs/experiments/one-pagers/E2-dimensional-coverage.md`
 
 ---
 
@@ -90,10 +107,10 @@ Emergent theme extraction will produce less "wooden" outputs than prescriptive f
 
 - **Design:** `docs/plans/2025-12-17-e1a-emergent-extraction-design.md`
 - **Implementation:** `docs/plans/2025-12-17-e1a-emergent-extraction-implementation.md`
-- **Testing:** `tests/e1a-test-plan.md`
-- **Analysis:** `scripts/dimensional_coverage.py`
+- **Taxonomy Context:** `docs/plans/strategic/2026-01-03-taxonomy-design-session.md`
+- **Next Experiment:** `docs/experiments/one-pagers/E2-dimensional-coverage.md`
 
 ---
 
-**Implementation Status:** Complete
-**Next Step:** UAT → Enable for test participants → Collect data
+**Implementation Status:** ✅ Complete
+**Outcome:** ✅ Pass - Validated approach, revealed dimensional tracking opportunity
