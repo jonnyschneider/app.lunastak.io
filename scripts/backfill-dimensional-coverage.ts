@@ -61,7 +61,7 @@ async function backfillDimensionalCoverage(options: Options) {
 
   // Build query based on options
   const whereClause: any = {
-    dimensionalCoverage: Prisma.DbNull, // Only traces without coverage (DB NULL)
+    dimensionalCoverage: { equals: Prisma.DbNull }, // Only traces without coverage (DB NULL)
   };
 
   if (options.traceId) {
