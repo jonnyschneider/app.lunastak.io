@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation Consolidation** - Streamlined Linear integration documentation
+  - Consolidated 5 separate Linear docs into `.claude/README.md` backlog management section
+  - Migrated feature backlog to Linear issues (HUM-26 through HUM-31)
+  - Added Linear helper scripts (create-issue, import-history, find-duplicates)
+
 ---
 
 ## [1.2.2] - 2025-12-30
