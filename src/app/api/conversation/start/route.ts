@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
+import { getOrCreateDefaultProject } from '@/lib/projects';
 
 export const maxDuration = 60;
 
@@ -30,10 +31,14 @@ export async function POST(req: Request) {
     // Determine experiment variant (with optional override)
     const experimentVariant = await getExperimentVariant(statsigUserId, variantOverride);
 
+    // Get or create default project for authenticated users
+    const project = await getOrCreateDefaultProject(userId);
+
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
         userId, // null for guests, real User.id for authenticated users
+        projectId: project?.id || null,
         status: 'in_progress',
         experimentVariant,
       },

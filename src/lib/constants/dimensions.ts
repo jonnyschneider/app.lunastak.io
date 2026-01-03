@@ -1,0 +1,19 @@
+/**
+ * Tier 1 Strategic Dimensions
+ * See: docs/plans/strategic/TAXONOMY_REFERENCE.md
+ */
+export const TIER_1_DIMENSIONS = [
+  'CUSTOMER_MARKET',
+  'PROBLEM_OPPORTUNITY',
+  'VALUE_PROPOSITION',
+  'DIFFERENTIATION_ADVANTAGE',
+  'COMPETITIVE_LANDSCAPE',
+  'BUSINESS_MODEL_ECONOMICS',
+  'GO_TO_MARKET',
+  'PRODUCT_EXPERIENCE',
+  'CAPABILITIES_ASSETS',
+  'RISKS_CONSTRAINTS',
+  'STRATEGIC_INTENT',
+] as const
+
+export type Tier1Dimension = typeof TIER_1_DIMENSIONS[number]

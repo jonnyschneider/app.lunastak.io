@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation Consolidation** - Streamlined Linear integration documentation
+  - Consolidated 5 separate Linear docs into `.claude/README.md` backlog management section
+  - Migrated feature backlog to Linear issues (HUM-26 through HUM-31)
+  - Keep only `linear-create-issue.ts` for ongoing use
+- **Release Workflow Enhancement** - Added mandatory pre-release checklist to `CONTRIBUTING.md`
+  - Ensures CHANGELOG.md, VERSION_MAPPING.md, and .claude/README.md are updated before release
+  - 8-point checklist to prevent missing version documentation
+
+### Removed
+- **One-time Linear Scripts** - Removed setup and testing scripts after completion
+  - Deleted `linear-setup.ts`, `linear-import-history.ts`, `linear-find-duplicates.ts`
+  - Deleted `linear-check-team-repos.ts`, `test-linear-github.ts`
+  - Removed corresponding npm scripts: `linear:setup`, `linear:import`, `linear:test`
+- **Obsolete Test Folder** - Removed `/tests` directory
+  - Contained only E1a manual test checklist (released in v1.1.0, Dec 2025)
+  - UAT/testing now handled in implementation plans and PR descriptions
+
+### Fixed
+- **v1.3.0 Release Documentation** - Added missing release notes from 2026-01-03
+  - Added v1.3.0 entry to CHANGELOG.md (E2 Dimensional Coverage Tracking)
+  - Updated VERSION_MAPPING.md status: "Pending UAT" → "Production"
+  - Updated .claude/README.md current version and date
+
+---
+
+## [1.3.0] - 2026-01-03
+
+### Added - Experiment 2: Dimensional Coverage Tracking
+
+**Overview:** Post-extraction dimensional analysis for emergent extraction (E1a), mapping emergent themes to 10 strategic dimensions for coverage validation and gap identification.
+
+**Core Features:**
+- **Dimensional Coverage Analysis** - Automated mapping of emergent themes to strategic dimensions
+  - 10 Tier 1 strategic dimensions (Customer & Market, Strategic Intent, Differentiation & Advantage, etc.)
+  - Claude API integration for theme-to-dimension mapping
+  - Coverage percentage calculation (themes matched / total dimensions)
+  - Dimension tags stored in database for querying and analysis
+- **Backfill Script** - Apply dimensional coverage to existing traces
+  - `scripts/backfill-dimensional-coverage.ts` - Processes historical data
+  - Updates all emergent extraction traces with dimensional analysis
+  - Batch processing with rate limiting
+- **Analysis Tools** - Python functions and Jupyter notebooks
+  - `scripts/dimensional_coverage_analysis.py` - Load and analyze coverage patterns
+  - `notebooks/dimensional_coverage_analysis.ipynb` - Interactive exploration
+  - Coverage distribution analysis, gap identification, theme mapping insights
+
+**Technical Implementation:**
+- New field: `Trace.dimensionalCoverage Json?` in Prisma schema
+- `src/lib/dimensional-analysis.ts` - Core analysis logic
+- API integration: extract → analyze dimensions → store → query
+- TypeScript type definitions for dimensional coverage data
+- Unit tests for dimension mapping logic
+
+**Documentation:**
+- Experiment one-pager: `docs/experiments/one-pagers/E2-dimensional-coverage.md`
+- Implementation plan with UAT checklist
+- Deployment strategy and rollback procedures
+
 ---
 
 ## [1.2.2] - 2025-12-30

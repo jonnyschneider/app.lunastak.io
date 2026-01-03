@@ -8,22 +8,26 @@ datasource db {
 }
 
 model Conversation {
-  id        String   @id @default(cuid())
-  userId    String?  // Nullable for guest sessions
-  status    String   // 'in_progress' | 'completed' | 'abandoned'
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String? // Nullable for guest sessions
+  status        String // 'in_progress' | 'completed' | 'abandoned'
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   currentPhase  String   @default("INITIAL") // INITIAL | LENS_SELECTION | QUESTIONING | EXTRACTION | GENERATION
-  selectedLens  String?  // A | B | C | D | E
+  selectedLens  String? // A | B | C | D | E
   questionCount Int      @default(0)
 
   // Experiment tracking
-  experimentVariant String?  // baseline-v1, emergent-extraction, etc.
+  experimentVariant String? // baseline-v1, emergent-extraction, etc.
 
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Message[]
-  traces    Trace[]
-  events    Event[]
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  traces         Trace[]
+  events         Event[]
+  fragments      Fragment[]
+  extractionRuns ExtractionRun[]
+  Project        Project?        @relation(fields: [projectId], references: [id])
+  projectId      String?
 
   @@index([userId])
   @@index([createdAt])
@@ -31,66 +35,67 @@ model Conversation {
 }
 
 model Message {
-  id             String   @id @default(cuid())
-  conversationId String
-  role           String   // 'assistant' | 'user'
-  content        String   @db.Text
-  stepNumber     Int
-  timestamp      DateTime @default(now())
-  confidenceScore     String?  // HIGH | MEDIUM | LOW
+  id                  String   @id @default(cuid())
+  conversationId      String
+  role                String // 'assistant' | 'user'
+  content             String   @db.Text
+  stepNumber          Int
+  timestamp           DateTime @default(now())
+  confidenceScore     String? // HIGH | MEDIUM | LOW
   confidenceReasoning String?  @db.Text
 
   // Phase 2: Message-level annotations
-  annotations         String?  @db.Text
+  annotations String? @db.Text
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  fragments    Fragment[]
 
   @@index([conversationId])
   @@index([timestamp])
 }
 
 model Trace {
-  id                  String   @id @default(cuid())
-  conversationId      String
-  userId              String?  // Nullable for guests
-  timestamp           DateTime @default(now())
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String? // Nullable for guests
+  timestamp      DateTime @default(now())
 
   // Extracted Context (stored as JSON)
-  extractedContext    Json
+  extractedContext Json
 
   // Dimensional Coverage (E2: stored as JSON, nullable - only for emergent extraction)
   dimensionalCoverage Json?
 
   // Generated Output (stored as JSON)
-  output              Json
-  claudeThoughts      String?  @db.Text
+  output         Json
+  claudeThoughts String? @db.Text
 
   // Metadata
-  modelUsed           String
-  totalTokens         Int
-  promptTokens        Int
-  completionTokens    Int
-  latencyMs           Int
+  modelUsed        String
+  totalTokens      Int
+  promptTokens     Int
+  completionTokens Int
+  latencyMs        Int
 
   // User Feedback
-  userFeedback        String?  // 'helpful' | 'not_helpful'
+  userFeedback        String? // 'helpful' | 'not_helpful'
   feedbackTimestamp   DateTime?
-  refinementRequested Boolean  @default(false)
+  refinementRequested Boolean   @default(false)
 
   // Quality Rating (for experiments)
-  qualityRating       String?  // 'good' | 'bad'
+  qualityRating          String? // 'good' | 'bad'
   qualityRatingTimestamp DateTime?
 
   // Phase 2: Error coding fields
-  openCodingNotes     String?  @db.Text
-  errorCategories     String[] @default([])
-  reviewedAt          DateTime?
-  reviewedBy          String?
+  openCodingNotes String?   @db.Text
+  errorCategories String[]  @default([])
+  reviewedAt      DateTime?
+  reviewedBy      String?
 
-  user                User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  events              Event[]
-  feedbacks           Feedback[]
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  events       Event[]
+  feedbacks    Feedback[]
 
   @@index([userId])
   @@index([timestamp])
@@ -101,15 +106,15 @@ model Trace {
 model Event {
   id             String   @id @default(cuid())
   conversationId String
-  traceId        String?  // Nullable - some events happen before generation
+  traceId        String? // Nullable - some events happen before generation
   timestamp      DateTime @default(now())
 
   // Event classification
-  eventType      String   // 'fake_door_click', 'info_icon_view', 'extraction_choice', etc.
-  eventData      Json     // Flexible storage for event-specific data
+  eventType String // 'fake_door_click', 'info_icon_view', 'extraction_choice', etc.
+  eventData Json // Flexible storage for event-specific data
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  trace          Trace?       @relation(fields: [traceId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  trace        Trace?       @relation(fields: [traceId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([traceId])
@@ -125,6 +130,7 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
 
+  projects      Project[]
   conversations Conversation[]
   traces        Trace[]
   feedbacks     Feedback[]
@@ -132,6 +138,216 @@ model User {
   sessions      Session[]
 
   @@index([email])
+}
+
+model Project {
+  id          String  @id @default(cuid())
+  userId      String
+  name        String
+  description String? @db.Text
+  status      String  @default("active") // active | archived | deleted
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations (will add as we create other models)
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations        Conversation[]
+  fragments            Fragment[]
+  dimensionalSyntheses DimensionalSynthesis[]
+  generatedOutputs     GeneratedOutput[]
+  extractionRuns       ExtractionRun[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Fragment {
+  id        String @id @default(cuid())
+  projectId String
+
+  // Source: currently only Conversation (Document deferred)
+  conversationId String?
+  messageId      String?
+
+  // Content
+  content     String @db.Text
+  contentType String @default("theme") // theme | insight | quote | stat | principle
+
+  // Lifecycle
+  status         String    @default("active") // active | archived | soft_deleted
+  archivedAt     DateTime?
+  archivedReason String?
+  softDeletedAt  DateTime?
+
+  // Metadata
+  capturedAt  DateTime @default(now())
+  extractedBy String?
+  confidence  String? // HIGH | MEDIUM | LOW
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  conversation  Conversation?          @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message       Message?               @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  dimensionTags FragmentDimensionTag[]
+
+  @@index([projectId])
+  @@index([conversationId])
+  @@index([status])
+  @@index([capturedAt])
+}
+
+model FragmentDimensionTag {
+  id         String @id @default(cuid())
+  fragmentId String
+  dimension  String // CUSTOMER_MARKET | PROBLEM_OPPORTUNITY | etc.
+
+  // Tag metadata
+  confidence String?
+  reasoning  String?  @db.Text
+  taggedBy   String?
+  taggedAt   DateTime @default(now())
+
+  // Future: Tier 2 subdimensions
+  subdimension String?
+
+  fragment Fragment @relation(fields: [fragmentId], references: [id], onDelete: Cascade)
+
+  @@unique([fragmentId, dimension])
+  @@index([fragmentId])
+  @@index([dimension])
+  @@index([subdimension])
+}
+
+model DimensionalSynthesis {
+  id        String @id @default(cuid())
+  projectId String
+  dimension String // CUSTOMER_MARKET | PROBLEM_OPPORTUNITY | etc.
+
+  // Synthesis content: hybrid structured + JSONB
+  summary        String?  @db.Text
+  keyThemes      String[] @default([])
+  keyQuotes      String[] @default([])
+  gaps           String[] @default([])
+  contradictions String[] @default([])
+
+  // JSONB for emergent Tier 2 subdimensions
+  subdimensions Json?
+
+  // Quality metrics
+  confidence    String  @default("LOW") // HIGH | MEDIUM | LOW
+  coverage      String?
+  fragmentCount Int     @default(0)
+
+  // Versioning
+  synthesisVersion String @default("v1")
+
+  // Temporal
+  lastSynthesizedAt DateTime @default(now())
+  synthesizedBy     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, dimension])
+  @@index([projectId])
+  @@index([dimension])
+  @@index([confidence])
+  @@index([lastSynthesizedAt])
+}
+
+model GeneratedOutput {
+  id        String  @id @default(cuid())
+  projectId String
+  userId    String?
+
+  // Output metadata
+  outputType String // vision | strategy | objectives | initiatives | principles | full_decision_stack
+  version    Int    @default(1)
+
+  // Content
+  content Json
+
+  // Generation metadata
+  generatedFrom    String? @db.Text
+  modelUsed        String
+  promptTokens     Int?
+  completionTokens Int?
+  latencyMs        Int?
+
+  // User feedback
+  userFeedback    String?
+  feedbackAt      DateTime?
+  refinementNotes String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  extractionRuns ExtractionRun[]
+
+  @@index([projectId])
+  @@index([outputType])
+  @@index([createdAt])
+}
+
+model ExtractionRun {
+  id        String @id @default(cuid())
+  projectId String
+
+  // What triggered this run
+  conversationId String?
+
+  // Experiment tracking
+  experimentVariant String?
+  experimentId      String?
+
+  // What was extracted
+  fragmentIds String[] @default([])
+
+  // Synthesis state snapshots
+  synthesesBefore Json?
+  synthesesAfter  Json?
+
+  // Generated output
+  generatedOutputId String?
+
+  // Model/performance metadata
+  modelUsed        String
+  promptTokens     Int?
+  completionTokens Int?
+  latencyMs        Int?
+
+  // Evaluation fields (same as Trace)
+  userFeedback    String?
+  feedbackAt      DateTime?
+  qualityRating   String?
+  errorCategories String[]  @default([])
+  openCodingNotes String?   @db.Text
+  reviewedAt      DateTime?
+  reviewedBy      String?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  conversation    Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  generatedOutput GeneratedOutput? @relation(fields: [generatedOutputId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([conversationId])
+  @@index([experimentVariant])
+  @@index([experimentId])
+  @@index([qualityRating])
+  @@index([createdAt])
 }
 
 model Account {
@@ -176,8 +392,8 @@ model Feedback {
   responseText String   @db.Text
   createdAt    DateTime @default(now())
 
-  trace        Trace    @relation(fields: [traceId], references: [id], onDelete: Cascade)
-  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trace Trace @relation(fields: [traceId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([traceId])
   @@index([userId])
