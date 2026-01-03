@@ -127,14 +127,13 @@ ${pr.title}`;
 
       const issueData = await issue.issue;
 
-      // Mark as completed
+      // Mark as completed (completedAt is set automatically by Linear)
       const workflow = await team.states();
       const completedState = workflow.nodes.find(s => s.type === 'completed');
 
       if (completedState && issueData?.id) {
         await client.updateIssue(issueData.id, {
           stateId: completedState.id,
-          completedAt: new Date(pr.mergedAt!),
         });
       }
 
