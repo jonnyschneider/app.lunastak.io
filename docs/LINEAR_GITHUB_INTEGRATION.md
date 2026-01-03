@@ -20,30 +20,27 @@ Now we need to configure:
 
 1. **Go to Team Settings:**
    - Click workspace name (top left)
-   - Settings → Teams → Humventures → Workflow
+   - Settings → Teams → Humventures → Workflows
 
-2. **Enable Git Automations:**
-   - Scroll to "Git automations" section
-   - Toggle **"Enable automatic PR status sync"**
-   - Toggle **"Enable branch name automations"**
+2. **Configure Pull Request Automations:**
 
-3. **Configure PR Automation Rules:**
+   Scroll to "Pull request automations" section. Your settings are already configured:
 
-   **When PR is opened:**
-   - Action: Set issue to "In Progress"
+   - **On draft PR open, move to...** → No action
+   - **On PR open, move to...** → **In Progress** ✅
+   - **On PR review request or activity, move to...** → **In Review** ✅
+   - **On PR ready for merge, move to...** → No action
+   - **On PR merge, move to...** → **Done** ✅
 
-   **When PR is merged:**
-   - Action: Set issue to "Done"
-   - ✅ Close the issue
+   **✅ These settings are perfect! No changes needed.**
 
-   **When PR is closed (not merged):**
-   - Action: Set issue to "Todo"
+3. **Branch-Specific Rules (Optional):**
 
-4. **Branch Name Template:**
-   ```
-   {issueIdentifier}-{issueName}
-   ```
-   This generates: `HUM-123-add-feature-name`
+   You can click "Add branch" to set different rules for specific target branches.
+
+   Example use case: When PR merges to `main` → Move to "Released" instead of "Done"
+
+   This is optional - the default rules above work great for most workflows.
 
 ---
 
