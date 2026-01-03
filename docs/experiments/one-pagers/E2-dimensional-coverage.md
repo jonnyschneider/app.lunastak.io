@@ -126,8 +126,25 @@ Emergent extraction runs (existing)
 - Comparison across experiment variants (if baseline gets dimensional tracking)
 
 **Analysis Tools:**
-- `scripts/dimensional_coverage_analysis.py` - Load, analyze, visualize coverage data
+- `scripts/dimensional_coverage_analysis.py` - Python functions for loading and analyzing coverage data
+- `scripts/backfill-dimensional-coverage.ts` - Retroactively apply dimensional coverage to existing traces
+- `notebooks/dimensional_coverage_analysis.ipynb` - Dedicated Jupyter notebook for dimensional coverage analysis
 - Jupyter notebooks - Interactive exploration and reporting
+
+**Backfill Script Usage:**
+```bash
+# Dry run (preview without updating)
+npx tsx scripts/backfill-dimensional-coverage.ts --dry-run
+
+# Process all traces without coverage
+npx tsx scripts/backfill-dimensional-coverage.ts
+
+# Process only first N traces
+npx tsx scripts/backfill-dimensional-coverage.ts --limit 10
+
+# Process specific trace
+npx tsx scripts/backfill-dimensional-coverage.ts --trace-id <trace-id>
+```
 
 **Sample Size:** All E1a conversations going forward
 
@@ -165,6 +182,9 @@ Emergent extraction runs (existing)
 - **Taxonomy:** `docs/plans/strategic/TAXONOMY_REFERENCE.md`
 - **Previous Experiment:** `docs/experiments/one-pagers/E1-emergent-extraction.md`
 - **Analysis Script:** `scripts/dimensional_coverage_analysis.py`
+- **Backfill Script:** `scripts/backfill-dimensional-coverage.ts`
+- **Analysis Notebook:** `notebooks/dimensional_coverage_analysis.ipynb`
+- **Notebook README:** `notebooks/README-analysis.md`
 
 ---
 
