@@ -236,6 +236,24 @@ src/
 
 **See `CONTRIBUTING.md` for complete workflow documentation**
 
+### Backlog Management (Linear)
+
+**Linear Workspace:** https://linear.app/humventures
+
+**Creating Issues:**
+```bash
+# Create new issue
+npm run linear:issue -- --title "Feature name" --description "Details" --priority high --label chore
+
+# Import historical PRs (one-time setup)
+LINEAR_API_KEY=<key> npm run linear:import
+```
+
+**GitHub Integration:** ✅ Working
+- PRs automatically link to Linear issues (reference HUM-X in PR title/body)
+- PR status changes update issue status (Open → In Progress, Merge → Done)
+- PRs appear in issue's "Resources" section (bottom of issue view)
+
 ### Testing & Debugging
 
 **Local Development:**
