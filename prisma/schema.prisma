@@ -58,6 +58,9 @@ model Trace {
   // Extracted Context (stored as JSON)
   extractedContext    Json
 
+  // Dimensional Coverage (E2: stored as JSON, nullable - only for emergent extraction)
+  dimensionalCoverage Json?
+
   // Generated Output (stored as JSON)
   output              Json
   claudeThoughts      String?  @db.Text

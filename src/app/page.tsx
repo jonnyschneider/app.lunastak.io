@@ -26,6 +26,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [flowStep, setFlowStep] = useState<FlowStep>('intro');
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null);
+  const [dimensionalCoverage, setDimensionalCoverage] = useState<any>(null); // [E2] Dimensional coverage data
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null);
   const [thoughts, setThoughts] = useState<string>('');
   const [traceId, setTraceId] = useState<string>('');
@@ -327,8 +328,10 @@ export default function Home() {
         hasCore: 'core' in (data.extractedContext || {}),
         hasThemes: 'themes' in (data.extractedContext || {}),
         keys: Object.keys(data.extractedContext || {}),
+        hasDimensionalCoverage: !!data.dimensionalCoverage, // [E2] Log dimensional coverage
       });
       setExtractedContext(data.extractedContext);
+      setDimensionalCoverage(data.dimensionalCoverage); // [E2] Store dimensional coverage
       setFlowStep('extraction');
     } catch (error) {
       console.error('Failed to extract context:', error);
@@ -349,7 +352,11 @@ export default function Home() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, extractedContext }),
+        body: JSON.stringify({
+          conversationId,
+          extractedContext,
+          dimensionalCoverage, // [E2] Pass dimensional coverage to generate API
+        }),
       });
 
       console.log(`[Generate] Response received in ${Date.now() - startTime}ms, status: ${response.status}`);

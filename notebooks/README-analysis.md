@@ -1,5 +1,13 @@
 # Trace Analysis Notebooks
 
+## Available Notebooks
+
+### 1. `trace_analysis_starter.ipynb`
+General-purpose trace analysis for open coding, event analysis, and quality correlation.
+
+### 2. `dimensional_coverage_analysis.ipynb`
+Dimensional coverage analysis for Experiment 2 (E2) - analyzing how emergent themes map to strategic dimensions.
+
 ## Setup (First Time)
 
 1. **Create Python virtual environment:**
@@ -86,3 +94,72 @@ DATABASE_URL=postgresql://...
 - Run cell: `Shift + Enter`
 - Add cell below: `B`
 - Delete cell: `D D` (press D twice)
+
+## Dimensional Coverage Analysis (E2)
+
+### Prerequisites
+
+Before analyzing dimensional coverage data, you need to:
+
+1. **Run the backfill script** to add dimensional coverage to existing traces:
+   ```bash
+   # From project root
+   npx tsx scripts/backfill-dimensional-coverage.ts
+   ```
+
+2. **Options for backfill script:**
+   ```bash
+   # Dry run (preview without updating)
+   npx tsx scripts/backfill-dimensional-coverage.ts --dry-run
+
+   # Process only first N traces
+   npx tsx scripts/backfill-dimensional-coverage.ts --limit 10
+
+   # Process specific trace
+   npx tsx scripts/backfill-dimensional-coverage.ts --trace-id <trace-id>
+   ```
+
+3. **Verify dimensional coverage exists:**
+   ```bash
+   npx tsx scripts/check-dimensional-coverage.ts
+   ```
+
+### Using the Dimensional Coverage Notebook
+
+1. **Open the notebook:**
+   - Start Jupyter: `jupyter notebook`
+   - Navigate to `notebooks/dimensional_coverage_analysis.ipynb`
+
+2. **Run cells in order:**
+   - **Setup:** Load dimensional coverage functions
+   - **Summary:** Overall coverage statistics
+   - **Patterns:** Coverage rate by dimension
+   - **Gaps:** Identify systematically under-covered dimensions
+   - **Trace Detail:** Deep-dive into individual trace coverage
+   - **Theme Mappings:** Analyze which themes map to which dimensions
+
+3. **Key Analysis Functions:**
+   - `load_dimensional_coverage()` - Load all traces with coverage data
+   - `analyze_coverage_patterns(df)` - Coverage rate per dimension
+   - `find_systematic_gaps(df, threshold=0.5)` - Dimensions covered <50% of the time
+   - `get_coverage_summary_stats(df)` - Overall summary metrics
+   - `get_theme_to_dimension_mapping(df)` - Theme → dimension relationships
+
+### What to Look For
+
+**Coverage Patterns:**
+- Which dimensions are well-covered vs systematically missed?
+- Average coverage percentage across all traces
+- Number of primary (high confidence) dimensions per trace
+
+**Systematic Gaps:**
+- Dimensions covered in <50% of conversations
+- May indicate need for proactive questioning in future experiments
+
+**Theme Mappings:**
+- Which emergent themes consistently map to which dimensions?
+- Are themes mapping to expected dimensions?
+
+**Quality Correlation:**
+- Does higher dimensional coverage correlate with better quality ratings?
+- Are certain dimensions more predictive of quality than others?
