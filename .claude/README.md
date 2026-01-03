@@ -1,9 +1,9 @@
 # Decision Stack v4 - Developer Guide
 
-**Last Updated:** 2025-12-22
-**Current Version:** v1.2.0
+**Last Updated:** 2026-01-03
+**Current Version:** v1.3.0
 **Active Branch:** development
-**Production:** https://strategist.humventures.com.au (v1.2.0 pending deployment)
+**Production:** https://strategist.humventures.com.au (v1.3.0)
 
 ---
 
@@ -235,6 +235,20 @@ src/
 6. Create git tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
 
 **See `CONTRIBUTING.md` for complete workflow documentation**
+
+### Backlog Management (Linear)
+
+**Linear Workspace:** https://linear.app/humventures
+
+**Creating Issues:**
+```bash
+npm run linear:issue -- --title "Feature name" --description "Details" --priority high --label chore
+```
+
+**GitHub Integration:** ✅ Working
+- PRs automatically link to Linear issues (reference HUM-X in PR title/body)
+- PR status changes update issue status (Open → In Progress, Merge → Done)
+- PRs appear in issue's "Resources" section (bottom of issue view)
 
 ### Testing & Debugging
 
