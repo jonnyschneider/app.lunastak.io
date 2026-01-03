@@ -5,6 +5,7 @@ import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
 import { analyzeDimensionalCoverage, convertCoverageToDimensionTags } from '@/lib/dimensional-analysis';
 import { createFragmentsFromThemes } from '@/lib/fragments';
+import { updateAllSyntheses } from '@/lib/synthesis';
 
 export const maxDuration = 60;
 
@@ -298,6 +299,11 @@ export async function POST(req: Request) {
             dimensionTags
           );
           console.log(`[Extract] Created ${fragments.length} fragments for project ${conversation.projectId}`);
+
+          // Trigger synthesis update (async, don't block response)
+          updateAllSyntheses(conversation.projectId).catch(error => {
+            console.error('[Extract] Failed to update syntheses:', error);
+          });
         } catch (error) {
           // Log but don't fail extraction if fragment creation fails
           console.error('[Extract] Failed to create fragments:', error);
