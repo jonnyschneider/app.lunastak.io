@@ -3,7 +3,8 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
-import { analyzeDimensionalCoverage } from '@/lib/dimensional-analysis';
+import { analyzeDimensionalCoverage, convertCoverageToDimensionTags } from '@/lib/dimensional-analysis';
+import { createFragmentsFromThemes } from '@/lib/fragments';
 
 export const maxDuration = 60;
 
@@ -285,6 +286,23 @@ export async function POST(req: Request) {
         coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
         gaps: dimensionalCoverage.summary.gaps,
       });
+
+      // Create fragments from themes with dimension tags
+      if (conversation.projectId) {
+        try {
+          const dimensionTags = convertCoverageToDimensionTags(dimensionalCoverage);
+          const fragments = await createFragmentsFromThemes(
+            conversation.projectId,
+            conversationId,
+            extractedContext.themes,
+            dimensionTags
+          );
+          console.log(`[Extract] Created ${fragments.length} fragments for project ${conversation.projectId}`);
+        } catch (error) {
+          // Log but don't fail extraction if fragment creation fails
+          console.error('[Extract] Failed to create fragments:', error);
+        }
+      }
     }
 
     return NextResponse.json({
