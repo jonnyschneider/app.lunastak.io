@@ -15,6 +15,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-01-03
+
+### Added - Experiment 2: Dimensional Coverage Tracking
+
+**Overview:** Post-extraction dimensional analysis for emergent extraction (E1a), mapping emergent themes to 10 strategic dimensions for coverage validation and gap identification.
+
+**Core Features:**
+- **Dimensional Coverage Analysis** - Automated mapping of emergent themes to strategic dimensions
+  - 10 Tier 1 strategic dimensions (Customer & Market, Strategic Intent, Differentiation & Advantage, etc.)
+  - Claude API integration for theme-to-dimension mapping
+  - Coverage percentage calculation (themes matched / total dimensions)
+  - Dimension tags stored in database for querying and analysis
+- **Backfill Script** - Apply dimensional coverage to existing traces
+  - `scripts/backfill-dimensional-coverage.ts` - Processes historical data
+  - Updates all emergent extraction traces with dimensional analysis
+  - Batch processing with rate limiting
+- **Analysis Tools** - Python functions and Jupyter notebooks
+  - `scripts/dimensional_coverage_analysis.py` - Load and analyze coverage patterns
+  - `notebooks/dimensional_coverage_analysis.ipynb` - Interactive exploration
+  - Coverage distribution analysis, gap identification, theme mapping insights
+
+**Technical Implementation:**
+- New field: `Trace.dimensionalCoverage Json?` in Prisma schema
+- `src/lib/dimensional-analysis.ts` - Core analysis logic
+- API integration: extract → analyze dimensions → store → query
+- TypeScript type definitions for dimensional coverage data
+- Unit tests for dimension mapping logic
+
+**Documentation:**
+- Experiment one-pager: `docs/experiments/one-pagers/E2-dimensional-coverage.md`
+- Implementation plan with UAT checklist
+- Deployment strategy and rollback procedures
+
+---
+
 ## [1.2.2] - 2025-12-30
 
 ### Fixed
