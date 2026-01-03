@@ -62,13 +62,8 @@ def load_dimensional_coverage():
 
     df = pd.read_sql(query, engine)
 
-    # Parse JSON fields
-    df['dimensionalCoverage'] = df['dimensionalCoverage'].apply(
-        lambda x: json.loads(x) if pd.notna(x) else None
-    )
-    df['extractedContext'] = df['extractedContext'].apply(
-        lambda x: json.loads(x) if pd.notna(x) else None
-    )
+    # JSON fields are already parsed by PostgreSQL/SQLAlchemy
+    # No need to json.loads() - they come back as dicts already
 
     return df
 
