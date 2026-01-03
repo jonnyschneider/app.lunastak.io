@@ -223,7 +223,7 @@ export async function POST(req: Request) {
 
         const extractionResponse = await anthropic.messages.create({
           model: CLAUDE_MODEL,
-          max_tokens: 800,
+          max_tokens: 2000, // Increased for inline dimensions
           messages: [{
             role: 'user',
             content: extractionPrompt
@@ -240,7 +240,7 @@ export async function POST(req: Request) {
         let dimensionalCoverage: any = null;
 
         if (isEmergent) {
-          // Parse emergent themes
+          // Parse emergent themes with inline dimensions
           const themes = parseEmergentThemes(extractionXML);
 
           // Step 2 & 3: Run summary + dimensional analysis in parallel
@@ -382,7 +382,7 @@ export async function POST(req: Request) {
                 conversationId,
                 extractedContext.themes as ThemeWithDimensions[]
               );
-              console.log(`[Extract] Created ${fragments.length} fragments for project ${conversation.projectId}`);
+              console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
 
               // Trigger synthesis update (async, don't block response)
               updateAllSyntheses(conversation.projectId).catch(error => {

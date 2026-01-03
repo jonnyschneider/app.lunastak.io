@@ -106,8 +106,6 @@ export async function createFragmentsFromThemes(
         })
         .filter((tag): tag is DimensionTagInput => tag !== null)
 
-      console.log(`[Fragments] Theme "${theme.theme_name}" has ${tags.length} dimension tags:`,
-        tags.map(t => t.dimension))
 
       return createFragment({
         projectId,
