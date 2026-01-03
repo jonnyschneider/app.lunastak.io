@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { UnstructuredClient } from 'unstructured-client';
 import { Strategy } from 'unstructured-client/sdk/models/shared';
+import { getOrCreateDefaultProject } from '@/lib/projects';
 
 export const maxDuration = 60;
 
@@ -82,10 +83,14 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id || null;
 
+    // Get or create default project for authenticated users
+    const project = await getOrCreateDefaultProject(userId);
+
     // Create conversation with document context
     const conversation = await prisma.conversation.create({
       data: {
         userId,
+        projectId: project?.id || null,
         status: 'in_progress',
         experimentVariant: 'baseline-v1', // Default variant for document uploads
       },

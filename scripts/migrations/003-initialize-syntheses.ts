@@ -45,12 +45,10 @@ async function main() {
           projectId: project.id,
           dimension,
           synthesisVersion: 'v1',
-          summary: null,
           keyThemes: [],
           keyQuotes: [],
           gaps: [],
           contradictions: [],
-          subdimensions: null,
           confidence: 'LOW',
           fragmentCount: 0,
         }
