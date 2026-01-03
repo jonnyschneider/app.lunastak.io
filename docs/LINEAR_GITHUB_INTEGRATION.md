@@ -46,18 +46,27 @@ Now we need to configure:
 
 ## 2. Configure Personal Git Settings
 
-### In Linear (Settings → Account → Preferences → Git):
+### In Linear (Settings → Account → Preferences):
 
-1. **PR Linking:**
-   - ✅ Enable "Automatically link PRs when branch matches issue identifier"
+Scroll to "Automations and workflows" section:
 
-2. **Commit Linking:**
-   - ✅ Enable "Link commits that reference issue identifiers"
-   - Patterns: `HUM-123`, `fixes HUM-123`, `closes HUM-123`
+1. **Auto-assign to self** (optional)
+   - Toggle ON if you want new issues auto-assigned to you
+   - Recommended: Leave OFF for team visibility
 
-3. **PR Status in Issue:**
-   - ✅ Show PR status badge on issues
-   - ✅ Show PR review status
+2. **Git attachment format**
+   - Set to: **"Title"** ✅ (you already have this)
+   - This shows branch/PR titles in Linear issues
+
+3. **On git branch copy, move issue to started status** (recommended)
+   - Toggle ON: ✅
+   - When you copy a branch name from Linear, it auto-moves issue to "In Progress"
+   - Saves a manual step when starting work
+
+4. **On move to started status, assign to yourself** (recommended)
+   - Toggle ON: ✅
+   - Auto-assigns when you start working
+   - Good for team visibility of who's working on what
 
 ---
 
