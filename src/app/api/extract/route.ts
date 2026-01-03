@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { ExtractedContext, ExtractionConfidence, Message } from '@/lib/types';
+import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
+import { analyzeDimensionalCoverage } from '@/lib/dimensional-analysis';
 
 export const maxDuration = 60;
 
@@ -269,8 +270,26 @@ export async function POST(req: Request) {
       keys: Object.keys(extractedContext),
     });
 
+    // [E2] Run dimensional analysis for emergent extraction
+    let dimensionalCoverage = null;
+
+    if (isEmergentContext(extractedContext)) {
+      console.log('[Extract] Running dimensional analysis...');
+      dimensionalCoverage = await analyzeDimensionalCoverage(
+        extractedContext,
+        conversationHistory
+      );
+
+      console.log('[Extract] Dimensional coverage:', {
+        dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
+        coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
+        gaps: dimensionalCoverage.summary.gaps,
+      });
+    }
+
     return NextResponse.json({
       extractedContext,
+      dimensionalCoverage, // [E2] Include in response
     });
   } catch (error) {
     console.error('Extract context error:', error);
