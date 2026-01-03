@@ -6,6 +6,8 @@ import {
   StrategicDimension,
   CoverageConfidence,
 } from '@/lib/types';
+import { Tier1Dimension } from '@/lib/constants/dimensions';
+import { DimensionTagInput } from '@/lib/fragments';
 
 /**
  * Analyzes emergent themes and maps them to strategic dimensions
@@ -171,4 +173,49 @@ function parseDimensionalCoverageResponse(
     analysisTimestamp: new Date().toISOString(),
     modelUsed: CLAUDE_MODEL,
   };
+}
+
+/**
+ * Map from dimensional-analysis dimension names to Tier 1 dimension constants
+ */
+const DIMENSION_NAME_MAP: Record<string, Tier1Dimension> = {
+  'customer_and_market': 'CUSTOMER_MARKET',
+  'problem_and_opportunity': 'PROBLEM_OPPORTUNITY',
+  'value_proposition': 'VALUE_PROPOSITION',
+  'differentiation_and_advantage': 'DIFFERENTIATION_ADVANTAGE',
+  'competitive_landscape': 'COMPETITIVE_LANDSCAPE',
+  'business_model_and_economics': 'BUSINESS_MODEL_ECONOMICS',
+  'go_to_market': 'GO_TO_MARKET',
+  'product_experience': 'PRODUCT_EXPERIENCE',
+  'capabilities_and_assets': 'CAPABILITIES_ASSETS',
+  'risks_and_constraints': 'RISKS_CONSTRAINTS',
+}
+
+/**
+ * Convert dimensional coverage response to fragment dimension tags
+ * Returns a map of theme_name -> dimension tags
+ */
+export function convertCoverageToDimensionTags(
+  coverage: DimensionalCoverage
+): Map<string, DimensionTagInput[]> {
+  const themeToTags = new Map<string, DimensionTagInput[]>()
+
+  for (const [dimKey, dimValue] of Object.entries(coverage.dimensions)) {
+    if (!dimValue.covered) continue
+
+    const tier1Dimension = DIMENSION_NAME_MAP[dimKey]
+    if (!tier1Dimension) continue
+
+    for (const themeName of dimValue.themes) {
+      const existingTags = themeToTags.get(themeName) || []
+      existingTags.push({
+        dimension: tier1Dimension,
+        confidence: dimValue.confidence.toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW',
+        reasoning: `Mapped from dimensional coverage analysis`,
+      })
+      themeToTags.set(themeName, existingTags)
+    }
+  }
+
+  return themeToTags
 }
