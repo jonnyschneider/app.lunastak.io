@@ -1,6 +1,6 @@
 {
   "name": "decision-stack-v4",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -55,6 +55,7 @@
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

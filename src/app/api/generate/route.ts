@@ -86,7 +86,7 @@ export async function POST(req: Request) {
   console.log('[Generate API] Request started');
 
   try {
-    const { conversationId, extractedContext } = await req.json();
+    const { conversationId, extractedContext, dimensionalCoverage } = await req.json();
     console.log('[Generate API] Parsed request body, conversationId:', conversationId);
 
     if (!conversationId || !extractedContext) {
@@ -211,6 +211,7 @@ export async function POST(req: Request) {
         conversationId,
         userId: conversation.userId,
         extractedContext: extractedContext as any,
+        dimensionalCoverage: dimensionalCoverage as any, // [E2] Store dimensional coverage
         output: statements as any,
         claudeThoughts: thoughts,
         modelUsed: CLAUDE_MODEL,
