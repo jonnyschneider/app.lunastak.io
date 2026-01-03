@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Fragment Extraction & Synthesis Implementation
+
+**Overview:** Populates the new Schema V1 tables (Fragment, FragmentDimensionTag, DimensionalSynthesis, GeneratedOutput, ExtractionRun) by updating the extraction and generation flows.
+
+**Core Features:**
+- **Fragment Creation from Extraction** - Creates Fragment records from emergent themes during extraction
+  - `src/lib/fragments.ts` - Fragment service with `createFragment`, `createFragmentsFromThemes`, `getActiveFragments`
+  - `src/lib/dimensional-analysis.ts` - Added `convertCoverageToDimensionTags` function
+  - Fragments tagged with Tier 1 dimensions via `FragmentDimensionTag` records
+  - Extraction route (`/api/extract`) now creates fragments for project-linked conversations
+
+- **Synthesis Algorithm** - Full and incremental synthesis for dimensional understanding
+  - `src/lib/synthesis/types.ts` - `SynthesisResult`, `FragmentForSynthesis` types
+  - `src/lib/synthesis/full-synthesis.ts` - Synthesizes all fragments into coherent understanding
+  - `src/lib/synthesis/incremental-synthesis.ts` - Merges new fragments into existing synthesis
+  - `src/lib/synthesis/update-synthesis.ts` - Orchestrates full vs incremental based on staleness, fragment count
+  - Synthesis triggered asynchronously after fragment creation (doesn't block extraction response)
+
+- **GeneratedOutput & ExtractionRun Tracking** - Evaluation infrastructure
+  - `src/lib/extraction-runs.ts` - Creates ExtractionRun records with synthesis snapshots
+  - Generation route (`/api/generate`) now creates GeneratedOutput and ExtractionRun records
+  - Captures syntheses before/after for A/B evaluation
+
+**Testing & Verification:**
+- `scripts/test-fragment-flow.ts` - Integration test for fragment creation and synthesis
+- Updated `scripts/migrations/verify-migration.ts` with checks 5-8 (fragments, syntheses, outputs, runs)
+- All 36 existing tests pass, no TypeScript errors
+
+**Documentation:**
+- Updated `.claude/architecture.md` with Extraction → Fragment → Synthesis flow
+
 ### Changed
 - **Documentation Consolidation** - Streamlined Linear integration documentation
   - Consolidated 5 separate Linear docs into `.claude/README.md` backlog management section
