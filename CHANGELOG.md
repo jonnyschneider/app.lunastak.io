@@ -11,7 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation Consolidation** - Streamlined Linear integration documentation
   - Consolidated 5 separate Linear docs into `.claude/README.md` backlog management section
   - Migrated feature backlog to Linear issues (HUM-26 through HUM-31)
-  - Added Linear helper scripts (create-issue, import-history, find-duplicates)
+  - Keep only `linear-create-issue.ts` for ongoing use
+- **Release Workflow Enhancement** - Added mandatory pre-release checklist to `CONTRIBUTING.md`
+  - Ensures CHANGELOG.md, VERSION_MAPPING.md, and .claude/README.md are updated before release
+  - 8-point checklist to prevent missing version documentation
+
+### Removed
+- **One-time Linear Scripts** - Removed setup and testing scripts after completion
+  - Deleted `linear-setup.ts`, `linear-import-history.ts`, `linear-find-duplicates.ts`
+  - Deleted `linear-check-team-repos.ts`, `test-linear-github.ts`
+  - Removed corresponding npm scripts: `linear:setup`, `linear:import`, `linear:test`
+- **Obsolete Test Folder** - Removed `/tests` directory
+  - Contained only E1a manual test checklist (released in v1.1.0, Dec 2025)
+  - UAT/testing now handled in implementation plans and PR descriptions
+
+### Fixed
+- **v1.3.0 Release Documentation** - Added missing release notes from 2026-01-03
+  - Added v1.3.0 entry to CHANGELOG.md (E2 Dimensional Coverage Tracking)
+  - Updated VERSION_MAPPING.md status: "Pending UAT" → "Production"
+  - Updated .claude/README.md current version and date
 
 ---
 
