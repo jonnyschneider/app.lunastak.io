@@ -12,26 +12,42 @@
 
 | ID | Variant | Hypothesis | Status | Participants | Key Metrics | Outcome | One-Pager |
 |---|---|---|---|---|---|---|---|
-| **E0** | `baseline-v1` c018f2c | Establishes normalized control for all future experiments | 🟢 Complete | TBD | Event logging, quality ratings, user feedback | ✅ Pass - Infrastructure ready | [View](./one-pagers/E0-baseline-v1.md) |
-| **E1a** | `emergent-extraction-e1a` | Completely freeform extraction (no prescribed fields) will produce less "wooden" outputs while maintaining dimensional coverage | 🟡 Implementation Complete | Target: 10-15 | Quality rating (good/bad %), user feedback (helpful %), dimensional coverage (>80%) | TBD | [View](./one-pagers/E1a-emergent-extraction.md) |
-| **E2** | `energetic-prompts` | Energetic generation prompts will reduce generic corporate speak | ⚪ Planned | Target: 10-15 | Quality rating (good/bad %), specificity assessment | TBD | [View](./one-pagers/E2-energetic-prompts.md) |
-| **E3** | `lens-inference` | Inferring strategic focus from conversation beats explicit selection | ⚪ Planned | Target: 10-15 | Dimensional coverage, quality ratings | TBD | [View](./one-pagers/E3-lens-inference.md) |
-| **E4** | `dimensional-coverage` | Emergent extraction still captures all strategic dimensions needed | ⚪ Planned | Retrospective analysis | Coverage %, gaps analysis | TBD | TBD |
-| **E5** | `optimal-depth` | There's an optimal question count where quality plateaus | ⚪ Planned | Controlled tests | Quality vs. question count curve | TBD | TBD |
+| **E0** | `baseline-v1` c018f2c | Establishes normalized control for all future experiments | 🟢 Complete | Dogfooding | Event logging, quality ratings, user feedback | ✅ Pass - Infrastructure ready | [View](./one-pagers/E0-baseline-v1.md) |
+| **E1** | `emergent-extraction` | Completely freeform extraction (no prescribed fields) will produce less "wooden" outputs while maintaining dimensional coverage | 🟢 Complete | Dogfooding | Quality rating (good/bad %), user feedback (helpful %), theme richness | ✅ Pass - Dogfooding validated approach; revealed dimensional tracking need | [View](./one-pagers/E1-emergent-extraction.md) |
+| **E2** | `dimensional-coverage` | Emergent themes naturally map to strategic dimensions, enabling coverage tracking without prescriptive schemas | 🟡 Implementation Planned | Retrospective analysis | Coverage % per dimension, gap patterns, mapping accuracy | TBD | [View](./one-pagers/E2-dimensional-coverage.md) |
+| **E3** | `gap-based-questioning` | Using coverage gaps to proactively guide conversation improves dimensional completeness | ⚪ Future | Target: 10-15 | Coverage improvement, conversation quality, user experience | TBD | TBD |
+| **E4** | `real-time-coverage-display` | Showing dimensional coverage during conversation increases user trust and engagement | ⚪ Future | Target: 10-15 | User engagement, trust ratings, completion rates | TBD | TBD |
+| **E5** | `multi-session-accumulation` | Accumulating strategic context across sessions produces richer outputs over time | ⚪ Future | Target: 5-10 multi-session users | Coverage growth over sessions, output quality improvement | TBD | TBD |
+| **E6** | `llm-as-judge-training` | LLM-as-judge can assess dimensional coverage and tagging accuracy with expert-level consistency | ⚪ Future | Retrospective analysis | Agreement with expert ratings, false positive/negative rates | TBD | TBD |
+| **E7** | `sub-dimension-emergence` | Patterns within dimensional themes can be clustered into coherent sub-dimensions post-hoc | ⚪ Future | Retrospective analysis | Sub-dimension stability, coverage granularity improvement | TBD | TBD |
+| **E8** | `energetic-prompts` | Energetic generation prompts will reduce generic corporate speak | ⚪ Planned | Target: 10-15 | Quality rating (good/bad %), specificity assessment | TBD | TBD |
+| **E9** | `lens-inference` | Inferring strategic focus from conversation beats explicit selection | ⚪ Planned | Target: 10-15 | Dimensional coverage, quality ratings | TBD | TBD |
+| **E10** | `optimal-depth` | There's an optimal question count where quality plateaus | ⚪ Planned | Controlled tests | Quality vs. question count curve | TBD | TBD |
 
 ---
 
 ## Experiment Priority
 
-**Critical Path:**
-1. E0 (baseline-v1) - ✅ Complete
-2. E1 (emergent extraction) - Next
-3. E2 (energetic prompts) - After E1
-4. E3 (lens inference) - After E1 or E2
+**Foundation (Complete):**
+1. ✅ E0 (baseline-v1) - Infrastructure baseline
+2. ✅ E1 (emergent extraction) - Validated via dogfooding
 
-**Supporting Research:**
-- E4 (dimensional coverage) - Validates E1 doesn't miss critical dimensions
-- E5 (optimal depth) - Informs UX decisions about conversation length
+**Current:**
+3. 🟡 E2 (dimensional coverage) - Implementation in progress
+
+**Near-term Planned:**
+4. E8 (energetic prompts) - Reduce corporate speak in outputs
+5. E9 (lens inference) - Improve conversation flow
+6. E10 (optimal depth) - Optimize conversation length
+
+**Future Research (Dimensional Taxonomy Evolution):**
+- E3 (gap-based questioning) - Use coverage data to guide conversations
+- E4 (real-time coverage display) - Increase user transparency
+- E5 (multi-session accumulation) - Support evolving strategic context
+- E6 (LLM-as-judge training) - Automate quality assessment
+- E7 (sub-dimension emergence) - Discover sub-dimensional patterns
+
+**Note:** E3-E7 originated from the strategic taxonomy design session (see `docs/plans/strategic/2026-01-03-taxonomy-design-session.md`). These experiments build on dimensional coverage tracking to evolve the taxonomy framework.
 
 ---
 
@@ -74,4 +90,19 @@
 
 ---
 
-**Last Updated:** 2025-12-13
+## Experiment Lineage
+
+**Taxonomy-Driven Experiments:**
+- E2 → E3 → E4 → E5 → E6 → E7
+- These experiments evolved from the strategic taxonomy design session
+- Build progressively on dimensional coverage infrastructure
+- Cross-reference: `docs/plans/strategic/2026-01-03-taxonomy-design-session.md`
+
+**Generation Quality Experiments:**
+- E8 (energetic prompts)
+- E9 (lens inference)
+- E10 (optimal depth)
+
+---
+
+**Last Updated:** 2026-01-03
