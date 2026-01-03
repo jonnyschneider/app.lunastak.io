@@ -9,6 +9,22 @@ import { updateAllSyntheses } from '@/lib/synthesis';
 
 export const maxDuration = 60;
 
+// Progress step type for streaming updates
+type ProgressStep =
+  | 'starting'
+  | 'extracting_themes'
+  | 'analyzing_dimensions'
+  | 'generating_summary'
+  | 'saving_insights'
+  | 'complete'
+  | 'error';
+
+interface ProgressUpdate {
+  step: ProgressStep;
+  data?: any;
+  error?: string;
+}
+
 const EXTRACTION_PROMPT = `You are analyzing a business strategy conversation. Extract structured information with core fields and enrichment.
 
 Conversation:
@@ -114,212 +130,260 @@ function parseEmergentThemes(xml: string): { theme_name: string; content: string
 }
 
 export async function POST(req: Request) {
-  try {
-    const { conversationId } = await req.json();
+  const { conversationId } = await req.json();
 
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: 'conversationId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Get conversation with messages
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        messages: {
-          orderBy: { stepNumber: 'asc' },
-        },
-      },
-    });
-
-    if (!conversation) {
-      return NextResponse.json(
-        { error: 'Conversation not found' },
-        { status: 404 }
-      );
-    }
-
-    // Build conversation history
-    const conversationHistory = conversation.messages
-      .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
-      .join('\n\n');
-
-    // Determine extraction approach based on experiment variant
-    const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
-    console.log('[Extract] Conversation details:', {
-      conversationId: conversation.id,
-      experimentVariant: conversation.experimentVariant,
-      isEmergent,
-      messageCount: conversation.messages.length,
-    });
-
-    const extractionPrompt = isEmergent
-      ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
-      : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
-
-    // Extract context
-    const startTime = Date.now();
-    const extractionResponse = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 800,
-      messages: [{
-        role: 'user',
-        content: extractionPrompt
-      }],
-      temperature: 0.3
-    });
-
-    const extractionContent = extractionResponse.content[0]?.type === 'text'
-      ? extractionResponse.content[0].text : '';
-
-    const extractionXML = extractXML(extractionContent, 'extraction');
-
-    let extractedContext: any;
-
-    if (isEmergent) {
-      // Parse emergent themes
-      const themes = parseEmergentThemes(extractionXML);
-
-      // Generate reflective summary (same for both approaches)
-      const summaryResponse = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
-        }],
-        temperature: 0.5
-      });
-
-      const summaryContent = summaryResponse.content[0]?.type === 'text'
-        ? summaryResponse.content[0].text : '';
-      const summaryXML = extractXML(summaryContent, 'summary');
-
-      const reflective_summary = {
-        strengths: extractAllXML(summaryXML, 'strength'),
-        emerging: extractAllXML(summaryXML, 'area'),
-        opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
-        thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
-      };
-
-      extractedContext = {
-        themes,
-        reflective_summary,
-        extraction_approach: 'emergent',
-      };
-    } else {
-      // Prescriptive extraction (baseline-v1)
-      const coreXML = extractXML(extractionXML, 'core');
-      const enrichmentXML = extractXML(extractionXML, 'enrichment');
-
-      const core = {
-        industry: extractXML(coreXML, 'industry'),
-        target_market: extractXML(coreXML, 'target_market'),
-        unique_value: extractXML(coreXML, 'unique_value'),
-      };
-
-      const enrichment: any = {};
-      if (enrichmentXML) {
-        const competitiveContext = extractXML(enrichmentXML, 'competitive_context');
-        if (competitiveContext) enrichment.competitive_context = competitiveContext;
-
-        const customerSegments = extractXML(enrichmentXML, 'customer_segments');
-        if (customerSegments) enrichment.customer_segments = customerSegments.split(',').map(s => s.trim());
-
-        const operationalCaps = extractXML(enrichmentXML, 'operational_capabilities');
-        if (operationalCaps) enrichment.operational_capabilities = operationalCaps;
-
-        const techAdvantages = extractXML(enrichmentXML, 'technical_advantages');
-        if (techAdvantages) enrichment.technical_advantages = techAdvantages;
-      }
-
-      // Generate reflective summary
-      const summaryResponse = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
-        }],
-        temperature: 0.5
-      });
-
-      const summaryContent = summaryResponse.content[0]?.type === 'text'
-        ? summaryResponse.content[0].text : '';
-      const summaryXML = extractXML(summaryContent, 'summary');
-
-      const reflective_summary = {
-        strengths: extractAllXML(summaryXML, 'strength'),
-        emerging: extractAllXML(summaryXML, 'area'),
-        opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
-        thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
-      };
-
-      extractedContext = {
-        core,
-        enrichment,
-        reflective_summary,
-        extraction_approach: 'prescriptive',
-      };
-    }
-
-    console.log('[Extract] Returning extraction data:', {
-      extraction_approach: extractedContext.extraction_approach,
-      hasCore: 'core' in extractedContext,
-      hasThemes: 'themes' in extractedContext,
-      keys: Object.keys(extractedContext),
-    });
-
-    // [E2] Run dimensional analysis for emergent extraction
-    let dimensionalCoverage = null;
-
-    if (isEmergentContext(extractedContext)) {
-      console.log('[Extract] Running dimensional analysis...');
-      dimensionalCoverage = await analyzeDimensionalCoverage(
-        extractedContext,
-        conversationHistory
-      );
-
-      console.log('[Extract] Dimensional coverage:', {
-        dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
-        coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
-        gaps: dimensionalCoverage.summary.gaps,
-      });
-
-      // Create fragments from themes with dimension tags
-      if (conversation.projectId) {
-        try {
-          const dimensionTags = convertCoverageToDimensionTags(dimensionalCoverage);
-          const fragments = await createFragmentsFromThemes(
-            conversation.projectId,
-            conversationId,
-            extractedContext.themes,
-            dimensionTags
-          );
-          console.log(`[Extract] Created ${fragments.length} fragments for project ${conversation.projectId}`);
-
-          // Trigger synthesis update (async, don't block response)
-          updateAllSyntheses(conversation.projectId).catch(error => {
-            console.error('[Extract] Failed to update syntheses:', error);
-          });
-        } catch (error) {
-          // Log but don't fail extraction if fragment creation fails
-          console.error('[Extract] Failed to create fragments:', error);
-        }
-      }
-    }
-
-    return NextResponse.json({
-      extractedContext,
-      dimensionalCoverage, // [E2] Include in response
-    });
-  } catch (error) {
-    console.error('Extract context error:', error);
+  if (!conversationId) {
     return NextResponse.json(
-      { error: 'Failed to extract context' },
-      { status: 500 }
+      { error: 'conversationId is required' },
+      { status: 400 }
     );
   }
+
+  // Get conversation with messages
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: {
+      messages: {
+        orderBy: { stepNumber: 'asc' },
+      },
+    },
+  });
+
+  if (!conversation) {
+    return NextResponse.json(
+      { error: 'Conversation not found' },
+      { status: 404 }
+    );
+  }
+
+  // Create a streaming response
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const sendProgress = (update: ProgressUpdate) => {
+        controller.enqueue(encoder.encode(JSON.stringify(update) + '\n'));
+      };
+
+      try {
+        // Build conversation history
+        const conversationHistory = conversation.messages
+          .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+          .join('\n\n');
+
+        // Determine extraction approach based on experiment variant
+        const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
+        console.log('[Extract] Conversation details:', {
+          conversationId: conversation.id,
+          experimentVariant: conversation.experimentVariant,
+          isEmergent,
+          messageCount: conversation.messages.length,
+        });
+
+        // Step 1: Extract themes
+        sendProgress({ step: 'extracting_themes' });
+
+        const extractionPrompt = isEmergent
+          ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
+          : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
+
+        const extractionResponse = await anthropic.messages.create({
+          model: CLAUDE_MODEL,
+          max_tokens: 800,
+          messages: [{
+            role: 'user',
+            content: extractionPrompt
+          }],
+          temperature: 0.3
+        });
+
+        const extractionContent = extractionResponse.content[0]?.type === 'text'
+          ? extractionResponse.content[0].text : '';
+
+        const extractionXML = extractXML(extractionContent, 'extraction');
+
+        let extractedContext: any;
+        let dimensionalCoverage: any = null;
+
+        if (isEmergent) {
+          // Parse emergent themes
+          const themes = parseEmergentThemes(extractionXML);
+
+          // Step 2 & 3: Run summary + dimensional analysis in parallel
+          sendProgress({ step: 'generating_summary' });
+
+          const summaryPromise = anthropic.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 600,
+            messages: [{
+              role: 'user',
+              content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
+            }],
+            temperature: 0.5
+          });
+
+          // Start dimensional analysis
+          const tempContext = {
+            themes,
+            reflective_summary: { strengths: [], emerging: [], opportunities_for_enrichment: [] },
+            extraction_approach: 'emergent' as const,
+          };
+
+          // Send analyzing dimensions update after a small delay to show both steps
+          setTimeout(() => sendProgress({ step: 'analyzing_dimensions' }), 500);
+
+          const dimensionalPromise = analyzeDimensionalCoverage(
+            tempContext,
+            conversationHistory
+          );
+
+          // Await both in parallel
+          const [summaryResponse, dimensionalResult] = await Promise.all([
+            summaryPromise,
+            dimensionalPromise
+          ]);
+
+          const summaryContent = summaryResponse.content[0]?.type === 'text'
+            ? summaryResponse.content[0].text : '';
+          const summaryXML = extractXML(summaryContent, 'summary');
+
+          const reflective_summary = {
+            strengths: extractAllXML(summaryXML, 'strength'),
+            emerging: extractAllXML(summaryXML, 'area'),
+            opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
+            thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
+          };
+
+          extractedContext = {
+            themes,
+            reflective_summary,
+            extraction_approach: 'emergent',
+          };
+
+          dimensionalCoverage = dimensionalResult;
+        } else {
+          // Prescriptive extraction (baseline-v1)
+          const coreXML = extractXML(extractionXML, 'core');
+          const enrichmentXML = extractXML(extractionXML, 'enrichment');
+
+          const core = {
+            industry: extractXML(coreXML, 'industry'),
+            target_market: extractXML(coreXML, 'target_market'),
+            unique_value: extractXML(coreXML, 'unique_value'),
+          };
+
+          const enrichment: any = {};
+          if (enrichmentXML) {
+            const competitiveContext = extractXML(enrichmentXML, 'competitive_context');
+            if (competitiveContext) enrichment.competitive_context = competitiveContext;
+
+            const customerSegments = extractXML(enrichmentXML, 'customer_segments');
+            if (customerSegments) enrichment.customer_segments = customerSegments.split(',').map(s => s.trim());
+
+            const operationalCaps = extractXML(enrichmentXML, 'operational_capabilities');
+            if (operationalCaps) enrichment.operational_capabilities = operationalCaps;
+
+            const techAdvantages = extractXML(enrichmentXML, 'technical_advantages');
+            if (techAdvantages) enrichment.technical_advantages = techAdvantages;
+          }
+
+          // Generate reflective summary
+          sendProgress({ step: 'generating_summary' });
+
+          const summaryResponse = await anthropic.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 600,
+            messages: [{
+              role: 'user',
+              content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
+            }],
+            temperature: 0.5
+          });
+
+          const summaryContent = summaryResponse.content[0]?.type === 'text'
+            ? summaryResponse.content[0].text : '';
+          const summaryXML = extractXML(summaryContent, 'summary');
+
+          const reflective_summary = {
+            strengths: extractAllXML(summaryXML, 'strength'),
+            emerging: extractAllXML(summaryXML, 'area'),
+            opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
+            thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
+          };
+
+          extractedContext = {
+            core,
+            enrichment,
+            reflective_summary,
+            extraction_approach: 'prescriptive',
+          };
+        }
+
+        console.log('[Extract] Returning extraction data:', {
+          extraction_approach: extractedContext.extraction_approach,
+          hasCore: 'core' in extractedContext,
+          hasThemes: 'themes' in extractedContext,
+          keys: Object.keys(extractedContext),
+        });
+
+        // Step 4: Save insights (fragments)
+        if (isEmergentContext(extractedContext) && dimensionalCoverage) {
+          sendProgress({ step: 'saving_insights' });
+
+          console.log('[Extract] Dimensional coverage:', {
+            dimensionsCovered: dimensionalCoverage.summary.dimensionsCovered,
+            coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
+            gaps: dimensionalCoverage.summary.gaps,
+          });
+
+          // Create fragments from themes with dimension tags
+          if (conversation.projectId) {
+            try {
+              const dimensionTags = convertCoverageToDimensionTags(dimensionalCoverage);
+              const fragments = await createFragmentsFromThemes(
+                conversation.projectId,
+                conversationId,
+                extractedContext.themes,
+                dimensionTags
+              );
+              console.log(`[Extract] Created ${fragments.length} fragments for project ${conversation.projectId}`);
+
+              // Trigger synthesis update (async, don't block response)
+              updateAllSyntheses(conversation.projectId).catch(error => {
+                console.error('[Extract] Failed to update syntheses:', error);
+              });
+            } catch (error) {
+              // Log but don't fail extraction if fragment creation fails
+              console.error('[Extract] Failed to create fragments:', error);
+            }
+          }
+        }
+
+        // Step 5: Complete
+        sendProgress({
+          step: 'complete',
+          data: {
+            extractedContext,
+            dimensionalCoverage,
+          },
+        });
+
+        controller.close();
+      } catch (error) {
+        console.error('Extract context error:', error);
+        sendProgress({
+          step: 'error',
+          error: error instanceof Error ? error.message : 'Failed to extract context',
+        });
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+    },
+  });
 }
