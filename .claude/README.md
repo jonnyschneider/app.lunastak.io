@@ -1,9 +1,9 @@
 # Decision Stack v4 - Developer Guide
 
-**Last Updated:** 2025-12-22
-**Current Version:** v1.2.0
+**Last Updated:** 2026-01-03
+**Current Version:** v1.3.0
 **Active Branch:** development
-**Production:** https://strategist.humventures.com.au (v1.2.0 pending deployment)
+**Production:** https://strategist.humventures.com.au (v1.3.0)
 
 ---
 
