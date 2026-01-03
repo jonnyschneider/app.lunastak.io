@@ -15,7 +15,9 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "regen": "tsx scripts/regenerate.ts",
-    "regen:remote": "tsx scripts/regenerate-remote.ts"
+    "regen:remote": "tsx scripts/regenerate-remote.ts",
+    "linear:setup": "tsx scripts/linear-setup.ts",
+    "linear:issue": "tsx scripts/linear-create-issue.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
@@ -52,6 +54,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@linear/sdk": "^68.1.0",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.6.1",
