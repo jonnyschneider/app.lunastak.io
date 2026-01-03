@@ -16,6 +16,7 @@
  */
 
 import { prisma } from '../src/lib/db';
+import { Prisma } from '@prisma/client';
 import { analyzeDimensionalCoverage } from '../src/lib/dimensional-analysis';
 import { EmergentExtractedContext, isEmergentContext } from '../src/lib/types';
 
@@ -60,7 +61,7 @@ async function backfillDimensionalCoverage(options: Options) {
 
   // Build query based on options
   const whereClause: any = {
-    dimensionalCoverage: null, // Only traces without coverage
+    dimensionalCoverage: Prisma.DbNull, // Only traces without coverage (DB NULL)
   };
 
   if (options.traceId) {
