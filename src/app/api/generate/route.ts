@@ -286,12 +286,14 @@ export async function POST(req: Request) {
     });
 
     // Log to Statsig for experiment metrics
-    await logStatsigEvent(
-      conversation.userId,
-      'strategy_generated',
-      1,
-      { variant: conversation.experimentVariant }
-    );
+    if (conversation.userId) {
+      await logStatsigEvent(
+        conversation.userId,
+        'strategy_generated',
+        1,
+        { variant: conversation.experimentVariant || 'unknown' }
+      );
+    }
 
     const totalTime = Date.now() - requestStartTime;
     console.log(`[Generate API] Request completed successfully in ${totalTime}ms`);
