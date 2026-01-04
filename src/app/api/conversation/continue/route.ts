@@ -130,12 +130,11 @@ async function handleInitialPhase(
     },
   });
 
-  const conversationHistory = conversation!.messages
-    .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
-    .join('\n\n');
+  const experimentVariant = conversation!.experimentVariant;
+  console.log(`[Continue API - INITIAL] Using ${experimentVariant} questioning approach`);
 
-  // Generate first question directly (no lens selection)
-  const FIRST_QUESTION_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+  // Select prompt based on experiment variant
+  const EMERGENT_INITIAL_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
 
 The user just responded to your opening question with:
 "${userResponse}"
@@ -148,6 +147,34 @@ Keep the question warm, conversational, and specific to what they shared. Build 
 
 Return only the question, no preamble.`;
 
+  const DIMENSION_GUIDED_INITIAL_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+
+The user just responded to your opening question with:
+"${userResponse}"
+
+Strategic dimensions to consider (for your awareness only - never mention these explicitly):
+1. Customer & Market - who we serve, their problems, buying behaviour
+2. Problem & Opportunity - the problem space, opportunity size, why now
+3. Value Proposition - what we offer, how it solves problems
+4. Differentiation & Advantage - what makes us unique, defensibility
+5. Competitive Landscape - who else plays, positioning
+6. Business Model & Economics - how we create/capture value, unit economics
+7. Go-to-Market - sales strategy, customer success, channels
+8. Product Experience - the experience we're creating, customer journey
+9. Capabilities & Assets - what we can do, team, technology
+10. Risks & Constraints - risks, dependencies, limitations
+11. Strategic Intent - aspirations, goals, direction
+
+Based on their response, identify which dimensions they've touched on and which remain unexplored.
+Ask a warm, conversational follow-up question that naturally explores an important dimension
+while building on what they shared.
+
+Return only the question, no preamble.`;
+
+  const prompt = experimentVariant === 'dimension-guided-e3'
+    ? DIMENSION_GUIDED_INITIAL_PROMPT
+    : EMERGENT_INITIAL_PROMPT;
+
   const startTime = Date.now();
   console.log('[Continue API - INITIAL] Calling Claude API for first question...');
   const response = await anthropic.messages.create({
@@ -155,7 +182,7 @@ Return only the question, no preamble.`;
     max_tokens: 200,
     messages: [{
       role: 'user',
-      content: FIRST_QUESTION_PROMPT
+      content: prompt
     }],
     temperature: 0.7
   });
@@ -358,6 +385,46 @@ Return your assessment:
   }
 }
 
+// Prompt for E2: Emergent questioning (follow the user's thread)
+const EMERGENT_QUESTION_PROMPT = (conversationHistory: string) => `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+
+Conversation so far:
+${conversationHistory}
+
+Based on the conversation, ask the next natural follow-up question that will help you extract information for:
+- Core context (industry, target market, unique value)
+- Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
+
+Keep the question warm, conversational, and build naturally on what's been discussed. Focus on areas not yet explored.
+
+Return only the question, no preamble.`;
+
+// Prompt for E3: Dimension-guided questioning (steer toward gaps)
+const DIMENSION_GUIDED_PROMPT = (conversationHistory: string) => `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+
+Conversation so far:
+${conversationHistory}
+
+Strategic dimensions to consider (for your awareness only - never mention these explicitly):
+1. Customer & Market - who we serve, their problems, buying behaviour
+2. Problem & Opportunity - the problem space, opportunity size, why now
+3. Value Proposition - what we offer, how it solves problems
+4. Differentiation & Advantage - what makes us unique, defensibility
+5. Competitive Landscape - who else plays, positioning
+6. Business Model & Economics - how we create/capture value, unit economics
+7. Go-to-Market - sales strategy, customer success, channels
+8. Product Experience - the experience we're creating, customer journey
+9. Capabilities & Assets - what we can do, team, technology
+10. Risks & Constraints - risks, dependencies, limitations
+11. Strategic Intent - aspirations, goals, direction
+
+Review the conversation and identify which dimensions have been well-covered and which are thin or missing.
+
+Ask a warm, conversational follow-up question that naturally explores an under-covered dimension.
+The question should feel like a natural continuation of the conversation, not a checklist item.
+
+Return only the question, no preamble.`;
+
 async function continueQuestioning(
   conversationId: string,
   questionCount: number,
@@ -377,19 +444,13 @@ async function continueQuestioning(
     .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
-  // Generate next question using general prompt (no lens)
-  const NEXT_QUESTION_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+  // Select prompt based on experiment variant
+  const experimentVariant = conversation!.experimentVariant;
+  const prompt = experimentVariant === 'dimension-guided-e3'
+    ? DIMENSION_GUIDED_PROMPT(conversationHistory)
+    : EMERGENT_QUESTION_PROMPT(conversationHistory);
 
-Conversation so far:
-${conversationHistory}
-
-Based on the conversation, ask the next natural follow-up question that will help you extract information for:
-- Core context (industry, target market, unique value)
-- Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
-
-Keep the question warm, conversational, and build naturally on what's been discussed. Focus on areas not yet explored.
-
-Return only the question, no preamble.`;
+  console.log(`[Continue API] Using ${experimentVariant} questioning approach`);
 
   const startTime = Date.now();
   const response = await anthropic.messages.create({
@@ -397,7 +458,7 @@ Return only the question, no preamble.`;
     max_tokens: 200,
     messages: [{
       role: 'user',
-      content: NEXT_QUESTION_PROMPT
+      content: prompt
     }],
     temperature: 0.7
   });
