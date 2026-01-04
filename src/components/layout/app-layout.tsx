@@ -11,7 +11,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuItem,
@@ -20,13 +19,12 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import {
-  Dropdown,
-  DropdownButton,
-  DropdownItem,
-  DropdownLabel,
   DropdownMenu,
-} from '@/components/ui/dropdown'
-import { Avatar } from '@/components/ui/avatar'
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 interface SavedStrategy {
   id: string
@@ -49,8 +47,13 @@ export function AppLayout({
     <SidebarProvider>
       <AppSidebar experimentVariant={experimentVariant} />
       <SidebarInset className="flex flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <SidebarTrigger className="-ml-1" />
+          <img
+            src="/lunastak-logo.svg"
+            alt="Lunastak"
+            className="h-12 w-auto"
+          />
         </header>
         <div className="flex flex-1 flex-col min-h-0">
           {children}
@@ -115,16 +118,6 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
 
   return (
     <Sidebar>
-      <SidebarHeader>
-        <div className="px-2 py-2">
-          <img
-            src="/lunastak-logo.svg"
-            alt="Lunastak"
-            className="h-8 w-auto"
-          />
-        </div>
-      </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Recent</SidebarGroupLabel>
@@ -178,27 +171,33 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
         <SidebarMenu>
           <SidebarMenuItem>
             {session ? (
-              <Dropdown>
-                <DropdownButton as="div" className="w-full">
-                  <div className="flex items-center gap-3 px-2 py-2">
-                    <Avatar initials={getUserInitials()} className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-900" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-3 px-2 py-2 w-full cursor-pointer rounded-md hover:bg-sidebar-accent">
+                    <Avatar className="h-10 w-10 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+                      <AvatarFallback className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">
                         {getUserDisplay()}
                       </span>
                     </div>
                   </div>
-                </DropdownButton>
-                <DropdownMenu className="min-w-64" anchor="top start">
-                  <DropdownItem onClick={() => signOut()}>
-                    <ArrowRightStartOnRectangleIcon />
-                    <DropdownLabel>Logout</DropdownLabel>
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="min-w-64" side="top" align="start">
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <div className="flex items-center gap-3 px-2 py-2">
-                <Avatar initials="G" className="bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" />
+                <Avatar className="h-10 w-10 bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                  <AvatarFallback className="bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">G</AvatarFallback>
+                </Avatar>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">Guest</span>
                   <div className="text-xs flex gap-2">
