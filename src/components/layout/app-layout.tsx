@@ -19,6 +19,9 @@ import {
   CreditCard,
   Bell,
   LogOut,
+  MoreHorizontal,
+  Star,
+  Trash2,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -31,6 +34,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuAction,
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
@@ -59,6 +63,8 @@ interface SavedStrategy {
     vision?: string
     strategy?: string
   }
+  starred: boolean
+  starredAt: string | null
 }
 
 export function AppLayout({
@@ -141,6 +147,86 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
     return session.user?.name || session.user?.email?.split('@')[0] || 'User'
   }
 
+  const toggleStar = async (strategyId: string, currentStarred: boolean) => {
+    // Optimistic update
+    setStrategies(prev =>
+      prev.map(s =>
+        s.id === strategyId
+          ? { ...s, starred: !currentStarred, starredAt: !currentStarred ? new Date().toISOString() : null }
+          : s
+      )
+    )
+
+    try {
+      const response = await fetch(`/api/strategies/${strategyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ starred: !currentStarred }),
+      })
+
+      if (!response.ok) {
+        // Revert on failure
+        setStrategies(prev =>
+          prev.map(s =>
+            s.id === strategyId
+              ? { ...s, starred: currentStarred, starredAt: s.starredAt }
+              : s
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Failed to toggle star:', error)
+      // Revert on failure
+      setStrategies(prev =>
+        prev.map(s =>
+          s.id === strategyId
+            ? { ...s, starred: currentStarred, starredAt: s.starredAt }
+            : s
+        )
+      )
+    }
+  }
+
+  // Separate starred and unstarred strategies
+  const starredStrategies = strategies.filter(s => s.starred)
+  const unstarredStrategies = strategies.filter(s => !s.starred)
+
+  const renderStrategyItem = (strategy: SavedStrategy) => (
+    <SidebarMenuItem key={strategy.id}>
+      <SidebarMenuButton asChild className="h-auto py-2 pr-8">
+        <Link href={`/strategy/${strategy.id}`}>
+          <div className="flex flex-col items-start gap-0.5 min-w-0">
+            <span className="font-medium text-sm leading-tight line-clamp-2">
+              {strategy.output.vision || 'Untitled Strategy'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {new Date(strategy.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+        </Link>
+      </SidebarMenuButton>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuAction showOnHover>
+            <MoreHorizontal className="h-4 w-4" />
+            <span className="sr-only">More options</span>
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start">
+          <DropdownMenuItem onClick={() => toggleStar(strategy.id, strategy.starred)}>
+            <Star className={`h-4 w-4 ${strategy.starred ? 'fill-current' : ''}`} />
+            {strategy.starred ? 'Unstar' : 'Star'}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive">
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
+  )
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -170,24 +256,31 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
               </div>
             )}
             {session && !isLoading && strategies.length > 0 && (
-              <SidebarMenu>
-                {strategies.map((strategy) => (
-                  <SidebarMenuItem key={strategy.id}>
-                    <SidebarMenuButton asChild>
-                      <Link href={`/strategy/${strategy.id}`}>
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium truncate">
-                            {strategy.output.vision?.substring(0, 50) || 'Untitled Strategy'}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(strategy.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              <>
+                {/* Starred section - only show if there are starred items */}
+                {starredStrategies.length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Star className="h-3 w-3 fill-current" />
+                      Starred
+                    </div>
+                    <SidebarMenu>
+                      {starredStrategies.map(renderStrategyItem)}
+                    </SidebarMenu>
+                    {unstarredStrategies.length > 0 && (
+                      <div className="px-2 py-1.5 mt-2 text-xs font-medium text-muted-foreground">
+                        Recent
+                      </div>
+                    )}
+                  </>
+                )}
+                {/* Unstarred/Recent section */}
+                {unstarredStrategies.length > 0 && (
+                  <SidebarMenu>
+                    {unstarredStrategies.map(renderStrategyItem)}
+                  </SidebarMenu>
+                )}
+              </>
             )}
           </SidebarGroupContent>
         </SidebarGroup>

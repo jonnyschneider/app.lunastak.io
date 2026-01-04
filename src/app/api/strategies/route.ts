@@ -18,16 +18,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch user's traces ordered by timestamp desc
+    // Fetch user's traces ordered by starred first, then timestamp desc
     const traces = await prisma.trace.findMany({
       where: { userId: session.user.id },
-      orderBy: { timestamp: 'desc' },
-      take: 10, // Limit to 10 most recent
+      orderBy: [
+        { starred: 'desc' },
+        { timestamp: 'desc' },
+      ],
+      take: 20, // Limit to 20 most recent
       select: {
         id: true,
         conversationId: true,
         timestamp: true,
         output: true,
+        starred: true,
+        starredAt: true,
       },
     })
 
@@ -37,6 +42,8 @@ export async function GET(request: NextRequest) {
         conversationId: t.conversationId,
         createdAt: t.timestamp,
         output: t.output,
+        starred: t.starred,
+        starredAt: t.starredAt,
       })),
     })
   } catch (error) {
