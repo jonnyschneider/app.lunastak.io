@@ -127,4 +127,8 @@ export async function logStatsigEvent(
 
   Statsig.logEvent({ userID: userId }, eventName, value, metadata);
   console.log(`[Statsig] Event logged: ${eventName}`, { userId, value, metadata });
+
+  // Flush immediately in serverless environment to ensure events are sent
+  await Statsig.flush();
+  console.log(`[Statsig] Events flushed`);
 }
