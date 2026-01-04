@@ -37,28 +37,50 @@ export async function checkFeatureGate(
   return result;
 }
 
+// Experiment name in Statsig console
+const QUESTIONING_EXPERIMENT = 'questioning_approach';
+
+// Valid variants for the questioning approach experiment
+const VALID_VARIANTS = ['baseline-v1', 'emergent-extraction-e1a', 'dimension-guided-e3'] as const;
+type ExperimentVariant = typeof VALID_VARIANTS[number];
+
 export async function getExperimentVariant(
   userId: string,
   variantOverride?: string
 ): Promise<string> {
   // Allow manual override via query parameter for testing/UAT
   if (variantOverride) {
-    const validVariants = ['baseline-v1', 'emergent-extraction-e1a', 'dimension-guided-e3'];
-    if (validVariants.includes(variantOverride)) {
+    if (VALID_VARIANTS.includes(variantOverride as ExperimentVariant)) {
       console.log(`[Statsig] Using variant override: ${variantOverride}`);
       return variantOverride;
     }
     console.warn(`[Statsig] Invalid variant override: ${variantOverride}, ignoring`);
   }
 
-  // Check feature gates in priority order
-  const isDimensionGuidedEnabled = await checkFeatureGate(userId, 'dimension_guided_e3');
-  if (isDimensionGuidedEnabled) {
-    return 'dimension-guided-e3';
+  await initializeStatsig();
+
+  if (!process.env.STATSIG_SERVER_SECRET_KEY) {
+    console.log('[Statsig] No STATSIG_SERVER_SECRET_KEY found, returning baseline');
+    return 'baseline-v1';
   }
 
-  const isEmergentEnabled = await checkFeatureGate(userId, 'emergent_extraction_e1a');
-  return isEmergentEnabled ? 'emergent-extraction-e1a' : 'baseline-v1';
+  // Get variant from Statsig experiment
+  // Experiment should be configured in Statsig console with:
+  // - Control: emergent-extraction-e1a (E2)
+  // - Test: dimension-guided-e3 (E3)
+  // - Parameter: "variant" (string)
+  const experiment = Statsig.getExperiment({ userID: userId }, QUESTIONING_EXPERIMENT);
+  const variant = experiment.get('variant', 'emergent-extraction-e1a') as string;
+
+  console.log(`[Statsig] Experiment: userId=${userId}, experiment=${QUESTIONING_EXPERIMENT}, variant=${variant}`);
+
+  // Validate variant is known
+  if (!VALID_VARIANTS.includes(variant as ExperimentVariant)) {
+    console.warn(`[Statsig] Unknown variant "${variant}", falling back to emergent-extraction-e1a`);
+    return 'emergent-extraction-e1a';
+  }
+
+  return variant;
 }
 
 export function shutdownStatsig() {
