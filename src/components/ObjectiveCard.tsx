@@ -22,21 +22,21 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter }: Obj
 
   const frontContent = (
     <Card className={clsx(
-      'h-full border-zinc-200 dark:border-zinc-700 hover:shadow-lg transition-shadow duration-200',
-      isFilterActive && 'ring-2 ring-zinc-400'
+      'h-full border-border hover:shadow-lg transition-shadow duration-200',
+      isFilterActive && 'ring-2 ring-primary'
     )}>
       <CardContent className="p-6 h-full flex flex-col">
         {/* Filter Toggle - Top Left */}
         <div className="flex items-start justify-between mb-4">
           <button
             onClick={handleToggleClick}
-            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+            className="p-1 hover:bg-muted rounded transition-colors"
             aria-label={isFilterActive ? 'Hide related initiatives' : 'Show related initiatives'}
           >
             {isFilterActive ? (
-              <EyeIcon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+              <EyeIcon className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <EyeSlashIcon className="w-5 h-5 text-zinc-400" />
+              <EyeSlashIcon className="w-5 h-5 text-muted-foreground" />
             )}
           </button>
 
@@ -53,54 +53,54 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter }: Obj
         </div>
 
         {/* Pithy Objective */}
-        <p className="text-base font-medium text-zinc-900 dark:text-zinc-100 leading-relaxed flex-1">
+        <p className="text-base font-medium text-foreground leading-relaxed flex-1">
           {objective.pithy}
         </p>
 
         {/* Flip Indicator */}
         <div className="flex justify-end mt-4">
-          <ArrowPathIcon className="w-4 h-4 text-zinc-400" />
+          <ArrowPathIcon className="w-4 h-4 text-muted-foreground" />
         </div>
       </CardContent>
     </Card>
   );
 
   const backContent = (
-    <Card className="h-full bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+    <Card className="h-full bg-muted border-border">
       <CardContent className="p-6 h-full flex flex-col">
         {/* SMART Metric */}
         <div className="mb-4">
-          <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Target
           </h4>
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <p className="text-sm font-medium text-foreground">
             {objective.metric.full}
           </p>
         </div>
 
         {/* Explanation */}
         <div className="mb-4 flex-1">
-          <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Why It Matters
           </h4>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {objective.explanation}
           </p>
         </div>
 
         {/* Success Criteria */}
         <div className="mb-4">
-          <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Success Looks Like
           </h4>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm text-muted-foreground">
             {objective.successCriteria}
           </p>
         </div>
 
         {/* Back Indicator */}
         <div className="flex justify-end">
-          <ArrowPathIcon className="w-4 h-4 text-zinc-400 transform rotate-180" />
+          <ArrowPathIcon className="w-4 h-4 text-muted-foreground transform rotate-180" />
         </div>
       </CardContent>
     </Card>
