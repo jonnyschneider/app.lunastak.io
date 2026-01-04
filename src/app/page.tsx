@@ -531,7 +531,7 @@ export default function Home() {
 
   return (
     <AppLayout experimentVariant={experimentVariant}>
-      <main className="h-full bg-gray-50 dark:bg-zinc-900 flex flex-col">
+      <main className="h-full bg-background flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
           {showIntro && flowStep === 'intro' && (
             <IntroCard onEntryPointSelect={handleEntryPointSelect} isLoading={isLoading} />

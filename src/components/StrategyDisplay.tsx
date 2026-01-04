@@ -112,15 +112,15 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Strategic Thinking Accordion */}
       {thoughts && (
-        <Accordion type="single" collapsible className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+        <Accordion type="single" collapsible className="bg-muted border border-border rounded-lg">
           <AccordionItem value="thinking" className="border-0">
             <AccordionTrigger className="px-4 hover:no-underline">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+              <span className="font-semibold text-foreground">
                 How to talk to this strategy
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
-              <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap text-sm">
+              <p className="text-muted-foreground whitespace-pre-wrap text-sm">
                 {thoughts}
               </p>
             </AccordionContent>
@@ -131,15 +131,15 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
       {/* Strategy Output */}
       <div className="space-y-4">
         {/* Vision Card */}
-        <div className="bg-zinc-800 dark:bg-zinc-700 rounded-lg p-6 shadow-sm relative group">
+        <div className="bg-primary rounded-lg p-6 shadow-sm relative group">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-primary-foreground/70 uppercase tracking-wide">
               Vision
             </h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => showInfoModal('Vision', 'A Vision statement describes your aspirational future state (3+ years). It should be customer-centric, specific, and inspiring but grounded in reality.\n\n**Like this...**\nTo organize the world\'s information and make it universally accessible and useful\n\n**Not this...**\nTo be the best-in-class solution provider')}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
                 title="Learn about Vision statements"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -148,7 +148,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
               <button
                 onClick={() => handleFakeDoor('Edit Vision')}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors opacity-0 group-hover:opacity-100"
+                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit Vision"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,21 +157,21 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <p className="text-lg font-medium text-white leading-relaxed">
+          <p className="text-lg font-medium text-primary-foreground leading-relaxed">
             {strategy.vision}
           </p>
         </div>
 
         {/* Strategy Card */}
-        <div className="bg-zinc-700 dark:bg-zinc-600 rounded-lg p-6 shadow-sm relative group">
+        <div className="bg-primary/80 rounded-lg p-6 shadow-sm relative group">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-primary-foreground/70 uppercase tracking-wide">
               Strategy
             </h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => showInfoModal('Strategy', 'A Strategy statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\n**Like this...**\nTo capture an unrivalled store of data, understand it, and leverage it to better deliver what users want, when they want it.\n\n**Not this...**\nProvide innovative solutions to customers')}
-                className="text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
                 title="Learn about Strategy statements"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -180,7 +180,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
               <button
                 onClick={() => handleFakeDoor('Edit Strategy')}
-                className="text-zinc-400 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
+                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit Strategy"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +189,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <p className="text-lg font-medium text-white leading-relaxed">
+          <p className="text-lg font-medium text-primary-foreground leading-relaxed">
             {strategy.strategy}
           </p>
         </div>
@@ -198,12 +198,12 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Objectives
               </h3>
               <button
                 onClick={() => showInfoModal('Objectives', 'Objectives are SMART, outcome-focused goals (12-18 months). The main text should be pithy and engaging. The timeframe appears in the top-left corner. Metric details (direction, name, value) appear below.\n\n**Like this...**\n[12M] Improve relevance by understanding content\n↑ Search accuracy | 30% lift in user satisfaction\n\n**Not this...**\nIncrease search accuracy by 30% in 12 months')}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
                 title="Learn about Objectives"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -216,11 +216,11 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             {objectives.map((objective) => (
               <div
                 key={objective.id}
-                className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative group"
+                className="bg-card border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative group"
               >
                 {/* Timeframe badge - top left */}
                 {objective.metric.timeframe && (
-                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
+                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded">
                     {objective.metric.timeframe}
                   </span>
                 )}
@@ -228,7 +228,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 {/* Edit button - top right */}
                 <button
                   onClick={() => handleFakeDoor('Edit Objective')}
-                  className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors opacity-0 group-hover:opacity-100"
+                  className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
                   title="Edit Objective"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,13 +237,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 </button>
 
                 {/* Objective text */}
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3 mt-6">
+                <p className="text-sm font-medium text-foreground mb-3 mt-6">
                   {objective.pithy}
                 </p>
 
                 {/* Metric information */}
                 {objective.metric.direction && objective.metric.metricName && (
-                  <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>
                       {objective.metric.direction === 'increase' ? '↑' : '↓'}
                     </span>
@@ -269,12 +269,12 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Opportunities
               </h3>
               <button
                 onClick={() => showInfoModal('Opportunities', 'Opportunities are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.\n\n**Like this...**\nLaunch knowledge graph indexing (Q2) → Index 500M entities, integrate with search results, measure relevance lift\n\n**Not this...**\nImprove product features')}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
                 title="Learn about Opportunities"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -283,13 +283,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-12 text-center">
-            <p className="text-zinc-500 dark:text-zinc-400 mb-4">
+          <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
+            <p className="text-muted-foreground mb-4">
               Define opportunities that support your objectives
             </p>
             <button
               onClick={() => handleFakeDoor('Create Opportunities')}
-              className="px-6 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               Create Opportunities
             </button>
@@ -300,12 +300,12 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Principles
               </h3>
               <button
                 onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\n**Like this...**\nUser experience even over short-term revenue\n\n**Not this...**\nWe value quality and excellence')}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
                 title="Learn about Principles"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -314,13 +314,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-12 text-center">
-            <p className="text-zinc-500 dark:text-zinc-400 mb-4">
+          <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
+            <p className="text-muted-foreground mb-4">
               Define principles that guide your decision-making
             </p>
             <button
               onClick={() => handleFakeDoor('Define Principles')}
-              className="px-6 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               Define Principles
             </button>

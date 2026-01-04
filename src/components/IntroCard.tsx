@@ -15,8 +15,8 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
       <div className="flex flex-col h-full max-w-3xl mx-auto">
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <div className="flex justify-start">
-            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
-              <p className="text-zinc-500 dark:text-zinc-400">Thinking...</p>
+            <div className="bg-muted rounded-lg p-4">
+              <p className="text-muted-foreground">Thinking...</p>
             </div>
           </div>
         </div>
@@ -29,7 +29,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Assistant intro message bubble */}
         <div className="flex justify-start">
-          <div className="max-w-[80%] bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-lg p-4">
+          <div className="max-w-[80%] bg-muted text-foreground rounded-lg p-4">
             <p className="whitespace-pre-wrap">
               I help founders and business leaders clarify their strategic thinking.
               {'\n\n'}
