@@ -70,9 +70,20 @@ export async function getExperimentVariant(
   // - Test: dimension-guided-e3 (E3)
   // - Parameter: "variant" (string)
   const experiment = Statsig.getExperiment({ userID: userId }, QUESTIONING_EXPERIMENT);
-  const variant = experiment.get('variant', 'emergent-extraction-e1a') as string;
+  const rawVariant = experiment.get('variant', 'emergent-extraction-e1a') as string;
 
-  console.log(`[Statsig] Experiment: userId=${userId}, experiment=${QUESTIONING_EXPERIMENT}, variant=${variant}`);
+  // Normalize: convert underscores to hyphens for consistency
+  const variant = rawVariant.replace(/_/g, '-');
+
+  // Debug: log experiment details
+  console.log(`[Statsig] Experiment lookup:`, {
+    userId,
+    experiment: QUESTIONING_EXPERIMENT,
+    rawVariant,
+    variant,
+    experimentValue: experiment.value,
+    ruleID: experiment.getRuleID?.() || 'N/A',
+  });
 
   // Validate variant is known
   if (!VALID_VARIANTS.includes(variant as ExperimentVariant)) {
