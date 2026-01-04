@@ -570,6 +570,7 @@ export default function Home() {
                 conversationId={conversationId}
                 messages={messages}
                 onUserResponse={handleUserResponse}
+                onEntryPointSelect={handleEntryPointSelect}
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}

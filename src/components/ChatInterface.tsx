@@ -2,11 +2,22 @@
 
 import { useState } from 'react';
 import { Message, ConversationPhase } from '@/lib/types';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { EntryPointSelector } from '@/components/EntryPointSelector';
+
+type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
   messages: Message[];
   onUserResponse: (response: string) => void;
+  onEntryPointSelect?: (option: EntryPoint) => void;
   isLoading: boolean;
   isComplete: boolean;
   currentPhase: ConversationPhase;
@@ -17,12 +28,17 @@ export default function ChatInterface({
   conversationId,
   messages,
   onUserResponse,
+  onEntryPointSelect,
   isLoading,
   isComplete,
   currentPhase,
   traceId,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
+  const [entryPointSheetOpen, setEntryPointSheetOpen] = useState(false);
+
+  // Check if user has started the conversation (any user messages exist)
+  const hasUserResponded = messages.some((m) => m.role === 'user');
 
   const getPlaceholderText = () => {
     return 'Type your response...';
@@ -36,22 +52,13 @@ export default function ChatInterface({
     setUserInput('');
   };
 
-  const handleFakeDoorClick = async () => {
-    // Log fake door click
-    if (conversationId) {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          ...(traceId && { traceId }),
-          eventType: 'fake_door_click',
-          eventData: { feature: 'alternate_start_options' },
-        }),
-      }).catch(err => console.error('Failed to log event:', err));
-    }
+  const handleAlternateOptionsClick = () => {
+    setEntryPointSheetOpen(true);
+  };
 
-    alert('Alternative start options coming soon!');
+  const handleEntryPointSelection = (option: EntryPoint) => {
+    setEntryPointSheetOpen(false);
+    onEntryPointSelect?.(option);
   };
 
   return (
@@ -74,11 +81,11 @@ export default function ChatInterface({
               </div>
             </div>
 
-            {/* Fake door link for first assistant message */}
-            {message.role === 'assistant' && message.stepNumber === 1 && (
+            {/* Entry point options link - only show before user has responded */}
+            {message.role === 'assistant' && message.stepNumber === 1 && !hasUserResponded && (
               <div className="flex justify-start mt-2">
                 <button
-                  onClick={handleFakeDoorClick}
+                  onClick={handleAlternateOptionsClick}
                   className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
                 >
                   see other options to get started?
@@ -128,6 +135,19 @@ export default function ChatInterface({
           </p>
         </form>
       )}
+
+      {/* Entry point selection sheet */}
+      <Sheet open={entryPointSheetOpen} onOpenChange={setEntryPointSheetOpen}>
+        <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+          <SheetHeader className="mb-6">
+            <SheetTitle>Choose how to get started</SheetTitle>
+            <SheetDescription>
+              Select an option that works best for you
+            </SheetDescription>
+          </SheetHeader>
+          <EntryPointSelector onSelect={handleEntryPointSelection} />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
