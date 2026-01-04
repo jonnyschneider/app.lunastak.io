@@ -6,6 +6,7 @@ import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } fr
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import { updateAllSyntheses } from '@/lib/synthesis';
+import { logStatsigEvent } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -352,6 +353,18 @@ export async function POST(req: Request) {
               coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
               gaps: dimensionalCoverage.summary.gaps,
             });
+
+            // Log to Statsig for experiment metrics
+            await logStatsigEvent(
+              conversation.userId,
+              'dimensional_coverage',
+              dimensionalCoverage.summary.coveragePercentage,
+              {
+                variant: conversation.experimentVariant,
+                dimensionsCovered: String(dimensionalCoverage.summary.dimensionsCovered),
+                gaps: dimensionalCoverage.summary.gaps.join(','),
+              }
+            );
           }
 
           // Create fragments from themes with inline dimension tags
