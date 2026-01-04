@@ -1,7 +1,6 @@
 'use client';
 
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
-import { Button } from '@/components/ui/button';
 
 interface DocumentSummaryProps {
   filename: string;
