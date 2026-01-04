@@ -6,6 +6,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { UnstructuredClient } from 'unstructured-client';
 import { Strategy } from 'unstructured-client/sdk/models/shared';
 import { getOrCreateDefaultProject } from '@/lib/projects';
+import { getExperimentVariant } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -86,13 +87,17 @@ export async function POST(req: Request) {
     // Get or create project (creates guest user + project for unauthenticated users)
     const { userId, project, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
 
+    // Determine experiment variant via Statsig (same as conversation/start)
+    const statsigUserId = authenticatedUserId || userId || `guest_${Date.now()}`;
+    const experimentVariant = await getExperimentVariant(statsigUserId);
+
     // Create conversation with document context
     const conversation = await prisma.conversation.create({
       data: {
         userId,
         projectId: project.id,
         status: 'in_progress',
-        experimentVariant: 'baseline-v1', // Default variant for document uploads
+        experimentVariant,
       },
     });
 
@@ -151,6 +156,7 @@ export async function POST(req: Request) {
       conversationId: conversation.id,
       summary,
       extractedText,
+      experimentVariant,
       // Include guestUserId for session transfer when guest authenticates
       ...(isGuest && { guestUserId: userId }),
     });
