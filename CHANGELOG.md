@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.1] - 2026-01-04
+
+### Changed
+- **Sidebar UX Improvements**
+  - Added prominent "New Conversation" button in sidebar header with primary green styling
+  - Increased sidebar width from 16rem to 21rem for better content display
+  - Sidebar now closed by default
+  - Added margin above "Starred" section for better visual spacing
+  - Made logo clickable (navigates to home) and brand-colored (green)
+
+- **Loading Indicator Refinements**
+  - Simplified `ExtractionProgress.tsx`: removed animated dots and spinner, slowed pulse animation to 3s
+  - Added consistent animated ellipsis loading indicator to `ChatInterface.tsx` and `IntroCard.tsx`
+  - Unified loading state styling across all conversation components
+
+---
+
 ## [1.4.0] - 2026-01-04
 
 ### Added - Fragment Extraction & Synthesis Implementation

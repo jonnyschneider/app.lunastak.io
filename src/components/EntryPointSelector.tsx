@@ -56,16 +56,16 @@ export function EntryPointSelector({ onSelect }: EntryPointSelectorProps) {
         return (
           <Card
             key={option.id}
-            className="cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors"
+            className="cursor-pointer hover:border-primary transition-colors"
             onClick={() => onSelect(option.id)}
           >
             <CardContent className="flex items-start gap-4 p-4">
-              <Icon className="w-6 h-6 text-zinc-600 dark:text-zinc-400 flex-shrink-0 mt-0.5" />
+              <Icon className="w-6 h-6 text-muted-foreground flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
+                <h3 className="font-medium text-foreground">
                   {option.title}
                 </h3>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {option.description}
                 </p>
               </div>
