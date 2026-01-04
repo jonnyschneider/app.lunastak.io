@@ -66,8 +66,8 @@ export default function ChatInterface({
               <div
                 className={`max-w-[80%] rounded-lg p-4 ${
                   message.role === 'user'
-                    ? 'bg-zinc-800 text-white'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground'
                 }`}
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
@@ -79,7 +79,7 @@ export default function ChatInterface({
               <div className="flex justify-start mt-2">
                 <button
                   onClick={handleFakeDoorClick}
-                  className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline ml-2"
+                  className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
                 >
                   see other options to get started?
                 </button>
@@ -90,8 +90,8 @@ export default function ChatInterface({
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4">
-              <p className="text-zinc-500 dark:text-zinc-400">Thinking...</p>
+            <div className="bg-muted rounded-lg p-4">
+              <p className="text-muted-foreground">Thinking...</p>
             </div>
           </div>
         )}
@@ -99,7 +99,7 @@ export default function ChatInterface({
 
       {/* Input */}
       {!isComplete && (
-        <form onSubmit={handleSubmit} className="border-t border-zinc-200 dark:border-zinc-700 p-4">
+        <form onSubmit={handleSubmit} className="border-t border-border p-4">
           <div className="flex gap-2 items-end">
             <textarea
               value={userInput}
@@ -107,7 +107,7 @@ export default function ChatInterface({
               placeholder={getPlaceholderText()}
               disabled={isLoading}
               rows={8}
-              className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-none"
+              className="flex-1 px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault();
@@ -118,12 +118,12 @@ export default function ChatInterface({
             <button
               type="submit"
               disabled={isLoading || !userInput.trim()}
-              className="px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               Send
             </button>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             Press Cmd+Enter (Mac) or Ctrl+Enter (Windows) to send
           </p>
         </form>

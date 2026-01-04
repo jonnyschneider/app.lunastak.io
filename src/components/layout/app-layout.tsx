@@ -126,7 +126,7 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
               <div className="px-2 py-2 text-sm text-muted-foreground">
                 <button
                   onClick={() => signIn('email', { callbackUrl: '/' })}
-                  className="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 underline"
+                  className="text-primary hover:text-primary/80 underline"
                 >
                   sign in
                 </button>{' '}
@@ -174,8 +174,8 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-3 px-2 py-2 w-full cursor-pointer rounded-md hover:bg-sidebar-accent">
-                    <Avatar className="h-10 w-10 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-                      <AvatarFallback className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+                    <Avatar className="h-10 w-10 bg-primary text-primary-foreground">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
                         {getUserInitials()}
                       </AvatarFallback>
                     </Avatar>
@@ -195,22 +195,22 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-3 px-2 py-2">
-                <Avatar className="h-10 w-10 bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-                  <AvatarFallback className="bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">G</AvatarFallback>
+                <Avatar className="h-10 w-10 bg-muted text-muted-foreground">
+                  <AvatarFallback className="bg-muted text-muted-foreground">G</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">Guest</span>
                   <div className="text-xs flex gap-2">
                     <button
                       onClick={() => signIn('email', { callbackUrl: '/' })}
-                      className="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      className="text-primary hover:text-primary/80"
                     >
                       sign in
                     </button>
                     <span className="text-muted-foreground">|</span>
                     <button
                       onClick={() => signIn('email', { callbackUrl: '/' })}
-                      className="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      className="text-primary hover:text-primary/80"
                     >
                       create account
                     </button>

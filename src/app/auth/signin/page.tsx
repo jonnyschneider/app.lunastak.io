@@ -41,7 +41,7 @@ function SignInForm() {
 
   if (emailSent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-900 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle>Check your email</CardTitle>
@@ -60,7 +60,7 @@ function SignInForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-900 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
           <CardTitle>Sign in to Lunastak</CardTitle>
@@ -71,12 +71,12 @@ function SignInForm() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg p-3">
-                <p className="text-sm text-zinc-700 dark:text-zinc-300">{error}</p>
+              <div className="bg-muted border border-border rounded-lg p-3">
+                <p className="text-sm text-foreground">{error}</p>
               </div>
             )}
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
               </label>
               <Input
@@ -108,7 +108,7 @@ function SignInForm() {
 export default function SignIn() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-900 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle>Sign in to Lunastak</CardTitle>

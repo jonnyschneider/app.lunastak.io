@@ -79,7 +79,7 @@ export function ExtractionProgress({ currentStep, error }: ExtractionProgressPro
         <div className={`rounded-lg p-8 ${
           isError
             ? 'bg-red-50 dark:bg-red-900/20'
-            : 'bg-zinc-100 dark:bg-zinc-800'
+            : 'bg-muted'
         }`}>
           {/* Progress indicator */}
           {!isComplete && !isError && (
@@ -97,10 +97,10 @@ export function ExtractionProgress({ currentStep, error }: ExtractionProgressPro
                       key={step}
                       className={`h-1.5 w-8 rounded-full transition-all duration-300 ${
                         isDone
-                          ? 'bg-emerald-500'
+                          ? 'bg-primary'
                           : isActive
-                            ? 'bg-blue-500 animate-pulse'
-                            : 'bg-zinc-300 dark:bg-zinc-600'
+                            ? 'bg-primary/70 animate-pulse'
+                            : 'bg-muted-foreground/30'
                       }`}
                     />
                   );
@@ -137,7 +137,7 @@ export function ExtractionProgress({ currentStep, error }: ExtractionProgressPro
           <p className={`font-medium ${
             isError
               ? 'text-red-700 dark:text-red-300'
-              : 'text-zinc-700 dark:text-zinc-300'
+              : 'text-foreground'
           }`}>
             {stepConfig.title}{!isComplete && !isError && dots}
           </p>
@@ -146,7 +146,7 @@ export function ExtractionProgress({ currentStep, error }: ExtractionProgressPro
           <p className={`text-sm mt-2 ${
             isError
               ? 'text-red-600 dark:text-red-400'
-              : 'text-zinc-500 dark:text-zinc-400'
+              : 'text-muted-foreground'
           }`}>
             {error || stepConfig.description}
           </p>

@@ -52,8 +52,8 @@ export default function StrategyViewPage() {
   if (isLoading) {
     return (
       <AppLayout>
-        <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
-          <div className="text-gray-600 dark:text-zinc-400">Loading...</div>
+        <main className="h-screen bg-background flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
         </main>
       </AppLayout>
     )
@@ -62,12 +62,12 @@ export default function StrategyViewPage() {
   if (error) {
     return (
       <AppLayout>
-        <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex items-center justify-center">
+        <main className="h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+            <p className="text-destructive mb-4">{error}</p>
             <button
               onClick={() => router.push('/')}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              className="text-primary hover:text-primary/80"
             >
               Return to home
             </button>
@@ -79,7 +79,7 @@ export default function StrategyViewPage() {
 
   return (
     <AppLayout>
-      <main className="h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col">
+      <main className="h-screen bg-background flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col">
           {strategy && conversationId && (
             <StrategyDisplay
