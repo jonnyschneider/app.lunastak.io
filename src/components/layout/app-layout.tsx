@@ -390,9 +390,9 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
       </SidebarContent>
 
       <SidebarFooter>
-        {/* Variant indicator for testing/debugging - always visible but subtle */}
+        {/* Version and variant indicator for testing/debugging */}
         <div className="px-3 py-1.5 text-[10px] font-mono text-muted-foreground/50 truncate border-t border-border/50">
-          {experimentVariant}
+          v{process.env.NEXT_PUBLIC_APP_VERSION} · {experimentVariant}
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
