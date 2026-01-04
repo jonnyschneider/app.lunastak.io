@@ -1,0 +1,83 @@
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#animatedFilterGlitch)">
+    <circle cx="25" cy="25" r="25" transform="matrix(-1 0 0 1 55 5)" style="fill-opacity:1;">
+      <!-- Subtle colour shifts through slightly different greens -->
+      <animate 
+        attributeName="fill" 
+        values="rgb(51,153,72); rgb(46,160,70); rgb(55,146,74); rgb(51,153,72)"
+        dur="12s" 
+        repeatCount="indefinite"
+        calcMode="spline"
+        keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+      
+      <!-- Gentle brightening "hello" every 60 seconds -->
+      <animate 
+        attributeName="fill" 
+        values="rgb(51,153,72); rgb(58,168,80); rgb(51,153,72)"
+        dur="1.5s"
+        begin="60s; 120s; 180s; 240s; 300s; 360s; 420s; 480s; 540s; 600s"
+        repeatCount="1"
+        calcMode="spline"
+        keySplines="0.3 0 0.7 1; 0.3 0 0.7 1"/>
+      
+      <!-- Opacity variation - 3-4% range -->
+      <animate 
+        attributeName="fill-opacity" 
+        values="1; 0.97; 0.96; 1"
+        dur="12s" 
+        repeatCount="indefinite"
+        calcMode="spline"
+        keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+      
+      <!-- Gentle acknowledgment pulse -->
+      <animateTransform
+        attributeName="transform"
+        type="scale"
+        values="1,1; 1.04,1.04; 1,1"
+        dur="1.5s"
+        begin="60s; 120s; 180s; 240s; 300s; 360s; 420s; 480s; 540s; 600s"
+        repeatCount="1"
+        calcMode="spline"
+        keySplines="0.3 0 0.7 1; 0.3 0 0.7 1"
+        additive="sum"/>
+    </circle>
+  </g>
+  <defs>
+    <filter id="animatedFilterGlitch" x="0" y="0" width="60" height="60" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.025 0.025" numOctaves="3" seed="2310">
+        <!-- Normal breathing -->
+        <animate 
+          attributeName="baseFrequency" 
+          values="0.025 0.025; 0.033333 0.033333; 0.05 0.05; 0.033333 0.033333; 0.025 0.025"
+          dur="12s" 
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+        
+        <!-- Gentle ripple during "hello" acknowledgment -->
+        <animate 
+          attributeName="baseFrequency" 
+          values="0.025 0.025; 0.04 0.04; 0.025 0.025"
+          dur="1.5s"
+          begin="60s; 120s; 180s; 240s; 300s; 360s; 420s; 480s; 540s; 600s"
+          repeatCount="1"
+          calcMode="spline"
+          keySplines="0.3 0 0.7 1; 0.3 0 0.7 1"/>
+      </feTurbulence>
+      <feDisplacementMap in="shape" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%">
+        <animate 
+          attributeName="scale" 
+          values="10; 10; 8; 10; 10"
+          dur="12s" 
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
+      </feDisplacementMap>
+      <feMerge result="effect1_texture">
+        <feMergeNode in="displacedImage"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
