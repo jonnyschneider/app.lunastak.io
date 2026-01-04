@@ -1,5 +1,6 @@
 'use client';
 
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import { EntryPointSelector } from './EntryPointSelector';
 
 type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
@@ -16,7 +17,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <div className="flex justify-start">
             <div className="bg-muted rounded-lg p-4">
-              <p className="text-muted-foreground">Thinking...</p>
+              <EllipsisHorizontalIcon className="w-6 h-6 text-primary animate-[pulse_3s_ease-in-out_infinite]" />
             </div>
           </div>
         </div>
