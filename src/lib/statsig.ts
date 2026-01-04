@@ -2,12 +2,20 @@ import Statsig from 'statsig-node';
 
 let statsigInitialized = false;
 
+// Get environment tier for Statsig
+// VERCEL_ENV: 'production' | 'preview' | 'development' (Vercel-specific)
+// Falls back to NODE_ENV for local development
+function getEnvironmentTier(): string {
+  return process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
+}
+
 export async function initializeStatsig() {
   if (!statsigInitialized && process.env.STATSIG_SERVER_SECRET_KEY) {
     try {
-      console.log('[Statsig] Initializing with environment:', process.env.NODE_ENV || 'development');
+      const tier = getEnvironmentTier();
+      console.log('[Statsig] Initializing with environment:', tier);
       await Statsig.initialize(process.env.STATSIG_SERVER_SECRET_KEY, {
-        environment: { tier: process.env.NODE_ENV || 'development' },
+        environment: { tier },
       });
       statsigInitialized = true;
       console.log('[Statsig] Successfully initialized');
