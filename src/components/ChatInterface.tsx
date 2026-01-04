@@ -9,6 +9,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import { Kbd } from '@/components/ui/kbd';
 import { EntryPointSelector } from '@/components/EntryPointSelector';
 
 type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
@@ -130,8 +131,11 @@ export default function ChatInterface({
               Send
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Press Cmd+Enter (Mac) or Ctrl+Enter (Windows) to send
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+            <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
+            <span className="mx-1">or</span>
+            <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
+            <span className="ml-1">to send</span>
           </p>
         </form>
       )}
