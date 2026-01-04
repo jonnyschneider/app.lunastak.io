@@ -108,3 +108,23 @@ export function shutdownStatsig() {
     statsigInitialized = false;
   }
 }
+
+/**
+ * Log a custom event to Statsig for experiment metrics
+ * Use for key conversion events like strategy_generated, quality_rating, etc.
+ */
+export async function logStatsigEvent(
+  userId: string,
+  eventName: string,
+  value?: number,
+  metadata?: Record<string, string>
+) {
+  await initializeStatsig();
+
+  if (!process.env.STATSIG_SERVER_SECRET_KEY) {
+    return;
+  }
+
+  Statsig.logEvent({ userID: userId }, eventName, value, metadata);
+  console.log(`[Statsig] Event logged: ${eventName}`, { userId, value, metadata });
+}
