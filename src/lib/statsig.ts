@@ -43,12 +43,18 @@ export async function getExperimentVariant(
 ): Promise<string> {
   // Allow manual override via query parameter for testing/UAT
   if (variantOverride) {
-    const validVariants = ['baseline-v1', 'emergent-extraction-e1a'];
+    const validVariants = ['baseline-v1', 'emergent-extraction-e1a', 'dimension-guided-e3'];
     if (validVariants.includes(variantOverride)) {
       console.log(`[Statsig] Using variant override: ${variantOverride}`);
       return variantOverride;
     }
     console.warn(`[Statsig] Invalid variant override: ${variantOverride}, ignoring`);
+  }
+
+  // Check feature gates in priority order
+  const isDimensionGuidedEnabled = await checkFeatureGate(userId, 'dimension_guided_e3');
+  if (isDimensionGuidedEnabled) {
+    return 'dimension-guided-e3';
   }
 
   const isEmergentEnabled = await checkFeatureGate(userId, 'emergent_extraction_e1a');
