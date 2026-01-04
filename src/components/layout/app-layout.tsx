@@ -390,6 +390,10 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
       </SidebarContent>
 
       <SidebarFooter>
+        {/* Variant indicator for testing/debugging - always visible but subtle */}
+        <div className="px-3 py-1.5 text-[10px] font-mono text-muted-foreground/50 truncate border-t border-border/50">
+          {experimentVariant}
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             {session ? (
