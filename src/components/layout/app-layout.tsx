@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession, signOut, signIn } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import {
   ChevronUp,
@@ -236,12 +236,12 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
           <SidebarGroupContent>
             {!session && (
               <div className="px-2 py-2 text-sm text-muted-foreground">
-                <button
-                  onClick={() => signIn('email', { callbackUrl: '/' })}
+                <Link
+                  href="/auth/signin"
                   className="text-primary hover:text-primary/80 underline"
                 >
-                  sign in
-                </button>{' '}
+                  Sign in
+                </Link>{' '}
                 to see your recent work
               </div>
             )}
@@ -433,19 +433,18 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <SidebarMenuButton
-                size="lg"
-                onClick={() => signIn('email', { callbackUrl: '/' })}
-              >
-                <Avatar className="h-8 w-8 rounded-lg bg-muted text-muted-foreground">
-                  <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">G</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Guest</span>
-                  <span className="truncate text-xs text-primary">
-                    Sign in to save your work
-                  </span>
-                </div>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/auth/signin">
+                  <Avatar className="h-8 w-8 rounded-lg bg-muted text-muted-foreground">
+                    <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">G</AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">Guest</span>
+                    <span className="truncate text-xs text-primary">
+                      Sign in to save your work
+                    </span>
+                  </div>
+                </Link>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
