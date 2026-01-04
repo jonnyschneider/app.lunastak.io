@@ -180,11 +180,17 @@ export default function Home() {
     conversationId: string;
     summary: string;
     filename: string;
+    experimentVariant?: string;
     guestUserId?: string;
   }) => {
     // Store conversation ID and document data
     setConversationId(data.conversationId);
     setDocumentSummary(data.summary);
+
+    // Set experiment variant from API response
+    if (data.experimentVariant) {
+      setExperimentVariant(data.experimentVariant);
+    }
 
     // Store guest user ID for session transfer when user authenticates
     if (data.guestUserId) {
