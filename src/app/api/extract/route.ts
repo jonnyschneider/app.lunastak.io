@@ -355,16 +355,18 @@ export async function POST(req: Request) {
             });
 
             // Log to Statsig for experiment metrics
-            await logStatsigEvent(
-              conversation.userId,
-              'dimensional_coverage',
-              dimensionalCoverage.summary.coveragePercentage,
-              {
-                variant: conversation.experimentVariant,
-                dimensionsCovered: String(dimensionalCoverage.summary.dimensionsCovered),
-                gaps: dimensionalCoverage.summary.gaps.join(','),
-              }
-            );
+            if (conversation.userId) {
+              await logStatsigEvent(
+                conversation.userId,
+                'dimensional_coverage',
+                dimensionalCoverage.summary.coveragePercentage,
+                {
+                  variant: conversation.experimentVariant || 'unknown',
+                  dimensionsCovered: String(dimensionalCoverage.summary.dimensionsCovered),
+                  gaps: dimensionalCoverage.summary.gaps.join(','),
+                }
+              );
+            }
           }
 
           // Create fragments from themes with inline dimension tags

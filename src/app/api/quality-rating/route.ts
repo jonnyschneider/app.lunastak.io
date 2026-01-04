@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         trace.conversation.userId,
         'quality_rating',
         rating === 'good' ? 1 : 0,
-        { rating, variant: trace.conversation.experimentVariant }
+        { rating, variant: trace.conversation.experimentVariant || 'unknown' }
       );
     }
 
