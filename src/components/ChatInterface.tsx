@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import { Message, ConversationPhase } from '@/lib/types';
 import {
   Sheet,
@@ -99,7 +100,7 @@ export default function ChatInterface({
         {isLoading && (
           <div className="flex justify-start">
             <div className="bg-muted rounded-lg p-4">
-              <p className="text-muted-foreground">Thinking...</p>
+              <EllipsisHorizontalIcon className="w-6 h-6 text-primary animate-[pulse_3s_ease-in-out_infinite]" />
             </div>
           </div>
         )}

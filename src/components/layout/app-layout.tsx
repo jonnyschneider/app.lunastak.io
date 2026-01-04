@@ -22,6 +22,7 @@ import {
   MoreHorizontal,
   Star,
   Trash2,
+  Plus,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -30,6 +31,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuItem,
@@ -75,16 +77,18 @@ export function AppLayout({
   experimentVariant?: string;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar experimentVariant={experimentVariant} />
       <SidebarInset className="flex flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <img
-            src="/lunastak-logo.svg"
-            alt="Lunastak"
-            className="h-12 w-auto"
-          />
+          <Link href="/">
+            <img
+              src="/lunastak-logo.svg"
+              alt="Lunastak"
+              className="h-12 w-auto"
+            />
+          </Link>
         </header>
         <div className="flex flex-1 flex-col min-h-0">
           {children}
@@ -229,6 +233,15 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
 
   return (
     <Sidebar>
+      <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          <span>New conversation</span>
+        </Link>
+      </SidebarHeader>
       <SidebarContent>
         {/* Group 1: Conversations */}
         <SidebarGroup>
@@ -260,7 +273,7 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
                 {/* Starred section - only show if there are starred items */}
                 {starredStrategies.length > 0 && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <div className="px-2 py-1.5 mt-2 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                       <Star className="h-3 w-3 fill-current" />
                       Starred
                     </div>
