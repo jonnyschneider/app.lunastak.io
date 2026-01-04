@@ -4,6 +4,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
+import { logStatsigEvent } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -214,6 +215,16 @@ export async function POST(req: Request) {
     });
 
     console.log(`[Regenerate API] Created new trace: ${newTrace.id}`);
+
+    // Log to Statsig for experiment metrics
+    if (originalTrace.conversation?.userId) {
+      await logStatsigEvent(
+        originalTrace.conversation.userId,
+        'strategy_generated',
+        1,
+        { variant: originalTrace.conversation.experimentVariant || 'unknown' }
+      );
+    }
 
     return NextResponse.json({
       success: true,
