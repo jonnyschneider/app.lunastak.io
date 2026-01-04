@@ -58,6 +58,55 @@ export default function Home() {
     }
   }, [flowStep, session]);
 
+  // DEV: Load stub data from URL param to skip conversation flow
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stubConversationId = params.get('stub');
+
+    if (!stubConversationId) return;
+
+    const loadStubData = async () => {
+      try {
+        console.log('[Stub] Loading conversation:', stubConversationId);
+        const response = await fetch(`/api/conversation/${stubConversationId}/stub`);
+
+        if (!response.ok) {
+          console.error('[Stub] Failed to load:', response.status);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('[Stub] Loaded data:', {
+          conversationId: data.conversationId,
+          hasExtractedContext: !!data.extractedContext,
+          hasStrategy: !!data.strategy,
+        });
+
+        // Hydrate state
+        setConversationId(data.conversationId);
+        setExperimentVariant(data.experimentVariant || 'baseline-v1');
+        setExtractedContext(data.extractedContext);
+        setDimensionalCoverage(data.dimensionalCoverage);
+        setTraceId(data.traceId);
+
+        // Jump to extraction view (or strategy if ?stubView=strategy)
+        const stubView = params.get('stubView');
+        if (stubView === 'strategy' && data.strategy) {
+          setStrategy(data.strategy);
+          setThoughts(data.thoughts || '');
+          setFlowStep('strategy');
+        } else {
+          setFlowStep('extraction');
+        }
+        setShowIntro(false);
+      } catch (error) {
+        console.error('[Stub] Error loading data:', error);
+      }
+    };
+
+    loadStubData();
+  }, []);
+
   // 90s idle timer for feedback modal
   useEffect(() => {
     if (flowStep !== 'strategy' || !traceId) return;
@@ -493,42 +542,6 @@ export default function Home() {
     }
   };
 
-  const handleFlagForLater = async () => {
-    // Log extraction choice
-    if (conversationId) {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          eventType: 'extraction_choice',
-          eventData: { choice: 'flag_for_later' },
-        }),
-      }).catch(err => console.error('Failed to log event:', err));
-    }
-
-    console.log('[Baseline] User flagged opportunities for later session');
-    alert('Opportunities flagged for your next session. (Feature coming soon)');
-  };
-
-  const handleDismiss = async () => {
-    // Log extraction choice
-    if (conversationId) {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          eventType: 'extraction_choice',
-          eventData: { choice: 'dismiss' },
-        }),
-      }).catch(err => console.error('Failed to log event:', err));
-    }
-
-    console.log('[Baseline] User dismissed opportunities');
-    // Do nothing else - user can proceed to generate
-  };
-
   return (
     <AppLayout experimentVariant={experimentVariant}>
       <main className="h-full bg-background flex flex-col">
@@ -591,8 +604,6 @@ export default function Home() {
               extractedContext={extractedContext}
               onGenerate={handleGenerate}
               onContinue={handleContinue}
-              onFlagForLater={handleFlagForLater}
-              onDismiss={handleDismiss}
               isGenerating={isLoading}
             />
           )}
