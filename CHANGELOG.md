@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.2] - 2026-01-05
+
+### Added - E3: Dimension-Guided Questioning + Auth Flow
+
+**E3 Experiment Implementation:**
+- **Dimension-Guided Questioning** - Questions explicitly guided toward uncovered dimensions
+  - New variant: `dimension-guided-e3` (running parallel with E2's emergent approach)
+  - Updated `src/app/api/conversation/continue/route.ts` with variant-aware prompts
+  - E3 prompt includes 11 Tier 1 strategic dimensions for Claude's awareness
+  - Statsig feature gate: `dimension_guided_e3`
+- **Experiment Documentation**
+  - One-pager: `docs/experiments/one-pagers/E3-dimension-guided.md`
+  - Updated experiment register with E2/E3 parallel testing
+
+**Double Opt-In Auth Flow:**
+- **Subscribe Endpoints** - Guest-to-auth conversion without upfront friction
+  - `POST /api/subscribe` - Captures email, sends confirmation email
+  - `GET /api/subscribe/confirm` - Confirms email, redirects to sign-in
+  - Supports `conversationId` param for session transfer after auth
+- **Email Infrastructure**
+  - `src/emails/` - Email components and templates (EmailLayout, SubscribeConfirmEmail)
+  - `src/lib/resend.ts` - Shared Resend client with EMAIL_CONFIG
+  - `src/lib/crypto.ts` - Token encryption for confirmation links
+  - `src/lib/render-email.ts` - Email rendering utility
+- **Note:** Duplicates infrastructure from marketing site (lunastak.io) for self-contained operation
+
+**UI Refinements:**
+- **Extraction Summary Redesign**
+  - Main card: muted green background (`bg-primary/5`)
+  - Theme cards: white background with shadow for visual pop
+  - OR divider between "Generate" and "Continue" options
+  - Quote-style follow-up question display in refine card
+- **Intro Card Refresh**
+  - Added Luna avatar (animated-logo-glitch.svg)
+  - Playful copy: "I ask great questions, and I'm a really good listener"
+  - Removed fast-track entry point, horizontal 3-column layout
+- **Statsig Client Integration**
+  - Added `StatsigProvider.tsx` with session replay and web analytics autocapture
+  - Client key configured via `NEXT_PUBLIC_STATSIG_CLIENT_KEY`
+
+**Developer Tools:**
+- **Stub Mode** for UI development
+  - `GET /api/conversation/[id]/stub` - Loads real extraction data from DB
+  - Use `?stub=conversationId` URL param to bypass API calls
+  - Documentation in `.claude/README.md`
+
+### Changed
+- Removed `onFlagForLater` and `onDismiss` props from ExtractionConfirm (unused)
+
+### Dependencies
+- Added `@react-email/components` for email templating
+
+### Environment Variables
+- `RESEND_AUDIENCE_ID` - Resend audience ID for contact management
+- `ENCRYPTION_KEY` - 32-byte hex key for token encryption (must match lunastak.io)
+- `NEXT_PUBLIC_APP_URL` - App URL for confirmation links
+- `NEXT_PUBLIC_STATSIG_CLIENT_KEY` - Statsig client SDK key
+
+---
+
 ## [1.4.1] - 2026-01-04
 
 ### Changed
