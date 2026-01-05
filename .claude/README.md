@@ -271,6 +271,16 @@ npm run regen:remote <traceId> https://preview-url.vercel.app    # preview
 npm run regen:remote <traceId> https://dc-agent-v4.vercel.app    # production
 ```
 
+**UI Stubbing (Skip Conversation Flow):**
+```bash
+# Load extraction view with existing conversation data
+http://localhost:3000?stub=<conversationId>
+
+# Load strategy view directly
+http://localhost:3000?stub=<conversationId>&stubView=strategy
+```
+Useful for iterating on UI without burning API tokens. Loads real data from DB.
+
 **Logging:**
 - Frontend: Browser DevTools console
 - Backend: Terminal running `npm run dev`
