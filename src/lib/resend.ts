@@ -23,8 +23,12 @@ export const resend = new Proxy({} as Resend, {
 })
 
 // Email configuration
+// RESEND_FROM_EMAIL can be either "email@domain.com" or "Name <email@domain.com>"
+const fromEmail = process.env.RESEND_FROM_EMAIL || 'luna@lunastak.io'
+const formattedFrom = fromEmail.includes('<') ? fromEmail : `Lunastak <${fromEmail}>`
+
 export const EMAIL_CONFIG = {
-  from: process.env.RESEND_FROM_EMAIL || 'Lunastak <hello@lunastak.io>',
-  replyTo: 'hello@lunastak.io',
+  from: formattedFrom,
+  replyTo: 'luna@lunastak.io',
   adminEmail: 'jonny@humventures.com.au',
 } as const
