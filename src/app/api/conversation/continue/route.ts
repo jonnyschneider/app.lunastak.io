@@ -246,54 +246,16 @@ async function handleQuestioning(
   console.log('[Continue API - QUESTIONING] Conversation found, questionCount:', conversation.questionCount);
 
   // Check if previous assistant message was an early exit offer
+  // With the new UX, if user replies after early exit offer, they want to continue
   const lastAssistantMessage = conversation.messages
     .filter((m: { role: string }) => m.role === 'assistant')
     .pop();
 
-  const previousUserMessage = conversation.messages
-    .filter((m: { role: string }) => m.role === 'user')
-    .pop();
+  const isEarlyExitOffer = lastAssistantMessage?.content === 'I have what I need to create your strategy.';
 
-  const isEarlyExitOffer = lastAssistantMessage?.content.includes('A) Continue exploring') &&
-                           lastAssistantMessage?.content.includes('B) Generate strategy');
-  console.log('[Continue API - QUESTIONING] Early exit offer check:', isEarlyExitOffer);
-
-  if (isEarlyExitOffer && previousUserMessage) {
-    // Process early exit response
-    const userChoice = previousUserMessage.content.trim().toUpperCase();
-    console.log('[Continue API - QUESTIONING] Processing early exit response:', userChoice);
-
-    if (userChoice === 'B') {
-      // User chose to generate strategy
-      console.log('[Continue API - QUESTIONING] User chose to generate strategy');
-      return await moveToExtraction(conversationId, currentStep);
-    } else if (userChoice === 'A') {
-      // User chose to continue exploring - proceed with normal questioning flow
-      console.log('[Continue API - QUESTIONING] User chose to continue exploring');
-      const questionCount = conversation.questionCount;
-      return await continueQuestioning(conversationId, questionCount, currentStep);
-    } else {
-      console.log('[Continue API - QUESTIONING] Invalid early exit choice');
-      // Invalid choice - re-prompt
-      const errorMessage = 'Please type A to continue exploring or B to generate your strategy.';
-
-      await prisma.message.create({
-        data: {
-          conversationId,
-          role: 'assistant',
-          content: errorMessage,
-          stepNumber: currentStep + 1,
-        },
-      });
-
-      return NextResponse.json({
-        conversationId,
-        message: errorMessage,
-        nextPhase: 'QUESTIONING',
-        stepNumber: currentStep + 1,
-        earlyExitOffered: true,
-      });
-    }
+  if (isEarlyExitOffer) {
+    // User chose to continue by replying - proceed with normal questioning
+    console.log('[Continue API - QUESTIONING] User continued after early exit offer');
   }
 
   const questionCount = conversation.questionCount;
@@ -495,13 +457,33 @@ async function offerEarlyExit(
   conversationId: string,
   currentStep: number
 ) {
-  const exitMessage = `I think I have what I need to create your strategy.
+  // Generate a follow-up question
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: { messages: { orderBy: { stepNumber: 'asc' } } },
+  });
 
-Would you like to:
-A) Continue exploring
-B) Generate strategy
+  const conversationHistory = conversation!.messages
+    .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+    .join('\n\n');
 
-Type A or B:`;
+  const experimentVariant = conversation!.experimentVariant;
+  const prompt = experimentVariant === 'dimension-guided-e3'
+    ? `Based on this conversation, suggest ONE follow-up question that would explore an under-covered strategic dimension. Return ONLY the question.\n\n${conversationHistory}`
+    : `Based on this conversation, suggest ONE follow-up question to deepen understanding. Return ONLY the question.\n\n${conversationHistory}`;
+
+  const response = await anthropic.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 150,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+  });
+
+  const suggestedQuestion = response.content[0]?.type === 'text'
+    ? response.content[0].text
+    : 'What else would you like to explore?';
+
+  const exitMessage = `I have what I need to create your strategy.`;
 
   await prisma.message.create({
     data: {
@@ -512,13 +494,13 @@ Type A or B:`;
     },
   });
 
-  // Stay in QUESTIONING phase but flag early exit offered
   return NextResponse.json({
     conversationId,
     message: exitMessage,
     nextPhase: 'QUESTIONING',
     stepNumber: currentStep + 1,
     earlyExitOffered: true,
+    suggestedQuestion,
   });
 }
 
