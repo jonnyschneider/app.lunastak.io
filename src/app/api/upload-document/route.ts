@@ -87,9 +87,8 @@ export async function POST(req: Request) {
     // Get or create project (creates guest user + project for unauthenticated users)
     const { userId, project, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
 
-    // Determine experiment variant via Statsig (same as conversation/start)
-    const statsigUserId = authenticatedUserId || userId || `guest_${Date.now()}`;
-    const experimentVariant = await getExperimentVariant(statsigUserId);
+    // Use database userId for Statsig (ensures consistency with event logging)
+    const experimentVariant = await getExperimentVariant(userId);
 
     // Create conversation with document context
     const conversation = await prisma.conversation.create({
