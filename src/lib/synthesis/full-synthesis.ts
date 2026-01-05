@@ -35,16 +35,9 @@ Synthesize these fragments into structured understanding:
    - MEDIUM: 3-5 fragments, some gaps remain
    - LOW: <3 fragments or significant gaps
 
-Return ONLY valid JSON (no markdown code blocks):
-{
-  "summary": "...",
-  "keyThemes": ["...", "..."],
-  "keyQuotes": ["...", "..."],
-  "gaps": ["...", "..."],
-  "contradictions": ["...", "..."],
-  "subdimensions": null,
-  "confidence": "MEDIUM"
-}`
+IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
+
+{"summary": "...", "keyThemes": ["...", "..."], "keyQuotes": ["...", "..."], "gaps": ["...", "..."], "contradictions": ["...", "..."], "subdimensions": null, "confidence": "MEDIUM"}`
 
 export async function fullSynthesis(
   dimension: Tier1Dimension,
@@ -83,12 +76,20 @@ export async function fullSynthesis(
     : '{}'
 
   try {
-    // Clean up response - remove markdown code blocks if present
-    const cleanedContent = content
+    // Clean up response - remove markdown code blocks and extract JSON
+    let cleanedContent = content
       .replace(/^```json\s*/i, '')
       .replace(/^```\s*/i, '')
       .replace(/\s*```$/i, '')
       .trim()
+
+    // If content doesn't start with {, try to extract JSON from preamble
+    if (!cleanedContent.startsWith('{')) {
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        cleanedContent = jsonMatch[0]
+      }
+    }
 
     const result = JSON.parse(cleanedContent) as SynthesisResult
     return result
