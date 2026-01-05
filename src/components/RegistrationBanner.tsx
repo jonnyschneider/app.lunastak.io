@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface RegistrationBannerProps {
   guestUserId: string
@@ -8,9 +9,9 @@ interface RegistrationBannerProps {
 }
 
 export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBannerProps) {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,19 +23,20 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
       // Store guest user ID in localStorage for session transfer after authentication
       localStorage.setItem('guestUserId', guestUserId)
 
-      // Use double opt-in flow via /api/subscribe
-      // This adds the email to the marketing list and sends a confirmation email
+      // Subscribe and get redirect URL to sign-in
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, guestUserId }),
       })
 
-      if (response.ok) {
-        setEmailSent(true)
+      const data = await response.json()
+
+      if (response.ok && data.redirectUrl) {
+        // Redirect to sign-in page with pre-filled email
+        router.push(data.redirectUrl)
       } else {
-        const data = await response.json()
-        setError(data.error || 'Failed to send confirmation. Please try again.')
+        setError(data.error || 'Failed to subscribe. Please try again.')
       }
     } catch (err) {
       console.error('Failed to subscribe:', err)
@@ -42,29 +44,6 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  if (emailSent) {
-    return (
-      <div className="bg-muted border-l-4 border-primary p-4 mb-6 rounded-r-lg">
-        <div className="flex items-start">
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-foreground">
-              Check your email
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              We've sent a confirmation email to <strong>{email}</strong>. Click the link to verify your email and save your strategy.
-            </p>
-          </div>
-          <button
-            onClick={onDismiss}
-            className="ml-4 text-muted-foreground hover:text-foreground"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -94,7 +73,7 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
               disabled={isSubmitting}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-50 transition"
             >
-              {isSubmitting ? 'Sending...' : 'Send Link'}
+              {isSubmitting ? 'Redirecting...' : 'Continue'}
             </button>
           </form>
         </div>
