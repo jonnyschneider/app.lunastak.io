@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { IBM_Plex_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
+import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
+import { StatsigProvider } from '@/components/StatsigProvider'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
@@ -26,11 +28,15 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexSans.className} bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950`}
+      className={`${ibmPlexSans.className} bg-background`}
     >
       <body>
         <SessionProvider session={session}>
-          {children}
+          <SessionTransferProvider>
+            <StatsigProvider>
+              {children}
+            </StatsigProvider>
+          </SessionTransferProvider>
         </SessionProvider>
       </body>
     </html>

@@ -6,6 +6,7 @@ import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } fr
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import { updateAllSyntheses } from '@/lib/synthesis';
+import { logStatsigEvent } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -206,7 +207,9 @@ export async function POST(req: Request) {
           .join('\n\n');
 
         // Determine extraction approach based on experiment variant
-        const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
+        // Both E1a (emergent questioning) and E3 (dimension-guided questioning) use emergent extraction
+        // Only baseline-v1 uses the prescriptive 3-field extraction
+        const isEmergent = conversation.experimentVariant !== 'baseline-v1';
         console.log('[Extract] Conversation details:', {
           conversationId: conversation.id,
           experimentVariant: conversation.experimentVariant,
@@ -352,6 +355,20 @@ export async function POST(req: Request) {
               coveragePercentage: dimensionalCoverage.summary.coveragePercentage,
               gaps: dimensionalCoverage.summary.gaps,
             });
+
+            // Log to Statsig for experiment metrics
+            if (conversation.userId) {
+              await logStatsigEvent(
+                conversation.userId,
+                'dimensional_coverage',
+                dimensionalCoverage.summary.coveragePercentage,
+                {
+                  variant: conversation.experimentVariant || 'unknown',
+                  dimensionsCovered: String(dimensionalCoverage.summary.dimensionsCovered),
+                  gaps: dimensionalCoverage.summary.gaps.join(','),
+                }
+              );
+            }
           }
 
           // Create fragments from themes with inline dimension tags

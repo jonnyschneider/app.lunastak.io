@@ -77,28 +77,28 @@ export function DocumentUpload({ onUploadComplete, onError }: DocumentUploadProp
         {...getRootProps()}
         className={`
           border-2 border-dashed rounded-lg p-8 text-center transition-colors
-          ${isDragActive ? 'border-zinc-500 bg-zinc-50 dark:bg-zinc-800' : 'border-zinc-300 dark:border-zinc-600'}
-          ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500'}
+          ${isDragActive ? 'border-primary bg-muted' : 'border-border'}
+          ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary/60'}
         `}
       >
         <input {...getInputProps()} />
 
         {isUploading ? (
           <>
-            <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-zinc-400 animate-pulse" />
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-muted-foreground animate-pulse" />
+            <p className="mt-2 text-sm text-muted-foreground">
               Extracting content from {uploadedFile?.name}...
             </p>
           </>
         ) : (
           <>
-            <DocumentTextIcon className="mx-auto h-12 w-12 text-zinc-400" />
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <p className="mt-2 text-sm text-muted-foreground">
               {isDragActive
                 ? 'Drop your file here'
                 : 'Drag and drop your file here, or click to browse'}
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               Supports PDF, DOCX, TXT, and Markdown files (max 10MB)
             </p>
           </>

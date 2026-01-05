@@ -50,6 +50,8 @@ export default function Home() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting');
   const [extractionError, setExtractionError] = useState<string | undefined>();
+  const [earlyExitOffered, setEarlyExitOffered] = useState(false);
+  const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null);
 
   // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
@@ -57,6 +59,55 @@ export default function Home() {
       setShowRegistrationBanner(true);
     }
   }, [flowStep, session]);
+
+  // DEV: Load stub data from URL param to skip conversation flow
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stubConversationId = params.get('stub');
+
+    if (!stubConversationId) return;
+
+    const loadStubData = async () => {
+      try {
+        console.log('[Stub] Loading conversation:', stubConversationId);
+        const response = await fetch(`/api/conversation/${stubConversationId}/stub`);
+
+        if (!response.ok) {
+          console.error('[Stub] Failed to load:', response.status);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('[Stub] Loaded data:', {
+          conversationId: data.conversationId,
+          hasExtractedContext: !!data.extractedContext,
+          hasStrategy: !!data.strategy,
+        });
+
+        // Hydrate state
+        setConversationId(data.conversationId);
+        setExperimentVariant(data.experimentVariant || 'baseline-v1');
+        setExtractedContext(data.extractedContext);
+        setDimensionalCoverage(data.dimensionalCoverage);
+        setTraceId(data.traceId);
+
+        // Jump to extraction view (or strategy if ?stubView=strategy)
+        const stubView = params.get('stubView');
+        if (stubView === 'strategy' && data.strategy) {
+          setStrategy(data.strategy);
+          setThoughts(data.thoughts || '');
+          setFlowStep('strategy');
+        } else {
+          setFlowStep('extraction');
+        }
+        setShowIntro(false);
+      } catch (error) {
+        console.error('[Stub] Error loading data:', error);
+      }
+    };
+
+    loadStubData();
+  }, []);
 
   // 90s idle timer for feedback modal
   useEffect(() => {
@@ -87,32 +138,12 @@ export default function Home() {
     };
   }, [flowStep, traceId]);
 
-  // Transfer guest session when user signs in
+  // Session transfer is now handled globally by SessionTransferProvider
+  // Hide registration banner when user is authenticated
   useEffect(() => {
-    const transferSession = async () => {
-      if (!session?.user?.id) return;
-
-      const guestUserId = localStorage.getItem('guestUserId');
-      if (!guestUserId) return;
-
-      try {
-        const response = await fetch('/api/transfer-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ guestUserId }),
-        });
-
-        if (response.ok) {
-          console.log('Session transferred successfully');
-          localStorage.removeItem('guestUserId');
-          setShowRegistrationBanner(false);
-        }
-      } catch (error) {
-        console.error('Failed to transfer session:', error);
-      }
-    };
-
-    transferSession();
+    if (session?.user?.id) {
+      setShowRegistrationBanner(false);
+    }
   }, [session]);
 
   const handleStartClick = () => {
@@ -315,7 +346,7 @@ export default function Home() {
         // Move to extraction step
         extractContext();
       } else {
-        // Add assistant's next question
+        // Add assistant's message
         setMessages(prev => [...prev, {
           id: `msg_${Date.now()}`,
           conversationId,
@@ -324,6 +355,15 @@ export default function Home() {
           stepNumber: data.stepNumber,
           timestamp: new Date(),
         }]);
+
+        // Handle early exit offer
+        if (data.earlyExitOffered) {
+          setEarlyExitOffered(true);
+          setSuggestedQuestion(data.suggestedQuestion || null);
+        } else {
+          setEarlyExitOffered(false);
+          setSuggestedQuestion(null);
+        }
       }
     } catch (error) {
       console.error('Failed to continue conversation:', error);
@@ -493,45 +533,12 @@ export default function Home() {
     }
   };
 
-  const handleFlagForLater = async () => {
-    // Log extraction choice
-    if (conversationId) {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          eventType: 'extraction_choice',
-          eventData: { choice: 'flag_for_later' },
-        }),
-      }).catch(err => console.error('Failed to log event:', err));
-    }
-
-    console.log('[Baseline] User flagged opportunities for later session');
-    alert('Opportunities flagged for your next session. (Feature coming soon)');
-  };
-
-  const handleDismiss = async () => {
-    // Log extraction choice
-    if (conversationId) {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          eventType: 'extraction_choice',
-          eventData: { choice: 'dismiss' },
-        }),
-      }).catch(err => console.error('Failed to log event:', err));
-    }
-
-    console.log('[Baseline] User dismissed opportunities');
-    // Do nothing else - user can proceed to generate
-  };
+  // Show variant badge during active conversation flow (for UAT/testing)
+  const showVariantBadge = ['chat', 'extracting', 'extraction'].includes(flowStep);
 
   return (
-    <AppLayout experimentVariant={experimentVariant}>
-      <main className="h-full bg-gray-50 dark:bg-zinc-900 flex flex-col">
+    <AppLayout experimentVariant={experimentVariant} showVariantBadge={showVariantBadge}>
+      <main className="h-full bg-background flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
           {showIntro && flowStep === 'intro' && (
             <IntroCard onEntryPointSelect={handleEntryPointSelect} isLoading={isLoading} />
@@ -570,10 +577,14 @@ export default function Home() {
                 conversationId={conversationId}
                 messages={messages}
                 onUserResponse={handleUserResponse}
+                onEntryPointSelect={handleEntryPointSelect}
+                onGenerateStrategy={extractContext}
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}
                 traceId={traceId}
+                earlyExitOffered={earlyExitOffered}
+                suggestedQuestion={suggestedQuestion}
               />
             </div>
           )}
@@ -590,8 +601,6 @@ export default function Home() {
               extractedContext={extractedContext}
               onGenerate={handleGenerate}
               onContinue={handleContinue}
-              onFlagForLater={handleFlagForLater}
-              onDismiss={handleDismiss}
               isGenerating={isLoading}
             />
           )}

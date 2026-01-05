@@ -9,6 +9,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.2] - 2026-01-05
+
+### Added - E3: Dimension-Guided Questioning + Auth Flow + Statsig Experiments
+
+**E3 Experiment Implementation:**
+- **Dimension-Guided Questioning** - Questions explicitly guided toward uncovered dimensions
+  - New variant: `dimension-guided-e3` (running parallel with E2's emergent approach)
+  - Updated `src/app/api/conversation/continue/route.ts` with variant-aware prompts
+  - E3 prompt includes 11 Tier 1 strategic dimensions for Claude's awareness
+  - E3 uses emergent theme extraction (same as E1a), not baseline prescriptive format
+- **Experiment Documentation**
+  - One-pager: `docs/experiments/one-pagers/E3-dimension-guided.md`
+  - Statsig experiments guide: `docs/STATSIG_EXPERIMENTS.md`
+  - Updated experiment register with E2/E3 parallel testing
+
+**Statsig A/B Experiments:**
+- **Proper Experiment Setup** - Migrated from feature gates to Statsig experiments
+  - Experiment ID: `questioning_approach` with `variant` parameter
+  - Valid variants: `baseline-v1`, `emergent-extraction-e1a`, `dimension-guided-e3`
+  - Uses `VERCEL_ENV` for environment tier (production/preview/development)
+- **Custom Event Logging** - Key metrics for experiment analysis
+  - `dimensional_coverage` - Logged after extraction (0-100%)
+  - `quality_rating` - Logged when user rates output (1=good, 0=bad)
+  - `strategy_generated` - Logged after generation
+  - Events flushed immediately in serverless environment
+- **Helper Scripts**
+  - `scripts/sync-ratings-to-statsig.ts` - Batch sync ratings from DB to Statsig
+  - Manual override via `?variant=dimension-guided-e3` URL param
+
+**Double Opt-In Auth Flow:**
+- **Subscribe Endpoints** - Guest-to-auth conversion without upfront friction
+  - `POST /api/subscribe` - Captures email, sends confirmation email
+  - `GET /api/subscribe/confirm` - Confirms email, redirects to sign-in
+  - Supports `conversationId` param for session transfer after auth
+- **Global Session Transfer** - Reliable guest-to-auth data migration
+  - `SessionTransferProvider` - Runs on any page, not just homepage
+  - Triggers page reload after transfer to refresh UI state
+  - Dispatches `strategySaved` event to update sidebar
+- **Email Infrastructure**
+  - `src/emails/` - Email components and templates (EmailLayout, SubscribeConfirmEmail)
+  - `src/lib/resend.ts` - Shared Resend client with EMAIL_CONFIG
+  - `src/lib/crypto.ts` - Token encryption for confirmation links
+  - `src/lib/render-email.ts` - Email rendering utility
+- **Note:** Duplicates infrastructure from marketing site (lunastak.io) for self-contained operation
+
+**UI Refinements:**
+- **Extraction Summary Redesign**
+  - Main card: muted green background (`bg-primary/5`)
+  - Theme cards: white background with shadow for visual pop
+  - OR divider between "Generate" and "Continue" options
+  - Quote-style follow-up question display in refine card
+- **Intro Card Refresh**
+  - Added Luna avatar (animated-logo-glitch.svg)
+  - Playful copy: "I ask great questions, and I'm a really good listener"
+  - Removed fast-track entry point, horizontal 3-column layout
+- **Early Exit UX** - Improved flow when confidence is high
+  - Green "Generate Strategy" button instead of "Type A or B"
+  - OR divider with contextual follow-up question below
+  - User can click button or reply to continue conversation
+- **Sidebar Enhancements**
+  - Version and variant indicator (only shown during active conversation)
+  - Format: `v1.4.2 · dimension-guided-e3`
+- **Statsig Client Integration**
+  - Added `StatsigProvider.tsx` with session replay and web analytics autocapture
+  - Client key configured via `NEXT_PUBLIC_STATSIG_CLIENT_KEY`
+
+**Developer Tools:**
+- **Stub Mode** for UI development
+  - `GET /api/conversation/[id]/stub` - Loads real extraction data from DB
+  - Use `?stub=conversationId` URL param to bypass API calls
+  - Documentation in `.claude/README.md`
+- **Trace API** - New endpoint for strategy page
+  - `GET /api/trace/[traceId]` - Fetches trace data with ownership check
+
+### Changed
+- Removed `onFlagForLater` and `onDismiss` props from ExtractionConfirm (unused)
+- RegistrationBanner now uses double opt-in flow instead of direct NextAuth
+
+### Fixed
+- E3 variant now uses emergent theme extraction (was incorrectly using baseline format)
+- Subscribe confirm route uses `force-dynamic` for Next.js serverless
+- Session transfer works regardless of which page magic link returns to
+
+### Dependencies
+- Added `@react-email/components` for email templating
+
+### Environment Variables
+- `RESEND_AUDIENCE_ID` - Resend audience ID for contact management
+- `ENCRYPTION_KEY` - 32-byte hex key for token encryption (must match lunastak.io)
+- `NEXT_PUBLIC_APP_URL` - App URL for confirmation links (must include https://)
+- `NEXT_PUBLIC_STATSIG_CLIENT_KEY` - Statsig client SDK key
+- `NEXTAUTH_URL` - Must be set to `https://app.lunastak.io` for production
+
+---
+
+## [1.4.1] - 2026-01-04
+
+### Changed
+- **Sidebar UX Improvements**
+  - Added prominent "New Conversation" button in sidebar header with primary green styling
+  - Increased sidebar width from 16rem to 21rem for better content display
+  - Sidebar now closed by default
+  - Added margin above "Starred" section for better visual spacing
+  - Made logo clickable (navigates to home) and brand-colored (green)
+
+- **Loading Indicator Refinements**
+  - Simplified `ExtractionProgress.tsx`: removed animated dots and spinner, slowed pulse animation to 3s
+  - Added consistent animated ellipsis loading indicator to `ChatInterface.tsx` and `IntroCard.tsx`
+  - Unified loading state styling across all conversation components
+
+---
+
 ## [1.4.0] - 2026-01-04
 
 ### Added - Fragment Extraction & Synthesis Implementation

@@ -86,6 +86,10 @@ model Trace {
   qualityRating          String? // 'good' | 'bad'
   qualityRatingTimestamp DateTime?
 
+  // User preferences
+  starred   Boolean   @default(false)
+  starredAt DateTime?
+
   // Phase 2: Error coding fields
   openCodingNotes String?   @db.Text
   errorCategories String[]  @default([])
@@ -101,6 +105,7 @@ model Trace {
   @@index([timestamp])
   @@index([userFeedback])
   @@index([qualityRating])
+  @@index([starred])
 }
 
 model Event {

@@ -6,7 +6,9 @@ This document maps release versions to experiment IDs for clarity.
 
 | Release Version | Experiment ID | Variant ID | Status | Notes |
 |-----------------|---------------|------------|--------|-------|
-| **v1.4.0** | - | `emergent-extraction-e1a` | 🟢 **Production** | Fragment Extraction & Synthesis - [CHANGELOG](./CHANGELOG.md#140---2026-01-04) |
+| **v1.4.2** | E3 | `dimension-guided-e3` | 🟡 **UAT** | E3 dimension-guided questioning, double opt-in auth, UI refinements - [CHANGELOG](./CHANGELOG.md#142---2026-01-05) |
+| **v1.4.1** | - | `emergent-extraction-e1a` | 🟢 Production | Sidebar UX & loading indicator refinements - [CHANGELOG](./CHANGELOG.md#141---2026-01-04) |
+| **v1.4.0** | - | `emergent-extraction-e1a` | 🟢 Deployed | Fragment Extraction & Synthesis - [CHANGELOG](./CHANGELOG.md#140---2026-01-04) |
 | **v1.3.0** | E2 | `emergent-extraction-e1a` | 🟢 Deployed | Dimensional Coverage Tracking - [One-Pager](./docs/experiments/one-pagers/E2-dimensional-coverage.md) - [CHANGELOG](./CHANGELOG.md#130---2026-01-03) |
 | **v1.2.2** | - | `baseline-v1` or `emergent-extraction-e1a` | 🟢 **Production** | Bug fixes: hydration, conversation loading, event logging - [CHANGELOG](./CHANGELOG.md#122---2025-12-30) |
 | **v1.2.1** | - | `baseline-v1` or `emergent-extraction-e1a` | 🟢 Deployed | Terminology: initiatives → opportunities - [CHANGELOG](./CHANGELOG.md#120---2025-12-22) |
@@ -99,14 +101,14 @@ When deploying a new version:
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
 
-**Current Production Version:** v1.4.0
+**Current Production Version:** v1.4.1 (v1.4.2 in UAT)
 
 ## Future Versions
 
 Planned experiments will increment versions as follows:
 
-- **v1.5.0** - E3: Proactive Gap-Based Questioning (planned)
-- **v1.6.0** - E4: LLM-as-Judge Training (planned)
+- **v1.5.0** - E4: Real-Time Coverage Display (planned)
+- **v1.6.0** - E5: Multi-Session Accumulation (planned)
 - **v2.0.0** - Major architecture change (if needed)
 
 ## Notes

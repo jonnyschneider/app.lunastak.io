@@ -27,7 +27,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
+const SIDEBAR_WIDTH = "21rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -277,15 +277,16 @@ const SidebarTrigger = React.forwardRef<
 
   return (
     <Button
-      ref={ref as any}
+      ref={ref}
       data-sidebar="trigger"
-      plain
-      className={cn("h-9 w-9 p-0", className)}
-      onClick={(event: React.MouseEvent) => {
-        onClick?.(event as any)
+      variant="ghost"
+      size="icon"
+      className={cn("h-9 w-9", className)}
+      onClick={(event) => {
+        onClick?.(event)
         toggleSidebar()
       }}
-      {...props as any}
+      {...props}
     >
       <PanelLeft className="h-5 w-5" />
       <span className="sr-only">Toggle Sidebar</span>
@@ -448,7 +449,7 @@ const SidebarGroupLabel = React.forwardRef<
       ref={ref}
       data-sidebar="group-label"
       className={cn(
-        "flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground outline-none ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}

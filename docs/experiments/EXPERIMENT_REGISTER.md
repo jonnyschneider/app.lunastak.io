@@ -13,9 +13,9 @@
 | ID | Variant | Hypothesis | Status | Participants | Key Metrics | Outcome | One-Pager |
 |---|---|---|---|---|---|---|---|
 | **E0** | `baseline-v1` c018f2c | Establishes normalized control for all future experiments | 🟢 Complete | Dogfooding | Event logging, quality ratings, user feedback | ✅ Pass - Infrastructure ready | [View](./one-pagers/E0-baseline-v1.md) |
-| **E1** | `emergent-extraction` | Completely freeform extraction (no prescribed fields) will produce less "wooden" outputs while maintaining dimensional coverage | 🟢 Complete | Dogfooding | Quality rating (good/bad %), user feedback (helpful %), theme richness | ✅ Pass - Dogfooding validated approach; revealed dimensional tracking need | [View](./one-pagers/E1-emergent-extraction.md) |
-| **E2** | `dimensional-coverage` | Emergent themes naturally map to strategic dimensions, enabling coverage tracking without prescriptive schemas | 🟡 Implementation Planned | Retrospective analysis | Coverage % per dimension, gap patterns, mapping accuracy | TBD | [View](./one-pagers/E2-dimensional-coverage.md) |
-| **E3** | `gap-based-questioning` | Using coverage gaps to proactively guide conversation improves dimensional completeness | ⚪ Future | Target: 10-15 | Coverage improvement, conversation quality, user experience | TBD | TBD |
+| **E1** | `emergent-extraction-e1a` | Loosened extraction (emergent themes vs rigid 3-fields) produces less "wooden" outputs | 🟢 Complete | Dogfooding | Quality rating (good/bad %), user feedback (helpful %), theme richness | ✅ Pass - Dogfooding validated approach | [View](./one-pagers/E1-emergent-extraction.md) |
+| **E2** | `emergent-extraction-e1a` | Emergent questioning with post-hoc dimensional coverage tracking validates natural theme coverage (~75%) | 🟢 Complete | Dogfooding | Coverage % per dimension, gap patterns, mapping accuracy | ✅ Pass - ~75% coverage emergently; ready for comparison | [View](./one-pagers/E2-dimensional-coverage.md) |
+| **E3** | `dimension-guided-e3` | Dimension-guided questioning achieves higher coverage than emergent, but trade-off with quality/authenticity is unknown | 🟡 In Progress | Alpha cohort | Coverage %, quality ratings, authenticity assessment | TBD | [View](./one-pagers/E3-dimension-guided.md) |
 | **E4** | `real-time-coverage-display` | Showing dimensional coverage during conversation increases user trust and engagement | ⚪ Future | Target: 10-15 | User engagement, trust ratings, completion rates | TBD | TBD |
 | **E5** | `multi-session-accumulation` | Accumulating strategic context across sessions produces richer outputs over time | ⚪ Future | Target: 5-10 multi-session users | Coverage growth over sessions, output quality improvement | TBD | TBD |
 | **E6** | `llm-as-judge-training` | LLM-as-judge can assess dimensional coverage and tagging accuracy with expert-level consistency | ⚪ Future | Retrospective analysis | Agreement with expert ratings, false positive/negative rates | TBD | TBD |
@@ -30,18 +30,20 @@
 
 **Foundation (Complete):**
 1. ✅ E0 (baseline-v1) - Infrastructure baseline
-2. ✅ E1 (emergent extraction) - Validated via dogfooding
+2. ✅ E1 (emergent extraction) - Loosened extraction, validated via dogfooding
+3. ✅ E2 (dimensional coverage) - Post-hoc coverage tracking, ~75% emergent coverage
 
-**Current:**
-3. 🟡 E2 (dimensional coverage) - Implementation in progress
+**Current (Alpha Testing):**
+4. 🟡 E2 + E3 running in parallel behind feature flags
+   - E2: Emergent questioning (control) - `emergent-extraction-e1a`
+   - E3: Dimension-guided questioning (variant) - `dimension-guided-e3`
 
 **Near-term Planned:**
-4. E8 (energetic prompts) - Reduce corporate speak in outputs
-5. E9 (lens inference) - Improve conversation flow
-6. E10 (optimal depth) - Optimize conversation length
+5. E8 (energetic prompts) - Reduce corporate speak in outputs
+6. E9 (lens inference) - Improve conversation flow
+7. E10 (optimal depth) - Optimize conversation length
 
 **Future Research (Dimensional Taxonomy Evolution):**
-- E3 (gap-based questioning) - Use coverage data to guide conversations
 - E4 (real-time coverage display) - Increase user transparency
 - E5 (multi-session accumulation) - Support evolving strategic context
 - E6 (LLM-as-judge training) - Automate quality assessment
