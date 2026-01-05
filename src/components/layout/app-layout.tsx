@@ -71,14 +71,16 @@ interface SavedStrategy {
 
 export function AppLayout({
   children,
-  experimentVariant = 'baseline-v1'
+  experimentVariant,
+  showVariantBadge = false
 }: {
   children: React.ReactNode;
   experimentVariant?: string;
+  showVariantBadge?: boolean;
 }) {
   return (
     <SidebarProvider defaultOpen={false}>
-      <AppSidebar experimentVariant={experimentVariant} />
+      <AppSidebar experimentVariant={experimentVariant} showVariantBadge={showVariantBadge} />
       <SidebarInset className="flex flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <SidebarTrigger className="-ml-1" />
@@ -98,7 +100,7 @@ export function AppLayout({
   )
 }
 
-function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?: string }) {
+function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimentVariant?: string; showVariantBadge?: boolean }) {
   const { data: session } = useSession()
   const [strategies, setStrategies] = useState<SavedStrategy[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -390,10 +392,12 @@ function AppSidebar({ experimentVariant = 'baseline-v1' }: { experimentVariant?:
       </SidebarContent>
 
       <SidebarFooter>
-        {/* Version and variant indicator for testing/debugging */}
-        <div className="px-3 py-1.5 text-[10px] font-mono text-muted-foreground/50 truncate border-t border-border/50">
-          v{process.env.NEXT_PUBLIC_APP_VERSION} · {experimentVariant}
-        </div>
+        {/* Version and variant indicator for testing/debugging - only shown during active conversation */}
+        {showVariantBadge && experimentVariant && (
+          <div className="px-3 py-1.5 text-[10px] font-mono text-muted-foreground/50 truncate border-t border-border/50">
+            v{process.env.NEXT_PUBLIC_APP_VERSION} · {experimentVariant}
+          </div>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             {session ? (

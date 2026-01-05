@@ -207,7 +207,9 @@ export async function POST(req: Request) {
           .join('\n\n');
 
         // Determine extraction approach based on experiment variant
-        const isEmergent = conversation.experimentVariant === 'emergent-extraction-e1a';
+        // Both E1a (emergent questioning) and E3 (dimension-guided questioning) use emergent extraction
+        // Only baseline-v1 uses the prescriptive 3-field extraction
+        const isEmergent = conversation.experimentVariant !== 'baseline-v1';
         console.log('[Extract] Conversation details:', {
           conversationId: conversation.id,
           experimentVariant: conversation.experimentVariant,
