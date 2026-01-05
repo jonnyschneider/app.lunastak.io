@@ -16,7 +16,7 @@ IMPORTANT: Output ONLY the question itself. No preambles like "I'm happy to help
 
 export async function POST(req: Request) {
   try {
-    const { userId: tempUserId, variantOverride } = await req.json();
+    const { variantOverride } = await req.json();
 
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
@@ -25,14 +25,12 @@ export async function POST(req: Request) {
     // For guests, userId will be null initially
     const authenticatedUserId = session?.user?.id || null;
 
-    // For statsig, use actual userId or temp ID for guests (statsig needs an ID for variant assignment)
-    const statsigUserId = authenticatedUserId || tempUserId || `guest_${Date.now()}`;
-
-    // Determine experiment variant (with optional override)
-    const experimentVariant = await getExperimentVariant(statsigUserId, variantOverride);
-
-    // Get or create project (creates guest user + project for unauthenticated users)
+    // Get or create project FIRST (creates guest user + project for unauthenticated users)
+    // This ensures we have a consistent database user ID for Statsig
     const { userId, project, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
+
+    // Use database userId for Statsig (ensures consistency with event logging)
+    const experimentVariant = await getExperimentVariant(userId, variantOverride);
 
     // Create conversation
     const conversation = await prisma.conversation.create({
