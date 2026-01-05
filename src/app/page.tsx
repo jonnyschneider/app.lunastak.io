@@ -91,6 +91,11 @@ export default function Home() {
         setDimensionalCoverage(data.dimensionalCoverage);
         setTraceId(data.traceId);
 
+        // Set guestUserId for registration banner (if conversation belongs to guest)
+        if (data.userId) {
+          setGuestUserId(data.userId);
+        }
+
         // Jump to extraction view (or strategy if ?stubView=strategy)
         const stubView = params.get('stubView');
         if (stubView === 'strategy' && data.strategy) {
