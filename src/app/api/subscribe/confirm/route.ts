@@ -1,14 +1,9 @@
 /**
+ * @deprecated This endpoint is deprecated. The subscribe flow now uses single opt-in.
+ * Keeping for backwards compatibility with any existing confirmation links.
+ *
  * Subscribe confirmation endpoint - confirms email and redirects to sign-in
- *
- * This is the second step of the double opt-in flow for in-app signup.
- * After clicking the confirmation link, the user's email is verified
- * and they're redirected to sign in (which sends the magic link).
- *
- * NOTE: This is a duplicate implementation from the marketing site
- * (lunastak.io/app/api/early-access/confirm/route.ts).
- * Both endpoints use the same Resend audience and encryption key.
- * If updating this file, consider whether the marketing site also needs updating.
+ * (Legacy double opt-in flow)
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
