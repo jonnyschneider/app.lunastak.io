@@ -5,6 +5,7 @@ import { extractXML } from '@/lib/utils';
 import { EnhancedExtractedContext, StrategyStatements, Trace, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
+import { logStatsigEvent } from '@/lib/statsig';
 
 export const maxDuration = 60;
 
@@ -283,6 +284,16 @@ export async function POST(req: Request) {
       where: { id: conversationId },
       data: { status: 'completed' },
     });
+
+    // Log to Statsig for experiment metrics
+    if (conversation.userId) {
+      await logStatsigEvent(
+        conversation.userId,
+        'strategy_generated',
+        1,
+        { variant: conversation.experimentVariant || 'unknown' }
+      );
+    }
 
     const totalTime = Date.now() - requestStartTime;
     console.log(`[Generate API] Request completed successfully in ${totalTime}ms`);

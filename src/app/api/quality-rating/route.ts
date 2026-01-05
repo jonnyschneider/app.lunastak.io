@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { logQualityRating } from '@/lib/events';
+import { logStatsigEvent } from '@/lib/statsig';
+import { prisma } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +22,20 @@ export async function POST(req: Request) {
     }
 
     await logQualityRating(traceId, rating);
+
+    // Log to Statsig for experiment metrics
+    const trace = await prisma.trace.findUnique({
+      where: { id: traceId },
+      include: { conversation: true },
+    });
+    if (trace?.conversation?.userId) {
+      await logStatsigEvent(
+        trace.conversation.userId,
+        'quality_rating',
+        rating === 'good' ? 1 : 0,
+        { rating, variant: trace.conversation.experimentVariant || 'unknown' }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

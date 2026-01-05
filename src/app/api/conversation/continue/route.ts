@@ -130,12 +130,11 @@ async function handleInitialPhase(
     },
   });
 
-  const conversationHistory = conversation!.messages
-    .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
-    .join('\n\n');
+  const experimentVariant = conversation!.experimentVariant;
+  console.log(`[Continue API - INITIAL] Using ${experimentVariant} questioning approach`);
 
-  // Generate first question directly (no lens selection)
-  const FIRST_QUESTION_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+  // Select prompt based on experiment variant
+  const EMERGENT_INITIAL_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
 
 The user just responded to your opening question with:
 "${userResponse}"
@@ -148,6 +147,34 @@ Keep the question warm, conversational, and specific to what they shared. Build 
 
 Return only the question, no preamble.`;
 
+  const DIMENSION_GUIDED_INITIAL_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+
+The user just responded to your opening question with:
+"${userResponse}"
+
+Strategic dimensions to consider (for your awareness only - never mention these explicitly):
+1. Customer & Market - who we serve, their problems, buying behaviour
+2. Problem & Opportunity - the problem space, opportunity size, why now
+3. Value Proposition - what we offer, how it solves problems
+4. Differentiation & Advantage - what makes us unique, defensibility
+5. Competitive Landscape - who else plays, positioning
+6. Business Model & Economics - how we create/capture value, unit economics
+7. Go-to-Market - sales strategy, customer success, channels
+8. Product Experience - the experience we're creating, customer journey
+9. Capabilities & Assets - what we can do, team, technology
+10. Risks & Constraints - risks, dependencies, limitations
+11. Strategic Intent - aspirations, goals, direction
+
+Based on their response, identify which dimensions they've touched on and which remain unexplored.
+Ask a warm, conversational follow-up question that naturally explores an important dimension
+while building on what they shared.
+
+Return only the question, no preamble.`;
+
+  const prompt = experimentVariant === 'dimension-guided-e3'
+    ? DIMENSION_GUIDED_INITIAL_PROMPT
+    : EMERGENT_INITIAL_PROMPT;
+
   const startTime = Date.now();
   console.log('[Continue API - INITIAL] Calling Claude API for first question...');
   const response = await anthropic.messages.create({
@@ -155,7 +182,7 @@ Return only the question, no preamble.`;
     max_tokens: 200,
     messages: [{
       role: 'user',
-      content: FIRST_QUESTION_PROMPT
+      content: prompt
     }],
     temperature: 0.7
   });
@@ -219,54 +246,16 @@ async function handleQuestioning(
   console.log('[Continue API - QUESTIONING] Conversation found, questionCount:', conversation.questionCount);
 
   // Check if previous assistant message was an early exit offer
+  // With the new UX, if user replies after early exit offer, they want to continue
   const lastAssistantMessage = conversation.messages
     .filter((m: { role: string }) => m.role === 'assistant')
     .pop();
 
-  const previousUserMessage = conversation.messages
-    .filter((m: { role: string }) => m.role === 'user')
-    .pop();
+  const isEarlyExitOffer = lastAssistantMessage?.content === 'I have what I need to create your strategy.';
 
-  const isEarlyExitOffer = lastAssistantMessage?.content.includes('A) Continue exploring') &&
-                           lastAssistantMessage?.content.includes('B) Generate strategy');
-  console.log('[Continue API - QUESTIONING] Early exit offer check:', isEarlyExitOffer);
-
-  if (isEarlyExitOffer && previousUserMessage) {
-    // Process early exit response
-    const userChoice = previousUserMessage.content.trim().toUpperCase();
-    console.log('[Continue API - QUESTIONING] Processing early exit response:', userChoice);
-
-    if (userChoice === 'B') {
-      // User chose to generate strategy
-      console.log('[Continue API - QUESTIONING] User chose to generate strategy');
-      return await moveToExtraction(conversationId, currentStep);
-    } else if (userChoice === 'A') {
-      // User chose to continue exploring - proceed with normal questioning flow
-      console.log('[Continue API - QUESTIONING] User chose to continue exploring');
-      const questionCount = conversation.questionCount;
-      return await continueQuestioning(conversationId, questionCount, currentStep);
-    } else {
-      console.log('[Continue API - QUESTIONING] Invalid early exit choice');
-      // Invalid choice - re-prompt
-      const errorMessage = 'Please type A to continue exploring or B to generate your strategy.';
-
-      await prisma.message.create({
-        data: {
-          conversationId,
-          role: 'assistant',
-          content: errorMessage,
-          stepNumber: currentStep + 1,
-        },
-      });
-
-      return NextResponse.json({
-        conversationId,
-        message: errorMessage,
-        nextPhase: 'QUESTIONING',
-        stepNumber: currentStep + 1,
-        earlyExitOffered: true,
-      });
-    }
+  if (isEarlyExitOffer) {
+    // User chose to continue by replying - proceed with normal questioning
+    console.log('[Continue API - QUESTIONING] User continued after early exit offer');
   }
 
   const questionCount = conversation.questionCount;
@@ -358,6 +347,46 @@ Return your assessment:
   }
 }
 
+// Prompt for E2: Emergent questioning (follow the user's thread)
+const EMERGENT_QUESTION_PROMPT = (conversationHistory: string) => `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+
+Conversation so far:
+${conversationHistory}
+
+Based on the conversation, ask the next natural follow-up question that will help you extract information for:
+- Core context (industry, target market, unique value)
+- Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
+
+Keep the question warm, conversational, and build naturally on what's been discussed. Focus on areas not yet explored.
+
+Return only the question, no preamble.`;
+
+// Prompt for E3: Dimension-guided questioning (steer toward gaps)
+const DIMENSION_GUIDED_PROMPT = (conversationHistory: string) => `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+
+Conversation so far:
+${conversationHistory}
+
+Strategic dimensions to consider (for your awareness only - never mention these explicitly):
+1. Customer & Market - who we serve, their problems, buying behaviour
+2. Problem & Opportunity - the problem space, opportunity size, why now
+3. Value Proposition - what we offer, how it solves problems
+4. Differentiation & Advantage - what makes us unique, defensibility
+5. Competitive Landscape - who else plays, positioning
+6. Business Model & Economics - how we create/capture value, unit economics
+7. Go-to-Market - sales strategy, customer success, channels
+8. Product Experience - the experience we're creating, customer journey
+9. Capabilities & Assets - what we can do, team, technology
+10. Risks & Constraints - risks, dependencies, limitations
+11. Strategic Intent - aspirations, goals, direction
+
+Review the conversation and identify which dimensions have been well-covered and which are thin or missing.
+
+Ask a warm, conversational follow-up question that naturally explores an under-covered dimension.
+The question should feel like a natural continuation of the conversation, not a checklist item.
+
+Return only the question, no preamble.`;
+
 async function continueQuestioning(
   conversationId: string,
   questionCount: number,
@@ -377,19 +406,13 @@ async function continueQuestioning(
     .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
-  // Generate next question using general prompt (no lens)
-  const NEXT_QUESTION_PROMPT = `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+  // Select prompt based on experiment variant
+  const experimentVariant = conversation!.experimentVariant;
+  const prompt = experimentVariant === 'dimension-guided-e3'
+    ? DIMENSION_GUIDED_PROMPT(conversationHistory)
+    : EMERGENT_QUESTION_PROMPT(conversationHistory);
 
-Conversation so far:
-${conversationHistory}
-
-Based on the conversation, ask the next natural follow-up question that will help you extract information for:
-- Core context (industry, target market, unique value)
-- Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
-
-Keep the question warm, conversational, and build naturally on what's been discussed. Focus on areas not yet explored.
-
-Return only the question, no preamble.`;
+  console.log(`[Continue API] Using ${experimentVariant} questioning approach`);
 
   const startTime = Date.now();
   const response = await anthropic.messages.create({
@@ -397,7 +420,7 @@ Return only the question, no preamble.`;
     max_tokens: 200,
     messages: [{
       role: 'user',
-      content: NEXT_QUESTION_PROMPT
+      content: prompt
     }],
     temperature: 0.7
   });
@@ -434,13 +457,33 @@ async function offerEarlyExit(
   conversationId: string,
   currentStep: number
 ) {
-  const exitMessage = `I think I have what I need to create your strategy.
+  // Generate a follow-up question
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: { messages: { orderBy: { stepNumber: 'asc' } } },
+  });
 
-Would you like to:
-A) Continue exploring
-B) Generate strategy
+  const conversationHistory = conversation!.messages
+    .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
+    .join('\n\n');
 
-Type A or B:`;
+  const experimentVariant = conversation!.experimentVariant;
+  const prompt = experimentVariant === 'dimension-guided-e3'
+    ? `Based on this conversation, suggest ONE follow-up question that would explore an under-covered strategic dimension. Return ONLY the question.\n\n${conversationHistory}`
+    : `Based on this conversation, suggest ONE follow-up question to deepen understanding. Return ONLY the question.\n\n${conversationHistory}`;
+
+  const response = await anthropic.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 150,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+  });
+
+  const suggestedQuestion = response.content[0]?.type === 'text'
+    ? response.content[0].text
+    : 'What else would you like to explore?';
+
+  const exitMessage = `I have what I need to create your strategy.`;
 
   await prisma.message.create({
     data: {
@@ -451,13 +494,13 @@ Type A or B:`;
     },
   });
 
-  // Stay in QUESTIONING phase but flag early exit offered
   return NextResponse.json({
     conversationId,
     message: exitMessage,
     nextPhase: 'QUESTIONING',
     stepNumber: currentStep + 1,
     earlyExitOffered: true,
+    suggestedQuestion,
   });
 }
 

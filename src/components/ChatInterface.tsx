@@ -11,6 +11,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Kbd } from '@/components/ui/kbd';
+import { Button } from '@/components/ui/button';
 import { EntryPointSelector } from '@/components/EntryPointSelector';
 
 type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
@@ -20,10 +21,13 @@ interface ChatInterfaceProps {
   messages: Message[];
   onUserResponse: (response: string) => void;
   onEntryPointSelect?: (option: EntryPoint) => void;
+  onGenerateStrategy?: () => void;
   isLoading: boolean;
   isComplete: boolean;
   currentPhase: ConversationPhase;
   traceId?: string;
+  earlyExitOffered?: boolean;
+  suggestedQuestion?: string | null;
 }
 
 export default function ChatInterface({
@@ -31,10 +35,13 @@ export default function ChatInterface({
   messages,
   onUserResponse,
   onEntryPointSelect,
+  onGenerateStrategy,
   isLoading,
   isComplete,
   currentPhase,
   traceId,
+  earlyExitOffered,
+  suggestedQuestion,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
   const [entryPointSheetOpen, setEntryPointSheetOpen] = useState(false);
@@ -102,6 +109,37 @@ export default function ChatInterface({
             <div className="bg-muted rounded-lg p-4">
               <EllipsisHorizontalIcon className="w-6 h-6 text-primary animate-[pulse_3s_ease-in-out_infinite]" />
             </div>
+          </div>
+        )}
+
+        {/* Early exit card with Generate button + suggested question */}
+        {earlyExitOffered && !isLoading && (
+          <div className="space-y-4">
+            {/* Generate Strategy button */}
+            <div className="flex justify-center py-2">
+              <Button
+                onClick={onGenerateStrategy}
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base font-semibold"
+              >
+                Generate Strategy
+              </Button>
+            </div>
+
+            {/* Divider with "or" */}
+            <div className="flex items-center gap-4 px-4">
+              <div className="flex-1 border-t border-border" />
+              <span className="text-sm text-muted-foreground">or</span>
+              <div className="flex-1 border-t border-border" />
+            </div>
+
+            {/* Suggested follow-up question as chat bubble */}
+            {suggestedQuestion && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-lg p-4 bg-muted text-foreground">
+                  <p className="whitespace-pre-wrap">{suggestedQuestion}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
