@@ -14,15 +14,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
 import { decrypt } from '@/lib/crypto'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const token = searchParams.get('token')
+    const token = request.nextUrl.searchParams.get('token')
+
+    const baseUrl = request.nextUrl.origin
 
     if (!token) {
-      return NextResponse.redirect(
-        new URL('/auth/signin?error=missing-token', request.url)
-      )
+      return NextResponse.redirect(new URL('/auth/signin?error=missing-token', baseUrl))
     }
 
     // Decrypt and parse the token
@@ -38,17 +39,13 @@ export async function GET(request: NextRequest) {
       conversationId = data.conversationId || null
     } catch (error) {
       console.error('Token decryption error:', error)
-      return NextResponse.redirect(
-        new URL('/auth/signin?error=invalid-token', request.url)
-      )
+      return NextResponse.redirect(new URL('/auth/signin?error=invalid-token', baseUrl))
     }
 
     // Check if the token is expired (24 hours)
     const tokenAge = Date.now() - timestamp
     if (tokenAge > 24 * 60 * 60 * 1000) {
-      return NextResponse.redirect(
-        new URL('/auth/signin?error=token-expired', request.url)
-      )
+      return NextResponse.redirect(new URL('/auth/signin?error=token-expired', baseUrl))
     }
 
     // Update contact status to subscribed in Resend audience
@@ -64,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build redirect URL with pre-filled email
-    const signInUrl = new URL('/auth/signin', request.url)
+    const signInUrl = new URL('/auth/signin', baseUrl)
     signInUrl.searchParams.set('email', email)
     signInUrl.searchParams.set('confirmed', 'true')
 
@@ -77,7 +74,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Subscribe confirmation error:', error)
     return NextResponse.redirect(
-      new URL('/auth/signin?error=confirmation-failed', request.url)
+      new URL('/auth/signin?error=confirmation-failed', request.nextUrl.origin)
     )
   }
 }

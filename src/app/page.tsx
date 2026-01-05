@@ -50,6 +50,8 @@ export default function Home() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting');
   const [extractionError, setExtractionError] = useState<string | undefined>();
+  const [earlyExitOffered, setEarlyExitOffered] = useState(false);
+  const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null);
 
   // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
@@ -344,7 +346,7 @@ export default function Home() {
         // Move to extraction step
         extractContext();
       } else {
-        // Add assistant's next question
+        // Add assistant's message
         setMessages(prev => [...prev, {
           id: `msg_${Date.now()}`,
           conversationId,
@@ -353,6 +355,15 @@ export default function Home() {
           stepNumber: data.stepNumber,
           timestamp: new Date(),
         }]);
+
+        // Handle early exit offer
+        if (data.earlyExitOffered) {
+          setEarlyExitOffered(true);
+          setSuggestedQuestion(data.suggestedQuestion || null);
+        } else {
+          setEarlyExitOffered(false);
+          setSuggestedQuestion(null);
+        }
       }
     } catch (error) {
       console.error('Failed to continue conversation:', error);
@@ -567,10 +578,13 @@ export default function Home() {
                 messages={messages}
                 onUserResponse={handleUserResponse}
                 onEntryPointSelect={handleEntryPointSelect}
+                onGenerateStrategy={extractContext}
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}
                 traceId={traceId}
+                earlyExitOffered={earlyExitOffered}
+                suggestedQuestion={suggestedQuestion}
               />
             </div>
           )}
