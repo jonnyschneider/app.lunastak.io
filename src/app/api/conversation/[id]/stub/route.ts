@@ -53,6 +53,7 @@ export async function GET(
 
     return NextResponse.json({
       conversationId: conversation.id,
+      userId: conversation.userId,
       experimentVariant: conversation.experimentVariant,
       traceId: latestTrace.id,
       extractedContext: latestTrace.extractedContext,
