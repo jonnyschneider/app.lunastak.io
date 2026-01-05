@@ -6,6 +6,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { DimensionalSynthesis } from '@prisma/client'
+import { extractJsonFromResponse } from './extract-json'
 
 const INCREMENTAL_SYNTHESIS_PROMPT = `You are updating strategic understanding for the dimension: **{dimension}**.
 
@@ -39,16 +40,9 @@ These new fragments have been added since the last synthesis. Update the existin
 5. **Surfacing contradictions** if new fragments conflict with existing understanding
 6. **Re-assessing confidence** based on new information
 
-Return ONLY valid JSON with UPDATED synthesis (not just deltas):
-{
-  "summary": "... (updated) ...",
-  "keyThemes": ["... (existing + new) ..."],
-  "keyQuotes": ["... (existing + new) ..."],
-  "gaps": ["... (updated) ..."],
-  "contradictions": ["..."],
-  "subdimensions": null,
-  "confidence": "HIGH"
-}`
+IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
+
+{"summary": "... (updated) ...", "keyThemes": ["... (existing + new) ..."], "keyQuotes": ["... (existing + new) ..."], "gaps": ["... (updated) ..."], "contradictions": ["..."], "subdimensions": null, "confidence": "HIGH"}`
 
 export async function incrementalSynthesis(
   dimension: Tier1Dimension,
@@ -91,12 +85,7 @@ export async function incrementalSynthesis(
     : '{}'
 
   try {
-    const cleanedContent = content
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim()
-
+    const cleanedContent = extractJsonFromResponse(content)
     const result = JSON.parse(cleanedContent) as SynthesisResult
     return result
   } catch (error) {

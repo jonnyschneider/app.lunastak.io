@@ -5,6 +5,7 @@
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
+import { extractJsonFromResponse } from './extract-json'
 
 const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
 
@@ -35,16 +36,9 @@ Synthesize these fragments into structured understanding:
    - MEDIUM: 3-5 fragments, some gaps remain
    - LOW: <3 fragments or significant gaps
 
-Return ONLY valid JSON (no markdown code blocks):
-{
-  "summary": "...",
-  "keyThemes": ["...", "..."],
-  "keyQuotes": ["...", "..."],
-  "gaps": ["...", "..."],
-  "contradictions": ["...", "..."],
-  "subdimensions": null,
-  "confidence": "MEDIUM"
-}`
+IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
+
+{"summary": "...", "keyThemes": ["...", "..."], "keyQuotes": ["...", "..."], "gaps": ["...", "..."], "contradictions": ["...", "..."], "subdimensions": null, "confidence": "MEDIUM"}`
 
 export async function fullSynthesis(
   dimension: Tier1Dimension,
@@ -83,13 +77,7 @@ export async function fullSynthesis(
     : '{}'
 
   try {
-    // Clean up response - remove markdown code blocks if present
-    const cleanedContent = content
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim()
-
+    const cleanedContent = extractJsonFromResponse(content)
     const result = JSON.parse(cleanedContent) as SynthesisResult
     return result
   } catch (error) {
