@@ -2,19 +2,18 @@ import type { NextAuthOptions } from "next-auth"
 import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { resend, EMAIL_CONFIG } from "@/lib/resend"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     EmailProvider({
       server: "", // Not needed for Resend
-      from: process.env.RESEND_FROM_EMAIL,
+      from: EMAIL_CONFIG.from,
       sendVerificationRequest: async ({ identifier: email, url }) => {
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL!,
+          from: EMAIL_CONFIG.from,
+          replyTo: EMAIL_CONFIG.replyTo,
           to: email,
           subject: "Sign in to Lunastak",
           html: `
