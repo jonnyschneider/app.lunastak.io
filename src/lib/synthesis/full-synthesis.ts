@@ -5,6 +5,7 @@
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
+import { extractJsonFromResponse } from './extract-json'
 
 const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
 
@@ -76,21 +77,7 @@ export async function fullSynthesis(
     : '{}'
 
   try {
-    // Clean up response - remove markdown code blocks and extract JSON
-    let cleanedContent = content
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim()
-
-    // If content doesn't start with {, try to extract JSON from preamble
-    if (!cleanedContent.startsWith('{')) {
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        cleanedContent = jsonMatch[0]
-      }
-    }
-
+    const cleanedContent = extractJsonFromResponse(content)
     const result = JSON.parse(cleanedContent) as SynthesisResult
     return result
   } catch (error) {
