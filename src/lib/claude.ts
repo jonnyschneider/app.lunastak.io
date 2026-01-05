@@ -12,4 +12,4 @@ export const anthropic = new Anthropic({
   timeout: 180_000, // 3 minute timeout
 });
 
-export const CLAUDE_MODEL = 'claude-3-opus-20240229'; // Using Opus temporarily to test API key
+export const CLAUDE_MODEL = 'claude-sonnet-4-5-20250929'; 

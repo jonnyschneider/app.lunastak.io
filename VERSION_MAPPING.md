@@ -6,7 +6,8 @@ This document maps release versions to experiment IDs for clarity.
 
 | Release Version | Experiment ID | Variant ID | Status | Notes |
 |-----------------|---------------|------------|--------|-------|
-| **v1.4.2** | E3 | `dimension-guided-e3` | 🟡 **UAT** | E3 dimension-guided questioning, double opt-in auth, UI refinements - [CHANGELOG](./CHANGELOG.md#142---2026-01-05) |
+| **v1.4.3** | E3 | `dimension-guided-e3` and `emergent-extraction` | 🟢 Production | Upgrade to Claude Sonnet 4.5 API [CHANGELOG](./CHANGELOG.md#143---2026-01-06) |
+| **v1.4.2** | E3 | `dimension-guided-e3` and `emergent-extraction` | 🟢 Production | E3 dimension-guided questioning, double opt-in auth, UI refinements - [CHANGELOG](./CHANGELOG.md#142---2026-01-05) |
 | **v1.4.1** | - | `emergent-extraction-e1a` | 🟢 Production | Sidebar UX & loading indicator refinements - [CHANGELOG](./CHANGELOG.md#141---2026-01-04) |
 | **v1.4.0** | - | `emergent-extraction-e1a` | 🟢 Deployed | Fragment Extraction & Synthesis - [CHANGELOG](./CHANGELOG.md#140---2026-01-04) |
 | **v1.3.0** | E2 | `emergent-extraction-e1a` | 🟢 Deployed | Dimensional Coverage Tracking - [One-Pager](./docs/experiments/one-pagers/E2-dimensional-coverage.md) - [CHANGELOG](./CHANGELOG.md#130---2026-01-03) |
