@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
@@ -10,10 +10,41 @@ import { Input } from '@/components/ui/input'
 function SignInForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
-  const [email, setEmail] = useState('')
+  const prefilledEmail = searchParams.get('email') || ''
+  const isConfirmed = searchParams.get('confirmed') === 'true'
+
+  const [email, setEmail] = useState(prefilledEmail)
   const [isLoading, setIsLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [error, setError] = useState('')
+
+  // Auto-submit if coming from confirmation flow with pre-filled email
+  useEffect(() => {
+    if (isConfirmed && prefilledEmail && !emailSent && !isLoading) {
+      handleAutoSubmit()
+    }
+  }, [isConfirmed, prefilledEmail])
+
+  const handleAutoSubmit = async () => {
+    setIsLoading(true)
+    try {
+      const result = await signIn('email', {
+        email: prefilledEmail,
+        redirect: false,
+        callbackUrl,
+      })
+
+      if (result?.error) {
+        setError('Failed to send email. Please try again.')
+      } else {
+        setEmailSent(true)
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,6 +70,27 @@ function SignInForm() {
     }
   }
 
+  // Show loading state when auto-submitting from confirmation
+  if (isConfirmed && isLoading && !emailSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Email confirmed</CardTitle>
+            <CardDescription>
+              Sending your sign-in link...
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we send a magic link to {prefilledEmail}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   if (emailSent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -46,7 +98,7 @@ function SignInForm() {
           <CardHeader>
             <CardTitle>Check your email</CardTitle>
             <CardDescription>
-              A sign in link has been sent to {email}
+              A sign in link has been sent to {email || prefilledEmail}
             </CardDescription>
           </CardHeader>
           <CardContent>

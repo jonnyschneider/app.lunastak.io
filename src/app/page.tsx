@@ -136,32 +136,12 @@ export default function Home() {
     };
   }, [flowStep, traceId]);
 
-  // Transfer guest session when user signs in
+  // Session transfer is now handled globally by SessionTransferProvider
+  // Hide registration banner when user is authenticated
   useEffect(() => {
-    const transferSession = async () => {
-      if (!session?.user?.id) return;
-
-      const guestUserId = localStorage.getItem('guestUserId');
-      if (!guestUserId) return;
-
-      try {
-        const response = await fetch('/api/transfer-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ guestUserId }),
-        });
-
-        if (response.ok) {
-          console.log('Session transferred successfully');
-          localStorage.removeItem('guestUserId');
-          setShowRegistrationBanner(false);
-        }
-      } catch (error) {
-        console.error('Failed to transfer session:', error);
-      }
-    };
-
-    transferSession();
+    if (session?.user?.id) {
+      setShowRegistrationBanner(false);
+    }
   }, [session]);
 
   const handleStartClick = () => {
@@ -542,8 +522,11 @@ export default function Home() {
     }
   };
 
+  // Show variant badge during active conversation flow (for UAT/testing)
+  const showVariantBadge = ['chat', 'extracting', 'extraction'].includes(flowStep);
+
   return (
-    <AppLayout experimentVariant={experimentVariant}>
+    <AppLayout experimentVariant={experimentVariant} showVariantBadge={showVariantBadge}>
       <main className="h-full bg-background flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
           {showIntro && flowStep === 'intro' && (

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 
 interface RegistrationBannerProps {
   guestUserId: string
@@ -12,21 +11,34 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError('')
 
     try {
-      // Store guest user ID in localStorage before signing in
-      // This will be used to transfer the session after authentication
+      // Store guest user ID in localStorage for session transfer after authentication
       localStorage.setItem('guestUserId', guestUserId)
 
-      await signIn('email', { email, redirect: false })
-      setEmailSent(true)
-    } catch (error) {
-      console.error('Failed to send magic link:', error)
-      alert('Failed to send magic link. Please try again.')
+      // Use double opt-in flow via /api/subscribe
+      // This adds the email to the marketing list and sends a confirmation email
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (response.ok) {
+        setEmailSent(true)
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to send confirmation. Please try again.')
+      }
+    } catch (err) {
+      console.error('Failed to subscribe:', err)
+      setError('Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -41,7 +53,7 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
               Check your email
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              We've sent a magic link to <strong>{email}</strong>. Click the link to sign in and save your strategy.
+              We've sent a confirmation email to <strong>{email}</strong>. Click the link to verify your email and save your strategy.
             </p>
           </div>
           <button
@@ -65,6 +77,9 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
           <p className="mt-2 text-sm text-muted-foreground">
             Enter your email to save this strategy and access it anytime.
           </p>
+          {error && (
+            <p className="mt-2 text-sm text-destructive">{error}</p>
+          )}
           <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
             <input
               type="email"
