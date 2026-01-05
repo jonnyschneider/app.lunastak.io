@@ -39,16 +39,9 @@ These new fragments have been added since the last synthesis. Update the existin
 5. **Surfacing contradictions** if new fragments conflict with existing understanding
 6. **Re-assessing confidence** based on new information
 
-Return ONLY valid JSON with UPDATED synthesis (not just deltas):
-{
-  "summary": "... (updated) ...",
-  "keyThemes": ["... (existing + new) ..."],
-  "keyQuotes": ["... (existing + new) ..."],
-  "gaps": ["... (updated) ..."],
-  "contradictions": ["..."],
-  "subdimensions": null,
-  "confidence": "HIGH"
-}`
+IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
+
+{"summary": "... (updated) ...", "keyThemes": ["... (existing + new) ..."], "keyQuotes": ["... (existing + new) ..."], "gaps": ["... (updated) ..."], "contradictions": ["..."], "subdimensions": null, "confidence": "HIGH"}`
 
 export async function incrementalSynthesis(
   dimension: Tier1Dimension,
@@ -91,11 +84,19 @@ export async function incrementalSynthesis(
     : '{}'
 
   try {
-    const cleanedContent = content
+    let cleanedContent = content
       .replace(/^```json\s*/i, '')
       .replace(/^```\s*/i, '')
       .replace(/\s*```$/i, '')
       .trim()
+
+    // If content doesn't start with {, try to extract JSON from preamble
+    if (!cleanedContent.startsWith('{')) {
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        cleanedContent = jsonMatch[0]
+      }
+    }
 
     const result = JSON.parse(cleanedContent) as SynthesisResult
     return result
