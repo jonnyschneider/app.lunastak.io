@@ -6,6 +6,7 @@ import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { DimensionalSynthesis } from '@prisma/client'
+import { extractJsonFromResponse } from './extract-json'
 
 const INCREMENTAL_SYNTHESIS_PROMPT = `You are updating strategic understanding for the dimension: **{dimension}**.
 
@@ -84,20 +85,7 @@ export async function incrementalSynthesis(
     : '{}'
 
   try {
-    let cleanedContent = content
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim()
-
-    // If content doesn't start with {, try to extract JSON from preamble
-    if (!cleanedContent.startsWith('{')) {
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        cleanedContent = jsonMatch[0]
-      }
-    }
-
+    const cleanedContent = extractJsonFromResponse(content)
     const result = JSON.parse(cleanedContent) as SynthesisResult
     return result
   } catch (error) {
