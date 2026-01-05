@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { IBM_Plex_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
+import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
+import { StatsigProvider } from '@/components/StatsigProvider'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
@@ -30,7 +32,11 @@ export default async function RootLayout({
     >
       <body>
         <SessionProvider session={session}>
-          {children}
+          <SessionTransferProvider>
+            <StatsigProvider>
+              {children}
+            </StatsigProvider>
+          </SessionTransferProvider>
         </SessionProvider>
       </body>
     </html>

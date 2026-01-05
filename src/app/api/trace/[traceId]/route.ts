@@ -1,44 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { traceId: string } }
+  { params }: { params: Promise<{ traceId: string }> }
 ) {
   try {
+    const { traceId } = await params
     const session = await getServerSession(authOptions)
-    const traceId = params.traceId
 
-    // Fetch trace
+    // Find the trace
     const trace = await prisma.trace.findUnique({
       where: { id: traceId },
+      include: {
+        conversation: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     })
 
     if (!trace) {
       return NextResponse.json(
-        { error: 'Trace not found' },
+        { error: 'Strategy not found' },
         { status: 404 }
       )
     }
 
-    // Check authorization - user must be authenticated and own the trace
-    if (trace.userId !== session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+    // Check access: user must own the trace or conversation
+    // For guest users, we allow access if they have the trace ID (shared link scenario)
+    // For authenticated users, verify ownership
+    if (session?.user?.id) {
+      const isOwner = trace.userId === session.user.id ||
+                      trace.conversation?.userId === session.user.id
+
+      if (!isOwner) {
+        return NextResponse.json(
+          { error: 'You do not have permission to view this strategy' },
+          { status: 403 }
+        )
+      }
     }
+    // Note: For guest users without a session, we currently allow access if they have the traceId
+    // This enables the "just generated" scenario before auth transfer completes
 
     return NextResponse.json({
       id: trace.id,
-      conversationId: trace.conversationId,
       output: trace.output,
       claudeThoughts: trace.claudeThoughts,
-      dimensionalCoverage: trace.dimensionalCoverage, // [E2] Include dimensional coverage
+      conversationId: trace.conversationId,
       timestamp: trace.timestamp,
     })
   } catch (error) {
