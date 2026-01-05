@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
 ---
+## [1.4.3] - 2026-01-06
+
+### Changed
+** Migrated to Sonnet 4.5 Model for Claude API, as Opus 3 has been retired. This should have been done a while ago!
 
 ## [1.4.2] - 2026-01-05
 
