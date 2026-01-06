@@ -19,7 +19,8 @@
     "regen": "tsx scripts/regenerate.ts",
     "regen:remote": "tsx scripts/regenerate-remote.ts",
     "linear:issue": "tsx scripts/linear-create-issue.ts",
-    "backfill:extraction": "tsx scripts/backfill-extraction.ts"
+    "backfill:extraction": "tsx scripts/backfill-extraction.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
@@ -70,6 +71,7 @@
     "autoprefixer": "^10.4.16",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.31",

@@ -1,0 +1,13 @@
+echo "Running verification before push..."
+npm run verify
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "Verification failed. Push blocked."
+  echo ""
+  echo "Fix the issues above, or bypass with: git push --no-verify"
+  echo "(Only bypass if you know what you're doing!)"
+  exit 1
+fi
+
+echo "Verification passed. Pushing..."
