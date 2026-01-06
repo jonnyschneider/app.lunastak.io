@@ -755,6 +755,69 @@ See: `docs/plans/strategic/schema-design-summary.md` for full design docs.
 
 ---
 
+## Data Contracts (2026-01-06)
+
+### Purpose
+
+Contracts define the expected data shapes at key boundaries in the pipeline. They catch breaking changes before deployment.
+
+### Contract Locations
+
+- `src/lib/contracts/` - TypeScript contract types
+- `src/lib/__tests__/contracts/` - Contract validation tests
+- `src/lib/__tests__/smoke.test.ts` - End-to-end smoke test
+
+### Key Boundaries
+
+1. **Extraction Output** (`/api/extract` → frontend/generate)
+   - EmergentExtractionContract: themes + reflective_summary
+   - PrescriptiveExtractionContract: core + enrichment + reflective_summary
+
+2. **Fragment Persistence** (extraction → database)
+   - FragmentContract: id, projectId, conversationId, content, contentType, status
+   - FragmentDimensionTagContract: fragmentId, dimension, confidence
+
+3. **Generation Input** (frontend → `/api/generate`)
+   - conversationId + extractedContext
+
+4. **Generation Output** (`/api/generate` → frontend)
+   - traceId + thoughts + statements (vision, strategy, objectives)
+
+### Verification Commands
+
+- `npm run smoke` - Run smoke tests only
+- `npm run verify` - Run type-check + all tests + smoke
+
+### Adding New Boundaries
+
+When adding a new API or data flow:
+1. Define contract types in `src/lib/contracts/`
+2. Add validation tests in `src/lib/__tests__/contracts/`
+3. Update smoke test if it affects the critical path
+
+---
+
+## Schema Change Policy
+
+**The Prisma schema (`prisma/schema.prisma`) is a protected boundary.**
+
+Changes to the schema affect:
+- Data contracts and their tests
+- Fragment/synthesis creation
+- API input/output shapes
+- Database migrations in production
+
+**Before modifying the schema:**
+1. Consider if the change can be made in application code instead
+2. Update relevant contracts in `src/lib/contracts/`
+3. Run `npm run verify` to catch breaking changes
+4. Test migration on preview deployment before production
+5. Document the change in CHANGELOG.md
+
+Schema changes should be intentional and well-considered, not casual.
+
+---
+
 ## Notes
 
 - This architecture is designed for Phase 0
@@ -762,4 +825,4 @@ See: `docs/plans/strategic/schema-design-summary.md` for full design docs.
 - Prioritize learning and iteration over perfect design
 - Update this document as architecture changes
 
-**Last major update:** Fragment extraction & synthesis implementation (2026-01-04)
+**Last major update:** Contract-driven quality foundation (2026-01-06)
