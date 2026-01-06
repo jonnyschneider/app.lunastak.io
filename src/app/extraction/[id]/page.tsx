@@ -4,8 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import { ExtractedContextVariant } from '@/lib/types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
-type ViewMode = 'user' | 'debug';
+type ViewMode = 'user' | 'data';
 
 interface DimensionTag {
   id: string;
@@ -150,14 +156,14 @@ export default function ExtractionPage() {
                 User View
               </button>
               <button
-                onClick={() => setViewMode('debug')}
+                onClick={() => setViewMode('data')}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'debug'
+                  viewMode === 'data'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Debug View
+                Data View
               </button>
             </div>
           </div>
@@ -207,30 +213,38 @@ export default function ExtractionPage() {
           )
         )}
 
-        {/* Debug View - Shows all internal data */}
-        {viewMode === 'debug' && (
+        {/* Data View - Shows all internal data */}
+        {viewMode === 'data' && (
           <>
-            {/* Conversation */}
+            {/* Conversation - Collapsed by default */}
             {conversation && (
               <section>
-                <h2 className="text-xl font-semibold mb-4">Conversation ({conversation.messages.length} messages)</h2>
-                <div className="space-y-3 max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/30">
-                  {conversation.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`p-3 rounded-lg ${
-                        msg.role === 'assistant'
-                          ? 'bg-primary/10 border-l-4 border-primary'
-                          : 'bg-secondary/50 border-l-4 border-secondary'
-                      }`}
-                    >
-                      <div className="text-xs font-medium text-muted-foreground mb-1">
-                        {msg.role === 'assistant' ? 'Assistant' : 'User'} (Step {msg.stepNumber})
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="conversation" className="border-none">
+                    <AccordionTrigger className="text-xl font-semibold hover:no-underline">
+                      Conversation ({conversation.messages.length} messages)
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3 max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/30">
+                        {conversation.messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`p-3 rounded-lg ${
+                              msg.role === 'assistant'
+                                ? 'bg-primary/10 border-l-4 border-primary'
+                                : 'bg-secondary/50 border-l-4 border-secondary'
+                            }`}
+                          >
+                            <div className="text-xs font-medium text-muted-foreground mb-1">
+                              {msg.role === 'assistant' ? 'Assistant' : 'User'} (Step {msg.stepNumber})
+                            </div>
+                            <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
-                    </div>
-                  ))}
-                </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </section>
             )}
 
@@ -268,53 +282,140 @@ export default function ExtractionPage() {
               </div>
             </section>
 
-            {/* Dimensional Syntheses */}
+            {/* Dimensional Coverage Bar Chart */}
+            <section>
+              <h2 className="text-xl font-semibold mb-4">Dimensional Coverage</h2>
+              <div className="border rounded-lg p-4 bg-card">
+                <div className="space-y-2">
+                  {syntheses.map((syn) => {
+                    const maxFragments = Math.max(...syntheses.map(s => s.fragmentCount), 1);
+                    const percentage = (syn.fragmentCount / maxFragments) * 100;
+                    return (
+                      <div key={syn.id} className="flex items-center gap-3">
+                        <div className="w-36 text-xs font-medium truncate" title={DIMENSION_LABELS[syn.dimension] || syn.dimension}>
+                          {DIMENSION_LABELS[syn.dimension] || syn.dimension}
+                        </div>
+                        <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              syn.confidence === 'HIGH'
+                                ? 'bg-green-500'
+                                : syn.confidence === 'MEDIUM'
+                                ? 'bg-yellow-500'
+                                : 'bg-gray-400'
+                            }`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <div className="w-8 text-xs text-muted-foreground text-right tabular-nums">
+                          {syn.fragmentCount}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-3 border-t flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Total fragments: <span className="font-medium text-foreground">{fragments.length}</span>
+                  </span>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-green-500" />
+                      High
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                      Medium
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-gray-400" />
+                      Low
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Dimensional Syntheses - Compact Table */}
             <section>
               <h2 className="text-xl font-semibold mb-4">Dimensional Syntheses</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {syntheses.map((syn) => (
-                  <div key={syn.id} className="border rounded-lg p-4 bg-card">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">
-                        {DIMENSION_LABELS[syn.dimension] || syn.dimension}
-                      </h3>
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          syn.confidence === 'HIGH'
-                            ? 'bg-green-100 text-green-800'
-                            : syn.confidence === 'MEDIUM'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {syn.confidence} ({syn.fragmentCount} fragments)
-                      </span>
-                    </div>
-                    {syn.summary && (
-                      <p className="text-sm text-muted-foreground">{syn.summary}</p>
-                    )}
-                    {syn.keyThemes.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-medium">Key Themes:</span>
-                        <ul className="text-xs text-muted-foreground list-disc list-inside">
-                          {syn.keyThemes.map((theme, i) => (
-                            <li key={i}>{theme}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {syn.gaps.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-medium text-orange-600">Gaps:</span>
-                        <ul className="text-xs text-orange-600 list-disc list-inside">
-                          {syn.gaps.map((gap, i) => (
-                            <li key={i}>{gap}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-3 font-medium">Dimension</th>
+                      <th className="text-left p-3 font-medium">Summary</th>
+                      <th className="text-center p-3 font-medium w-20">Fragments</th>
+                      <th className="text-center p-3 font-medium w-24">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {syntheses.map((syn) => (
+                      <tr key={syn.id} className="hover:bg-muted/30">
+                        <td className="p-3 font-medium whitespace-nowrap">
+                          {DIMENSION_LABELS[syn.dimension] || syn.dimension}
+                        </td>
+                        <td className="p-3">
+                          {syn.summary ? (
+                            <div className="space-y-2">
+                              <p className="text-muted-foreground line-clamp-2">{syn.summary}</p>
+                              {(syn.keyThemes.length > 0 || syn.gaps.length > 0) && (
+                                <Accordion type="single" collapsible className="w-full">
+                                  {syn.keyThemes.length > 0 && (
+                                    <AccordionItem value="themes" className="border-none">
+                                      <AccordionTrigger className="text-xs py-1 hover:no-underline">
+                                        Key Themes ({syn.keyThemes.length})
+                                      </AccordionTrigger>
+                                      <AccordionContent className="pt-1">
+                                        <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
+                                          {syn.keyThemes.map((theme, i) => (
+                                            <li key={i}>{theme}</li>
+                                          ))}
+                                        </ul>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  )}
+                                  {syn.gaps.length > 0 && (
+                                    <AccordionItem value="gaps" className="border-none">
+                                      <AccordionTrigger className="text-xs py-1 hover:no-underline text-orange-600">
+                                        Gaps ({syn.gaps.length})
+                                      </AccordionTrigger>
+                                      <AccordionContent className="pt-1">
+                                        <ul className="text-xs text-orange-600 list-disc list-inside space-y-0.5">
+                                          {syn.gaps.map((gap, i) => (
+                                            <li key={i}>{gap}</li>
+                                          ))}
+                                        </ul>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  )}
+                                </Accordion>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/50 italic">No data yet</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center tabular-nums">
+                          {syn.fragmentCount}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span
+                            className={`text-xs px-2 py-1 rounded ${
+                              syn.confidence === 'HIGH'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : syn.confidence === 'MEDIUM'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                            }`}
+                          >
+                            {syn.confidence}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
 
