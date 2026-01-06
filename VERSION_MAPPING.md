@@ -6,7 +6,8 @@ This document maps release versions to experiment IDs for clarity.
 
 | Release Version | Experiment ID | Variant ID | Status | Notes |
 |-----------------|---------------|------------|--------|-------|
-| **v1.4.3** | E3 | `dimension-guided-e3` and `emergent-extraction` | 🟢 Production | Upgrade to Claude Sonnet 4.5 API [CHANGELOG](./CHANGELOG.md#143---2026-01-06) |
+| **v1.4.4** | - | - | 🟢 Production | Contract-driven quality foundation - [CHANGELOG](./CHANGELOG.md#144---2026-01-06) |
+| **v1.4.3** | E3 | `dimension-guided-e3` and `emergent-extraction` | 🟢 Deployed | Upgrade to Claude Sonnet 4.5 API [CHANGELOG](./CHANGELOG.md#143---2026-01-06) |
 | **v1.4.2** | E3 | `dimension-guided-e3` and `emergent-extraction` | 🟢 Production | E3 dimension-guided questioning, double opt-in auth, UI refinements - [CHANGELOG](./CHANGELOG.md#142---2026-01-05) |
 | **v1.4.1** | - | `emergent-extraction-e1a` | 🟢 Production | Sidebar UX & loading indicator refinements - [CHANGELOG](./CHANGELOG.md#141---2026-01-04) |
 | **v1.4.0** | - | `emergent-extraction-e1a` | 🟢 Deployed | Fragment Extraction & Synthesis - [CHANGELOG](./CHANGELOG.md#140---2026-01-04) |
@@ -102,7 +103,7 @@ When deploying a new version:
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
 
-**Current Production Version:** v1.4.3
+**Current Production Version:** v1.4.4
 
 ## Future Versions
 
