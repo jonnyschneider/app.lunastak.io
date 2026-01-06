@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ** Migrated to Sonnet 4.5 Model for Claude API, as Opus 3 has been retired. This should have been done a while ago!
 
+### Added
+** New API endpoint `/extraction` that displays synthesis, reflective summary, and fragment extraction for evals (not user facing)
+
 ## [1.4.2] - 2026-01-05
 
 ### Added - E3: Dimension-Guided Questioning + Auth Flow + Statsig Experiments

@@ -24,6 +24,9 @@ jest.mock('@/lib/db', () => ({
     trace: {
       updateMany: jest.fn(),
     },
+    dimensionalSynthesis: {
+      createMany: jest.fn(),
+    },
   },
 }))
 

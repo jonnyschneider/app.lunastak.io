@@ -106,6 +106,13 @@ export default function ExtractionConfirm({
         <div className="border-t border-primary/20 pt-6">
           <h3 className="text-lg font-medium text-foreground mb-4">Reflection</h3>
 
+          {/* Show message if no reflection data */}
+          {extractedContext.reflective_summary.strengths.length === 0 &&
+           extractedContext.reflective_summary.emerging.length === 0 &&
+           extractedContext.reflective_summary.opportunities_for_enrichment.length === 0 && (
+            <p className="text-sm text-muted-foreground italic">No reflection data available.</p>
+          )}
+
           {extractedContext.reflective_summary.strengths.length > 0 && (
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">What&apos;s Clear</h4>
