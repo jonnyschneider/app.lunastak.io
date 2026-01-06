@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ---
+## [1.4.4] - 2026-01-06
+
+### Added
+- **Data Contracts** - TypeScript contracts for extraction/generation/persistence boundaries
+  - `src/lib/contracts/` - Contract type definitions
+  - Extraction contracts: EmergentExtractionContract, PrescriptiveExtractionContract
+  - Persistence contracts: FragmentContract, FragmentDimensionTagContract
+  - Generation contracts: GenerationInputContract, GenerationOutputContract
+  - Validation functions for runtime checking
+
+- **Contract Tests** - Integration tests verifying contracts at seams
+  - `src/lib/__tests__/contracts/extraction-contracts.test.ts`
+  - `src/lib/__tests__/contracts/generation-contracts.test.ts`
+  - `src/lib/__tests__/contracts/persistence-contracts.test.ts`
+
+- **Smoke Test** - End-to-end verification of critical path
+  - `src/lib/__tests__/smoke.test.ts`
+  - Tests extraction → fragment persistence → generation flow
+  - Mocked AI responses for determinism
+
+- **Verification Scripts**
+  - `npm run smoke` - Run smoke tests only
+  - `npm run verify` - Full verification (type-check + tests + smoke)
+
+- **Pre-Push Hook** - Enforces verification before push
+  - Runs `npm run verify` automatically
+  - Blocks push on failure
+  - Bypass with `--no-verify` when needed
+
+### Documentation
+- Added `src/lib/contracts/README.md` explaining contract usage
+- Updated `.claude/architecture.md` with contracts documentation
+- Added Schema Change Policy to protect Prisma schema
+
+---
 ## [1.4.3] - 2026-01-06
 
 ### Changed
