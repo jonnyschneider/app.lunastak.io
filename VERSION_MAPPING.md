@@ -102,7 +102,7 @@ When deploying a new version:
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
 
-**Current Production Version:** v1.4.1 (v1.4.2 in UAT)
+**Current Production Version:** v1.4.3
 
 ## Future Versions
 

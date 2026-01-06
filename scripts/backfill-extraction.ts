@@ -61,6 +61,47 @@ Format your extraction:
   <!-- Repeat for each emergent theme (3-7 themes) -->
 </extraction>`
 
+const REFLECTIVE_SUMMARY_PROMPT = `Based on this business strategy conversation, provide a reflective summary to support strategy development.
+
+Conversation:
+{conversation}
+
+IMPORTANT: You MUST respond using ONLY the XML format below. Do not use Markdown. Do not include any text outside the XML tags.
+
+<summary>
+  <strengths>
+    <strength>First strength - what's clearly articulated and solid</strength>
+    <strength>Second strength - another clear anchor point</strength>
+  </strengths>
+
+  <emerging>
+    <area>First emerging area - themes starting to surface</area>
+    <area>Second emerging area - room to develop</area>
+  </emerging>
+
+  <opportunities_for_enrichment>
+    <opportunity>First opportunity - areas for deeper thinking</opportunity>
+    <opportunity>Second opportunity - unexplored territory</opportunity>
+  </opportunities_for_enrichment>
+
+  <thought_prompt>An open-ended question to spark further reflection</thought_prompt>
+</summary>
+
+Respond with 2-3 strengths, 1-2 emerging areas, and 1-2 opportunities. Keep each item to 1-2 sentences. Output ONLY the XML.`
+
+function extractAllXML(xml: string, tag: string): string[] {
+  const regex = new RegExp(`<${tag}>(.*?)</${tag}>`, 'gs')
+  const matches: string[] = []
+  let match
+  while ((match = regex.exec(xml)) !== null) {
+    const value = match[1].trim()
+    if (value) {
+      matches.push(value)
+    }
+  }
+  return matches
+}
+
 interface ParsedTheme {
   theme_name: string
   content: string
@@ -153,7 +194,58 @@ async function backfillExtraction(conversationId: string) {
     console.log(`      Dimensions: ${t.dimensions.map(d => `${d.name}(${d.confidence})`).join(', ')}`)
   })
 
-  // 5. Compute dimensional coverage
+  // 5. Generate reflective summary
+  console.log(`\n🤔 Generating reflective summary...`)
+  const summaryPrompt = REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
+
+  const summaryResponse = await anthropic.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 1500,
+    messages: [{ role: 'user', content: summaryPrompt }],
+    temperature: 0.5,
+  })
+
+  const summaryContent = summaryResponse.content[0].type === 'text'
+    ? summaryResponse.content[0].text
+    : ''
+
+  // Debug: show raw response
+  console.log(`\n   [Debug] Raw summary response length: ${summaryContent.length}`)
+  console.log(`   [Debug] First 500 chars:`)
+  console.log(`   ${summaryContent.substring(0, 500)}`)
+  console.log(`\n   [Debug] Last 200 chars:`)
+  console.log(`   ${summaryContent.substring(summaryContent.length - 200)}`)
+  console.log(`\n   [Debug] Has </summary>: ${summaryContent.includes('</summary>')}`)
+
+  const summaryXML = extractXML(summaryContent, 'summary')
+  console.log(`   [Debug] Extracted summary XML length: ${summaryXML.length}`)
+  if (summaryXML.length > 0) {
+    console.log(`   [Debug] First 500 chars of extracted:`)
+    console.log(`   ${summaryXML.substring(0, 500)}`)
+  }
+
+  const reflective_summary = {
+    strengths: extractAllXML(summaryXML, 'strength'),
+    emerging: extractAllXML(summaryXML, 'area'),
+    opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
+    thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
+  }
+
+  console.log(`\n   Strengths: ${reflective_summary.strengths.length}`)
+  console.log(`   Emerging: ${reflective_summary.emerging.length}`)
+  console.log(`   Opportunities: ${reflective_summary.opportunities_for_enrichment.length}`)
+  if (reflective_summary.thought_prompt) {
+    console.log(`   Thought prompt: "${reflective_summary.thought_prompt.substring(0, 50)}..."`)
+  }
+
+  // 6. Build complete extractedContext
+  const extractedContext = {
+    themes,
+    reflective_summary,
+    extraction_approach: 'emergent' as const,
+  }
+
+  // 7. Compute dimensional coverage
   const dimensionalCoverage = computeDimensionalCoverageFromInline(themes)
   console.log(`\n📊 Dimensional Coverage:`)
   console.log(`   Covered: ${dimensionalCoverage.summary.dimensionsCovered}/10`)
@@ -162,7 +254,7 @@ async function backfillExtraction(conversationId: string) {
     console.log(`   Gaps: ${dimensionalCoverage.summary.gaps.join(', ')}`)
   }
 
-  // 6. Create fragments
+  // 8. Create fragments
   console.log(`\n💾 Creating fragments...`)
   const fragments = await createFragmentsFromThemes(
     conversation.projectId,
@@ -171,7 +263,7 @@ async function backfillExtraction(conversationId: string) {
   )
   console.log(`   Created ${fragments.length} fragments`)
 
-  // 7. Create ExtractionRun record
+  // 9. Create ExtractionRun record
   console.log(`\n📝 Creating ExtractionRun record...`)
   const extractionRun = await prisma.extractionRun.create({
     data: {
@@ -184,24 +276,52 @@ async function backfillExtraction(conversationId: string) {
   })
   console.log(`   ExtractionRun ID: ${extractionRun.id}`)
 
-  // 8. Trigger synthesis
+  // 10. Create new Trace with complete extractedContext
+  console.log(`\n📝 Creating Trace with complete extractedContext...`)
+  const totalTokens =
+    extractionResponse.usage.input_tokens +
+    extractionResponse.usage.output_tokens +
+    summaryResponse.usage.input_tokens +
+    summaryResponse.usage.output_tokens
+
+  const trace = await prisma.trace.create({
+    data: {
+      conversationId,
+      userId: conversation.userId,
+      extractedContext: extractedContext as any,
+      dimensionalCoverage: dimensionalCoverage as any,
+      output: {}, // Empty - this is just for extraction, not generation
+      modelUsed: CLAUDE_MODEL,
+      totalTokens,
+      promptTokens: extractionResponse.usage.input_tokens + summaryResponse.usage.input_tokens,
+      completionTokens: extractionResponse.usage.output_tokens + summaryResponse.usage.output_tokens,
+      latencyMs: 0, // Not tracking latency in backfill
+    },
+  })
+  console.log(`   Trace ID: ${trace.id}`)
+
+  // 11. Trigger synthesis
   console.log(`\n🔄 Updating syntheses...`)
   await updateAllSyntheses(conversation.projectId)
   console.log(`   Syntheses updated`)
 
-  // 9. Summary
+  // 12. Summary
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
   console.log(`✅ Backfill complete!`)
   console.log(`   Conversation: ${conversationId}`)
   console.log(`   Themes: ${themes.length}`)
   console.log(`   Fragments: ${fragments.length}`)
   console.log(`   ExtractionRun: ${extractionRun.id}`)
+  console.log(`   Trace: ${trace.id}`)
+  console.log(`\n   View extraction: http://localhost:3000/extraction/${conversationId}`)
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`)
 
   return {
     themes,
     fragments,
     extractionRun,
+    trace,
+    extractedContext,
     dimensionalCoverage,
   }
 }
