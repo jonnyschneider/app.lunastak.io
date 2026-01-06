@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
 // Hardcoded demo conversation - public showcase
-const DEMO_CONVERSATION_ID = 'cmk1tr94r0010lvzgnlpt8n3z';
+const DEMO_CONVERSATION_ID = 'cmjz4zjdi0001a4kzehxif92h';
 
 export async function GET() {
   // Find extraction run for the demo conversation
