@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "smoke": "jest --testPathPattern=smoke --verbose",
+    "verify": "npm run type-check && npm run test && npm run smoke",
     "type-check": "tsc --noEmit",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
