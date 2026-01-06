@@ -10,6 +10,8 @@
 
 **Linear Issues:** HUM-28, HUM-32, HUM-33, HUM-34
 
+**UI Constraint:** Use shadcn/ui components everywhere possible. No custom UI unless absolutely necessary. All components must be standard, interchangeable, and straightforward. UX polish comes in future rounds.
+
 ---
 
 ## 1. Overview & Mental Model
