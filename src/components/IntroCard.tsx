@@ -37,9 +37,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
               Let&apos;s clarify your strategy
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Hi, I'm Luna, the green blob &#128075; 
-            </p>
-            <p>I don't look very smart, but I ask great questions (and, I'm a really good listener). 
+              &#128075; I'm Luna, the green blob. I don't look very smart, but I ask great questions (and, I'm a really good listener). 
             </p>
           </div>
           <Image
