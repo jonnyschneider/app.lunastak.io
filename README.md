@@ -57,7 +57,7 @@ See [scripts/README.md](scripts/README.md) for details.
 |------|---------|
 | [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
 | [CLAUDE.md](CLAUDE.md) | Context for Claude Code |
-| [.claude/architecture.md](.claude/architecture.md) | Technical architecture |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture |
 | [docs/experiments/](docs/experiments/) | Experiment documentation |
 
 ## License

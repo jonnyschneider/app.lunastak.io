@@ -20,7 +20,7 @@ npm run smoke        # Smoke tests only
 
 ## Architecture
 
-See [.claude/architecture.md](.claude/architecture.md) for full details.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full details.
 
 **Key directories:**
 - `src/app/api/` - API routes (conversation, extract, generate)
