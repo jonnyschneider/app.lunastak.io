@@ -160,9 +160,9 @@ export function DocumentUploadDialog({
           {/* Selected File */}
           {selectedFile && state === 'selected' && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
-                <FileText className="h-8 w-8 text-muted-foreground" />
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50 overflow-hidden">
+                <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <p className="text-sm font-medium truncate">{selectedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatFileSize(selectedFile.size)}
@@ -201,15 +201,15 @@ export function DocumentUploadDialog({
           {/* Upload Progress */}
           {(state === 'uploading' || state === 'processing') && (
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
-                <FileText className="h-8 w-8 text-muted-foreground" />
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50 overflow-hidden">
+                <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <p className="text-sm font-medium truncate">{selectedFile?.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {state === 'uploading' ? 'Uploading...' : 'Processing...'}
                   </p>
                 </div>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
               </div>
               <Progress value={progress} className="h-2" />
             </div>
