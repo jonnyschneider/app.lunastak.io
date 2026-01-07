@@ -203,13 +203,12 @@ export async function processDocument(
     })
 
     // Step 5: Trigger synthesis and knowledge summary refresh (async)
-    updateAllSyntheses(document.projectId).catch(error => {
-      console.error('[DocumentProcessing] Failed to update syntheses:', error)
-    })
-
-    generateKnowledgeSummary(document.projectId).catch(error => {
-      console.error('[DocumentProcessing] Failed to generate knowledge summary:', error)
-    })
+    // IMPORTANT: Knowledge summary must run AFTER synthesis so fragmentCount is accurate
+    updateAllSyntheses(document.projectId)
+      .then(() => generateKnowledgeSummary(document.projectId))
+      .catch(error => {
+        console.error('[DocumentProcessing] Failed to update syntheses or generate knowledge summary:', error)
+      })
 
     console.log(`[DocumentProcessing] Completed processing for document ${documentId}`)
 
