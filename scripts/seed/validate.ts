@@ -74,9 +74,10 @@ function validateFixture(filePath: string): ValidationError[] {
     project.fragments?.forEach((fragment, fIdx) => {
       const fragPath = `${projectPath}.fragments[${fIdx}]`;
 
-      // Check dimension tags
+      // Check dimension tags (normalize to lowercase for comparison)
       fragment.dimensionTags?.forEach((tag, tIdx) => {
-        if (!isValidDimension(tag.dimension)) {
+        const normalizedDimension = tag.dimension.toLowerCase();
+        if (!isValidDimension(normalizedDimension)) {
           errors.push({
             fixture: fixtureName,
             path: `${fragPath}.dimensionTags[${tIdx}].dimension`,
