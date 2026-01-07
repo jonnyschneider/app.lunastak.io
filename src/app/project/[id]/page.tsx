@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/app-layout'
+import { ProjectEmptyState } from '@/components/ProjectEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -332,6 +333,29 @@ export default function ProjectPage() {
             </Button>
           </div>
         </div>
+      </AppLayout>
+    )
+  }
+
+  // Show empty state when project has no content
+  const isEmpty =
+    (projectData?.stats?.fragmentCount ?? 0) === 0 &&
+    (projectData?.conversations?.length ?? 0) === 0
+
+  if (isEmpty && projectData) {
+    return (
+      <AppLayout>
+        <ProjectEmptyState
+          projectId={projectId}
+          onStartConversation={() => router.push(`/?projectId=${projectId}`)}
+          onUploadDocument={() => setUploadDialogOpen(true)}
+        />
+        <DocumentUploadDialog
+          projectId={projectId}
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          onUploadComplete={() => fetchProjectData()}
+        />
       </AppLayout>
     )
   }
