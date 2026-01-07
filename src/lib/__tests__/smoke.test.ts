@@ -2,8 +2,10 @@
 /**
  * Smoke Test
  *
- * End-to-end test of the critical path:
- * Conversation → Extraction → Fragment Persistence → Generation
+ * End-to-end tests of critical user paths:
+ *
+ * Path 1: Conversation → Extraction → Fragment Persistence → Generation
+ * Path 2: Document Upload → Text Extraction → Theme Extraction → Fragment Persistence → Synthesis
  *
  * Uses mocked AI responses for determinism and speed.
  */
@@ -12,12 +14,16 @@ import {
   validateEmergentExtraction,
   validateGenerationOutput,
   validateFragmentCreationResult,
+  validateDocument,
   isEmergentExtraction,
 } from '@/lib/contracts';
 import {
   MOCK_EMERGENT_EXTRACTION,
   MOCK_GENERATION_OUTPUT,
   MOCK_FRAGMENT_CREATION_RESULT,
+  MOCK_DOCUMENT,
+  MOCK_DOCUMENT_THEMES,
+  MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT,
 } from './fixtures/ai-responses';
 
 // Mock Prisma
@@ -175,6 +181,149 @@ describe('Smoke Test: Critical Path', () => {
 
       expect(extraction.reflective_summary).toBeDefined();
       expect(extraction.reflective_summary.strengths.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe('Smoke Test: Document Upload Path', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Step 1: Document upload creates valid record', () => {
+    it('should create document with pending status', () => {
+      const document = MOCK_DOCUMENT;
+
+      expect(validateDocument(document)).toBe(true);
+      expect(document.status).toBe('pending');
+      expect(document.projectId).toBeTruthy();
+      expect(document.fileName).toBeTruthy();
+    });
+
+    it('should include optional upload context', () => {
+      const document = MOCK_DOCUMENT;
+
+      expect(document.uploadContext).toBeTruthy();
+      expect(document.fileSizeBytes).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Step 2: Theme extraction produces valid contract', () => {
+    it('should extract themes matching EmergentThemeContract', () => {
+      const themes = MOCK_DOCUMENT_THEMES;
+
+      expect(themes.length).toBeGreaterThan(0);
+      for (const theme of themes) {
+        expect(theme.theme_name).toBeTruthy();
+        expect(theme.content).toBeTruthy();
+        expect(theme.dimensions).toBeDefined();
+        expect(theme.dimensions!.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should have themes with dimension tags', () => {
+      const themes = MOCK_DOCUMENT_THEMES;
+
+      for (const theme of themes) {
+        for (const dim of theme.dimensions!) {
+          expect(dim.name).toBeTruthy();
+          expect(['HIGH', 'MEDIUM', 'LOW']).toContain(dim.confidence);
+        }
+      }
+    });
+  });
+
+  describe('Step 3: Fragment persistence with document lineage', () => {
+    it('should create fragments with documentId (no conversationId)', () => {
+      const result = MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT;
+
+      expect(validateFragmentCreationResult(result)).toBe(true);
+
+      for (const fragment of result.fragments) {
+        expect(fragment.documentId).toBeTruthy();
+        expect((fragment as any).conversationId).toBeUndefined();
+        expect(fragment.status).toBe('active');
+      }
+    });
+
+    it('should create dimension tags for document fragments', () => {
+      const result = MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT;
+
+      // 4 themes × 2 dimensions each = 8 tags
+      expect(result.dimensionTags.length).toBe(8);
+
+      const fragmentIds = new Set(result.fragments.map(f => f.id));
+      for (const tag of result.dimensionTags) {
+        expect(fragmentIds.has(tag.fragmentId)).toBe(true);
+      }
+    });
+
+    it('should maintain theme count from extraction to fragments', () => {
+      const themes = MOCK_DOCUMENT_THEMES;
+      const fragments = MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT;
+
+      expect(fragments.fragments.length).toBe(themes.length);
+    });
+  });
+
+  describe('Step 4: Document status lifecycle', () => {
+    it('should transition through valid statuses', () => {
+      const statuses = ['pending', 'processing', 'complete'];
+
+      for (const status of statuses) {
+        const doc = { ...MOCK_DOCUMENT, status: status as any };
+        expect(validateDocument(doc)).toBe(true);
+      }
+    });
+
+    it('should handle failed status with error message', () => {
+      const failedDoc = {
+        ...MOCK_DOCUMENT,
+        status: 'failed' as const,
+        errorMessage: 'Could not extract text from document',
+      };
+
+      expect(validateDocument(failedDoc)).toBe(true);
+      expect(failedDoc.errorMessage).toBeTruthy();
+    });
+  });
+
+  describe('Step 5: Data flows correctly through document pipeline', () => {
+    it('should maintain dimension count from themes to tags', () => {
+      const themes = MOCK_DOCUMENT_THEMES;
+      const fragments = MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT;
+
+      const totalDimensions = themes.reduce(
+        (sum, theme) => sum + (theme.dimensions?.length || 0),
+        0
+      );
+
+      expect(fragments.dimensionTags.length).toBe(totalDimensions);
+    });
+
+    it('should cover multiple strategic dimensions from document', () => {
+      const fragments = MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT;
+      const coveredDimensions = new Set(fragments.dimensionTags.map(t => t.dimension));
+
+      // Document should cover multiple dimensions
+      expect(coveredDimensions.size).toBeGreaterThanOrEqual(4);
+    });
+
+    it('should distinguish document fragments from conversation fragments', () => {
+      const docFragments = MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT.fragments;
+      const convFragments = MOCK_FRAGMENT_CREATION_RESULT.fragments;
+
+      // Document fragments have documentId, no conversationId
+      for (const f of docFragments) {
+        expect(f.documentId).toBeTruthy();
+        expect((f as any).conversationId).toBeUndefined();
+      }
+
+      // Conversation fragments have conversationId, no documentId
+      for (const f of convFragments) {
+        expect(f.conversationId).toBeTruthy();
+        expect((f as any).documentId).toBeUndefined();
+      }
     });
   });
 });

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
@@ -21,7 +22,8 @@ import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog';
 type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -60,6 +62,28 @@ export default function Home() {
   const [deferralTopic, setDeferralTopic] = useState('');
   const [deferralMessageId, setDeferralMessageId] = useState<string | undefined>();
 
+  // Redirect authenticated users to their project dashboard (unless they have URL params)
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) return;
+
+    // Don't redirect if URL has params indicating intentional navigation
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('question') || params.get('deepDiveId') || params.get('projectId')) {
+      return;
+    }
+
+    // Fetch projects and redirect to first one
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(data => {
+        if (data.projects && data.projects.length > 0) {
+          router.replace(`/project/${data.projects[0].id}`);
+        }
+      })
+      .catch(err => console.error('Failed to fetch projects for redirect:', err));
+  }, [session, status, router]);
+
   // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
     if (flowStep === 'strategy' && !session) {
@@ -70,7 +94,7 @@ export default function Home() {
   // Fetch user's project ID for deep dive deferral
   useEffect(() => {
     if (session?.user?.id) {
-      fetch('/api/project')
+      fetch('/api/projects')
         .then(res => res.json())
         .then(data => {
           if (data.projects && data.projects.length > 0) {

@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle2,
+  X,
 } from 'lucide-react'
 
 interface DeepDiveConversation {
@@ -52,8 +53,10 @@ interface DeepDiveSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onResolve: () => void
+  onDismiss: (deepDiveId: string) => void
   onStartChat: (deepDiveId: string) => void
   onUploadDoc: (deepDiveId: string) => void
+  conversationCount?: number
 }
 
 export function DeepDiveSheet({
@@ -61,8 +64,10 @@ export function DeepDiveSheet({
   open,
   onOpenChange,
   onResolve,
+  onDismiss,
   onStartChat,
   onUploadDoc,
+  conversationCount = 0,
 }: DeepDiveSheetProps) {
   const [deepDive, setDeepDive] = useState<DeepDiveDetail | null>(null)
   const [conversations, setConversations] = useState<DeepDiveConversation[]>([])
@@ -136,8 +141,15 @@ export function DeepDiveSheet({
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
                 {deepDive.topic}
-                <Badge variant={deepDive.status === 'active' ? 'default' : 'secondary'}>
-                  {deepDive.status}
+                <Badge
+                  variant={deepDive.status === 'active' ? 'outline' : 'secondary'}
+                  className={deepDive.status === 'active' ? 'text-xs text-amber-600 border-amber-300' : 'text-xs'}
+                >
+                  {deepDive.status === 'resolved'
+                    ? 'Resolved'
+                    : conversations.length > 0
+                      ? 'In progress'
+                      : 'Ready to explore'}
                 </Badge>
               </SheetTitle>
               <SheetDescription>
@@ -161,19 +173,32 @@ export function DeepDiveSheet({
                 Upload
               </Button>
               {deepDive.status === 'active' && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleResolve}
-                  disabled={isResolving}
-                >
-                  {isResolving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  Resolve
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResolve}
+                    disabled={isResolving}
+                  >
+                    {isResolving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Resolve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      onOpenChange(false)
+                      onDismiss(deepDive.id)
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Dismiss
+                  </Button>
+                </>
               )}
             </div>
 

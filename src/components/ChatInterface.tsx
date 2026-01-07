@@ -199,12 +199,30 @@ export default function ChatInterface({
               Send
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
-            <span className="mx-1">or</span>
-            <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
-            <span className="ml-1">to send</span>
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
+              <span className="mx-1">or</span>
+              <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
+              <span className="ml-1">to send</span>
+            </p>
+            {onDeferToDeepDive && hasUserResponded && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Use the latest assistant message for deferral
+                  const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+                  if (lastAssistantMessage) {
+                    onDeferToDeepDive(lastAssistantMessage.content, lastAssistantMessage.id);
+                  }
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              >
+                <Crosshair className="h-3 w-3" />
+                Defer to Deep Dive
+              </button>
+            )}
+          </div>
         </form>
       )}
 

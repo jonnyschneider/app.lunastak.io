@@ -3,8 +3,34 @@
  * Persistence Contracts
  *
  * Defines what gets written to the database during extraction.
- * Based on Fragment and FragmentDimensionTag models in Prisma schema.
+ * Based on Fragment, FragmentDimensionTag, and Document models in Prisma schema.
  */
+
+// Document status values
+export const DOCUMENT_STATUSES = ['pending', 'processing', 'complete', 'failed'] as const;
+export type DocumentStatus = typeof DOCUMENT_STATUSES[number];
+
+// Document record for uploaded files
+export interface DocumentContract {
+  id: string;
+  projectId: string;
+  fileName: string;
+  fileType: string;
+  fileSizeBytes?: number;
+  uploadContext?: string;
+  status: DocumentStatus;
+  processedAt?: string; // ISO date string
+  errorMessage?: string;
+}
+
+// What document upload API expects
+export interface DocumentUploadInputContract {
+  projectId: string;
+  fileName: string;
+  fileType: string;
+  fileSizeBytes?: number;
+  uploadContext?: string;
+}
 
 // Valid dimension keys (Tier 1 dimensions)
 export const VALID_DIMENSIONS = [
@@ -18,6 +44,7 @@ export const VALID_DIMENSIONS = [
   'product_experience',
   'capabilities_assets',
   'risks_constraints',
+  'strategic_intent',
 ] as const;
 
 export type DimensionKey = typeof VALID_DIMENSIONS[number];
@@ -26,7 +53,8 @@ export type DimensionKey = typeof VALID_DIMENSIONS[number];
 export interface FragmentContract {
   id: string;
   projectId: string;
-  conversationId: string;
+  conversationId?: string; // Optional - null for document-sourced fragments
+  documentId?: string;     // Optional - null for conversation-sourced fragments
   content: string;
   contentType: 'theme'; // Currently only themes
   status: 'active';
@@ -58,7 +86,12 @@ export function validateFragment(data: unknown): data is FragmentContract {
 
   if (typeof obj.id !== 'string' || !obj.id) return false;
   if (typeof obj.projectId !== 'string' || !obj.projectId) return false;
-  if (typeof obj.conversationId !== 'string' || !obj.conversationId) return false;
+  // conversationId is optional (null for document-sourced fragments)
+  if (obj.conversationId !== undefined && obj.conversationId !== null && typeof obj.conversationId !== 'string') return false;
+  // documentId is optional (null for conversation-sourced fragments)
+  if (obj.documentId !== undefined && obj.documentId !== null && typeof obj.documentId !== 'string') return false;
+  // At least one of conversationId or documentId should be present
+  if (!obj.conversationId && !obj.documentId) return false;
   if (typeof obj.content !== 'string' || !obj.content) return false;
   if (obj.contentType !== 'theme') return false;
   if (obj.status !== 'active') return false;
@@ -97,6 +130,45 @@ export function validateFragmentCreationResult(data: unknown): data is FragmentC
   for (const tag of obj.dimensionTags) {
     if (!validateFragmentDimensionTag(tag)) return false;
   }
+
+  return true;
+}
+
+// Document validation
+export function isValidDocumentStatus(status: string): status is DocumentStatus {
+  return DOCUMENT_STATUSES.includes(status as DocumentStatus);
+}
+
+export function validateDocument(data: unknown): data is DocumentContract {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.id !== 'string' || !obj.id) return false;
+  if (typeof obj.projectId !== 'string' || !obj.projectId) return false;
+  if (typeof obj.fileName !== 'string' || !obj.fileName) return false;
+  if (typeof obj.fileType !== 'string' || !obj.fileType) return false;
+  if (typeof obj.status !== 'string' || !isValidDocumentStatus(obj.status)) return false;
+
+  // Optional fields
+  if (obj.fileSizeBytes !== undefined && obj.fileSizeBytes !== null && typeof obj.fileSizeBytes !== 'number') return false;
+  if (obj.uploadContext !== undefined && obj.uploadContext !== null && typeof obj.uploadContext !== 'string') return false;
+  if (obj.processedAt !== undefined && obj.processedAt !== null && typeof obj.processedAt !== 'string') return false;
+  if (obj.errorMessage !== undefined && obj.errorMessage !== null && typeof obj.errorMessage !== 'string') return false;
+
+  return true;
+}
+
+export function validateDocumentUploadInput(data: unknown): data is DocumentUploadInputContract {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.projectId !== 'string' || !obj.projectId) return false;
+  if (typeof obj.fileName !== 'string' || !obj.fileName) return false;
+  if (typeof obj.fileType !== 'string' || !obj.fileType) return false;
+
+  // Optional fields
+  if (obj.fileSizeBytes !== undefined && obj.fileSizeBytes !== null && typeof obj.fileSizeBytes !== 'number') return false;
+  if (obj.uploadContext !== undefined && obj.uploadContext !== null && typeof obj.uploadContext !== 'string') return false;
 
   return true;
 }

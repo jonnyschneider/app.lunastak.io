@@ -4,10 +4,12 @@
 
 import { prisma } from '@/lib/db'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
+import { EmergentThemeContract } from '@/lib/contracts/extraction'
 
 export interface FragmentInput {
   projectId: string
-  conversationId: string
+  conversationId?: string
+  documentId?: string
   messageId?: string
   content: string
   contentType: 'theme' | 'insight' | 'quote' | 'stat' | 'principle'
@@ -32,6 +34,7 @@ export async function createFragment(
     data: {
       projectId: input.projectId,
       conversationId: input.conversationId,
+      documentId: input.documentId,
       messageId: input.messageId,
       content: input.content,
       contentType: input.contentType,
@@ -69,16 +72,14 @@ const EXTRACTION_DIMENSION_MAP: Record<string, Tier1Dimension> = {
   'product_experience': 'PRODUCT_EXPERIENCE',
   'capabilities_assets': 'CAPABILITIES_ASSETS',
   'risks_constraints': 'RISKS_CONSTRAINTS',
+  'strategic_intent': 'STRATEGIC_INTENT',
 }
 
 /**
  * Theme with inline dimension tags from extraction
+ * @deprecated Use EmergentThemeContract from '@/lib/contracts/extraction' directly
  */
-export interface ThemeWithDimensions {
-  theme_name: string
-  content: string
-  dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[]
-}
+export type ThemeWithDimensions = EmergentThemeContract
 
 /**
  * Create multiple fragments from extraction themes with inline dimensions
@@ -91,7 +92,7 @@ export async function createFragmentsFromThemes(
   const fragments = await Promise.all(
     themes.map(theme => {
       // Convert inline dimensions to DimensionTagInput[]
-      const tags: DimensionTagInput[] = theme.dimensions
+      const tags: DimensionTagInput[] = (theme.dimensions || [])
         .map(dim => {
           const tier1Dimension = EXTRACTION_DIMENSION_MAP[dim.name]
           if (!tier1Dimension) {
@@ -113,6 +114,47 @@ export async function createFragmentsFromThemes(
         content: `**${theme.theme_name}**\n\n${theme.content}`,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
+      }, tags)
+    })
+  )
+
+  return fragments
+}
+
+/**
+ * Create multiple fragments from document themes with inline dimensions
+ */
+export async function createFragmentsFromDocument(
+  projectId: string,
+  documentId: string,
+  themes: ThemeWithDimensions[]
+) {
+  const fragments = await Promise.all(
+    themes.map(theme => {
+      // Convert inline dimensions to DimensionTagInput[]
+      const tags: DimensionTagInput[] = (theme.dimensions || [])
+        .map(dim => {
+          const tier1Dimension = EXTRACTION_DIMENSION_MAP[dim.name]
+          if (!tier1Dimension) {
+            console.log(`[Fragments] Unknown dimension key: ${dim.name}`)
+            return null
+          }
+          return {
+            dimension: tier1Dimension,
+            confidence: dim.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
+            reasoning: 'Tagged during document extraction',
+          } as DimensionTagInput
+        })
+        .filter((tag): tag is DimensionTagInput => tag !== null)
+
+
+      return createFragment({
+        projectId,
+        documentId,
+        content: `**${theme.theme_name}**\n\n${theme.content}`,
+        contentType: 'theme',
+        confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
+        extractedBy: 'claude-document-extraction',
       }, tags)
     })
   )

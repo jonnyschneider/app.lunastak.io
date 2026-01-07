@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+## [1.5.0] - 2026-01-07
+
+### Added - Project-Centric Navigation & Multi-Session Polish
+
+**Project-First Navigation:**
+- **Homepage Redirect** - Authenticated users now redirected to project dashboard
+  - Redirect skipped if URL has `question`, `deepDiveId`, or `projectId` params
+  - Unauthenticated users see intro flow as before
+- **Sidebar Restructure** - Removed conversations section, added quick actions
+  - New Chat and Upload buttons in sidebar body
+  - Lunastak logo in sidebar header
+  - Projects and Your Lunastak sections remain
+
+**Project View Enhancements:**
+- **Conversation Starring** - Star conversations directly from project view
+  - Starred (3) and Recent (3) sections with expand/collapse
+  - Star persists via Trace model (leverages existing infrastructure)
+  - New API: `POST /api/conversation/[id]/star`
+- **Conversation Titles** - Generated during extraction, shown in lists
+  - Titles like "Market expansion strategy", "B2B pricing model"
+  - Backfill script for existing conversations
+  - Date format: "13 Jan '26"
+- **Deep Dives Polish** - Consistent dismissal UX
+  - Whole item clickable to open sheet
+  - X button and dropdown dismiss option
+  - Dismiss button in sheet alongside Resolve
+  - Status badges: "In progress", "Ready to explore", "Resolved"
+
+**UI Polish:**
+- **Layout** - Knowledge Base card combines stats + dimensional coverage
+- **Luna Wonders** - Renamed from "Opportunities to Enrich"
+- **Worth Exploring** - Renamed from "Areas of Focus" with better positioning
+- **Deep Dives** - Renamed to "Your Deep Dives" for personalization
+
+### Changed
+- Sidebar truncation: Recent conversations limited to 5 with "See more"
+- Project view conversations limited to 3+3 (starred + recent)
+
+### Fixed
+- Deep dive dismissal wired to UserDismissal API
+- Conversation-level deferral controls visibility
 
 ---
 ## [1.4.4] - 2026-01-06

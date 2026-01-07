@@ -7,6 +7,7 @@ import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis
 import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import { updateAllSyntheses } from '@/lib/synthesis';
 import { logStatsigEvent } from '@/lib/statsig';
+import { generateKnowledgeSummary } from '@/lib/knowledge-summary';
 
 export const maxDuration = 60;
 
@@ -96,6 +97,8 @@ Conversation:
 Provide:
 
 <summary>
+  <title>Short descriptive title for this conversation (3-6 words, e.g. "Market expansion strategy", "Customer acquisition approach")</title>
+
   <strengths>
     <!-- 2-3 strongest anchors from conversation -->
     <strength>What's clearly articulated and solid</strength>
@@ -267,12 +270,21 @@ export async function POST(req: Request) {
             ? summaryResponse.content[0].text : '';
           const summaryXML = extractXML(summaryContent, 'summary');
 
+          const conversationTitle = extractXML(summaryXML, 'title') || undefined;
           const reflective_summary = {
             strengths: extractAllXML(summaryXML, 'strength'),
             emerging: extractAllXML(summaryXML, 'area'),
             opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
             thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
           };
+
+          // Save title to conversation
+          if (conversationTitle) {
+            await prisma.conversation.update({
+              where: { id: conversationId },
+              data: { title: conversationTitle },
+            });
+          }
 
           extractedContext = {
             themes,
@@ -322,12 +334,21 @@ export async function POST(req: Request) {
             ? summaryResponse.content[0].text : '';
           const summaryXML = extractXML(summaryContent, 'summary');
 
+          const conversationTitleBaseline = extractXML(summaryXML, 'title') || undefined;
           const reflective_summary = {
             strengths: extractAllXML(summaryXML, 'strength'),
             emerging: extractAllXML(summaryXML, 'area'),
             opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
             thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
           };
+
+          // Save title to conversation
+          if (conversationTitleBaseline) {
+            await prisma.conversation.update({
+              where: { id: conversationId },
+              data: { title: conversationTitleBaseline },
+            });
+          }
 
           extractedContext = {
             core,
@@ -385,6 +406,11 @@ export async function POST(req: Request) {
               // Trigger synthesis update (async, don't block response)
               updateAllSyntheses(conversation.projectId).catch(error => {
                 console.error('[Extract] Failed to update syntheses:', error);
+              });
+
+              // Trigger knowledge summary generation (async, don't block response)
+              generateKnowledgeSummary(conversation.projectId).catch(error => {
+                console.error('[Extract] Failed to generate knowledge summary:', error);
               });
             } catch (error) {
               // Log but don't fail extraction if fragment creation fails

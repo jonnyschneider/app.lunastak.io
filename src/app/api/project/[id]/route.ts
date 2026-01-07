@@ -31,10 +31,15 @@ export async function GET(
         conversations: {
           where: { status: { not: 'abandoned' } },
           orderBy: { createdAt: 'desc' },
-          take: 10,
+          take: 20, // Fetch more to ensure we have enough after filtering
           include: {
             messages: { select: { id: true } },
             fragments: { where: { status: 'active' }, select: { id: true } },
+            traces: {
+              where: { starred: true },
+              select: { starred: true, starredAt: true },
+              take: 1,
+            },
           },
         },
         fragments: {
@@ -125,13 +130,20 @@ export async function GET(
     }
 
     // Format conversation summaries
-    const conversations = project.conversations.map(conv => ({
-      id: conv.id,
-      createdAt: conv.createdAt.toISOString(),
-      status: conv.status,
-      messageCount: conv.messages.length,
-      fragmentCount: conv.fragments.length,
-    }))
+    const conversations = project.conversations.map(conv => {
+      // traces array will have 1 item if starred, 0 if not (due to where filter)
+      const hasStarredTrace = conv.traces.length > 0
+      return {
+        id: conv.id,
+        title: conv.title || null,
+        createdAt: conv.createdAt.toISOString(),
+        status: conv.status,
+        messageCount: conv.messages.length,
+        fragmentCount: conv.fragments.length,
+        starred: hasStarredTrace,
+        starredAt: hasStarredTrace ? conv.traces[0].starredAt?.toISOString() || null : null,
+      }
+    })
 
     // Format document summaries
     const documents = project.documents.map(doc => ({
