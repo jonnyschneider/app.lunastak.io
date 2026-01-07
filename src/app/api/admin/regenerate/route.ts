@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { logStatsigEvent } from '@/lib/statsig';
 
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 minutes for Pro plan
 
 const GENERATION_PROMPT = `Generate compelling strategy statements based on the comprehensive business context provided.
 
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
     console.log('[Regenerate API] Calling Claude API...');
     const startTime = Date.now();
 
-    const response = await anthropic.messages.create({
+    const response = await createMessage({
       model: CLAUDE_MODEL,
       max_tokens: 1000,
       messages: [{
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
         content: prompt
       }],
       temperature: 0.7
-    });
+    }, 'admin_regenerate');
 
     const latency = Date.now() - startTime;
     console.log(`[Regenerate API] Claude responded in ${latency}ms`);

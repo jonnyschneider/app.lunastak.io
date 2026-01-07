@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
 import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 minutes for Pro plan
 
 const FIRST_QUESTION_PROMPT_NEW_USER = `You are Luna, a strategic consultant helping someone articulate their business strategy.
 
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
       console.log('[Start] Using prompt type:', promptType);
 
       // Generate first question
-      const response = await anthropic.messages.create({
+      const response = await createMessage({
         model: CLAUDE_MODEL,
         max_tokens: 200,
         messages: [{
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
           content: prompt
         }],
         temperature: 0.7
-      });
+      }, 'conversation_start');
 
       firstQuestion = response.content[0]?.type === 'text'
         ? response.content[0].text

@@ -73,10 +73,14 @@ Guest User ID: ${guestUserId || 'None'}
       console.error('Error sending admin notification:', emailError)
     }
 
-    // Build redirect URL to sign-in page
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Build redirect URL to sign-in page with auto-submit
+    // Use VERCEL_URL for preview deployments, custom domain for production
+    const baseUrl = process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
     const signInUrl = new URL('/auth/signin', baseUrl)
     signInUrl.searchParams.set('email', email)
+    signInUrl.searchParams.set('confirmed', 'true') // Auto-submit to send magic link
     if (guestUserId) {
       signInUrl.searchParams.set('callbackUrl', '/')
     }

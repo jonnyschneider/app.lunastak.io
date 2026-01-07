@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
 
@@ -51,11 +51,22 @@ Your conversational summary here
 <question>A thought-provoking question about a gap or area to explore further</question>
 <question>Another question that could deepen their strategic thinking</question>
 <question>A third question connecting different aspects of their strategy</question>
-</suggested_questions>`
+</suggested_questions>
+
+<dimension_gaps>
+For each gap dimension listed above, generate ONE specific question that:
+- References what you DO know about their business (from covered dimensions)
+- Frames the gap in context of their specific situation
+- Would help deepen understanding of that dimension
+
+Format each as:
+<gap dimension="DIMENSION_NAME">Your contextual question here</gap>
+</dimension_gaps>`
 
 interface KnowledgeSummaryResult {
   summary: string
   suggestedQuestions: string[]
+  dimensionGaps: Record<string, string> // dimension -> contextual gap question
 }
 
 /**
@@ -112,8 +123,9 @@ export async function generateKnowledgeSummary(
   const coveredDimensionsList = Array.from(coveredDimensions)
     .map(d => DIMENSION_NAMES[d as Tier1Dimension])
     .join(', ') || 'None yet'
+  // Include both key and display name so Claude uses the key in dimension_gaps
   const gapDimensionsList = gapDimensions
-    .map(d => DIMENSION_NAMES[d])
+    .map(d => `${d} (${DIMENSION_NAMES[d]})`)
     .join(', ') || 'None - great coverage!'
 
   const prompt = KNOWLEDGE_SUMMARY_PROMPT
@@ -123,12 +135,12 @@ export async function generateKnowledgeSummary(
     .replace('{gapDimensions}', gapDimensionsList)
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await createMessage({
       model: CLAUDE_MODEL,
-      max_tokens: 1000,
+      max_tokens: 2000, // Increased for dimension gaps
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.6,
-    })
+    }, 'knowledge_summary')
 
     const responseText = response.content[0]?.type === 'text'
       ? response.content[0].text
@@ -147,6 +159,17 @@ export async function generateKnowledgeSummary(
       }
     }
 
+    // Parse dimension-specific gaps
+    const dimensionGaps: Record<string, string> = {}
+    const gapRegex = /<gap dimension="([^"]+)">([\s\S]*?)<\/gap>/g
+    while ((match = gapRegex.exec(responseText)) !== null) {
+      const dimension = match[1].trim()
+      const gapQuestion = match[2].trim()
+      if (dimension && gapQuestion) {
+        dimensionGaps[dimension] = gapQuestion
+      }
+    }
+
     // Update project with new summary
     await prisma.project.update({
       where: { id: projectId },
@@ -157,13 +180,31 @@ export async function generateKnowledgeSummary(
       },
     })
 
+    // Update DimensionalSynthesis records with contextual gaps
+    if (Object.keys(dimensionGaps).length > 0) {
+      for (const [dimension, gapQuestion] of Object.entries(dimensionGaps)) {
+        await prisma.dimensionalSynthesis.updateMany({
+          where: {
+            projectId,
+            dimension,
+            fragmentCount: 0, // Only update dimensions with no fragments
+          },
+          data: {
+            gaps: [gapQuestion],
+          },
+        })
+      }
+      console.log('[KnowledgeSummary] Updated dimension gaps:', Object.keys(dimensionGaps))
+    }
+
     console.log('[KnowledgeSummary] Updated project knowledge:', {
       projectId,
       summaryLength: summary.length,
       questionCount: suggestedQuestions.length,
+      dimensionGapCount: Object.keys(dimensionGaps).length,
     })
 
-    return { summary, suggestedQuestions }
+    return { summary, suggestedQuestions, dimensionGaps }
   } catch (error) {
     console.error('[KnowledgeSummary] Failed to generate summary:', error)
     return null

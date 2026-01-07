@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ConversationPhase } from '@/lib/types';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 minutes for Pro plan
 
 export async function POST(req: Request) {
   const requestStartTime = Date.now();
@@ -178,7 +178,7 @@ Return only the question, no preamble.`;
 
   const startTime = Date.now();
   console.log('[Continue API - INITIAL] Calling Claude API for first question...');
-  const response = await anthropic.messages.create({
+  const response = await createMessage({
     model: CLAUDE_MODEL,
     max_tokens: 200,
     messages: [{
@@ -186,7 +186,7 @@ Return only the question, no preamble.`;
       content: prompt
     }],
     temperature: 0.7
-  });
+  }, 'continue_initial');
 
   const firstQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text
@@ -294,7 +294,7 @@ Return your assessment:
   <reasoning>Brief explanation (1-2 sentences)</reasoning>
 </assessment>`;
 
-  const confidenceResponse = await anthropic.messages.create({
+  const confidenceResponse = await createMessage({
     model: CLAUDE_MODEL,
     max_tokens: 300,
     messages: [{
@@ -302,7 +302,7 @@ Return your assessment:
       content: CONFIDENCE_PROMPT.replace('{conversation}', conversationHistory)
     }],
     temperature: 0.3
-  });
+  }, 'continue_confidence');
 
   const confidenceContent = confidenceResponse.content[0]?.type === 'text' ? confidenceResponse.content[0].text : '';
 
@@ -434,7 +434,7 @@ async function continueQuestioning(
   console.log(`[Continue API] Using ${experimentVariant} questioning approach, has project knowledge: ${!!projectKnowledge}`);
 
   const startTime = Date.now();
-  const response = await anthropic.messages.create({
+  const response = await createMessage({
     model: CLAUDE_MODEL,
     max_tokens: 200,
     messages: [{
@@ -442,7 +442,7 @@ async function continueQuestioning(
       content: prompt
     }],
     temperature: 0.7
-  });
+  }, 'continue_questioning');
 
   const nextQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text
@@ -491,12 +491,12 @@ async function offerEarlyExit(
     ? `Based on this conversation, suggest ONE follow-up question that would explore an under-covered strategic dimension. Return ONLY the question.\n\n${conversationHistory}`
     : `Based on this conversation, suggest ONE follow-up question to deepen understanding. Return ONLY the question.\n\n${conversationHistory}`;
 
-  const response = await anthropic.messages.create({
+  const response = await createMessage({
     model: CLAUDE_MODEL,
     max_tokens: 150,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-  });
+  }, 'continue_early_exit');
 
   const suggestedQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text

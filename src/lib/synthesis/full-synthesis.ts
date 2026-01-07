@@ -2,7 +2,7 @@
  * Full synthesis - creates synthesis from all fragments
  */
 
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
@@ -65,12 +65,12 @@ export async function fullSynthesis(
     .replace('{count}', String(fragments.length))
     .replace('{fragments}', fragmentsText)
 
-  const response = await anthropic.messages.create({
+  const response = await createMessage({
     model: CLAUDE_MODEL,
     max_tokens: 2000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.3
-  })
+  }, 'full_synthesis')
 
   const content = response.content[0]?.type === 'text'
     ? response.content[0].text
