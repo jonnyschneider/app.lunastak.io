@@ -162,7 +162,9 @@ export async function updateAllSyntheses(projectId: string): Promise<void> {
 
   console.log(`[Synthesis] Updating ${dimensions.length} dimensions for project ${projectId}`)
 
-  for (const dimension of dimensions) {
-    await updateDimensionalSynthesis(projectId, dimension)
-  }
+  // Run dimension syntheses in parallel - they're independent of each other
+  // (Knowledge summary must still run AFTER all syntheses complete)
+  await Promise.all(
+    dimensions.map(dimension => updateDimensionalSynthesis(projectId, dimension))
+  )
 }
