@@ -269,10 +269,12 @@ export async function POST(req: Request) {
         });
         console.log('[Generate API] ExtractionRun saved with ID:', extractionRun.id);
 
-        // Update with syntheses after (async)
-        updateExtractionRunWithSyntheses(extractionRun.id, conversation.projectId).catch(err => {
+        // Update with syntheses - must await or Vercel terminates before completion
+        try {
+          await updateExtractionRunWithSyntheses(extractionRun.id, conversation.projectId);
+        } catch (err) {
           console.error('[Generate API] Failed to update extraction run with syntheses:', err);
-        });
+        }
       } catch (error) {
         console.error('[Generate API] Failed to create GeneratedOutput/ExtractionRun:', error);
         // Continue - don't fail generation if new schema writes fail
