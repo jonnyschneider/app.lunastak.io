@@ -425,7 +425,13 @@ export default function ProjectPage() {
                 <div className="text-center py-6 text-muted-foreground">
                   <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No knowledge yet</p>
-                  <p className="text-xs mt-1">Have conversations with Luna to build context</p>
+                  <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
+                  <Button asChild size="sm">
+                    <Link href={`/?projectId=${projectId}`}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Start a Conversation
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>
