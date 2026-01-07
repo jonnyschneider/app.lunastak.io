@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/app-layout'
+import { ProjectEmptyState } from '@/components/ProjectEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -336,6 +337,29 @@ export default function ProjectPage() {
     )
   }
 
+  // Show empty state when project has no content
+  const isEmpty =
+    (projectData?.stats?.fragmentCount ?? 0) === 0 &&
+    (projectData?.conversations?.length ?? 0) === 0
+
+  if (isEmpty && projectData) {
+    return (
+      <AppLayout>
+        <ProjectEmptyState
+          projectId={projectId}
+          onStartConversation={() => router.push(`/?projectId=${projectId}`)}
+          onUploadDocument={() => setUploadDialogOpen(true)}
+        />
+        <DocumentUploadDialog
+          projectId={projectId}
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          onUploadComplete={() => fetchProjectData()}
+        />
+      </AppLayout>
+    )
+  }
+
   const stats = projectData?.stats || {
     fragmentCount: 0,
     conversationCount: 0,
@@ -401,7 +425,13 @@ export default function ProjectPage() {
                 <div className="text-center py-6 text-muted-foreground">
                   <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No knowledge yet</p>
-                  <p className="text-xs mt-1">Have conversations with Luna to build context</p>
+                  <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
+                  <Button asChild size="sm">
+                    <Link href={`/?projectId=${projectId}`}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Start a Conversation
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>

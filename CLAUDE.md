@@ -58,6 +58,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full details.
 | `docs/experiments/` | Experiment one-pagers and guides |
 | `.claude/architecture.md` | Technical architecture |
 
+**Note:** `docs/` is gitignored - kept locally for R&D tax records, not version controlled.
+
 **For planned features:** Use superpowers workflow (brainstorming → planning → execution)
 
 **For iterative work:** Create session note in `docs/session-notes/YYYY-MM-DD_description.md`
