@@ -10,6 +10,7 @@ datasource db {
 model Conversation {
   id            String   @id @default(cuid())
   userId        String? // Nullable for guest sessions
+  title         String? // Generated during extraction, e.g. "Market expansion strategy"
   status        String // 'in_progress' | 'completed' | 'abandoned'
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -19,6 +20,10 @@ model Conversation {
 
   // Experiment tracking
   experimentVariant String? // baseline-v1, emergent-extraction, etc.
+
+  // Deep Dive association
+  deepDiveId String?
+  deepDive   DeepDive? @relation(fields: [deepDiveId], references: [id], onDelete: SetNull)
 
   user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages       Message[]
@@ -30,6 +35,7 @@ model Conversation {
   projectId      String?
 
   @@index([userId])
+  @@index([deepDiveId])
   @@index([createdAt])
   @@index([experimentVariant])
 }
@@ -141,6 +147,7 @@ model User {
   feedbacks     Feedback[]
   accounts      Account[]
   sessions      Session[]
+  dismissals    UserDismissal[]
 
   @@index([email])
 }
@@ -152,6 +159,11 @@ model Project {
   description String? @db.Text
   status      String  @default("active") // active | archived | deleted
 
+  // Luna Remembers: accumulated knowledge
+  knowledgeSummary   String?   @db.Text // "What Luna Knows" - human-readable summary
+  knowledgeUpdatedAt DateTime? // Last time knowledge was synthesized
+  suggestedQuestions String[]  @default([]) // Suggested questions based on gaps
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -159,9 +171,12 @@ model Project {
   user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversations        Conversation[]
   fragments            Fragment[]
+  documents            Document[]
+  deepDives            DeepDive[]
   dimensionalSyntheses DimensionalSynthesis[]
   generatedOutputs     GeneratedOutput[]
   extractionRuns       ExtractionRun[]
+  dismissals           UserDismissal[]
 
   @@index([userId])
   @@index([status])
@@ -172,9 +187,10 @@ model Fragment {
   id        String @id @default(cuid())
   projectId String
 
-  // Source: currently only Conversation (Document deferred)
+  // Source: from Conversation or Document
   conversationId String?
   messageId      String?
+  documentId     String? // For fragments extracted from documents
 
   // Content
   content     String @db.Text
@@ -198,10 +214,12 @@ model Fragment {
   project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
   conversation  Conversation?          @relation(fields: [conversationId], references: [id], onDelete: SetNull)
   message       Message?               @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  document      Document?              @relation(fields: [documentId], references: [id], onDelete: SetNull)
   dimensionTags FragmentDimensionTag[]
 
   @@index([projectId])
   @@index([conversationId])
+  @@index([documentId])
   @@index([status])
   @@index([capturedAt])
 }
@@ -226,6 +244,65 @@ model FragmentDimensionTag {
   @@index([fragmentId])
   @@index([dimension])
   @@index([subdimension])
+}
+
+model Document {
+  id            String    @id @default(cuid())
+  projectId     String
+  fileName      String                           // Original filename
+  fileType      String                           // MIME type or extension
+  fileSizeBytes Int?                             // For display
+  uploadContext String?   @db.Text               // User-provided context about the document
+  status        String    @default("pending")    // pending | processing | complete | failed
+  processedAt   DateTime?                        // When extraction finished
+  errorMessage  String?                          // If status=failed
+
+  // Deep Dive association
+  deepDiveId String?
+  deepDive   DeepDive? @relation(fields: [deepDiveId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fragments Fragment[]
+
+  @@index([projectId])
+  @@index([deepDiveId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DeepDive {
+  id        String   @id @default(cuid())
+  projectId String
+
+  // Content
+  topic String              // The topic/question to explore
+  notes String? @db.Text    // Optional user notes
+
+  // Lifecycle
+  status     String    @default("active") // pending | active | resolved
+  resolvedAt DateTime?
+
+  // Origin tracking
+  origin           String  @default("manual") // manual | message | document
+  sourceMessageId  String?                    // If created from message deferral
+  sourceDocumentId String?                    // If created from document extraction
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  documents     Document[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model DimensionalSynthesis {
@@ -403,4 +480,19 @@ model Feedback {
   @@index([traceId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model UserDismissal {
+  id        String   @id @default(cuid())
+  userId    String
+  itemType  String   // 'suggested_question' | 'focus_area' | 'tip' | etc.
+  itemKey   String   // Content hash or identifier
+  projectId String?  // Optional - scope to project
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, itemKey, projectId])
+  @@index([userId, itemType])
 }

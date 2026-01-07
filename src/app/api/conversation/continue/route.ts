@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ConversationPhase } from '@/lib/types';
+import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 
 export const maxDuration = 60;
 
@@ -348,9 +349,14 @@ Return your assessment:
 }
 
 // Prompt for E2: Emergent questioning (follow the user's thread)
-const EMERGENT_QUESTION_PROMPT = (conversationHistory: string) => `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+const EMERGENT_QUESTION_PROMPT = (conversationHistory: string, projectKnowledge?: string | null) => {
+  const knowledgeSection = projectKnowledge
+    ? `\n## What You Already Know (from previous conversations)\n${projectKnowledge}\n`
+    : '';
 
-Conversation so far:
+  return `You are Luna, a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+${knowledgeSection}
+## Current Conversation
 ${conversationHistory}
 
 Based on the conversation, ask the next natural follow-up question that will help you extract information for:
@@ -358,13 +364,20 @@ Based on the conversation, ask the next natural follow-up question that will hel
 - Enrichment areas (competitive context, customer segments, operational capabilities, technical advantages)
 
 Keep the question warm, conversational, and build naturally on what's been discussed. Focus on areas not yet explored.
+${projectKnowledge ? 'Consider both this conversation AND what you already know from previous sessions.' : ''}
 
 Return only the question, no preamble.`;
+};
 
 // Prompt for E3: Dimension-guided questioning (steer toward gaps)
-const DIMENSION_GUIDED_PROMPT = (conversationHistory: string) => `You are a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+const DIMENSION_GUIDED_PROMPT = (conversationHistory: string, projectKnowledge?: string | null) => {
+  const knowledgeSection = projectKnowledge
+    ? `\n## What You Already Know (from previous conversations)\n${projectKnowledge}\n`
+    : '';
 
-Conversation so far:
+  return `You are Luna, a strategic advisor helping develop a strategic framework for a SaaS/digital business.
+${knowledgeSection}
+## Current Conversation
 ${conversationHistory}
 
 Strategic dimensions to consider (for your awareness only - never mention these explicitly):
@@ -380,12 +393,13 @@ Strategic dimensions to consider (for your awareness only - never mention these 
 10. Risks & Constraints - risks, dependencies, limitations
 11. Strategic Intent - aspirations, goals, direction
 
-Review the conversation and identify which dimensions have been well-covered and which are thin or missing.
+Review the conversation${projectKnowledge ? ' and your prior knowledge' : ''} to identify which dimensions have been well-covered and which are thin or missing.
 
 Ask a warm, conversational follow-up question that naturally explores an under-covered dimension.
 The question should feel like a natural continuation of the conversation, not a checklist item.
 
 Return only the question, no preamble.`;
+};
 
 async function continueQuestioning(
   conversationId: string,
@@ -406,13 +420,18 @@ async function continueQuestioning(
     .map((m: { role: string; content: string }) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
     .join('\n\n');
 
+  // Get project knowledge for context (Luna Remembers)
+  const projectKnowledge = conversation!.projectId
+    ? await getProjectKnowledgeForPrompt(conversation!.projectId)
+    : null;
+
   // Select prompt based on experiment variant
   const experimentVariant = conversation!.experimentVariant;
   const prompt = experimentVariant === 'dimension-guided-e3'
-    ? DIMENSION_GUIDED_PROMPT(conversationHistory)
-    : EMERGENT_QUESTION_PROMPT(conversationHistory);
+    ? DIMENSION_GUIDED_PROMPT(conversationHistory, projectKnowledge)
+    : EMERGENT_QUESTION_PROMPT(conversationHistory, projectKnowledge);
 
-  console.log(`[Continue API] Using ${experimentVariant} questioning approach`);
+  console.log(`[Continue API] Using ${experimentVariant} questioning approach, has project knowledge: ${!!projectKnowledge}`);
 
   const startTime = Date.now();
   const response = await anthropic.messages.create({

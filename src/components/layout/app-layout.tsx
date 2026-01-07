@@ -19,10 +19,10 @@ import {
   CreditCard,
   Bell,
   LogOut,
-  MoreHorizontal,
-  Star,
-  Trash2,
   Plus,
+  FolderKanban,
+  Upload,
+  MessageSquare,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -56,17 +56,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 
-interface SavedStrategy {
+interface Project {
   id: string
-  conversationId: string
-  createdAt: string
-  output: {
-    vision?: string
-    strategy?: string
-  }
-  starred: boolean
-  starredAt: string | null
+  name: string
+  fragmentCount: number
+  conversationCount: number
+  updatedAt: string
 }
 
 export function AppLayout({
@@ -78,13 +76,30 @@ export function AppLayout({
   experimentVariant?: string;
   showVariantBadge?: boolean;
 }) {
+  const { data: session } = useSession()
+  const [projectId, setProjectId] = useState<string | null>(null)
+
+  // Fetch first project for logo link
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/projects')
+        .then(res => res.json())
+        .then(data => {
+          if (data.projects && data.projects.length > 0) {
+            setProjectId(data.projects[0].id)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [session])
+
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar experimentVariant={experimentVariant} showVariantBadge={showVariantBadge} />
       <SidebarInset className="flex flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <Link href="/">
+          <Link href={projectId ? `/project/${projectId}` : '/'}>
             <img
               src="/lunastak-logo.svg"
               alt="Lunastak"
@@ -102,39 +117,28 @@ export function AppLayout({
 
 function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimentVariant?: string; showVariantBadge?: boolean }) {
   const { data: session } = useSession()
-  const [strategies, setStrategies] = useState<SavedStrategy[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false)
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
 
   useEffect(() => {
     if (session?.user?.id) {
-      fetchStrategies()
+      fetchProjects()
     }
   }, [session])
 
-  // Listen for strategy saved events to refresh the list
-  useEffect(() => {
-    const handleStrategySaved = () => {
-      if (session?.user?.id) {
-        fetchStrategies()
-      }
-    }
-
-    window.addEventListener('strategySaved', handleStrategySaved)
-    return () => window.removeEventListener('strategySaved', handleStrategySaved)
-  }, [session?.user?.id])
-
-  const fetchStrategies = async () => {
-    setIsLoading(true)
+  const fetchProjects = async () => {
+    setIsLoadingProjects(true)
     try {
-      const response = await fetch('/api/strategies')
+      const response = await fetch('/api/projects')
       if (response.ok) {
         const data = await response.json()
-        setStrategies(data.strategies)
+        setProjects(data.projects)
       }
     } catch (error) {
-      console.error('Failed to fetch strategies:', error)
+      console.error('Failed to fetch projects:', error)
     } finally {
-      setIsLoading(false)
+      setIsLoadingProjects(false)
     }
   }
 
@@ -153,101 +157,49 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     return session.user?.name || session.user?.email?.split('@')[0] || 'User'
   }
 
-  const toggleStar = async (strategyId: string, currentStarred: boolean) => {
-    // Optimistic update
-    setStrategies(prev =>
-      prev.map(s =>
-        s.id === strategyId
-          ? { ...s, starred: !currentStarred, starredAt: !currentStarred ? new Date().toISOString() : null }
-          : s
-      )
-    )
-
-    try {
-      const response = await fetch(`/api/strategies/${strategyId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ starred: !currentStarred }),
-      })
-
-      if (!response.ok) {
-        // Revert on failure
-        setStrategies(prev =>
-          prev.map(s =>
-            s.id === strategyId
-              ? { ...s, starred: currentStarred, starredAt: s.starredAt }
-              : s
-          )
-        )
-      }
-    } catch (error) {
-      console.error('Failed to toggle star:', error)
-      // Revert on failure
-      setStrategies(prev =>
-        prev.map(s =>
-          s.id === strategyId
-            ? { ...s, starred: currentStarred, starredAt: s.starredAt }
-            : s
-        )
-      )
-    }
-  }
-
-  // Separate starred and unstarred strategies
-  const starredStrategies = strategies.filter(s => s.starred)
-  const unstarredStrategies = strategies.filter(s => !s.starred)
-
-  const renderStrategyItem = (strategy: SavedStrategy) => (
-    <SidebarMenuItem key={strategy.id}>
-      <SidebarMenuButton asChild className="h-auto py-2 pr-8">
-        <Link href={`/strategy/${strategy.id}`}>
-          <div className="flex flex-col items-start gap-0.5 min-w-0">
-            <span className="font-medium text-sm leading-tight line-clamp-2">
-              {strategy.output.vision || 'Untitled Strategy'}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {new Date(strategy.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-        </Link>
-      </SidebarMenuButton>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuAction showOnHover>
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">More options</span>
-          </SidebarMenuAction>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="start">
-          <DropdownMenuItem onClick={() => toggleStar(strategy.id, strategy.starred)}>
-            <Star className={`h-4 w-4 ${strategy.starred ? 'fill-current' : ''}`} />
-            {strategy.starred ? 'Unstar' : 'Star'}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive">
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </SidebarMenuItem>
-  )
+  // Get first project ID for links (temporary until multi-project)
+  const firstProjectId = projects.length > 0 ? projects[0].id : null
 
   return (
     <Sidebar>
       <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
         <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+          href={firstProjectId ? `/project/${firstProjectId}` : '/'}
+          className="flex items-center gap-2"
         >
-          <Plus className="h-4 w-4" />
-          <span>New conversation</span>
+          <img
+            src="/lunastak-logo.svg"
+            alt="Lunastak"
+            className="h-8 w-auto"
+          />
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {/* Group 1: Conversations */}
+        {/* Quick Actions */}
         <SidebarGroup>
-          <SidebarGroupLabel>Conversations</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="flex gap-2 px-2 py-2">
+              <Link
+                href={firstProjectId ? `/?projectId=${firstProjectId}` : '/'}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span>New Chat</span>
+              </Link>
+              <button
+                onClick={() => setUploadDialogOpen(true)}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm border rounded-md hover:bg-accent transition-colors"
+              >
+                <Upload className="h-4 w-4" />
+                <span>Upload</span>
+              </button>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Projects */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             {!session && (
               <div className="px-2 py-2 text-sm text-muted-foreground">
@@ -257,50 +209,44 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                 >
                   Sign in
                 </Link>{' '}
-                to see your recent work
+                to see your projects
               </div>
             )}
-            {session && isLoading && (
+            {session && isLoadingProjects && (
               <div className="px-2 py-2 text-sm text-muted-foreground">
                 Loading...
               </div>
             )}
-            {session && !isLoading && strategies.length === 0 && (
+            {session && !isLoadingProjects && projects.length === 0 && (
               <div className="px-2 py-2 text-sm text-muted-foreground">
-                No saved strategies yet
+                No projects yet
               </div>
             )}
-            {session && !isLoading && strategies.length > 0 && (
-              <>
-                {/* Starred section - only show if there are starred items */}
-                {starredStrategies.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 mt-2 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <Star className="h-3 w-3 fill-current" />
-                      Starred
-                    </div>
-                    <SidebarMenu>
-                      {starredStrategies.map(renderStrategyItem)}
-                    </SidebarMenu>
-                    {unstarredStrategies.length > 0 && (
-                      <div className="px-2 py-1.5 mt-2 text-xs font-medium text-muted-foreground">
-                        Recent
-                      </div>
-                    )}
-                  </>
-                )}
-                {/* Unstarred/Recent section */}
-                {unstarredStrategies.length > 0 && (
-                  <SidebarMenu>
-                    {unstarredStrategies.map(renderStrategyItem)}
-                  </SidebarMenu>
-                )}
-              </>
+            {session && !isLoadingProjects && projects.length > 0 && (
+              <SidebarMenu>
+                {projects.map((project) => (
+                  <SidebarMenuItem key={project.id}>
+                    <SidebarMenuButton asChild className="h-auto py-2">
+                      <Link href={`/project/${project.id}`}>
+                        <FolderKanban className="h-4 w-4" />
+                        <div className="flex flex-col items-start gap-0.5 min-w-0">
+                          <span className="font-medium text-sm leading-tight truncate">
+                            {project.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {project.fragmentCount} fragments, {project.conversationCount} chats
+                          </span>
+                        </div>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
             )}
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Group 2: Your Lunastak */}
+        {/* Your Lunastak */}
         <SidebarGroup>
           <SidebarGroupLabel>Your Lunastak</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -471,6 +417,18 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      {/* Upload Dialog */}
+      {firstProjectId && (
+        <DocumentUploadDialog
+          projectId={firstProjectId}
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          onUploadComplete={() => {
+            // Could refresh project data here if needed
+          }}
+        />
+      )}
     </Sidebar>
   )
 }

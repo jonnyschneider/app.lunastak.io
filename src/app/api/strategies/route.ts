@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
         output: true,
         starred: true,
         starredAt: true,
+        conversation: {
+          select: {
+            title: true,
+          },
+        },
       },
     })
 
@@ -40,6 +45,7 @@ export async function GET(request: NextRequest) {
       strategies: traces.map(t => ({
         id: t.id,
         conversationId: t.conversationId,
+        conversationTitle: t.conversation?.title || null,
         createdAt: t.timestamp,
         output: t.output,
         starred: t.starred,

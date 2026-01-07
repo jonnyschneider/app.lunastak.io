@@ -1,6 +1,6 @@
 {
   "name": "decision-stack-v4",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -20,6 +20,9 @@
     "regen:remote": "tsx scripts/regenerate-remote.ts",
     "linear:issue": "tsx scripts/linear-create-issue.ts",
     "backfill:extraction": "tsx scripts/backfill-extraction.ts",
+    "seed:hydrate": "tsx scripts/seed/hydrate.ts",
+    "seed:export": "tsx scripts/seed/export.ts",
+    "seed:validate": "tsx scripts/seed/validate.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -35,6 +38,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
