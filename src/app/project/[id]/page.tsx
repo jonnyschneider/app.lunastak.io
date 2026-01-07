@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
+import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -148,6 +149,7 @@ export default function ProjectPage() {
   const [showAllInputs, setShowAllInputs] = useState(false)
   const [showAllOutputs, setShowAllOutputs] = useState(false)
   const [showAllDeepDives, setShowAllDeepDives] = useState(false)
+  const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -756,9 +758,7 @@ export default function ProjectPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  // TODO: Open add deep dive dialog
-                }}
+                onClick={() => setAddDeepDiveOpen(true)}
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add Topic
@@ -876,6 +876,14 @@ export default function ProjectPage() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUploadComplete={fetchProjectData}
+      />
+
+      {/* Add Deep Dive Dialog */}
+      <AddDeepDiveDialog
+        projectId={projectId}
+        open={addDeepDiveOpen}
+        onOpenChange={setAddDeepDiveOpen}
+        onCreated={fetchProjectData}
       />
     </AppLayout>
   )
