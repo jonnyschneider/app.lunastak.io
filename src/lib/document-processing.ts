@@ -7,7 +7,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { UnstructuredClient } from 'unstructured-client'
 import { Strategy } from 'unstructured-client/sdk/models/shared'
 import { extractXML } from '@/lib/utils'
@@ -162,12 +162,12 @@ export async function processDocument(
       .replace('{documentContent}', truncatedContent)
       .replace('{uploadContext}', uploadContext || 'No additional context provided')
 
-    const extractionResponse = await anthropic.messages.create({
+    const extractionResponse = await createMessage({
       model: CLAUDE_MODEL,
       max_tokens: 3000,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
-    })
+    }, 'document_extraction')
 
     const extractionContent = extractionResponse.content[0]?.type === 'text'
       ? extractionResponse.content[0].text

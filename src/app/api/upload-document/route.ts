@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { UnstructuredClient } from 'unstructured-client';
 import { Strategy } from 'unstructured-client/sdk/models/shared';
 import { getOrCreateDefaultProject } from '@/lib/projects';
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     console.log('[Upload] Extracted text length:', extractedText.length);
 
     // Generate summary using Claude
-    const summaryResponse = await anthropic.messages.create({
+    const summaryResponse = await createMessage({
       model: CLAUDE_MODEL,
       max_tokens: 200,
       messages: [{
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         content: `Briefly summarize this business document in 1-2 sentences. Focus on what business/product it's about:\n\n${extractedText.slice(0, 4000)}`
       }],
       temperature: 0.7,
-    });
+    }, 'document_summary');
 
     const summary = summaryResponse.content[0]?.type === 'text'
       ? summaryResponse.content[0].text
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
     });
 
     // Generate first context-aware question
-    const firstQuestionResponse = await anthropic.messages.create({
+    const firstQuestionResponse = await createMessage({
       model: CLAUDE_MODEL,
       max_tokens: 200,
       messages: [
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
         }
       ],
       temperature: 0.7,
-    });
+    }, 'document_first_question');
 
     const firstQuestion = firstQuestionResponse.content[0]?.type === 'text'
       ? firstQuestionResponse.content[0].text

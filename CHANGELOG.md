@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Universal Claude Truncation Detection** - All Claude API calls now use `createMessage()` wrapper
+  - Automatic warning logs when responses hit `max_tokens` limit
+  - Enforcement test prevents bypassing wrapper (`claude-wrapper.test.ts`)
+  - Documented in `docs/ARCHITECTURE.md`
+
+- **Contextual Gap Questions** - "Worth Exploring" items now show meaningful questions
+  - Questions reference what Luna already knows about the business
+  - Generated during `generateKnowledgeSummary` from full project context
+  - Stored in `DimensionalSynthesis.gaps` for dimensions without fragments
+
+### Fixed
+- **Guest-to-Auth Project Merge** - Fixed duplicate project issue during authentication
+  - Previously: guest + existing user projects both transferred → 2 projects
+  - Now: guest project data merged into existing project, "Guest Strategy" deleted
+  - Prevents confusing "Guest Strategy" + "My Strategy" scenario
+
 ---
 ## [1.5.0] - 2026-01-07
 

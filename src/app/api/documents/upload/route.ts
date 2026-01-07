@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { processDocument } from '@/lib/document-processing'
 
-export const maxDuration = 60
+export const maxDuration = 300 // 5 minutes for Pro plan
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = [

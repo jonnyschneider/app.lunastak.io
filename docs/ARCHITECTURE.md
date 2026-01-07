@@ -818,6 +818,52 @@ Schema changes should be intentional and well-considered, not casual.
 
 ---
 
+## Claude API Usage
+
+### IMPORTANT: Use createMessage() Wrapper
+
+**All Claude API calls MUST go through the `createMessage()` wrapper in `src/lib/claude.ts`.**
+
+```typescript
+// ✅ CORRECT - Use the wrapper
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+
+const response = await createMessage({
+  model: CLAUDE_MODEL,
+  max_tokens: 1000,
+  messages: [{ role: 'user', content: prompt }],
+  temperature: 0.7
+}, 'your_context_label');
+
+// ❌ WRONG - Direct anthropic.messages.create
+const response = await anthropic.messages.create({ ... });
+```
+
+### Why This Matters
+
+The wrapper provides:
+1. **Automatic truncation detection** - Logs warning when `stop_reason === 'max_tokens'`
+2. **Consistent logging** - Context labels help debug which call was truncated
+3. **Single point of control** - Easy to add retry logic, metrics, etc.
+
+### Context Labels
+
+Each call should include a descriptive context label for debugging:
+- `extraction` - Theme extraction from conversation
+- `reflective_summary_emergent` / `reflective_summary_prescriptive` - Summary generation
+- `strategy_generation` - Vision/Strategy/Objectives generation
+- `conversation_start` - First question generation
+- `continue_questioning` - Follow-up questions
+- `confidence_assessment` - Readiness evaluation
+
+### Enforcement
+
+A test in `src/lib/__tests__/claude-wrapper.test.ts` scans the codebase to ensure:
+- Only `src/lib/claude.ts` contains `anthropic.messages.create`
+- All other files use `createMessage()` instead
+
+---
+
 ## Notes
 
 - This architecture is designed for Phase 0

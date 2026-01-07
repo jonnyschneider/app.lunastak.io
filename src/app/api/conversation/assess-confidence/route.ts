@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ConfidenceLevel } from '@/lib/types';
 
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
 
     // Assess confidence
     const startTime = Date.now();
-    const response = await anthropic.messages.create({
+    const response = await createMessage({
       model: CLAUDE_MODEL,
       max_tokens: 300,
       messages: [{
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
         content: assessmentPrompt
       }],
       temperature: 0.3
-    });
+    }, 'confidence_assessment');
     const latency = Date.now() - startTime;
 
     const content = response.content[0]?.type === 'text' ? response.content[0].text : '';

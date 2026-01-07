@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
@@ -9,7 +9,7 @@ import { updateAllSyntheses } from '@/lib/synthesis';
 import { logStatsigEvent } from '@/lib/statsig';
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary';
 
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 minutes for Pro plan
 
 // Progress step type for streaming updates
 type ProgressStep =
@@ -227,7 +227,7 @@ export async function POST(req: Request) {
           ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
           : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
 
-        const extractionResponse = await anthropic.messages.create({
+        const extractionResponse = await createMessage({
           model: CLAUDE_MODEL,
           max_tokens: 2000, // Increased for inline dimensions
           messages: [{
@@ -235,7 +235,7 @@ export async function POST(req: Request) {
             content: extractionPrompt
           }],
           temperature: 0.3
-        });
+        }, 'extraction');
 
         const extractionContent = extractionResponse.content[0]?.type === 'text'
           ? extractionResponse.content[0].text : '';
@@ -256,19 +256,31 @@ export async function POST(req: Request) {
           // Generate reflective summary (only 1 Claude call now)
           sendProgress({ step: 'generating_summary' });
 
-          const summaryResponse = await anthropic.messages.create({
+          const summaryResponse = await createMessage({
             model: CLAUDE_MODEL,
-            max_tokens: 600,
+            max_tokens: 2000,
             messages: [{
               role: 'user',
               content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
             }],
             temperature: 0.5
-          });
+          }, 'reflective_summary_emergent');
 
           const summaryContent = summaryResponse.content[0]?.type === 'text'
             ? summaryResponse.content[0].text : '';
+
+          // Note: truncation is now automatically detected and logged by createMessage()
+          const wasTerminatedNormally = summaryResponse.stop_reason === 'end_turn';
+          if (!wasTerminatedNormally) {
+            console.warn('[Extract] Summary response may be truncated, stop_reason:', summaryResponse.stop_reason);
+          }
+
           const summaryXML = extractXML(summaryContent, 'summary');
+
+          // Debug logging for reflective summary parsing
+          console.log('[Extract] Summary response length:', summaryContent.length);
+          console.log('[Extract] Summary stop_reason:', summaryResponse.stop_reason);
+          console.log('[Extract] Summary XML extracted:', summaryXML ? 'OK' : 'EMPTY');
 
           const conversationTitle = extractXML(summaryXML, 'title') || undefined;
           const reflective_summary = {
@@ -277,6 +289,13 @@ export async function POST(req: Request) {
             opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
             thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
           };
+
+          console.log('[Extract] Reflective summary parsed:', {
+            strengthsCount: reflective_summary.strengths.length,
+            emergingCount: reflective_summary.emerging.length,
+            opportunitiesCount: reflective_summary.opportunities_for_enrichment.length,
+            hasThoughtPrompt: !!reflective_summary.thought_prompt,
+          });
 
           // Save title to conversation
           if (conversationTitle) {
@@ -320,19 +339,30 @@ export async function POST(req: Request) {
           // Generate reflective summary
           sendProgress({ step: 'generating_summary' });
 
-          const summaryResponse = await anthropic.messages.create({
+          const summaryResponse = await createMessage({
             model: CLAUDE_MODEL,
-            max_tokens: 600,
+            max_tokens: 2000,
             messages: [{
               role: 'user',
               content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
             }],
             temperature: 0.5
-          });
+          }, 'reflective_summary_prescriptive');
 
           const summaryContent = summaryResponse.content[0]?.type === 'text'
             ? summaryResponse.content[0].text : '';
+
+          // Note: truncation is now automatically detected and logged by createMessage()
+          if (summaryResponse.stop_reason !== 'end_turn') {
+            console.warn('[Extract] Prescriptive - Summary may be truncated, stop_reason:', summaryResponse.stop_reason);
+          }
+
           const summaryXML = extractXML(summaryContent, 'summary');
+
+          // Debug logging for reflective summary parsing (prescriptive path)
+          console.log('[Extract] Prescriptive - Summary response length:', summaryContent.length);
+          console.log('[Extract] Prescriptive - Summary stop_reason:', summaryResponse.stop_reason);
+          console.log('[Extract] Prescriptive - Summary XML extracted:', summaryXML ? 'OK' : 'EMPTY');
 
           const conversationTitleBaseline = extractXML(summaryXML, 'title') || undefined;
           const reflective_summary = {

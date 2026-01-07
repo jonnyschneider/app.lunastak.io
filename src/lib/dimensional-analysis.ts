@@ -1,4 +1,4 @@
-import { anthropic, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import {
   EmergentExtractedContext,
   DimensionalCoverage,
@@ -101,12 +101,12 @@ export async function analyzeDimensionalCoverage(
   );
 
   // Call Claude to map themes to dimensions
-  const response = await anthropic.messages.create({
+  const response = await createMessage({
     model: CLAUDE_MODEL,
     max_tokens: 1500,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.2, // Lower temp for consistent tagging
-  });
+  }, 'dimensional_analysis');
 
   const content = response.content[0]?.type === 'text'
     ? response.content[0].text
