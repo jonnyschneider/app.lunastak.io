@@ -16,6 +16,7 @@ import { EntryPointSelector } from '@/components/EntryPointSelector';
 import { FakeDoorDialog } from '@/components/FakeDoorDialog';
 import { ExtractionProgress, ExtractionStep } from '@/components/ExtractionProgress';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
+import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog';
 
 type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
@@ -53,12 +54,43 @@ export default function Home() {
   const [earlyExitOffered, setEarlyExitOffered] = useState(false);
   const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null);
 
+  // Deep dive deferral state
+  const [userProjectId, setUserProjectId] = useState<string | null>(null);
+  const [deepDiveDialogOpen, setDeepDiveDialogOpen] = useState(false);
+  const [deferralTopic, setDeferralTopic] = useState('');
+  const [deferralMessageId, setDeferralMessageId] = useState<string | undefined>();
+
   // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
     if (flowStep === 'strategy' && !session) {
       setShowRegistrationBanner(true);
     }
   }, [flowStep, session]);
+
+  // Fetch user's project ID for deep dive deferral
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/project')
+        .then(res => res.json())
+        .then(data => {
+          if (data.projects && data.projects.length > 0) {
+            setUserProjectId(data.projects[0].id);
+          }
+        })
+        .catch(err => console.error('Failed to fetch projects:', err));
+    }
+  }, [session]);
+
+  // Handle suggested question from URL param (from project page)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const questionParam = params.get('question');
+
+    if (questionParam && !conversationId) {
+      // Auto-start conversation with the suggested question
+      startConversationWithQuestion(questionParam);
+    }
+  }, []);
 
   // DEV: Load stub data from URL param to skip conversation flow
   useEffect(() => {
@@ -268,6 +300,10 @@ export default function Home() {
   };
 
   const startConversation = async () => {
+    return startConversationWithQuestion();
+  };
+
+  const startConversationWithQuestion = async (suggestedQuestion?: string) => {
     setIsLoading(true);
     try {
       // Check for variant override in URL query params
@@ -278,7 +314,8 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(variantOverride && { variantOverride })
+          ...(variantOverride && { variantOverride }),
+          ...(suggestedQuestion && { suggestedQuestion }),
         }),
       });
 
@@ -538,6 +575,16 @@ export default function Home() {
     }
   };
 
+  // Handle deferral to deep dive
+  const handleDeferToDeepDive = (messageContent: string, messageId: string) => {
+    // Create a topic from the message content (first 100 chars or until first newline)
+    const firstLine = messageContent.split('\n')[0];
+    const topic = firstLine.length > 100 ? firstLine.slice(0, 100) + '...' : firstLine;
+    setDeferralTopic(topic);
+    setDeferralMessageId(messageId);
+    setDeepDiveDialogOpen(true);
+  };
+
   // Show variant badge during active conversation flow (for UAT/testing)
   const showVariantBadge = ['chat', 'extracting', 'extraction'].includes(flowStep);
 
@@ -584,6 +631,7 @@ export default function Home() {
                 onUserResponse={handleUserResponse}
                 onEntryPointSelect={handleEntryPointSelect}
                 onGenerateStrategy={extractContext}
+                onDeferToDeepDive={userProjectId ? handleDeferToDeepDive : undefined}
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}
@@ -642,6 +690,22 @@ export default function Home() {
               featureName={fakeDoorFeature.name}
               description={fakeDoorFeature.description}
               onInterest={handleFakeDoorInterest}
+            />
+          )}
+
+          {/* Deep Dive Deferral Dialog */}
+          {userProjectId && (
+            <AddDeepDiveDialog
+              projectId={userProjectId}
+              open={deepDiveDialogOpen}
+              onOpenChange={setDeepDiveDialogOpen}
+              onCreated={() => {
+                // Could show a toast or notification here
+                console.log('Deep dive created from deferral');
+              }}
+              initialTopic={deferralTopic}
+              origin="message"
+              sourceMessageId={deferralMessageId}
             />
           )}
         </div>

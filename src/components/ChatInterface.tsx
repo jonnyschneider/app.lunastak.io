@@ -10,9 +10,16 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Kbd } from '@/components/ui/kbd';
 import { Button } from '@/components/ui/button';
 import { EntryPointSelector } from '@/components/EntryPointSelector';
+import { MoreHorizontal, Crosshair } from 'lucide-react';
 
 type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 
@@ -22,6 +29,7 @@ interface ChatInterfaceProps {
   onUserResponse: (response: string) => void;
   onEntryPointSelect?: (option: EntryPoint) => void;
   onGenerateStrategy?: () => void;
+  onDeferToDeepDive?: (messageContent: string, messageId: string) => void;
   isLoading: boolean;
   isComplete: boolean;
   currentPhase: ConversationPhase;
@@ -36,6 +44,7 @@ export default function ChatInterface({
   onUserResponse,
   onEntryPointSelect,
   onGenerateStrategy,
+  onDeferToDeepDive,
   isLoading,
   isComplete,
   currentPhase,
@@ -77,7 +86,7 @@ export default function ChatInterface({
         {messages.map((message) => (
           <div key={message.id}>
             <div
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} group`}
             >
               <div
                 className={`max-w-[80%] rounded-lg p-4 ${
@@ -88,6 +97,26 @@ export default function ChatInterface({
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
               </div>
+              {/* Context menu for assistant messages */}
+              {message.role === 'assistant' && onDeferToDeepDive && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 self-start mt-1">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1 rounded hover:bg-muted">
+                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem
+                        onClick={() => onDeferToDeepDive(message.content, message.id)}
+                      >
+                        <Crosshair className="h-4 w-4 mr-2" />
+                        Defer to Deep Dive
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </div>
 
             {/* Entry point options link - only show before user has responded */}
