@@ -111,6 +111,23 @@ export default function Home() {
     }
   }, []);
 
+  // Auto-start conversation for authenticated users with projectId param
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) return;
+    if (conversationId) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const projectIdParam = params.get('projectId');
+    const questionParam = params.get('question');
+    const deepDiveParam = params.get('deepDiveId');
+
+    // Only auto-start if projectId is the only param (no question/deepDive which are handled above)
+    if (projectIdParam && !questionParam && !deepDiveParam) {
+      startConversationWithQuestion();
+    }
+  }, [session, status, conversationId]);
+
   // DEV: Load stub data from URL param to skip conversation flow
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
