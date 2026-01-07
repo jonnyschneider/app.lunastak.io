@@ -434,13 +434,15 @@ export async function POST(req: Request) {
               );
               console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
 
-              // Trigger synthesis update, then knowledge summary (async, don't block response)
-              // IMPORTANT: Knowledge summary must run AFTER synthesis so fragmentCount is accurate
-              updateAllSyntheses(projectId)
-                .then(() => generateKnowledgeSummary(projectId))
-                .catch(error => {
-                  console.error('[Extract] Failed to update syntheses or generate knowledge summary:', error);
-                });
+              // Trigger synthesis update, then knowledge summary
+              // IMPORTANT: Must await - Vercel terminates after stream closes
+              // Knowledge summary must run AFTER synthesis so fragmentCount is accurate
+              try {
+                await updateAllSyntheses(projectId);
+                await generateKnowledgeSummary(projectId);
+              } catch (error) {
+                console.error('[Extract] Failed to update syntheses or generate knowledge summary:', error);
+              }
             } catch (error) {
               // Log but don't fail extraction if fragment creation fails
               console.error('[Extract] Failed to create fragments:', error);
