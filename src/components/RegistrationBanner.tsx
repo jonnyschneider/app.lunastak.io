@@ -51,10 +51,10 @@ export function RegistrationBanner({ guestUserId, onDismiss }: RegistrationBanne
       <div className="flex items-start">
         <div className="flex-1">
           <h3 className="text-sm font-medium text-foreground">
-            Save your strategy
+            Save your strategy and unlock deeper insights
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Enter your email to save this strategy and access it anytime.
+            Create a free account to save this work, upload documents, and continue refining your strategy with Luna.
           </p>
           {error && (
             <p className="mt-2 text-sm text-destructive">{error}</p>

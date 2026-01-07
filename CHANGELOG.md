@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+## [1.5.1] - 2026-01-07
+
 ### Added
 - **Universal Claude Truncation Detection** - All Claude API calls now use `createMessage()` wrapper
   - Automatic warning logs when responses hit `max_tokens` limit
@@ -18,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Generated during `generateKnowledgeSummary` from full project context
   - Stored in `DimensionalSynthesis.gaps` for dimensions without fragments
 
+- **Sign-In Gate for Premium Features** - Document upload and canvas gated behind auth
+  - `SignInGateDialog` component prompts sign-in for gated features
+  - Lock icon indicator on gated entry point cards
+  - Guided Conversation remains available for guests
+
 ### Fixed
 - **Guest-to-Auth Project Merge** - Fixed duplicate project issue during authentication
   - Previously: guest + existing user projects both transferred → 2 projects
@@ -28,6 +36,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both synthesis and knowledge summary were triggered in parallel after extraction
   - Knowledge summary now runs AFTER synthesis completes (sequential, not parallel)
   - Ensures `fragmentCount` is accurate when generating dimension-specific gap questions
+
+- **Fire-and-Forget Serverless Issue** - Fixed background tasks not completing on Vercel
+  - Document uploads stuck in "processing" - now awaits `processDocument()`
+  - Extraction synthesis not completing - now awaits `updateAllSyntheses()`
+  - All async operations properly awaited before response completes
+
+- **Slow Extraction Performance** - Parallelized dimension syntheses
+  - Dimension syntheses now run in parallel (was sequential)
+  - Knowledge summary still runs after all syntheses complete
+
+- **Jarring Page Reloads** - Smoother UX after authentication
+  - Disabled NextAuth `refetchOnWindowFocus` to prevent reload on tab switch
+  - Session transfer uses `router.refresh()` instead of `window.location.reload()`
+
+### Removed
+- **Deprecated Document Upload Flow** - Removed old home page document upload
+  - Deleted `/api/upload-document` route (used wrong pipeline)
+  - Deleted `DocumentUpload.tsx` and `DocumentSummary.tsx` components
+  - Authenticated users should use project dashboard for document upload
 
 ---
 ## [1.5.0] - 2026-01-07

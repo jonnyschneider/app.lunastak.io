@@ -8,9 +8,10 @@ type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 interface IntroCardProps {
   onEntryPointSelect: (option: EntryPoint) => void;
   isLoading?: boolean;
+  isAuthenticated?: boolean;
 }
 
-export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardProps) {
+export function IntroCard({ onEntryPointSelect, isLoading = false, isAuthenticated = false }: IntroCardProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full max-w-4xl mx-auto">
@@ -50,7 +51,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
 
         {/* Entry point options */}
         <div className="pt-4">
-          <EntryPointSelector onSelect={onEntryPointSelect} />
+          <EntryPointSelector onSelect={onEntryPointSelect} isAuthenticated={isAuthenticated} />
         </div>
       </div>
     </div>
