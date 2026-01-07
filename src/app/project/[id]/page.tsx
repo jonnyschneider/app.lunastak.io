@@ -28,6 +28,7 @@ import {
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
+import { DeepDiveSheet } from '@/components/deep-dive-sheet'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -150,6 +151,8 @@ export default function ProjectPage() {
   const [showAllOutputs, setShowAllOutputs] = useState(false)
   const [showAllDeepDives, setShowAllDeepDives] = useState(false)
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
+  const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
+  const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -225,6 +228,22 @@ export default function ProjectPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Deep dive handlers
+  const openDeepDiveSheet = (id: string) => {
+    setSelectedDeepDiveId(id)
+    setDeepDiveSheetOpen(true)
+  }
+
+  const handleStartDeepDiveChat = (deepDiveId: string) => {
+    router.push(`/?deepDiveId=${deepDiveId}`)
+  }
+
+  const handleUploadToDeepDive = (deepDiveId: string) => {
+    // Close sheet and open upload dialog
+    setDeepDiveSheetOpen(false)
+    setUploadDialogOpen(true)
   }
 
   if (status === 'loading' || isLoading) {
@@ -829,9 +848,7 @@ export default function ProjectPage() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem
-                                    onClick={() => {
-                                      // TODO: Open deep dive sheet
-                                    }}
+                                    onClick={() => openDeepDiveSheet(dd.id)}
                                   >
                                     View details
                                   </DropdownMenuItem>
@@ -884,6 +901,16 @@ export default function ProjectPage() {
         open={addDeepDiveOpen}
         onOpenChange={setAddDeepDiveOpen}
         onCreated={fetchProjectData}
+      />
+
+      {/* Deep Dive Sheet */}
+      <DeepDiveSheet
+        deepDiveId={selectedDeepDiveId}
+        open={deepDiveSheetOpen}
+        onOpenChange={setDeepDiveSheetOpen}
+        onResolve={fetchProjectData}
+        onStartChat={handleStartDeepDiveChat}
+        onUploadDoc={handleUploadToDeepDive}
       />
     </AppLayout>
   )
