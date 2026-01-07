@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.5.2] - 2026-01-07
+
+### Added
+- **Project Empty State** - Focused "Get Started" view for empty projects
+  - Two CTAs: "Start a Conversation" and "Upload a Document"
+  - Shown when project has no fragments AND no conversations
+  - CTA also added to empty "What Luna Knows" section
+
+### Changed
+- **Homepage Cleanup** - Simplified for guest-only flow
+  - Removed `isAuthenticated` prop from `EntryPointSelector` and `IntroCard`
+  - Gated features now always show lock icon (guests see sign-in gate)
+  - Authenticated users auto-redirected to Project view
+
+### Fixed
+- **New Chat Navigation** - Authed users now go straight to conversation
+  - Previously showed IntroCard entry point selector
+  - Now auto-starts conversation when clicking "New Chat" from project
+- **Long Filename Overflow** - Fixed document upload dialog overflow
+  - Added proper overflow handling to truncate long filenames
+
+---
 ## [1.5.1] - 2026-01-07
 
 ### Added
