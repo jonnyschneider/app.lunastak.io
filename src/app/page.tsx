@@ -607,7 +607,6 @@ export default function Home() {
             <IntroCard
               onEntryPointSelect={handleEntryPointSelect}
               isLoading={isLoading}
-              isAuthenticated={!!session}
             />
           )}
 
