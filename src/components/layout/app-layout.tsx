@@ -76,13 +76,30 @@ export function AppLayout({
   experimentVariant?: string;
   showVariantBadge?: boolean;
 }) {
+  const { data: session } = useSession()
+  const [projectId, setProjectId] = useState<string | null>(null)
+
+  // Fetch first project for logo link
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/projects')
+        .then(res => res.json())
+        .then(data => {
+          if (data.projects && data.projects.length > 0) {
+            setProjectId(data.projects[0].id)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [session])
+
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar experimentVariant={experimentVariant} showVariantBadge={showVariantBadge} />
       <SidebarInset className="flex flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <Link href="/">
+          <Link href={projectId ? `/project/${projectId}` : '/'}>
             <img
               src="/lunastak-logo.svg"
               alt="Lunastak"
@@ -146,7 +163,10 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   return (
     <Sidebar>
       <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
-        <Link href="/" className="flex items-center gap-2">
+        <Link
+          href={firstProjectId ? `/project/${firstProjectId}` : '/'}
+          className="flex items-center gap-2"
+        >
           <img
             src="/lunastak-logo.svg"
             alt="Lunastak"
