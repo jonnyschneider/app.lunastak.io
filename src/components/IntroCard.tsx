@@ -8,10 +8,9 @@ type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 interface IntroCardProps {
   onEntryPointSelect: (option: EntryPoint) => void;
   isLoading?: boolean;
-  isAuthenticated?: boolean;
 }
 
-export function IntroCard({ onEntryPointSelect, isLoading = false, isAuthenticated = false }: IntroCardProps) {
+export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full max-w-4xl mx-auto">
@@ -38,7 +37,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false, isAuthenticat
               Let&apos;s clarify your strategy
             </h1>
             <p className="text-muted-foreground max-w-md">
-              &#128075; I'm Luna, the green blob. I don't look very smart, but I ask great questions (and, I'm a really good listener). 
+              &#128075; I'm Luna, the green blob. I don't look very smart, but I ask great questions (and, I'm a really good listener).
             </p>
           </div>
           <Image
@@ -51,7 +50,7 @@ export function IntroCard({ onEntryPointSelect, isLoading = false, isAuthenticat
 
         {/* Entry point options */}
         <div className="pt-4">
-          <EntryPointSelector onSelect={onEntryPointSelect} isAuthenticated={isAuthenticated} />
+          <EntryPointSelector onSelect={onEntryPointSelect} />
         </div>
       </div>
     </div>
