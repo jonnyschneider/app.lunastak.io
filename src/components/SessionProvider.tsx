@@ -11,5 +11,13 @@ export function SessionProvider({
   children: ReactNode
   session: Session | null
 }) {
-  return <NextAuthSessionProvider session={session}>{children}</NextAuthSessionProvider>
+  return (
+    <NextAuthSessionProvider
+      session={session}
+      // Disable automatic refetch on window focus - causes jarring reloads
+      refetchOnWindowFocus={false}
+    >
+      {children}
+    </NextAuthSessionProvider>
+  )
 }

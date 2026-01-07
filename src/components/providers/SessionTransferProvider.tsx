@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 /**
  * Global provider that handles transferring guest sessions to authenticated users.
@@ -9,6 +10,7 @@ import { useSession } from 'next-auth/react'
  */
 export function SessionTransferProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
+  const router = useRouter()
   const hasTransferred = useRef(false)
 
   useEffect(() => {
@@ -36,12 +38,12 @@ export function SessionTransferProvider({ children }: { children: React.ReactNod
           console.log('[SessionTransfer] Session transferred successfully')
           localStorage.removeItem('guestUserId')
 
-          // Notify sidebar to refresh strategies list
+          // Notify components to refresh their data (softer than full reload)
           window.dispatchEvent(new Event('strategySaved'))
 
-          // Force a page refresh to ensure all UI is updated with new ownership
-          // This is a bit heavy-handed but ensures consistency
-          window.location.reload()
+          // Use router.refresh() for soft refresh - re-runs server components
+          // without full page reload. Much less jarring than window.location.reload()
+          router.refresh()
         } else {
           console.error('[SessionTransfer] Transfer failed:', await response.text())
           hasTransferred.current = false // Allow retry
@@ -53,7 +55,7 @@ export function SessionTransferProvider({ children }: { children: React.ReactNod
     }
 
     transferSession()
-  }, [session, status])
+  }, [session, status, router])
 
   return <>{children}</>
 }
