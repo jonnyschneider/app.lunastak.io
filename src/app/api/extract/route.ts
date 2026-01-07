@@ -424,24 +424,23 @@ export async function POST(req: Request) {
 
           // Create fragments from themes with inline dimension tags
           if (conversation.projectId) {
+            const projectId = conversation.projectId; // Capture for async callback
             try {
               // themes already have dimensions from parseEmergentThemes
               const fragments = await createFragmentsFromThemes(
-                conversation.projectId,
+                projectId,
                 conversationId,
                 extractedContext.themes as ThemeWithDimensions[]
               );
               console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
 
-              // Trigger synthesis update (async, don't block response)
-              updateAllSyntheses(conversation.projectId).catch(error => {
-                console.error('[Extract] Failed to update syntheses:', error);
-              });
-
-              // Trigger knowledge summary generation (async, don't block response)
-              generateKnowledgeSummary(conversation.projectId).catch(error => {
-                console.error('[Extract] Failed to generate knowledge summary:', error);
-              });
+              // Trigger synthesis update, then knowledge summary (async, don't block response)
+              // IMPORTANT: Knowledge summary must run AFTER synthesis so fragmentCount is accurate
+              updateAllSyntheses(projectId)
+                .then(() => generateKnowledgeSummary(projectId))
+                .catch(error => {
+                  console.error('[Extract] Failed to update syntheses or generate knowledge summary:', error);
+                });
             } catch (error) {
               // Log but don't fail extraction if fragment creation fails
               console.error('[Extract] Failed to create fragments:', error);

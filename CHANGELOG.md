@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Now: guest project data merged into existing project, "Guest Strategy" deleted
   - Prevents confusing "Guest Strategy" + "My Strategy" scenario
 
+- **Knowledge Summary Race Condition** - Fixed missing gaps and "What Luna knows" summary
+  - Both synthesis and knowledge summary were triggered in parallel after extraction
+  - Knowledge summary now runs AFTER synthesis completes (sequential, not parallel)
+  - Ensures `fragmentCount` is accurate when generating dimension-specific gap questions
+
 ---
 ## [1.5.0] - 2026-01-07
 
