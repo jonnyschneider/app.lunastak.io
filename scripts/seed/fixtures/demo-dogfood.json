@@ -729,7 +729,20 @@
           ]
         }
       ],
-      "deepDives": [],
+      "deepDives": [
+        {
+          "id": "{{DD_0_ID}}",
+          "topic": "What's our best GTM motion today?",
+          "status": "active",
+          "origin": "manual"
+        },
+        {
+          "id": "{{DD_1_ID}}",
+          "topic": "If we're successful, how would we defend advantage?",
+          "status": "active",
+          "origin": "manual"
+        }
+      ],
       "documents": [
         {
           "id": "{{DOC_ID}}",
