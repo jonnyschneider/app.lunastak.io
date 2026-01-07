@@ -81,14 +81,18 @@ export default function Home() {
     }
   }, [session]);
 
-  // Handle suggested question from URL param (from project page)
+  // Handle suggested question or deep dive from URL param (from project page)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const questionParam = params.get('question');
+    const deepDiveParam = params.get('deepDiveId');
 
     if (questionParam && !conversationId) {
       // Auto-start conversation with the suggested question
       startConversationWithQuestion(questionParam);
+    } else if (deepDiveParam && !conversationId) {
+      // Auto-start conversation within a deep dive
+      startConversationWithDeepDive(deepDiveParam);
     }
   }, []);
 
@@ -301,6 +305,51 @@ export default function Home() {
 
   const startConversation = async () => {
     return startConversationWithQuestion();
+  };
+
+  const startConversationWithDeepDive = async (deepDiveId: string) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const variantOverride = params.get('variant');
+
+      const response = await fetch('/api/conversation/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(variantOverride && { variantOverride }),
+          deepDiveId,
+        }),
+      });
+
+      const data = await response.json();
+      setConversationId(data.conversationId);
+      setExperimentVariant(data.experimentVariant || 'baseline-v1');
+
+      if (data.guestUserId) {
+        setGuestUserId(data.guestUserId);
+        localStorage.setItem('guestUserId', data.guestUserId);
+      }
+
+      setMessages([{
+        id: `msg_${Date.now()}`,
+        conversationId: data.conversationId,
+        role: 'assistant',
+        content: data.message,
+        stepNumber: 1,
+        timestamp: new Date(),
+      }]);
+
+      setShowIntro(false);
+      setFlowStep('chat');
+
+      return data.conversationId;
+    } catch (error) {
+      console.error('Failed to start deep dive conversation:', error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const startConversationWithQuestion = async (suggestedQuestion?: string) => {
