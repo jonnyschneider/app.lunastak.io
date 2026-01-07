@@ -82,17 +82,25 @@ export async function POST(request: Request) {
     // Get file content as buffer for processing
     const fileBuffer = Buffer.from(await file.arrayBuffer())
 
-    // Kick off async processing (don't await - let it run in background)
-    processDocument(document.id, fileBuffer, fileType, uploadContext || undefined).catch(
-      (error) => {
-        console.error('[Upload] Document processing failed:', error)
-      }
-    )
+    // Process document synchronously - Vercel serverless terminates after response
+    // so we must await or use waitUntil (which isn't available in all contexts)
+    try {
+      await processDocument(document.id, fileBuffer, fileType, uploadContext || undefined)
+    } catch (error) {
+      console.error('[Upload] Document processing failed:', error)
+      // Don't throw - document status is already set to 'failed' by processDocument
+    }
 
-    return NextResponse.json({
+    // Re-fetch document to get updated status
+    const updatedDoc = await prisma.document.findUnique({
+      where: { id: document.id },
+      select: { id: true, fileName: true, status: true }
+    })
+
+    return NextResponse.json(updatedDoc || {
       id: document.id,
       fileName: document.fileName,
-      status: document.status,
+      status: 'failed',
     })
   } catch (error) {
     console.error('Upload error:', error)
