@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import ChatInterface from '@/components/ChatInterface';
 import ExtractionConfirm from '@/components/ExtractionConfirm';
 import StrategyDisplay from '@/components/StrategyDisplay';
@@ -16,11 +17,13 @@ import { EntryPointSelector } from '@/components/EntryPointSelector';
 import { FakeDoorDialog } from '@/components/FakeDoorDialog';
 import { ExtractionProgress, ExtractionStep } from '@/components/ExtractionProgress';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
+import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog';
 
 type FlowStep = 'intro' | 'upload' | 'document-summary' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -53,12 +56,69 @@ export default function Home() {
   const [earlyExitOffered, setEarlyExitOffered] = useState(false);
   const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null);
 
+  // Deep dive deferral state
+  const [userProjectId, setUserProjectId] = useState<string | null>(null);
+  const [deepDiveDialogOpen, setDeepDiveDialogOpen] = useState(false);
+  const [deferralTopic, setDeferralTopic] = useState('');
+  const [deferralMessageId, setDeferralMessageId] = useState<string | undefined>();
+
+  // Redirect authenticated users to their project dashboard (unless they have URL params)
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) return;
+
+    // Don't redirect if URL has params indicating intentional navigation
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('question') || params.get('deepDiveId') || params.get('projectId')) {
+      return;
+    }
+
+    // Fetch projects and redirect to first one
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(data => {
+        if (data.projects && data.projects.length > 0) {
+          router.replace(`/project/${data.projects[0].id}`);
+        }
+      })
+      .catch(err => console.error('Failed to fetch projects for redirect:', err));
+  }, [session, status, router]);
+
   // Show registration banner when strategy is displayed and user is not authenticated
   useEffect(() => {
     if (flowStep === 'strategy' && !session) {
       setShowRegistrationBanner(true);
     }
   }, [flowStep, session]);
+
+  // Fetch user's project ID for deep dive deferral
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/projects')
+        .then(res => res.json())
+        .then(data => {
+          if (data.projects && data.projects.length > 0) {
+            setUserProjectId(data.projects[0].id);
+          }
+        })
+        .catch(err => console.error('Failed to fetch projects:', err));
+    }
+  }, [session]);
+
+  // Handle suggested question or deep dive from URL param (from project page)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const questionParam = params.get('question');
+    const deepDiveParam = params.get('deepDiveId');
+
+    if (questionParam && !conversationId) {
+      // Auto-start conversation with the suggested question
+      startConversationWithQuestion(questionParam);
+    } else if (deepDiveParam && !conversationId) {
+      // Auto-start conversation within a deep dive
+      startConversationWithDeepDive(deepDiveParam);
+    }
+  }, []);
 
   // DEV: Load stub data from URL param to skip conversation flow
   useEffect(() => {
@@ -268,6 +328,55 @@ export default function Home() {
   };
 
   const startConversation = async () => {
+    return startConversationWithQuestion();
+  };
+
+  const startConversationWithDeepDive = async (deepDiveId: string) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const variantOverride = params.get('variant');
+
+      const response = await fetch('/api/conversation/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(variantOverride && { variantOverride }),
+          deepDiveId,
+        }),
+      });
+
+      const data = await response.json();
+      setConversationId(data.conversationId);
+      setExperimentVariant(data.experimentVariant || 'baseline-v1');
+
+      if (data.guestUserId) {
+        setGuestUserId(data.guestUserId);
+        localStorage.setItem('guestUserId', data.guestUserId);
+      }
+
+      setMessages([{
+        id: `msg_${Date.now()}`,
+        conversationId: data.conversationId,
+        role: 'assistant',
+        content: data.message,
+        stepNumber: 1,
+        timestamp: new Date(),
+      }]);
+
+      setShowIntro(false);
+      setFlowStep('chat');
+
+      return data.conversationId;
+    } catch (error) {
+      console.error('Failed to start deep dive conversation:', error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startConversationWithQuestion = async (suggestedQuestion?: string) => {
     setIsLoading(true);
     try {
       // Check for variant override in URL query params
@@ -278,7 +387,8 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(variantOverride && { variantOverride })
+          ...(variantOverride && { variantOverride }),
+          ...(suggestedQuestion && { suggestedQuestion }),
         }),
       });
 
@@ -538,6 +648,16 @@ export default function Home() {
     }
   };
 
+  // Handle deferral to deep dive
+  const handleDeferToDeepDive = (messageContent: string, messageId: string) => {
+    // Create a topic from the message content (first 100 chars or until first newline)
+    const firstLine = messageContent.split('\n')[0];
+    const topic = firstLine.length > 100 ? firstLine.slice(0, 100) + '...' : firstLine;
+    setDeferralTopic(topic);
+    setDeferralMessageId(messageId);
+    setDeepDiveDialogOpen(true);
+  };
+
   // Show variant badge during active conversation flow (for UAT/testing)
   const showVariantBadge = ['chat', 'extracting', 'extraction'].includes(flowStep);
 
@@ -584,6 +704,7 @@ export default function Home() {
                 onUserResponse={handleUserResponse}
                 onEntryPointSelect={handleEntryPointSelect}
                 onGenerateStrategy={extractContext}
+                onDeferToDeepDive={userProjectId ? handleDeferToDeepDive : undefined}
                 isLoading={isLoading}
                 isComplete={false}
                 currentPhase={currentPhase}
@@ -642,6 +763,22 @@ export default function Home() {
               featureName={fakeDoorFeature.name}
               description={fakeDoorFeature.description}
               onInterest={handleFakeDoorInterest}
+            />
+          )}
+
+          {/* Deep Dive Deferral Dialog */}
+          {userProjectId && (
+            <AddDeepDiveDialog
+              projectId={userProjectId}
+              open={deepDiveDialogOpen}
+              onOpenChange={setDeepDiveDialogOpen}
+              onCreated={() => {
+                // Could show a toast or notification here
+                console.log('Deep dive created from deferral');
+              }}
+              initialTopic={deferralTopic}
+              origin="message"
+              sourceMessageId={deferralMessageId}
             />
           )}
         </div>

@@ -1,8 +1,8 @@
 // src/lib/__tests__/contracts/persistence-contracts.test.ts
 /**
- * Fragment Persistence Contract Tests
+ * Fragment and Document Persistence Contract Tests
  *
- * Verifies that fragment creation conforms to contracts.
+ * Verifies that fragment and document creation conforms to contracts.
  */
 
 import {
@@ -13,6 +13,11 @@ import {
   VALID_DIMENSIONS,
   FragmentContract,
   FragmentDimensionTagContract,
+  DocumentContract,
+  validateDocument,
+  validateDocumentUploadInput,
+  isValidDocumentStatus,
+  DOCUMENT_STATUSES,
 } from '@/lib/contracts/persistence';
 
 describe('Persistence Contracts', () => {
@@ -55,9 +60,30 @@ describe('Persistence Contracts', () => {
       expect(validateFragment(invalid)).toBe(false);
     });
 
-    it('should reject fragment with missing conversationId', () => {
+    it('should reject fragment with neither conversationId nor documentId', () => {
       const { conversationId, ...invalid } = validFragment;
       expect(validateFragment(invalid)).toBe(false);
+    });
+
+    it('should accept fragment with only documentId (no conversationId)', () => {
+      const documentSourcedFragment: FragmentContract = {
+        id: 'frag_doc123',
+        projectId: 'proj_xyz789',
+        documentId: 'doc_abc456',
+        content: 'Theme extracted from document',
+        contentType: 'theme',
+        status: 'active',
+        confidence: 'MEDIUM',
+      };
+      expect(validateFragment(documentSourcedFragment)).toBe(true);
+    });
+
+    it('should accept fragment with both conversationId and documentId', () => {
+      const bothSources: FragmentContract = {
+        ...validFragment,
+        documentId: 'doc_abc456',
+      };
+      expect(validateFragment(bothSources)).toBe(true);
     });
 
     it('should reject fragment with empty content', () => {
@@ -159,6 +185,129 @@ describe('Persistence Contracts', () => {
     it('should accept result with empty dimension tags', () => {
       const valid = { ...validResult, dimensionTags: [] };
       expect(validateFragmentCreationResult(valid)).toBe(true);
+    });
+
+    it('should accept result with document-sourced fragments', () => {
+      const documentSourcedResult = {
+        fragments: [
+          {
+            id: 'frag_1',
+            projectId: 'proj_1',
+            documentId: 'doc_1',
+            content: 'Theme from document',
+            contentType: 'theme',
+            status: 'active',
+          },
+        ],
+        dimensionTags: [
+          { id: 'tag_1', fragmentId: 'frag_1', dimension: 'customer_market' },
+        ],
+      };
+      expect(validateFragmentCreationResult(documentSourcedResult)).toBe(true);
+    });
+  });
+
+  describe('DocumentContract', () => {
+    describe('isValidDocumentStatus', () => {
+      it('should accept all valid statuses', () => {
+        for (const status of DOCUMENT_STATUSES) {
+          expect(isValidDocumentStatus(status)).toBe(true);
+        }
+      });
+
+      it('should reject invalid statuses', () => {
+        expect(isValidDocumentStatus('invalid')).toBe(false);
+        expect(isValidDocumentStatus('PENDING')).toBe(false);
+        expect(isValidDocumentStatus('')).toBe(false);
+      });
+    });
+
+    const validDocument: DocumentContract = {
+      id: 'doc_abc123',
+      projectId: 'proj_xyz789',
+      fileName: 'business-plan.pdf',
+      fileType: 'application/pdf',
+      status: 'pending',
+    };
+
+    it('should validate a correct document', () => {
+      expect(validateDocument(validDocument)).toBe(true);
+    });
+
+    it('should validate document with all optional fields', () => {
+      const fullDocument: DocumentContract = {
+        ...validDocument,
+        fileSizeBytes: 1024000,
+        uploadContext: 'Our 2024 business plan document',
+        status: 'complete',
+        processedAt: '2024-01-15T10:30:00Z',
+      };
+      expect(validateDocument(fullDocument)).toBe(true);
+    });
+
+    it('should validate failed document with error message', () => {
+      const failedDocument: DocumentContract = {
+        ...validDocument,
+        status: 'failed',
+        errorMessage: 'Could not extract text from document',
+      };
+      expect(validateDocument(failedDocument)).toBe(true);
+    });
+
+    it('should reject document with missing id', () => {
+      const { id, ...invalid } = validDocument;
+      expect(validateDocument(invalid)).toBe(false);
+    });
+
+    it('should reject document with missing projectId', () => {
+      const { projectId, ...invalid } = validDocument;
+      expect(validateDocument(invalid)).toBe(false);
+    });
+
+    it('should reject document with missing fileName', () => {
+      const { fileName, ...invalid } = validDocument;
+      expect(validateDocument(invalid)).toBe(false);
+    });
+
+    it('should reject document with invalid status', () => {
+      const invalid = { ...validDocument, status: 'invalid' };
+      expect(validateDocument(invalid)).toBe(false);
+    });
+  });
+
+  describe('DocumentUploadInputContract', () => {
+    const validInput = {
+      projectId: 'proj_xyz789',
+      fileName: 'strategy.pdf',
+      fileType: 'application/pdf',
+    };
+
+    it('should validate correct upload input', () => {
+      expect(validateDocumentUploadInput(validInput)).toBe(true);
+    });
+
+    it('should validate upload input with optional fields', () => {
+      const fullInput = {
+        ...validInput,
+        fileSizeBytes: 500000,
+        uploadContext: 'Our strategic plan for Q1',
+      };
+      expect(validateDocumentUploadInput(fullInput)).toBe(true);
+    });
+
+    it('should reject upload input with missing projectId', () => {
+      const { projectId, ...invalid } = validInput;
+      expect(validateDocumentUploadInput(invalid)).toBe(false);
+    });
+
+    it('should reject upload input with missing fileName', () => {
+      const { fileName, ...invalid } = validInput;
+      expect(validateDocumentUploadInput(invalid)).toBe(false);
+    });
+
+    it('should reject upload input with invalid fileSizeBytes type', () => {
+      const invalid = { ...validInput, fileSizeBytes: '500000' };
+      expect(validateDocumentUploadInput(invalid)).toBe(false);
     });
   });
 });

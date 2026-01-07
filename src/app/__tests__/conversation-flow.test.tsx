@@ -10,6 +10,14 @@ jest.mock('next-auth/react', () => ({
   useSession: () => ({ data: null, status: 'unauthenticated' }),
 }))
 
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+  }),
+}))
+
 // Mock AppLayout to avoid sidebar complexities
 jest.mock('@/components/layout/app-layout', () => ({
   AppLayout: ({ children }: any) => <div data-testid="app-layout">{children}</div>,

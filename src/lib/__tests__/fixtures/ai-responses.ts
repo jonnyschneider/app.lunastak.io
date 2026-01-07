@@ -127,7 +127,7 @@ export const MOCK_GENERATION_OUTPUT = {
   },
 };
 
-// Mock fragment creation result
+// Mock fragment creation result (conversation-sourced)
 export const MOCK_FRAGMENT_CREATION_RESULT = {
   fragments: [
     {
@@ -165,5 +165,170 @@ export const MOCK_FRAGMENT_CREATION_RESULT = {
     { id: 'tag_4', fragmentId: 'frag_2', dimension: 'differentiation_advantage' as const, confidence: 'MEDIUM' as const },
     { id: 'tag_5', fragmentId: 'frag_3', dimension: 'competitive_landscape' as const, confidence: 'MEDIUM' as const },
     { id: 'tag_6', fragmentId: 'frag_3', dimension: 'value_proposition' as const, confidence: 'HIGH' as const },
+  ],
+};
+
+// ============================================
+// DOCUMENT UPLOAD PATH FIXTURES
+// ============================================
+
+// Mock document record
+export const MOCK_DOCUMENT = {
+  id: 'doc_test123',
+  projectId: 'proj_test',
+  fileName: 'business-plan-2024.pdf',
+  fileType: 'application/pdf',
+  fileSizeBytes: 245000,
+  uploadContext: 'Our company business plan for 2024',
+  status: 'pending' as const,
+};
+
+// Mock extracted text from Unstructured API
+export const MOCK_DOCUMENT_TEXT = `
+Executive Summary
+
+Our company, InvoiceAI, is revolutionizing how small businesses handle their invoicing.
+We've identified that 73% of SMBs still process invoices manually, leading to an average
+of 14 days in payment delays.
+
+Market Opportunity
+
+The SMB invoicing market is valued at $4.2B and growing at 12% annually. Our target
+segment—businesses with 10-50 employees—is particularly underserved by current solutions
+that are either too expensive or too complex.
+
+Our Solution
+
+InvoiceAI uses proprietary OCR and machine learning to automate invoice processing with
+99.2% accuracy. Unlike competitors, we offer a self-service model that requires no
+implementation support.
+
+Go-to-Market Strategy
+
+We will initially target accounting firms as channel partners, as they serve multiple SMB
+clients and can drive rapid adoption through trusted relationships.
+`;
+
+// Mock document extraction response (Claude)
+export const MOCK_DOCUMENT_EXTRACTION_RESPONSE = `<extraction>
+  <theme>
+    <theme_name>SMB Invoice Processing Pain</theme_name>
+    <content>73% of SMBs still process invoices manually, leading to an average of 14 days in payment delays. This represents a significant operational inefficiency.</content>
+    <dimensions>
+      <dimension name="customer_market" confidence="high"/>
+      <dimension name="problem_opportunity" confidence="high"/>
+    </dimensions>
+  </theme>
+  <theme>
+    <theme_name>Market Size and Growth</theme_name>
+    <content>The SMB invoicing market is valued at $4.2B and growing at 12% annually. Target segment of businesses with 10-50 employees is underserved.</content>
+    <dimensions>
+      <dimension name="customer_market" confidence="high"/>
+      <dimension name="competitive_landscape" confidence="medium"/>
+    </dimensions>
+  </theme>
+  <theme>
+    <theme_name>Technical Differentiation</theme_name>
+    <content>Proprietary OCR and machine learning achieving 99.2% accuracy. Self-service model requiring no implementation support differentiates from competitors.</content>
+    <dimensions>
+      <dimension name="differentiation_advantage" confidence="high"/>
+      <dimension name="capabilities_assets" confidence="high"/>
+    </dimensions>
+  </theme>
+  <theme>
+    <theme_name>Channel Partner Strategy</theme_name>
+    <content>Initial go-to-market through accounting firms as channel partners, leveraging their trusted relationships with multiple SMB clients.</content>
+    <dimensions>
+      <dimension name="go_to_market" confidence="high"/>
+      <dimension name="business_model_economics" confidence="medium"/>
+    </dimensions>
+  </theme>
+</extraction>`;
+
+// Parsed document themes (matches EmergentThemeContract)
+export const MOCK_DOCUMENT_THEMES = [
+  {
+    theme_name: 'SMB Invoice Processing Pain',
+    content: '73% of SMBs still process invoices manually, leading to an average of 14 days in payment delays. This represents a significant operational inefficiency.',
+    dimensions: [
+      { name: 'customer_market', confidence: 'HIGH' as const },
+      { name: 'problem_opportunity', confidence: 'HIGH' as const },
+    ],
+  },
+  {
+    theme_name: 'Market Size and Growth',
+    content: 'The SMB invoicing market is valued at $4.2B and growing at 12% annually. Target segment of businesses with 10-50 employees is underserved.',
+    dimensions: [
+      { name: 'customer_market', confidence: 'HIGH' as const },
+      { name: 'competitive_landscape', confidence: 'MEDIUM' as const },
+    ],
+  },
+  {
+    theme_name: 'Technical Differentiation',
+    content: 'Proprietary OCR and machine learning achieving 99.2% accuracy. Self-service model requiring no implementation support differentiates from competitors.',
+    dimensions: [
+      { name: 'differentiation_advantage', confidence: 'HIGH' as const },
+      { name: 'capabilities_assets', confidence: 'HIGH' as const },
+    ],
+  },
+  {
+    theme_name: 'Channel Partner Strategy',
+    content: 'Initial go-to-market through accounting firms as channel partners, leveraging their trusted relationships with multiple SMB clients.',
+    dimensions: [
+      { name: 'go_to_market', confidence: 'HIGH' as const },
+      { name: 'business_model_economics', confidence: 'MEDIUM' as const },
+    ],
+  },
+];
+
+// Mock fragment creation result (document-sourced - no conversationId)
+export const MOCK_DOCUMENT_FRAGMENT_CREATION_RESULT = {
+  fragments: [
+    {
+      id: 'frag_doc_1',
+      projectId: 'proj_test',
+      documentId: 'doc_test123',
+      content: '73% of SMBs still process invoices manually, leading to an average of 14 days in payment delays.',
+      contentType: 'theme' as const,
+      status: 'active' as const,
+      confidence: 'HIGH' as const,
+    },
+    {
+      id: 'frag_doc_2',
+      projectId: 'proj_test',
+      documentId: 'doc_test123',
+      content: 'The SMB invoicing market is valued at $4.2B and growing at 12% annually.',
+      contentType: 'theme' as const,
+      status: 'active' as const,
+      confidence: 'HIGH' as const,
+    },
+    {
+      id: 'frag_doc_3',
+      projectId: 'proj_test',
+      documentId: 'doc_test123',
+      content: 'Proprietary OCR and machine learning achieving 99.2% accuracy.',
+      contentType: 'theme' as const,
+      status: 'active' as const,
+      confidence: 'HIGH' as const,
+    },
+    {
+      id: 'frag_doc_4',
+      projectId: 'proj_test',
+      documentId: 'doc_test123',
+      content: 'Initial go-to-market through accounting firms as channel partners.',
+      contentType: 'theme' as const,
+      status: 'active' as const,
+      confidence: 'HIGH' as const,
+    },
+  ],
+  dimensionTags: [
+    { id: 'tag_doc_1', fragmentId: 'frag_doc_1', dimension: 'customer_market' as const, confidence: 'HIGH' as const },
+    { id: 'tag_doc_2', fragmentId: 'frag_doc_1', dimension: 'problem_opportunity' as const, confidence: 'HIGH' as const },
+    { id: 'tag_doc_3', fragmentId: 'frag_doc_2', dimension: 'customer_market' as const, confidence: 'HIGH' as const },
+    { id: 'tag_doc_4', fragmentId: 'frag_doc_2', dimension: 'competitive_landscape' as const, confidence: 'MEDIUM' as const },
+    { id: 'tag_doc_5', fragmentId: 'frag_doc_3', dimension: 'differentiation_advantage' as const, confidence: 'HIGH' as const },
+    { id: 'tag_doc_6', fragmentId: 'frag_doc_3', dimension: 'capabilities_assets' as const, confidence: 'HIGH' as const },
+    { id: 'tag_doc_7', fragmentId: 'frag_doc_4', dimension: 'go_to_market' as const, confidence: 'HIGH' as const },
+    { id: 'tag_doc_8', fragmentId: 'frag_doc_4', dimension: 'business_model_economics' as const, confidence: 'MEDIUM' as const },
   ],
 };
