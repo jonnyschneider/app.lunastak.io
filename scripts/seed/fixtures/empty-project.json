@@ -1,0 +1,22 @@
+{
+  "template": {
+    "name": "empty-project",
+    "description": "Empty project for testing onboarding and empty states"
+  },
+  "user": {
+    "name": "New User",
+    "email": "{{EMAIL}}"
+  },
+  "projects": [
+    {
+      "id": "{{PROJECT_ID}}",
+      "name": "My Strategy",
+      "status": "active",
+      "suggestedQuestions": [],
+      "conversations": [],
+      "fragments": [],
+      "deepDives": [],
+      "documents": []
+    }
+  ]
+}
