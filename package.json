@@ -20,6 +20,9 @@
     "regen:remote": "tsx scripts/regenerate-remote.ts",
     "linear:issue": "tsx scripts/linear-create-issue.ts",
     "backfill:extraction": "tsx scripts/backfill-extraction.ts",
+    "seed:hydrate": "tsx scripts/seed/hydrate.ts",
+    "seed:export": "tsx scripts/seed/export.ts",
+    "seed:validate": "tsx scripts/seed/validate.ts",
     "prepare": "husky"
   },
   "dependencies": {
