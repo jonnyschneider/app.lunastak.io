@@ -625,6 +625,7 @@ export function HomePage({ session }: HomePageProps) {
             <IntroCard
               onEntryPointSelect={handleEntryPointSelect}
               isLoading={isLoading}
+              session={session}
             />
           )}
 

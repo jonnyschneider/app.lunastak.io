@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import type { Session } from 'next-auth';
 import { EntryPointSelector } from './EntryPointSelector';
 
 type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
@@ -8,9 +9,10 @@ type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 interface IntroCardProps {
   onEntryPointSelect: (option: EntryPoint) => void;
   isLoading?: boolean;
+  session?: Session | null;
 }
 
-export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardProps) {
+export function IntroCard({ onEntryPointSelect, isLoading = false, session }: IntroCardProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full max-w-4xl mx-auto">
@@ -34,10 +36,12 @@ export function IntroCard({ onEntryPointSelect, isLoading = false }: IntroCardPr
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">
-              Let&apos;s clarify your strategy
+              {session ? `Welcome back${session.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}` : "Let's clarify your strategy"}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              &#128075; I'm Luna, the green blob. I don't look very smart, but I ask great questions (and, I'm a really good listener).
+              {session
+                ? "Ready to continue building your strategy? Start a new conversation or explore your existing projects."
+                : "I'm Luna, the green blob. I don't look very smart, but I ask great questions (and, I'm a really good listener)."}
             </p>
           </div>
           <Image
