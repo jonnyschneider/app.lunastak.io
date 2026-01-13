@@ -8,6 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.6.0] - 2026-01-14
+
+### Added - Project Navigation Restructure
+
+**Sidebar Improvements:**
+- **Project Switcher Combobox** - Searchable dropdown replaces logo in sidebar header
+  - Quick project switching without navigating away
+  - Search filter for users with many projects
+- **Fixed Action Buttons** - "New Chat" and "Upload Document" always visible in sidebar
+  - Context-aware: actions apply to currently selected project
+- **Cleaner Menu Design** - Removed chevrons from all collapsible sections
+  - Reduces visual clutter, avoids clash with context menus
+
+**Thinking Page Enhancements:**
+- **Section Reordering** - Documents/Chats/Generated Strategies now above "What Luna Knows"
+  - Prioritizes user content over system analysis
+- **Gap Summaries** - "Close Gaps" section now displays dimension summaries and up to 3 specific gaps
+- **Updated Heading** - Page heading changed to "Refine Your Strategic Direction"
+
+**Strategy View Improvements:**
+- **Project Context Header** - Strategy view now shows project name and description
+- **Trace API Enhancement** - Returns `projectId` and `projectName` for better context
+
+### Changed
+- **Sidebar Labels** - "Strategy" → "Current Strategy" for clarity
+- **Module Labels** - "Generated Strategy" → "Generated Strategies"
+- **Simplified Strategy Route** - `/project/[id]/strategy` now redirects to latest trace
+
+### Dependencies
+- Added `@radix-ui/react-popover` for popover component
+- Added `cmdk` for command palette component
+
+---
 ## [1.5.2] - 2026-01-07
 
 ### Added
