@@ -1,0 +1,557 @@
+{
+  "template": {
+    "name": "demo-extended",
+    "description": "BuildFlow - Construction project management for custom home builders. Extended demo with multiple conversations, documents, and intentional coverage gaps."
+  },
+  "user": {
+    "name": "Demo User",
+    "email": "{{EMAIL}}"
+  },
+  "projects": [
+    {
+      "id": "{{PROJECT_ID}}",
+      "name": "My Strategy",
+      "status": "active",
+      "knowledgeSummary": "You're building BuildFlow as a project management platform specifically designed for custom home builders - small to mid-sized construction companies building 5-50 homes per year. Your core insight is that existing tools like Procore and Buildertrend are built for large commercial contractors, leaving custom home builders with software that's either way too complex or frustratingly basic.\n\nThe pain is real: builders are juggling client selections, subcontractor schedules, material orders, and change orders across spreadsheets, text threads, and whiteboards. Every project is unique (that's the nature of custom homes), so cookie-cutter templates don't work. They need flexibility without chaos.\n\nBuildFlow takes a 'structured flexibility' approach - providing guardrails and best practices while letting builders adapt to each project's quirks. The killer feature is your 'Selection Tracker' that keeps clients, builders, and designers aligned on the hundreds of decisions that go into a custom home - from cabinet hardware to flooring transitions.\n\nYour target builder is doing $3M-$15M annual revenue, has 3-10 employees, and is currently 'making it work' with a patchwork of tools. They've probably tried Buildertrend and found it overwhelming, or they're limping along with spreadsheets and are ready to professionalize.\n\nThe competitive landscape has a clear gap: Procore is enterprise, Buildertrend is trying to be everything, CoConstruct focuses heavily on pre-sale. You're the only one treating 'project execution for custom homes' as its own category worth optimizing.",
+      "suggestedQuestions": [
+        "You mention builders are 'making it work' with spreadsheets and texts - what's the breaking point that finally makes them search for a real solution? Is it a specific project size, a costly mistake, or something else?",
+        "The Selection Tracker sounds like a differentiator, but how do you prevent it from becoming a bottleneck when clients are slow to make decisions? Does the system help accelerate decisions or just track them?",
+        "Custom home builders often have deep relationships with their subcontractors - how does BuildFlow fit into those existing relationships without feeling like you're inserting yourself between them?"
+      ],
+      "conversations": [
+        {
+          "id": "{{CONV_ID}}",
+          "title": "BuildFlow Core Strategy Session",
+          "status": "completed",
+          "currentPhase": "QUESTIONING",
+          "questionCount": 4,
+          "experimentVariant": "emergent-extraction-e1a",
+          "messages": [
+            {
+              "role": "assistant",
+              "content": "Hey! Tell me about what you're building. What's the problem you're solving and who's it for?",
+              "stepNumber": 1
+            },
+            {
+              "role": "user",
+              "content": "We're building BuildFlow - project management software for custom home builders. Think small to mid-sized builders doing 5-50 homes a year. The problem is brutal: existing software like Procore is built for huge commercial contractors, and Buildertrend tries to do everything but ends up being overwhelming.\n\nThese builders are running $3M-$15M businesses with maybe 3-10 employees, and they're managing everything through spreadsheets, group texts, and whiteboards. Every custom home has hundreds of decisions - cabinets, flooring, fixtures, paint colors - and keeping track of what's been selected, ordered, and installed is a nightmare.\n\nThe breaking point usually comes when a builder has a costly mistake - wrong tile gets installed because the selection wasn't communicated, or a subcontractor shows up and the materials aren't there. That's when they start googling for solutions.",
+              "stepNumber": 2
+            },
+            {
+              "role": "assistant",
+              "content": "That selection coordination problem is super tangible - I can picture the chaos. You mentioned Buildertrend tries to do everything. What specifically makes it overwhelming for your target builders? Is it the learning curve, the feature bloat, or something about how it's designed?",
+              "stepNumber": 3
+            },
+            {
+              "role": "user",
+              "content": "It's all of those, honestly. Buildertrend was built for production builders doing the same floor plan over and over. They have templates and workflows that assume repetition. Custom home builders are the opposite - every project is unique.\n\nSo you've got this powerful system with 100 features, but 80 of them don't apply to how custom builders work. They spend hours trying to configure it, get frustrated, and eventually just use 10% of it while still doing the rest in spreadsheets.\n\nThe other issue is it's designed around the builder's workflow, not the homeowner's experience. Custom home clients are invested - they're making a $500K+ decision. They want visibility into their project, but Buildertrend's client portal feels like an afterthought.\n\nWe're taking the opposite approach. Start with the homeowner experience and work backward. Our Selection Tracker is the hero feature - it's where clients, builders, designers, and trades all see the same source of truth for every decision on the project.",
+              "stepNumber": 4
+            },
+            {
+              "role": "assistant",
+              "content": "That 'start with the homeowner experience' insight is interesting positioning. The Selection Tracker sounds like it could be a genuine differentiator. How do you think about the relationship between BuildFlow and the builder's existing subcontractors? Custom builders often have deep, long-term relationships with their trades - does BuildFlow enhance those or potentially feel like you're inserting yourself into them?",
+              "stepNumber": 5
+            },
+            {
+              "role": "user",
+              "content": "Great question. We're very intentional about not trying to replace those relationships. The subs don't need another app to log into - they're already juggling enough. BuildFlow integrates with how they already work: text messages and emails.\n\nWhen a selection is made that affects a sub's work, they get a simple notification with exactly what they need to know. They can reply by text if there's an issue. We're not asking them to adopt a new workflow - we're just making sure they have the right information at the right time.\n\nThe builder stays in control of the relationship. We're like the communication layer that keeps everyone synced without adding friction. Think of it like Slack for construction - the builder runs it, subs pop in when needed.",
+              "stepNumber": 6
+            },
+            {
+              "role": "assistant",
+              "content": "Smart approach - reducing friction for subs while keeping the builder as the hub. Let's talk about how you're going to reach these builders. What's your go-to-market thinking? Are you going direct, through partnerships, or something else?",
+              "stepNumber": 7
+            },
+            {
+              "role": "user",
+              "content": "We're still figuring that out honestly. Right now it's been mostly word of mouth through our beta users. Custom home builders are a tight community - they know each other, they refer subs to each other, they talk at lumber yards and permit offices.\n\nI think we need to be where they are. Local home builder associations, industry trade shows like IBS, maybe partnering with material suppliers. We've thought about working with designers and architects as a referral channel since they're often the ones who recommend software to their builder partners.\n\nPricing is still fuzzy too. We're thinking per-project pricing rather than per-seat, since builder team sizes vary so much. Maybe $200-500/month depending on project volume? We need to do more research here.\n\nThe challenge is these folks are busy actually building houses - they don't spend a lot of time online researching software. Traditional SaaS marketing playbooks might not work.",
+              "stepNumber": 8
+            }
+          ],
+          "traces": [
+            {
+              "extractedContext": {
+                "extraction_approach": "emergent",
+                "themes": [
+                  {
+                    "theme_name": "Custom vs Production Builder Gap",
+                    "content": "Existing tools like Procore and Buildertrend are built for commercial contractors or production builders doing repetitive floor plans. Custom home builders (5-50 homes/year, $3M-$15M revenue) have unique needs that these tools don't address. The 'structured flexibility' approach recognizes that every project is different.",
+                    "dimensions": [
+                      { "name": "problem_opportunity", "confidence": "HIGH" },
+                      { "name": "customer_market", "confidence": "HIGH" },
+                      { "name": "differentiation_advantage", "confidence": "HIGH" }
+                    ]
+                  },
+                  {
+                    "theme_name": "Selection Tracker as Hero Feature",
+                    "content": "The Selection Tracker is the core differentiator - a single source of truth for the hundreds of decisions in a custom home. It keeps clients, builders, designers, and trades aligned on what's been selected, ordered, and installed. Built around homeowner experience first, not just builder workflows.",
+                    "dimensions": [
+                      { "name": "product_experience", "confidence": "HIGH" },
+                      { "name": "value_proposition", "confidence": "HIGH" },
+                      { "name": "differentiation_advantage", "confidence": "MEDIUM" }
+                    ]
+                  },
+                  {
+                    "theme_name": "Friction-Free Sub Integration",
+                    "content": "Rather than asking subcontractors to adopt a new platform, BuildFlow integrates with existing communication channels (texts, emails). Subs get simple notifications with exactly what they need. The builder stays in control of relationships while ensuring information flows correctly.",
+                    "dimensions": [
+                      { "name": "product_experience", "confidence": "HIGH" },
+                      { "name": "value_proposition", "confidence": "MEDIUM" }
+                    ]
+                  },
+                  {
+                    "theme_name": "Target Builder Profile",
+                    "content": "Ideal customer is doing $3M-$15M annual revenue, has 3-10 employees, and is currently using spreadsheets/texts/whiteboards. They've tried Buildertrend and found it overwhelming, or they're ready to professionalize. The breaking point is usually a costly mistake from miscommunication.",
+                    "dimensions": [
+                      { "name": "customer_market", "confidence": "HIGH" },
+                      { "name": "problem_opportunity", "confidence": "HIGH" }
+                    ]
+                  },
+                  {
+                    "theme_name": "Competitive Landscape Gap",
+                    "content": "Procore is enterprise-focused, Buildertrend tries to do everything but overwhelms users with production-builder workflows, CoConstruct focuses on pre-sale. No one is optimizing specifically for 'project execution for custom homes' as a category.",
+                    "dimensions": [
+                      { "name": "competitive_landscape", "confidence": "HIGH" },
+                      { "name": "differentiation_advantage", "confidence": "HIGH" }
+                    ]
+                  }
+                ],
+                "reflective_summary": {
+                  "strengths": [
+                    "Crystal clear ICP with specific revenue bands and team sizes",
+                    "Strong differentiation through 'homeowner-first' design philosophy",
+                    "Practical approach to sub-contractor integration that respects existing workflows"
+                  ],
+                  "emerging": [
+                    "Selection Tracker as potential wedge feature and differentiator",
+                    "Community-based growth potential in tight-knit builder networks"
+                  ],
+                  "opportunities_for_enrichment": [
+                    "Go-to-market strategy needs more development - channels, pricing, partnerships",
+                    "Risk assessment around competition and market timing",
+                    "Unit economics and customer acquisition cost modeling"
+                  ]
+                }
+              },
+              "dimensionalCoverage": {
+                "coverage_percentage": 70,
+                "dimensions_covered": [
+                  "customer_market",
+                  "problem_opportunity",
+                  "value_proposition",
+                  "differentiation_advantage",
+                  "competitive_landscape",
+                  "product_experience"
+                ],
+                "gaps": ["go_to_market", "risks_constraints", "business_model_economics", "capabilities_assets"]
+              },
+              "output": {
+                "vision": "Every custom home builder has the clarity and control to deliver exceptional homes on time and on budget, with clients who feel connected to every decision in their dream home.",
+                "strategy": "Own the 'custom home project execution' category by building the only platform designed around the unique chaos of bespoke residential construction - where structured flexibility beats rigid templates, and homeowner experience drives builder efficiency.",
+                "objectives": [
+                  {
+                    "id": "obj-1",
+                    "pithy": "Achieve 100 paying builder accounts managing active projects, proving product-market fit in the custom home segment.",
+                    "metric": {
+                      "full": "Grow from 0 to 100 paying customers within 12 months",
+                      "summary": "100 builders",
+                      "category": "Growth",
+                      "direction": "increase",
+                      "timeframe": "12M",
+                      "metricName": "Paying builders",
+                      "metricValue": "from 0 to 100"
+                    },
+                    "explanation": "This objective focuses on validating product-market fit by acquiring paying customers who actively use the platform for real projects.",
+                    "successCriteria": "Achievement will be measured through active subscriptions and projects created."
+                  },
+                  {
+                    "id": "obj-2",
+                    "pithy": "Prove the Selection Tracker reduces client-caused delays by 50%, creating measurable ROI for builders.",
+                    "metric": {
+                      "full": "Reduce selection-related delays by 50% within 9 months",
+                      "summary": "50% reduction",
+                      "category": "Product",
+                      "direction": "decrease",
+                      "timeframe": "9M",
+                      "metricName": "Selection delays",
+                      "metricValue": "50% reduction"
+                    },
+                    "explanation": "This objective focuses on proving the core value proposition that better selection coordination leads to faster projects.",
+                    "successCriteria": "Achievement will be measured through project timeline comparisons before/after BuildFlow."
+                  },
+                  {
+                    "id": "obj-3",
+                    "pithy": "Establish builder referral engine with 40% of new customers coming from existing user recommendations.",
+                    "metric": {
+                      "full": "Achieve 40% referral-driven customer acquisition within 12 months",
+                      "summary": "40% referral",
+                      "category": "Growth",
+                      "direction": "increase",
+                      "timeframe": "12M",
+                      "metricName": "Referral rate",
+                      "metricValue": "40% of new customers"
+                    },
+                    "explanation": "This objective focuses on leveraging the tight-knit builder community for organic growth.",
+                    "successCriteria": "Achievement will be measured through referral tracking and customer source attribution."
+                  }
+                ]
+              },
+              "claudeThoughts": "Strong problem-solution clarity with a well-defined ICP. The 'homeowner-first' positioning is distinctive but go-to-market and risk assessment remain underdeveloped areas that need exploration.",
+              "modelUsed": "claude-sonnet-4-20250514",
+              "totalTokens": 5200,
+              "promptTokens": 3800,
+              "completionTokens": 1400,
+              "latencyMs": 9200,
+              "starred": true
+            }
+          ]
+        },
+        {
+          "id": "{{CONV_2_ID}}",
+          "title": "Pricing and Business Model Discussion",
+          "status": "completed",
+          "currentPhase": "QUESTIONING",
+          "questionCount": 3,
+          "experimentVariant": "emergent-extraction-e1a",
+          "messages": [
+            {
+              "role": "assistant",
+              "content": "I remember we touched on pricing being fuzzy last time. Let's dig into that. What's your current thinking on how BuildFlow should charge?",
+              "stepNumber": 1
+            },
+            {
+              "role": "user",
+              "content": "We've been experimenting with a few models. The challenge is that our customers vary so much - a builder doing 5 homes a year has very different needs than one doing 40.\n\nOur current thinking is a base platform fee plus per-project pricing. Something like $150/month base, then $50-100 per active project. That way smaller builders aren't priced out, but we grow with builders as they scale.\n\nWe're also considering a 'client upgrade' model where builders can offer premium client portals as an upsell to homeowners. The homeowner pays $500-1000 for enhanced features, builder keeps part of that. It aligns incentives nicely - builders make money recommending us.",
+              "stepNumber": 2
+            },
+            {
+              "role": "assistant",
+              "content": "That client upgrade angle is interesting - you're essentially creating a B2B2C model. Have you tested whether homeowners would actually pay for enhanced features? What would those features be?",
+              "stepNumber": 3
+            },
+            {
+              "role": "user",
+              "content": "We haven't validated it yet but the hypothesis is based on what we're seeing. Custom home clients are already spending $500K+ on their home. They're engaged, they want visibility, and many are already hiring their own project managers or owner's reps to keep tabs on the builder.\n\nThe premium features we're thinking about: real-time photo/video updates, automated weekly progress reports, direct messaging with trades (with builder oversight), and a 'home book' that compiles all selections, warranties, and documentation when the project completes.\n\nThe home book especially could be valuable - it becomes a reference document for the life of the home. That's something homeowners would pay to have done well.",
+              "stepNumber": 4
+            },
+            {
+              "role": "assistant",
+              "content": "The home book is a compelling lifetime-value play. Let me ask about the cost side - what does it take to acquire and serve a builder customer? Any sense of your unit economics?",
+              "stepNumber": 5
+            },
+            {
+              "role": "user",
+              "content": "Honestly, we're still early on this. Our beta users came through warm intros so we don't have real CAC data yet. Anecdotally, the sales cycle feels long - builders are busy and skeptical of new software. Getting a demo scheduled takes persistence.\n\nOn the serving side, onboarding is intensive. Builders need help migrating existing projects and learning the workflow. We're doing a lot of hand-holding right now, which doesn't scale. We need to figure out how to productize onboarding.\n\nOur gut says LTV could be strong if we nail retention. Builders don't want to switch project management tools often - it's too disruptive. If we can get them through the first 2-3 projects successfully, they're likely customers for years.\n\nBut we need to validate all of this with actual numbers. Right now it's mostly intuition based on conversations.",
+              "stepNumber": 6
+            }
+          ],
+          "traces": [
+            {
+              "extractedContext": {
+                "extraction_approach": "emergent",
+                "themes": [
+                  {
+                    "theme_name": "Tiered Pricing Model",
+                    "content": "Base platform fee ($150/month) plus per-project pricing ($50-100/active project). Designed to not price out smaller builders while growing with larger ones. Addresses the wide variation in customer sizes (5-40 homes/year).",
+                    "dimensions": [
+                      { "name": "business_model_economics", "confidence": "MEDIUM" }
+                    ]
+                  },
+                  {
+                    "theme_name": "B2B2C Client Upgrade Model",
+                    "content": "Potential revenue stream where builders offer premium client portals to homeowners for $500-1000. Features include real-time updates, progress reports, direct trade messaging, and a 'home book' documenting all selections and warranties. Creates aligned incentives for builder recommendations.",
+                    "dimensions": [
+                      { "name": "business_model_economics", "confidence": "MEDIUM" },
+                      { "name": "product_experience", "confidence": "MEDIUM" }
+                    ]
+                  },
+                  {
+                    "theme_name": "High-Touch Onboarding Challenge",
+                    "content": "Current onboarding requires significant hand-holding for project migration and workflow training. This doesn't scale. Need to productize the onboarding experience while maintaining success rates. Long sales cycles due to builder skepticism and busyness.",
+                    "dimensions": [
+                      { "name": "capabilities_assets", "confidence": "MEDIUM" }
+                    ]
+                  },
+                  {
+                    "theme_name": "Retention-Driven LTV Hypothesis",
+                    "content": "Builders are unlikely to switch project management tools frequently due to disruption. If successfully onboarded through 2-3 projects, customers likely remain for years. Strong retention could offset higher acquisition costs.",
+                    "dimensions": [
+                      { "name": "business_model_economics", "confidence": "LOW" }
+                    ]
+                  }
+                ],
+                "reflective_summary": {
+                  "strengths": [
+                    "Creative B2B2C model that aligns builder and homeowner incentives",
+                    "Flexible pricing that scales with customer size"
+                  ],
+                  "emerging": [
+                    "Home book as lifetime-value product opportunity",
+                    "Retention hypothesis based on switching costs"
+                  ],
+                  "opportunities_for_enrichment": [
+                    "Need actual CAC data from non-warm-intro acquisitions",
+                    "Onboarding scalability is a critical gap to address",
+                    "Client upgrade willingness-to-pay needs validation"
+                  ]
+                }
+              },
+              "dimensionalCoverage": {
+                "coverage_percentage": 30,
+                "dimensions_covered": [
+                  "business_model_economics",
+                  "product_experience",
+                  "capabilities_assets"
+                ],
+                "gaps": ["customer_market", "competitive_landscape", "go_to_market", "risks_constraints"]
+              },
+              "output": {
+                "vision": "Every custom home builder has the clarity and control to deliver exceptional homes on time and on budget, with clients who feel connected to every decision in their dream home.",
+                "strategy": "Own the 'custom home project execution' category by building the only platform designed around the unique chaos of bespoke residential construction - where structured flexibility beats rigid templates, and homeowner experience drives builder efficiency.",
+                "objectives": [
+                  {
+                    "id": "obj-1",
+                    "pithy": "Validate B2B2C model with 20 homeowner upgrades, proving willingness to pay for premium features.",
+                    "metric": {
+                      "full": "Achieve 20 homeowner premium upgrades within 6 months",
+                      "summary": "20 upgrades",
+                      "category": "Revenue",
+                      "direction": "increase",
+                      "timeframe": "6M",
+                      "metricName": "Homeowner upgrades",
+                      "metricValue": "20 paying homeowners"
+                    },
+                    "explanation": "This objective validates whether homeowners will pay for enhanced features, proving the B2B2C model.",
+                    "successCriteria": "Achievement will be measured through upgrade conversion rates and homeowner satisfaction."
+                  },
+                  {
+                    "id": "obj-2",
+                    "pithy": "Reduce onboarding time from 4 weeks to 1 week through productized setup flows and self-serve resources.",
+                    "metric": {
+                      "full": "Reduce average onboarding time by 75% within 9 months",
+                      "summary": "75% faster",
+                      "category": "Operations",
+                      "direction": "decrease",
+                      "timeframe": "9M",
+                      "metricName": "Onboarding time",
+                      "metricValue": "from 4 weeks to 1 week"
+                    },
+                    "explanation": "This objective addresses the scalability challenge of high-touch onboarding.",
+                    "successCriteria": "Achievement will be measured through time-to-first-project and support ticket volume."
+                  },
+                  {
+                    "id": "obj-3",
+                    "pithy": "Establish baseline unit economics with real CAC, LTV, and payback period data from 50 customers.",
+                    "metric": {
+                      "full": "Document unit economics from 50 non-referral customers within 12 months",
+                      "summary": "50 customers",
+                      "category": "Business",
+                      "direction": "increase",
+                      "timeframe": "12M",
+                      "metricName": "Measured customers",
+                      "metricValue": "50 with full data"
+                    },
+                    "explanation": "This objective builds the data foundation needed to validate and scale the business model.",
+                    "successCriteria": "Achievement will be measured through complete customer journey tracking."
+                  }
+                ]
+              },
+              "claudeThoughts": "Good exploration of pricing and business model, but still largely hypothetical. The B2B2C angle is creative. Key risks around CAC and onboarding scalability need attention.",
+              "modelUsed": "claude-sonnet-4-20250514",
+              "totalTokens": 4100,
+              "promptTokens": 2900,
+              "completionTokens": 1200,
+              "latencyMs": 7800,
+              "starred": false
+            }
+          ]
+        }
+      ],
+      "fragments": [
+        {
+          "id": "{{FRAG_0_ID}}",
+          "content": "Custom vs Production Builder Gap: Existing tools like Procore and Buildertrend are built for commercial contractors or production builders doing repetitive floor plans. Custom home builders (5-50 homes/year, $3M-$15M revenue) have unique needs that these tools don't address. The 'structured flexibility' approach recognizes that every project is different.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "HIGH",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            { "dimension": "PROBLEM_OPPORTUNITY", "confidence": "HIGH" },
+            { "dimension": "CUSTOMER_MARKET", "confidence": "HIGH" },
+            { "dimension": "DIFFERENTIATION_ADVANTAGE", "confidence": "HIGH" }
+          ]
+        },
+        {
+          "id": "{{FRAG_1_ID}}",
+          "content": "Selection Tracker as Hero Feature: The Selection Tracker is the core differentiator - a single source of truth for the hundreds of decisions in a custom home. It keeps clients, builders, designers, and trades aligned on what's been selected, ordered, and installed.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "HIGH",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            { "dimension": "PRODUCT_EXPERIENCE", "confidence": "HIGH" },
+            { "dimension": "VALUE_PROPOSITION", "confidence": "HIGH" },
+            { "dimension": "DIFFERENTIATION_ADVANTAGE", "confidence": "MEDIUM" }
+          ]
+        },
+        {
+          "id": "{{FRAG_2_ID}}",
+          "content": "Target Builder Profile: Ideal customer is doing $3M-$15M annual revenue, has 3-10 employees, and is currently using spreadsheets/texts/whiteboards. They've tried Buildertrend and found it overwhelming, or they're ready to professionalize.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "HIGH",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            { "dimension": "CUSTOMER_MARKET", "confidence": "HIGH" },
+            { "dimension": "PROBLEM_OPPORTUNITY", "confidence": "HIGH" }
+          ]
+        },
+        {
+          "id": "{{FRAG_3_ID}}",
+          "content": "Competitive Landscape Gap: Procore is enterprise-focused, Buildertrend tries to do everything but overwhelms users with production-builder workflows, CoConstruct focuses on pre-sale. No one is optimizing specifically for 'project execution for custom homes'.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "HIGH",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            { "dimension": "COMPETITIVE_LANDSCAPE", "confidence": "HIGH" },
+            { "dimension": "DIFFERENTIATION_ADVANTAGE", "confidence": "HIGH" }
+          ]
+        },
+        {
+          "id": "{{FRAG_4_ID}}",
+          "content": "Friction-Free Sub Integration: Rather than asking subcontractors to adopt a new platform, BuildFlow integrates with existing communication channels (texts, emails). Subs get simple notifications with exactly what they need. The builder stays in control.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "HIGH",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            { "dimension": "PRODUCT_EXPERIENCE", "confidence": "HIGH" },
+            { "dimension": "VALUE_PROPOSITION", "confidence": "MEDIUM" }
+          ]
+        },
+        {
+          "id": "{{FRAG_5_ID}}",
+          "content": "Tiered Pricing Model: Base platform fee ($150/month) plus per-project pricing ($50-100/active project). Designed to not price out smaller builders while growing with larger ones.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_2_ID}}",
+          "dimensionTags": [
+            { "dimension": "BUSINESS_MODEL_ECONOMICS", "confidence": "MEDIUM" }
+          ]
+        },
+        {
+          "id": "{{FRAG_6_ID}}",
+          "content": "B2B2C Client Upgrade Model: Potential revenue stream where builders offer premium client portals to homeowners for $500-1000. Features include real-time updates, progress reports, and a 'home book' documenting all selections and warranties.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_2_ID}}",
+          "dimensionTags": [
+            { "dimension": "BUSINESS_MODEL_ECONOMICS", "confidence": "MEDIUM" },
+            { "dimension": "PRODUCT_EXPERIENCE", "confidence": "MEDIUM" }
+          ]
+        },
+        {
+          "id": "{{FRAG_7_ID}}",
+          "content": "High-Touch Onboarding Challenge: Current onboarding requires significant hand-holding for project migration and workflow training. This doesn't scale. Long sales cycles due to builder skepticism and busyness.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_2_ID}}",
+          "dimensionTags": [
+            { "dimension": "CAPABILITIES_ASSETS", "confidence": "MEDIUM" }
+          ]
+        },
+        {
+          "id": "{{FRAG_8_ID}}",
+          "content": "**Construction Tech Market Overview**\n\nThe construction technology market is projected to reach $30B by 2027, with project management software representing a significant segment. Key players include Procore ($7B+ valuation), Buildertrend, CoConstruct, and Houzz Pro. The residential construction segment is underserved compared to commercial, with most tools designed for larger contractors and production builders.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "documentId": "{{DOC_ID}}",
+          "dimensionTags": [
+            { "dimension": "COMPETITIVE_LANDSCAPE", "confidence": "HIGH" },
+            { "dimension": "CUSTOMER_MARKET", "confidence": "MEDIUM" }
+          ]
+        },
+        {
+          "id": "{{FRAG_9_ID}}",
+          "content": "**Custom Home Builder Segment Analysis**\n\nThere are approximately 35,000 custom home builders in the US building 5-50 homes annually. Average project value ranges from $400K-$2M. These builders typically have 3-15 employees and generate $2M-$20M in annual revenue. Technology adoption is low compared to commercial contractors, with most still relying on spreadsheets and basic tools.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "documentId": "{{DOC_ID}}",
+          "dimensionTags": [
+            { "dimension": "CUSTOMER_MARKET", "confidence": "HIGH" }
+          ]
+        },
+        {
+          "id": "{{FRAG_10_ID}}",
+          "content": "**Homeowner Experience Expectations**\n\nSurveys show 78% of custom home buyers want more visibility into their project than builders currently provide. 65% report frustration with communication during the build process. The most common pain points are: unclear timeline expectations, surprise change order costs, and lack of visibility into selection deadlines.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "documentId": "{{DOC_2_ID}}",
+          "dimensionTags": [
+            { "dimension": "VALUE_PROPOSITION", "confidence": "HIGH" },
+            { "dimension": "PROBLEM_OPPORTUNITY", "confidence": "HIGH" }
+          ]
+        },
+        {
+          "id": "{{FRAG_11_ID}}",
+          "content": "**Client Portal Feature Priorities**\n\nTop features homeowners want in a builder client portal: 1) Real-time photo updates (89%), 2) Selection tracking and deadlines (84%), 3) Budget/change order visibility (79%), 4) Direct messaging with builder (71%), 5) Subcontractor schedule visibility (58%). Willingness to pay for premium features averages $600 according to survey data.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "documentId": "{{DOC_2_ID}}",
+          "dimensionTags": [
+            { "dimension": "PRODUCT_EXPERIENCE", "confidence": "HIGH" },
+            { "dimension": "VALUE_PROPOSITION", "confidence": "MEDIUM" }
+          ]
+        }
+      ],
+      "deepDives": [
+        {
+          "id": "{{DD_0_ID}}",
+          "topic": "What's our go-to-market playbook for reaching custom home builders?",
+          "status": "active",
+          "origin": "manual"
+        },
+        {
+          "id": "{{DD_1_ID}}",
+          "topic": "What are the key risks that could derail BuildFlow, and how do we mitigate them?",
+          "status": "active",
+          "origin": "manual"
+        }
+      ],
+      "documents": [
+        {
+          "id": "{{DOC_ID}}",
+          "fileName": "Construction Tech Market Analysis 2025.pdf",
+          "fileType": "application/pdf",
+          "fileSizeBytes": 245000,
+          "uploadContext": "Market research on construction software landscape and custom home builder segment",
+          "status": "complete"
+        },
+        {
+          "id": "{{DOC_2_ID}}",
+          "fileName": "Custom Home Buyer Survey Results.xlsx",
+          "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "fileSizeBytes": 128000,
+          "uploadContext": "Survey of 200 custom home buyers about their experience and technology expectations",
+          "status": "complete"
+        },
+        {
+          "id": "{{DOC_3_ID}}",
+          "fileName": "Competitor Feature Comparison.md",
+          "fileType": "text/markdown",
+          "fileSizeBytes": 34000,
+          "uploadContext": "Feature-by-feature comparison of Buildertrend, CoConstruct, and Houzz Pro",
+          "status": "complete"
+        }
+      ]
+    }
+  ]
+}
