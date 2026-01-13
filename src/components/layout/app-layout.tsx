@@ -26,6 +26,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   Trash2,
+  RotateCcw,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -137,6 +138,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRestoringDemo, setIsRestoringDemo] = useState(false)
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -190,6 +192,27 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       console.error('Failed to delete project:', error)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleRestoreDemo = async () => {
+    setIsRestoringDemo(true)
+    try {
+      const response = await fetch('/api/projects/restore-demo', {
+        method: 'POST',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        // Refresh projects list and navigate to demo
+        await fetchProjects()
+        router.push(`/project/${data.projectId}`)
+      } else {
+        console.error('Failed to restore demo project')
+      }
+    } catch (error) {
+      console.error('Failed to restore demo:', error)
+    } finally {
+      setIsRestoringDemo(false)
     }
   }
 
@@ -354,6 +377,20 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                           </a>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
+                      {session && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <button
+                              onClick={handleRestoreDemo}
+                              disabled={isRestoringDemo}
+                              className="w-full"
+                            >
+                              <RotateCcw className={`h-4 w-4 ${isRestoringDemo ? 'animate-spin' : ''}`} />
+                              <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo Project'}</span>
+                            </button>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
