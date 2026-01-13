@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import Home from '../page'
+import { HomePage } from '@/components/HomePage'
 
 // Mock fetch globally
 global.fetch = jest.fn()
@@ -53,7 +53,7 @@ describe('Conversation Start Flow', () => {
       })
     )
 
-    render(<Home />)
+    render(<HomePage session={null} />)
 
     // Click "Guided Conversation" entry point
     const guidedButton = screen.getByText(/Guided Conversation/i)
@@ -93,7 +93,7 @@ describe('Conversation Start Flow', () => {
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
 
-    render(<Home />)
+    render(<HomePage session={null} />)
 
     const guidedButton = screen.getByText(/Guided Conversation/i)
     await user.click(guidedButton)
@@ -127,7 +127,7 @@ describe('Conversation Start Flow', () => {
       })
     )
 
-    render(<Home />)
+    render(<HomePage session={null} />)
 
     const guidedButton = screen.getByText(/Guided Conversation/i)
     await user.click(guidedButton)
