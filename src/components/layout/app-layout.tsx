@@ -309,6 +309,22 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                         </SidebarMenuAction>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent side="right" align="start">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/?projectId=${project.id}`}>
+                            <MessageSquare className="h-4 w-4" />
+                            New Chat
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setUploadProjectId(project.id)
+                            setUploadDialogOpen(true)
+                          }}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload Document
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => setProjectToDelete(project)}
                           className="text-destructive focus:text-destructive"
