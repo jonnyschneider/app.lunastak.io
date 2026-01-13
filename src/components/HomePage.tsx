@@ -28,6 +28,7 @@ interface HomePageProps {
 export function HomePage({ session }: HomePageProps) {
   const router = useRouter();
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall();
+  const [isLoadingProjects, setIsLoadingProjects] = useState(!!session); // Start loading if authenticated
   const [hasNoProjects, setHasNoProjects] = useState(false);
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -63,11 +64,15 @@ export function HomePage({ session }: HomePageProps) {
 
   // Redirect authenticated users to their project dashboard (unless they have URL params)
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setIsLoadingProjects(false);
+      return;
+    }
 
     // Don't redirect if URL has params indicating intentional navigation
     const params = new URLSearchParams(window.location.search);
     if (params.get('question') || params.get('deepDiveId') || params.get('projectId')) {
+      setIsLoadingProjects(false);
       return;
     }
 
@@ -80,9 +85,13 @@ export function HomePage({ session }: HomePageProps) {
           router.replace(`/project/${data.projects[0].id}`);
         } else {
           setHasNoProjects(true);
+          setIsLoadingProjects(false);
         }
       })
-      .catch(err => console.error('Failed to fetch projects for redirect:', err));
+      .catch(err => {
+        console.error('Failed to fetch projects for redirect:', err);
+        setIsLoadingProjects(false);
+      });
   }, [session, router]);
 
   // Show registration banner when strategy is displayed and user is not authenticated
@@ -666,18 +675,28 @@ export function HomePage({ session }: HomePageProps) {
     <AppLayout experimentVariant={experimentVariant} showVariantBadge={showVariantBadge}>
       <main className="h-full bg-background flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
-          {showIntro && flowStep === 'intro' && !hasNoProjects && (
+          {/* Authenticated users: show loading or empty state */}
+          {session && flowStep === 'intro' && isLoadingProjects && (
             <IntroCard
               onEntryPointSelect={handleEntryPointSelect}
-              isLoading={isLoading}
+              isLoading={true}
               session={session}
             />
           )}
 
-          {session && hasNoProjects && flowStep === 'intro' && (
+          {session && flowStep === 'intro' && !isLoadingProjects && hasNoProjects && (
             <EmptyProjectState
               onCreateProject={handleCreateProject}
               onRestoreDemo={handleRestoreDemo}
+            />
+          )}
+
+          {/* Unauthenticated users: show intro card */}
+          {!session && showIntro && flowStep === 'intro' && (
+            <IntroCard
+              onEntryPointSelect={handleEntryPointSelect}
+              isLoading={isLoading}
+              session={session}
             />
           )}
 
