@@ -23,6 +23,8 @@ import {
   FolderKanban,
   Upload,
   MessageSquare,
+  MoreHorizontal,
+  Trash2,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -55,6 +57,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -120,6 +132,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -139,6 +153,27 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       console.error('Failed to fetch projects:', error)
     } finally {
       setIsLoadingProjects(false)
+    }
+  }
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        setProjects(projects.filter(p => p.id !== projectToDelete.id))
+        setProjectToDelete(null)
+      } else {
+        console.error('Failed to delete project')
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -239,6 +274,22 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                         </div>
                       </Link>
                     </SidebarMenuButton>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuAction>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </SidebarMenuAction>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="right" align="start">
+                        <DropdownMenuItem
+                          onClick={() => setProjectToDelete(project)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete Project
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -429,6 +480,28 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           }}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{projectToDelete?.name}"? This will permanently delete all conversations, fragments, and generated content. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProject}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sidebar>
   )
 }
