@@ -91,7 +91,9 @@ import {
 } from '@/components/ui/popover'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
+import { PaywallModal } from '@/components/PaywallModal'
 import { useProjectActions } from '@/hooks/use-project-actions'
+import { usePaywall } from '@/hooks/use-paywall'
 import { cn } from '@/lib/utils'
 
 interface Project {
@@ -162,6 +164,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
 
+  const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
+
   const {
     createProject,
     restoreDemo,
@@ -169,7 +173,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     isCreating: isCreatingProject,
     isRestoring: isRestoringDemo,
     isDeleting,
-  } = useProjectActions()
+  } = useProjectActions({ triggerPaywall })
 
   // Derive selected project from pathname
   const selectedProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
@@ -660,6 +664,13 @@ Jot down ideas from meetings, record voice memos on the go, or capture spontaneo
           // Log interest for now
           console.log(`[FakeDoor] User interested in: Add Memo (sidebar)`)
         }}
+      />
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        open={paywallOpen}
+        onOpenChange={(open) => !open && closePaywall()}
+        modal={paywallModal}
       />
     </Sidebar>
   )

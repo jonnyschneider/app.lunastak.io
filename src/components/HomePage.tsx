@@ -666,6 +666,7 @@ export function HomePage({ session }: HomePageProps) {
     const projectId = await restoreDemo();
     if (projectId) {
       router.push(`/project/${projectId}`);
+      router.refresh();
     }
   };
 
