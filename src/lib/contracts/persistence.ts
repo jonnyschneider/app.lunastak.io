@@ -172,3 +172,37 @@ export function validateDocumentUploadInput(data: unknown): data is DocumentUplo
 
   return true;
 }
+
+// Project status values
+export const PROJECT_STATUSES = ['active', 'archived', 'deleted'] as const;
+export type ProjectStatus = typeof PROJECT_STATUSES[number];
+
+// Project record
+export interface ProjectContract {
+  id: string;
+  userId: string;
+  name: string;
+  status: ProjectStatus;
+  isDemo: boolean;
+  description?: string;
+}
+
+export function isValidProjectStatus(status: string): status is ProjectStatus {
+  return PROJECT_STATUSES.includes(status as ProjectStatus);
+}
+
+export function validateProject(data: unknown): data is ProjectContract {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.id !== 'string' || !obj.id) return false;
+  if (typeof obj.userId !== 'string' || !obj.userId) return false;
+  if (typeof obj.name !== 'string' || !obj.name) return false;
+  if (typeof obj.status !== 'string' || !isValidProjectStatus(obj.status)) return false;
+  if (typeof obj.isDemo !== 'boolean') return false;
+
+  // Optional fields
+  if (obj.description !== undefined && obj.description !== null && typeof obj.description !== 'string') return false;
+
+  return true;
+}
