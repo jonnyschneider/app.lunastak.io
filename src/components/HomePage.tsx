@@ -238,6 +238,7 @@ export function HomePage({ session }: HomePageProps) {
   }, [session]);
 
   // Listen for project deletion and reset conversation state
+  // Pattern from SessionTransferProvider - TODO: Replace with proper state management
   useEffect(() => {
     const handleProjectDeleted = () => {
       // Reset conversation state if we have an active conversation

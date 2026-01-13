@@ -864,6 +864,61 @@ A test in `src/lib/__tests__/claude-wrapper.test.ts` scans the codebase to ensur
 
 ---
 
+## Known Compromises
+
+Learnings from runtime discoveries. Each notes whether the fix is **durable** (keep as-is) or **okay for now** (revisit when trigger condition met).
+
+### Platform: Vercel Serverless
+
+| Discovery | Solution | Durability |
+|-----------|----------|------------|
+| **Fire-and-forget doesn't work** - Background tasks silently fail when response completes | `await` all async operations before response | **Durable** - correct serverless pattern |
+| **Statsig events don't flush** - Events logged but never sent | Call `statsig.flush()` immediately after logging | **Durable** - required for serverless |
+
+### Platform: Claude API
+
+| Discovery | Solution | Durability |
+|-----------|----------|------------|
+| **Claude adds preamble to JSON** - "Here's the JSON:" before actual JSON | `extractJSON()` utility finds JSON within text | **Durable** - defensive parsing is correct |
+| **Truncation is silent** - No error when `max_tokens` hit | `createMessage()` wrapper logs warning on truncation | **Okay for now** - logging only. Revisit: auto-retry with higher limit, or structured error handling |
+
+### Platform: NextAuth
+
+| Discovery | Solution | Durability |
+|-----------|----------|------------|
+| **Magic link returns to any page** - Transfer must work globally | `SessionTransferProvider` wraps entire app | **Durable** - correct pattern |
+| **Jarring reloads on tab focus** | Disabled `refetchOnWindowFocus`, use `router.refresh()` | **Durable** - better UX |
+
+### Application Logic
+
+| Discovery | Solution | Durability |
+|-----------|----------|------------|
+| **Synthesis race conditions** - Knowledge summary needs all dimensions complete | Sequential: synthesis → then knowledge summary | **Okay for now** - slow but correct. Revisit when optimizing for performance (parallel with proper coordination) |
+| **Dimensional synthesis records must exist** | Initialize all 11 records on project creation | **Okay for now** - upfront allocation. Revisit if dimensions become dynamic |
+| **Guest-to-auth duplicate projects** | Merge guest data into existing, delete guest project | **Okay for now** - works but brittle. Revisit: proper session-to-user binding at auth layer |
+| **Cross-component state (project deletion)** | Window events (pattern from `SessionTransferProvider`) | **Okay for now** - not idiomatic React. Revisit: proper state management when designing app-wide state |
+
+---
+
+## Decision Log
+
+Intentional trade-offs made during development. Not tech debt (tracked in Linear), but conscious design choices with documented rationale.
+
+### 2026-01-13: Auth Routing & Demo Projects
+
+| Decision | Trade-off | Rationale |
+|----------|-----------|-----------|
+| **Hybrid server/client homepage** | Not fully optimized; client-heavy | Enables fast iteration. Full server rendering requires major refactor. Optimization after PMF. |
+| **Window events for cross-component state** | Not idiomatic React | Consistent with existing `SessionTransferProvider` pattern. Proper state management (Context/Zustand) is future scope. |
+| **`isPaid` boolean only** | No tiers, no Stripe integration | Binary free/paid sufficient for beta. Payment handled on marketing site. |
+| **Hardcoded paywall modal copy** | No CMS or dynamic content | Good enough for beta validation. |
+| **Hard delete projects** | No soft delete, no recovery | Simplicity. Project versioning/recovery deferred. |
+| **Demo seeding fire-and-forget** | If seeding fails, user has no demo | Doesn't block account creation. Acceptable failure mode. |
+| **First project bypass (paywall)** | Simple count check, not entitlement system | Minimal viable paywall for limit enforcement. |
+| **Cookie-based sidebar state** | No server-side preference storage | Uses Shadcn's built-in persistence. `defaultOpen={true}` for first visit only. |
+
+---
+
 ## Notes
 
 - This architecture is designed for Phase 0
@@ -871,4 +926,4 @@ A test in `src/lib/__tests__/claude-wrapper.test.ts` scans the codebase to ensur
 - Prioritize learning and iteration over perfect design
 - Update this document as architecture changes
 
-**Last major update:** Contract-driven quality foundation (2026-01-06)
+**Last major update:** Known Compromises + Decision Log sections (2026-01-13)

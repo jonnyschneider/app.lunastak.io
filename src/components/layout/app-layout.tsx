@@ -174,7 +174,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         setProjects(remainingProjects)
         setProjectToDelete(null)
 
-        // Notify any listeners (e.g., HomePage) that a project was deleted
+        // Notify listeners that a project was deleted (pattern from SessionTransferProvider)
+        // TODO: Replace with proper state management when designing app-wide state
         window.dispatchEvent(new CustomEvent('projectDeleted', {
           detail: { projectId: projectToDelete.id }
         }))
