@@ -386,7 +386,8 @@
               "totalTokens": 2403,
               "promptTokens": 1735,
               "completionTokens": 668,
-              "latencyMs": 23936
+              "latencyMs": 23936,
+              "starred": true
             }
           ]
         }

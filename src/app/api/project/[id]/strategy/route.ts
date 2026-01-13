@@ -3,19 +3,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// Type for the content stored in GeneratedOutput
-interface StrategyContent {
-  vision?: string
-  strategy?: string
-  objectives?: Array<{
-    title: string
-    description: string
-    timeframe?: string
-    direction?: string
-    targetMetric?: string
-  }>
-}
-
+/**
+ * GET /api/project/[id]/strategy
+ * Returns the latest starred trace ID for redirect, or null if no strategy exists
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,7 +20,7 @@ export async function GET(
   const { id: projectId } = await params
 
   try {
-    // Fetch project with latest strategy output and fragment count
+    // Fetch project basic info
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
@@ -38,17 +29,6 @@ export async function GET(
       select: {
         id: true,
         name: true,
-        updatedAt: true,
-        generatedOutputs: {
-          where: { outputType: 'full_decision_stack' },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: {
-            id: true,
-            createdAt: true,
-            content: true,
-          },
-        },
         _count: {
           select: { fragments: true },
         },
@@ -59,31 +39,30 @@ export async function GET(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    const latestOutput = project.generatedOutputs[0]
+    // Find the latest starred trace for this project's conversations
+    const conversations = await prisma.conversation.findMany({
+      where: { projectId },
+      select: { id: true },
+    })
 
-    // Parse content from JSON field
-    let latestStrategy = null
-    if (latestOutput) {
-      const content = latestOutput.content as StrategyContent
-      latestStrategy = {
-        id: latestOutput.id,
-        createdAt: latestOutput.createdAt,
-        vision: content.vision || null,
-        strategy: content.strategy || null,
-        objectives: content.objectives || [],
-      }
+    let latestTraceId: string | null = null
+
+    if (conversations.length > 0) {
+      const starredTrace = await prisma.trace.findFirst({
+        where: {
+          conversationId: { in: conversations.map(c => c.id) },
+          starred: true,
+        },
+        orderBy: { timestamp: 'desc' },
+        select: { id: true },
+      })
+
+      latestTraceId = starredTrace?.id || null
     }
 
-    // Check if there's new thinking since last strategy
-    const hasNewThinking = latestOutput
-      ? project.updatedAt > latestOutput.createdAt
-      : project._count.fragments > 0
-
     return NextResponse.json({
-      id: project.id,
-      name: project.name,
-      latestStrategy,
-      hasNewThinking,
+      latestTraceId,
+      projectName: project.name,
       thinkingCount: project._count.fragments,
     })
   } catch (error) {
