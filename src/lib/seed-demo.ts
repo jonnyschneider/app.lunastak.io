@@ -219,6 +219,22 @@ export async function seedDemoProject(userId: string): Promise<string> {
       });
     }
 
+    // Create documents
+    for (const doc of projectData.documents) {
+      await prisma.document.create({
+        data: {
+          id: doc.id,
+          projectId: project.id,
+          deepDiveId: doc.deepDiveId,
+          fileName: doc.fileName,
+          fileType: doc.fileType,
+          fileSizeBytes: doc.fileSizeBytes,
+          uploadContext: doc.uploadContext,
+          status: doc.status,
+        },
+      });
+    }
+
     // Create conversations
     for (const conv of projectData.conversations) {
       const conversation = await prisma.conversation.create({
