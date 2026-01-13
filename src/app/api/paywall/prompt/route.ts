@@ -52,6 +52,23 @@ export async function POST(request: Request) {
     return NextResponse.json(response);
   }
 
+  // Feature-specific checks for free users
+  if (body.feature === 'create_project') {
+    // Free users can create 1 non-demo project
+    const existingProjects = await prisma.project.count({
+      where: {
+        userId: session.user.id,
+        isDemo: false,
+        status: 'active',
+      },
+    });
+
+    if (existingProjects < 1) {
+      const response: PaywallResponseContract = { blocked: false };
+      return NextResponse.json(response);
+    }
+  }
+
   // Log the upgrade intent
   await prisma.event.create({
     data: {
