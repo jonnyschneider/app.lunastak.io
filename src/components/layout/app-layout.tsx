@@ -174,6 +174,11 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         setProjects(remainingProjects)
         setProjectToDelete(null)
 
+        // Notify any listeners (e.g., HomePage) that a project was deleted
+        window.dispatchEvent(new CustomEvent('projectDeleted', {
+          detail: { projectId: projectToDelete.id }
+        }))
+
         // Check if we're currently viewing the deleted project or its content
         const isViewingDeletedProject = pathname?.includes(projectToDelete.id)
 
