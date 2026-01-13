@@ -18,6 +18,10 @@ import {
   validateDocumentUploadInput,
   isValidDocumentStatus,
   DOCUMENT_STATUSES,
+  validateProject,
+  isValidProjectStatus,
+  PROJECT_STATUSES,
+  ProjectContract,
 } from '@/lib/contracts/persistence';
 
 describe('Persistence Contracts', () => {
@@ -308,6 +312,50 @@ describe('Persistence Contracts', () => {
     it('should reject upload input with invalid fileSizeBytes type', () => {
       const invalid = { ...validInput, fileSizeBytes: '500000' };
       expect(validateDocumentUploadInput(invalid)).toBe(false);
+    });
+  });
+
+  describe('ProjectContract', () => {
+    const validProject = {
+      id: 'proj_abc123',
+      userId: 'user_xyz789',
+      name: 'My Strategy',
+      status: 'active',
+      isDemo: false,
+    };
+
+    it('should validate a correct project', () => {
+      expect(validateProject(validProject)).toBe(true);
+    });
+
+    it('should validate a demo project', () => {
+      const demoProject = { ...validProject, isDemo: true, name: 'Demo: Catalyst Strategy' };
+      expect(validateProject(demoProject)).toBe(true);
+    });
+
+    it('should reject project with missing id', () => {
+      const { id, ...invalid } = validProject;
+      expect(validateProject(invalid)).toBe(false);
+    });
+
+    it('should reject project with missing userId', () => {
+      const { userId, ...invalid } = validProject;
+      expect(validateProject(invalid)).toBe(false);
+    });
+
+    it('should reject project with missing name', () => {
+      const { name, ...invalid } = validProject;
+      expect(validateProject(invalid)).toBe(false);
+    });
+
+    it('should reject project with invalid status', () => {
+      const invalid = { ...validProject, status: 'invalid' };
+      expect(validateProject(invalid)).toBe(false);
+    });
+
+    it('should reject project with non-boolean isDemo', () => {
+      const invalid = { ...validProject, isDemo: 'true' };
+      expect(validateProject(invalid)).toBe(false);
     });
   });
 });
