@@ -166,6 +166,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
     data: {
       email: options.email,
       name: fixture.user.name,
+      emailVerified: new Date(), // Required for NextAuth magic link login
     },
   });
 

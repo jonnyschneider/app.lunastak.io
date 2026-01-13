@@ -1,5 +1,53 @@
 # Development Scripts
 
+## Seed Scripts
+
+Hydrate test data into any account using fixtures. Useful for demos, testing, and development.
+
+### Usage
+
+```bash
+# Basic usage
+npm run seed:hydrate -- --fixture <name> --email <email>
+
+# With reset (deletes existing user first)
+npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --reset
+
+# Dry run (preview without changes)
+npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --dry-run
+
+# Override experiment variant
+npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --variant baseline-v1
+```
+
+### Available Fixtures
+
+| Fixture | Description |
+|---------|-------------|
+| `demo-dogfood` | Full demo with conversations, fragments, and deep dives |
+| `demo-simulated` | Simulated user journey data |
+| `empty-project` | Empty project for testing onboarding flows |
+| `test-minimal` | Minimal fixture for unit tests |
+
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `--fixture <name>` | Fixture name (required) |
+| `--email <email>` | Email for the account (required) |
+| `--reset` | Delete existing user data first |
+| `--dry-run` | Preview without writing to database |
+| `--variant <variant>` | Override experiment variant on all conversations |
+| `--production` | Allow running against production DB (use with caution) |
+
+### Creating New Fixtures
+
+1. Export from an existing account: `npm run seed:export -- --email user@example.com`
+2. Or create manually in `scripts/seed/fixtures/<name>.json`
+3. Validate with: `npm run seed:validate -- --fixture <name>`
+
+---
+
 ## Regeneration Scripts
 
 Two ways to regenerate strategies from existing traces:
