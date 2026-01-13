@@ -392,10 +392,10 @@ export default function ProjectPage() {
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            {projectData?.name || 'Your Strategy'}
+            {projectData?.name || 'Thinking'}
           </h1>
           <p className="text-muted-foreground">
-            Feed inputs, have conversations with Luna, and build your decision stack.
+            Your second brain for strategy. Capture ideas, explore questions, and refine your thinking.
           </p>
         </div>
 
