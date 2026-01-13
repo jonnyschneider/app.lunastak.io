@@ -288,53 +288,85 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             {session && !isLoadingProjects && projects.length > 0 && (
               <SidebarMenu>
                 {projects.map((project) => (
-                  <SidebarMenuItem key={project.id}>
-                    <SidebarMenuButton asChild className="h-auto py-2">
-                      <Link href={`/project/${project.id}`}>
-                        <FolderKanban className="h-4 w-4" />
-                        <div className="flex flex-col items-start gap-0.5 min-w-0">
-                          <span className="font-medium text-sm leading-tight truncate">
-                            {project.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {project.fragmentCount} fragments, {project.conversationCount} chats
-                          </span>
-                        </div>
-                      </Link>
-                    </SidebarMenuButton>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/?projectId=${project.id}`}>
-                            <MessageSquare className="h-4 w-4" />
-                            New Chat
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setUploadProjectId(project.id)
-                            setUploadDialogOpen(true)
-                          }}
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload Document
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setProjectToDelete(project)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete Project
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
+                  <Collapsible key={project.id} asChild defaultOpen={pathname?.includes(project.id)} className="group/collapsible">
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton className="h-auto py-2">
+                          <FolderKanban className="h-4 w-4" />
+                          <div className="flex flex-col items-start gap-0.5 min-w-0 flex-1">
+                            <span className="font-medium text-sm leading-tight truncate">
+                              {project.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {project.fragmentCount} fragments
+                            </span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right" align="start">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/?projectId=${project.id}`}>
+                              <MessageSquare className="h-4 w-4" />
+                              New Chat
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setUploadProjectId(project.id)
+                              setUploadDialogOpen(true)
+                            }}
+                          >
+                            <Upload className="h-4 w-4" />
+                            Upload Document
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setProjectToDelete(project)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete Project
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}/strategy`}>
+                              <Link href={`/project/${project.id}/strategy`}>
+                                <Target className="h-4 w-4" />
+                                <span>Strategy</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}` || pathname === `/project/${project.id}/thinking`}>
+                              <Link href={`/project/${project.id}`}>
+                                <Brain className="h-4 w-4" />
+                                <span>Thinking</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}/outcomes`}>
+                              <Link href={`/project/${project.id}/outcomes`}>
+                                <TrendingUp className="h-4 w-4" />
+                                <span>Outcomes</span>
+                                <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
                 ))}
               </SidebarMenu>
             )}
