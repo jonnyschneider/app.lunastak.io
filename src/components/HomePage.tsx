@@ -15,6 +15,9 @@ import { FakeDoorDialog } from '@/components/FakeDoorDialog';
 import { ExtractionProgress, ExtractionStep } from '@/components/ExtractionProgress';
 import { Message, ExtractedContext, EnhancedExtractedContext, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types';
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog';
+import { EmptyProjectState } from '@/components/EmptyProjectState';
+import { PaywallModal } from '@/components/PaywallModal';
+import { usePaywall } from '@/hooks/use-paywall';
 
 type FlowStep = 'intro' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
@@ -24,6 +27,8 @@ interface HomePageProps {
 
 export function HomePage({ session }: HomePageProps) {
   const router = useRouter();
+  const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall();
+  const [hasNoProjects, setHasNoProjects] = useState(false);
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -66,12 +71,15 @@ export function HomePage({ session }: HomePageProps) {
       return;
     }
 
-    // Fetch projects and redirect to first one
+    // Fetch projects and redirect to first one (or show empty state)
     fetch('/api/projects')
       .then(res => res.json())
       .then(data => {
         if (data.projects && data.projects.length > 0) {
+          setHasNoProjects(false);
           router.replace(`/project/${data.projects[0].id}`);
+        } else {
+          setHasNoProjects(true);
         }
       })
       .catch(err => console.error('Failed to fetch projects for redirect:', err));
@@ -614,6 +622,43 @@ export function HomePage({ session }: HomePageProps) {
     setDeepDiveDialogOpen(true);
   };
 
+  // Handle creating a new project from empty state
+  const handleCreateProject = async () => {
+    try {
+      // Check paywall first
+      const blocked = await triggerPaywall('create_project');
+      if (blocked) return;
+
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/project/${data.project.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to create project:', error);
+    }
+  };
+
+  // Handle restoring demo project from empty state
+  const handleRestoreDemo = async () => {
+    try {
+      const response = await fetch('/api/projects/restore-demo', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/project/${data.projectId}`);
+      }
+    } catch (error) {
+      console.error('Failed to restore demo:', error);
+    }
+  };
+
   // Show variant badge during active conversation flow (for UAT/testing)
   const showVariantBadge = ['chat', 'extracting', 'extraction'].includes(flowStep);
 
@@ -621,11 +666,18 @@ export function HomePage({ session }: HomePageProps) {
     <AppLayout experimentVariant={experimentVariant} showVariantBadge={showVariantBadge}>
       <main className="h-full bg-background flex flex-col">
         <div className="container mx-auto py-8 flex-1 flex flex-col min-h-0">
-          {showIntro && flowStep === 'intro' && (
+          {showIntro && flowStep === 'intro' && !hasNoProjects && (
             <IntroCard
               onEntryPointSelect={handleEntryPointSelect}
               isLoading={isLoading}
               session={session}
+            />
+          )}
+
+          {session && hasNoProjects && flowStep === 'intro' && (
+            <EmptyProjectState
+              onCreateProject={handleCreateProject}
+              onRestoreDemo={handleRestoreDemo}
             />
           )}
 
@@ -714,6 +766,13 @@ export function HomePage({ session }: HomePageProps) {
               sourceMessageId={deferralMessageId}
             />
           )}
+
+          {/* Paywall Modal */}
+          <PaywallModal
+            open={paywallOpen}
+            onOpenChange={closePaywall}
+            modal={paywallModal}
+          />
         </div>
       </main>
     </AppLayout>
