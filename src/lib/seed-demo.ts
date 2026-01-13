@@ -8,6 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions';
 import type { Fixture } from '../../scripts/seed/types';
 
@@ -234,9 +235,9 @@ export async function seedDemoProject(userId: string): Promise<string> {
           data: {
             conversationId: conversation.id,
             userId,
-            extractedContext: trace.extractedContext,
-            dimensionalCoverage: trace.dimensionalCoverage,
-            output: trace.output,
+            extractedContext: trace.extractedContext as Prisma.InputJsonValue,
+            dimensionalCoverage: trace.dimensionalCoverage as Prisma.InputJsonValue | undefined,
+            output: trace.output as Prisma.InputJsonValue,
             claudeThoughts: trace.claudeThoughts,
             modelUsed: trace.modelUsed,
             totalTokens: trace.totalTokens,

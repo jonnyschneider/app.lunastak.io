@@ -3,6 +3,7 @@ import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
+import { seedDemoProject } from "@/lib/seed-demo"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -28,6 +29,14 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/signin",
     verifyRequest: "/auth/verify-request",
+  },
+  events: {
+    createUser: async ({ user }) => {
+      // Seed demo project for new users
+      await seedDemoProject(user.id).catch((err) =>
+        console.error('Failed to seed demo project:', err)
+      );
+    },
   },
   callbacks: {
     async session({ session, user }) {
