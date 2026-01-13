@@ -28,7 +28,6 @@ import {
   Database,
   Star,
   NotebookPen,
-  Mic,
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -273,13 +272,9 @@ export default function ProjectPage() {
   // Fake door handlers
   const handleFakeDoor = (feature: string) => {
     const featureConfig: Record<string, { name: string; description: string }> = {
-      'Add Notes': {
-        name: 'Quick Notes',
-        description: 'Capture quick thoughts and observations directly in your project.\n\nJot down ideas from meetings, brainstorms, or spontaneous insights without leaving the context of your strategy work.',
-      },
-      'Voice Memo': {
-        name: 'Voice Memos',
-        description: 'Record audio notes and have them transcribed automatically.\n\nPerfect for capturing ideas on the go, or when typing isn\'t convenient. Luna will extract strategic insights from your recordings.',
+      'Add Memo': {
+        name: 'Memos',
+        description: 'Capture quick thoughts, voice notes, or observations directly in your project.\n\nJot down ideas from meetings, record voice memos on the go, or capture spontaneous insights. Luna will extract strategic themes from your memos.',
       },
     }
 
@@ -442,10 +437,10 @@ export default function ProjectPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Upload className="h-4 w-4" />
-                Documents & Uploads
+                Documents & Memos
               </CardTitle>
               <CardDescription className="text-xs">
-                Files that inform your strategy
+                Files and notes that inform your strategy
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -502,25 +497,16 @@ export default function ProjectPage() {
                   onClick={() => setUploadDialogOpen(true)}
                 >
                   <Upload className="h-3 w-3 mr-1" />
-                  Upload
+                  Upload Doc
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => handleFakeDoor('Add Notes')}
+                  onClick={() => handleFakeDoor('Add Memo')}
                 >
                   <NotebookPen className="h-3 w-3 mr-1" />
-                  Notes
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleFakeDoor('Voice Memo')}
-                >
-                  <Mic className="h-3 w-3 mr-1" />
-                  Voice
+                  Add Memo
                 </Button>
               </div>
             </CardContent>
@@ -939,6 +925,7 @@ export default function ProjectPage() {
                                   variant="outline"
                                   size="sm"
                                   className="h-7 px-2"
+                                  title="Chat"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     router.push(`/?deepDiveId=${dd.id}`)
@@ -950,12 +937,25 @@ export default function ProjectPage() {
                                   variant="outline"
                                   size="sm"
                                   className="h-7 px-2"
+                                  title="Upload Doc"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     setUploadDialogOpen(true)
                                   }}
                                 >
                                   <Upload className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  title="Add Memo"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleFakeDoor('Add Memo')
+                                  }}
+                                >
+                                  <NotebookPen className="h-3.5 w-3.5" />
                                 </Button>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -1078,7 +1078,7 @@ export default function ProjectPage() {
                         <Link
                           href={`/?question=${encodeURIComponent(`Tell me more about your ${DIMENSION_LABELS[area.dimension as Tier1Dimension]?.toLowerCase() || area.dimension}`)}`}
                         >
-                          <Button variant="outline" size="sm" className="h-7 px-2">
+                          <Button variant="outline" size="sm" className="h-7 px-2" title="Chat">
                             <MessageSquare className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
@@ -1086,9 +1086,19 @@ export default function ProjectPage() {
                           variant="outline"
                           size="sm"
                           className="h-7 px-2"
+                          title="Upload Doc"
                           onClick={() => setUploadDialogOpen(true)}
                         >
                           <Upload className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2"
+                          title="Add Memo"
+                          onClick={() => handleFakeDoor('Add Memo')}
+                        >
+                          <NotebookPen className="h-3.5 w-3.5" />
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

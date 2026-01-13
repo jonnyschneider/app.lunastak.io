@@ -2,10 +2,10 @@ import { loadDemoFixture, transformFixtureForUser } from '@/lib/seed-demo';
 
 describe('seedDemoProject', () => {
   describe('loadDemoFixture', () => {
-    it('should load the demo-simulated fixture', async () => {
+    it('should load the demo-extended fixture', async () => {
       const fixture = await loadDemoFixture();
       expect(fixture).toBeDefined();
-      expect(fixture.template.name).toBe('demo-simulated');
+      expect(fixture.template.name).toBe('demo-extended');
       expect(fixture.projects.length).toBeGreaterThan(0);
     });
   });
@@ -20,7 +20,7 @@ describe('seedDemoProject', () => {
       expect(transformed.userId).toBe(userId);
       expect(transformed.projects[0].userId).toBe(userId);
       expect(transformed.projects[0].isDemo).toBe(true);
-      expect(transformed.projects[0].name).toBe('Demo: Catalyst Strategy');
+      expect(transformed.projects[0].name).toBe('Demo: BuildFlow Strategy');
       // IDs should be new CUIDs, not template placeholders
       expect(transformed.projects[0].id).not.toContain('{{');
     });

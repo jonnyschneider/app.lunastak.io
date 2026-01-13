@@ -18,6 +18,7 @@ import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog';
 import { EmptyProjectState } from '@/components/EmptyProjectState';
 import { PaywallModal } from '@/components/PaywallModal';
 import { usePaywall } from '@/hooks/use-paywall';
+import { useProjectActions } from '@/hooks/use-project-actions';
 
 type FlowStep = 'intro' | 'chat' | 'extracting' | 'extraction' | 'strategy';
 
@@ -28,6 +29,7 @@ interface HomePageProps {
 export function HomePage({ session }: HomePageProps) {
   const router = useRouter();
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall();
+  const { createProject, restoreDemo } = useProjectActions({ triggerPaywall });
   const [isLoadingProjects, setIsLoadingProjects] = useState(!!session); // Start loading if authenticated
   const [hasNoProjects, setHasNoProjects] = useState(false);
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
@@ -653,38 +655,17 @@ export function HomePage({ session }: HomePageProps) {
 
   // Handle creating a new project from empty state
   const handleCreateProject = async () => {
-    try {
-      // Check paywall first
-      const blocked = await triggerPaywall('create_project');
-      if (blocked) return;
-
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        router.push(`/project/${data.project.id}`);
-      }
-    } catch (error) {
-      console.error('Failed to create project:', error);
+    const projectId = await createProject();
+    if (projectId) {
+      router.push(`/project/${projectId}`);
     }
   };
 
   // Handle restoring demo project from empty state
   const handleRestoreDemo = async () => {
-    try {
-      const response = await fetch('/api/projects/restore-demo', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        router.push(`/project/${data.projectId}`);
-      }
-    } catch (error) {
-      console.error('Failed to restore demo:', error);
+    const projectId = await restoreDemo();
+    if (projectId) {
+      router.push(`/project/${projectId}`);
     }
   };
 
