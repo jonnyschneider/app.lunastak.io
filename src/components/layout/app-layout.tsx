@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   ChevronUp,
@@ -129,6 +130,8 @@ export function AppLayout({
 
 function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimentVariant?: string; showVariantBadge?: boolean }) {
   const { data: session } = useSession()
+  const router = useRouter()
+  const pathname = usePathname()
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
@@ -165,8 +168,21 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         method: 'DELETE',
       })
       if (response.ok) {
-        setProjects(projects.filter(p => p.id !== projectToDelete.id))
+        const remainingProjects = projects.filter(p => p.id !== projectToDelete.id)
+        setProjects(remainingProjects)
         setProjectToDelete(null)
+
+        // Check if we're currently viewing the deleted project or its content
+        const isViewingDeletedProject = pathname?.includes(projectToDelete.id)
+
+        if (remainingProjects.length === 0) {
+          // No projects left - go to homepage (shows empty state)
+          router.push('/')
+        } else if (isViewingDeletedProject) {
+          // Was viewing deleted project - go to first remaining
+          router.push(`/project/${remainingProjects[0].id}`)
+        }
+        // Otherwise stay on current page
       } else {
         console.error('Failed to delete project')
       }
