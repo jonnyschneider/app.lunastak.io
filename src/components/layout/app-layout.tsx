@@ -27,6 +27,10 @@ import {
   MoreHorizontal,
   Trash2,
   RotateCcw,
+  Target,
+  Brain,
+  TrendingUp,
+  Lock,
 } from 'lucide-react'
 import {
   Sidebar,
