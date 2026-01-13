@@ -27,6 +27,8 @@ import {
   Crosshair,
   Database,
   Star,
+  NotebookPen,
+  Mic,
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -38,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 
 interface ProjectStats {
   fragmentCount: number
@@ -168,6 +171,12 @@ export default function ProjectPage() {
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
   const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
+  const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
+  const [fakeDoorConfig, setFakeDoorConfig] = useState<{
+    name: string
+    description: string
+    feature: string
+  } | null>(null)
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -259,6 +268,33 @@ export default function ProjectPage() {
     // Close sheet and open upload dialog
     setDeepDiveSheetOpen(false)
     setUploadDialogOpen(true)
+  }
+
+  // Fake door handlers
+  const handleFakeDoor = (feature: string) => {
+    const featureConfig: Record<string, { name: string; description: string }> = {
+      'Add Notes': {
+        name: 'Quick Notes',
+        description: 'Capture quick thoughts and observations directly in your project.\n\nJot down ideas from meetings, brainstorms, or spontaneous insights without leaving the context of your strategy work.',
+      },
+      'Voice Memo': {
+        name: 'Voice Memos',
+        description: 'Record audio notes and have them transcribed automatically.\n\nPerfect for capturing ideas on the go, or when typing isn\'t convenient. Luna will extract strategic insights from your recordings.',
+      },
+    }
+
+    setFakeDoorConfig({
+      ...featureConfig[feature],
+      feature,
+    })
+    setFakeDoorOpen(true)
+  }
+
+  const handleFakeDoorInterest = () => {
+    if (!fakeDoorConfig) return
+    // Log interest for now - project-level events don't have conversationId required by Event model.
+    // TODO: Once beta scope is locked, implement as Statsig custom event for proper analytics.
+    console.log(`[FakeDoor] User interested in: ${fakeDoorConfig.feature} (project: ${projectId})`)
   }
 
   // Toggle conversation star
@@ -458,15 +494,35 @@ export default function ProjectPage() {
                   <p className="text-xs">No documents yet</p>
                 </div>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-3"
-                onClick={() => setUploadDialogOpen(true)}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Upload
-              </Button>
+              <div className="flex gap-2 mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setUploadDialogOpen(true)}
+                >
+                  <Upload className="h-3 w-3 mr-1" />
+                  Upload
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleFakeDoor('Add Notes')}
+                >
+                  <NotebookPen className="h-3 w-3 mr-1" />
+                  Notes
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleFakeDoor('Voice Memo')}
+                >
+                  <Mic className="h-3 w-3 mr-1" />
+                  Voice
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -1116,6 +1172,17 @@ export default function ProjectPage() {
         onStartChat={handleStartDeepDiveChat}
         onUploadDoc={handleUploadToDeepDive}
       />
+
+      {/* Fake Door Dialog */}
+      {fakeDoorConfig && (
+        <FakeDoorDialog
+          open={fakeDoorOpen}
+          onOpenChange={setFakeDoorOpen}
+          featureName={fakeDoorConfig.name}
+          description={fakeDoorConfig.description}
+          onInterest={handleFakeDoorInterest}
+        />
+      )}
     </AppLayout>
   )
 }
