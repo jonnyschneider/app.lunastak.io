@@ -237,6 +237,25 @@ export function HomePage({ session }: HomePageProps) {
     }
   }, [session]);
 
+  // Listen for project deletion and reset conversation state
+  useEffect(() => {
+    const handleProjectDeleted = () => {
+      // Reset conversation state if we have an active conversation
+      if (conversationId) {
+        setConversationId(null);
+        setMessages([]);
+        setFlowStep('intro');
+        setShowIntro(true);
+        setExtractedContext(null);
+        setStrategy(null);
+        setCurrentPhase('INITIAL');
+      }
+    };
+
+    window.addEventListener('projectDeleted', handleProjectDeleted);
+    return () => window.removeEventListener('projectDeleted', handleProjectDeleted);
+  }, [conversationId]);
+
   const handleStartClick = () => {
     startConversation();
   };
