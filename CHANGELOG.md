@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.6.1] - 2026-01-14
+
+### Added
+- **useProjectActions Hook** - Consolidated project action logic into reusable hook
+  - `createProject()`, `restoreDemo()`, `deleteProject()` with loading states
+  - Optional paywall integration for create action
+  - Used by HomePage, AppSidebar, and EmptyProjectState
+
+- **Syntheses Support in Fixtures** - Fixture hydration now creates DimensionalSynthesis records
+  - `FixtureSynthesis` type added to fixture schema
+  - Demo fixtures can specify coverage levels and gaps per dimension
+  - Enables "Close Gaps" section to work with demo data
+
+### Changed
+- **Project Combobox Reorganized** - All project actions now in one place
+  - Add Project, Restore Demo, Delete Current Project moved from Settings menu
+  - Cleaner separation: projects list above, actions below
+
+- **Page Headings Updated**
+  - Strategy page: "Current Strategy: Decision Stack"
+  - Historical strategy view: "Decision Stack" with generated date
+  - Thinking page: "Refine Your Strategic Direction" (unchanged)
+
+- **New User Demo Fixture** - Switched from `demo-simulated` to `demo-extended`
+  - BuildFlow construction project management scenario
+  - Richer content: 2 conversations, 3 documents, 2 deep dives, 12 fragments
+  - Includes dimensional syntheses with intentional gaps (GO_TO_MARKET, RISKS_CONSTRAINTS)
+
+---
 ## [1.6.0] - 2026-01-14
 
 ### Added - Project Navigation Restructure
