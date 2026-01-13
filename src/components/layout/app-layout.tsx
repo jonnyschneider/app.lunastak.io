@@ -6,7 +6,8 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   ChevronUp,
-  ChevronRight,
+  Check,
+  ChevronsUpDown,
   Settings,
   BookOpen,
   Puzzle,
@@ -20,11 +21,9 @@ import {
   CreditCard,
   Bell,
   LogOut,
-  Plus,
   FolderKanban,
   Upload,
   MessageSquare,
-  MoreHorizontal,
   Trash2,
   RotateCcw,
   Target,
@@ -44,7 +43,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuAction,
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
@@ -75,7 +73,21 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
+import { cn } from '@/lib/utils'
 
 interface Project {
   id: string
@@ -144,6 +156,11 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRestoringDemo, setIsRestoringDemo] = useState(false)
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null)
+  const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
+
+  // Derive selected project from pathname
+  const selectedProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
+  const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0] || null
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -242,136 +259,158 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     return session.user?.name || session.user?.email?.split('@')[0] || 'User'
   }
 
-  // Get first project ID for links (temporary until multi-project)
-  const firstProjectId = projects.length > 0 ? projects[0].id : null
-
   return (
     <Sidebar>
-      <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
-        <Link
-          href={firstProjectId ? `/project/${firstProjectId}` : '/'}
-          className="flex items-center gap-2"
-        >
-          <img
-            src="/lunastak-logo.svg"
-            alt="Lunastak"
-            className="h-8 w-auto"
-          />
-        </Link>
-      </SidebarHeader>
-      <SidebarContent>
-        {/* Projects */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Projects</SidebarGroupLabel>
-          <SidebarGroupContent>
-            {!session && (
-              <div className="px-2 py-2 text-sm text-muted-foreground">
-                <Link
-                  href="/auth/signin"
-                  className="text-primary hover:text-primary/80 underline"
-                >
-                  Sign in
-                </Link>{' '}
-                to see your projects
-              </div>
-            )}
-            {session && isLoadingProjects && (
-              <div className="px-2 py-2 text-sm text-muted-foreground">
-                Loading...
-              </div>
-            )}
-            {session && !isLoadingProjects && projects.length === 0 && (
-              <div className="px-2 py-2 text-sm text-muted-foreground">
-                No projects yet
-              </div>
-            )}
-            {session && !isLoadingProjects && projects.length > 0 && (
-              <SidebarMenu>
-                {projects.map((project) => (
-                  <Collapsible key={project.id} asChild defaultOpen={pathname?.includes(project.id)} className="group/collapsible">
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="h-auto py-2">
-                          <FolderKanban className="h-4 w-4" />
-                          <div className="flex flex-col items-start gap-0.5 min-w-0 flex-1">
-                            <span className="font-medium text-sm leading-tight truncate">
-                              {project.name}
-                            </span>
+      <SidebarHeader className="border-b px-3 py-3">
+        {/* Project Switcher */}
+        {!session ? (
+          <div className="text-sm text-muted-foreground">
+            <Link
+              href="/auth/signin"
+              className="text-primary hover:text-primary/80 underline"
+            >
+              Sign in
+            </Link>{' '}
+            to see your projects
+          </div>
+        ) : isLoadingProjects ? (
+          <div className="h-9 flex items-center text-sm text-muted-foreground">
+            Loading...
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="text-sm text-muted-foreground">
+            No projects yet
+          </div>
+        ) : (
+          <Popover open={projectSwitcherOpen} onOpenChange={setProjectSwitcherOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={projectSwitcherOpen}
+                className="w-full justify-between h-auto py-2"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FolderKanban className="h-4 w-4 shrink-0" />
+                  <div className="flex flex-col items-start gap-0 min-w-0 text-left">
+                    <span className="font-medium text-sm leading-tight truncate">
+                      {selectedProject?.name || 'Select project'}
+                    </span>
+                    {selectedProject && (
+                      <span className="text-xs text-muted-foreground">
+                        {selectedProject.fragmentCount} fragments
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search projects..." />
+                <CommandList>
+                  <CommandEmpty>No project found.</CommandEmpty>
+                  <CommandGroup>
+                    {projects.map((project) => (
+                      <CommandItem
+                        key={project.id}
+                        value={project.name}
+                        onSelect={() => {
+                          router.push(`/project/${project.id}`)
+                          setProjectSwitcherOpen(false)
+                        }}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderKanban className="h-4 w-4 shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">{project.name}</span>
                             <span className="text-xs text-muted-foreground">
                               {project.fragmentCount} fragments
                             </span>
                           </div>
-                          <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="start">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/?projectId=${project.id}`}>
-                              <MessageSquare className="h-4 w-4" />
-                              New Chat
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setUploadProjectId(project.id)
-                              setUploadDialogOpen(true)
-                            }}
-                          >
-                            <Upload className="h-4 w-4" />
-                            Upload Document
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setProjectToDelete(project)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete Project
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}/strategy`}>
-                              <Link href={`/project/${project.id}/strategy`}>
-                                <Target className="h-4 w-4" />
-                                <span>Strategy</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}` || pathname === `/project/${project.id}/thinking`}>
-                              <Link href={`/project/${project.id}`}>
-                                <Brain className="h-4 w-4" />
-                                <span>Thinking</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}/outcomes`}>
-                              <Link href={`/project/${project.id}/outcomes`}>
-                                <TrendingUp className="h-4 w-4" />
-                                <span>Outcomes</span>
-                                <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ))}
+                        </div>
+                        <Check
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            selectedProject?.id === project.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        )}
+      </SidebarHeader>
+      <SidebarContent>
+        {/* Quick Actions - only show when project selected */}
+        {session && selectedProject && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={`/?projectId=${selectedProject.id}`}>
+                      <MessageSquare className="h-4 w-4" />
+                      <span>New Chat</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      setUploadProjectId(selectedProject.id)
+                      setUploadDialogOpen(true)
+                    }}
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>Upload Document</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
-            )}
-          </SidebarGroupContent>
-        </SidebarGroup>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Project Navigation - only show when project selected */}
+        {session && selectedProject && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Navigate</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/strategy`}>
+                    <Link href={`/project/${selectedProject.id}/strategy`}>
+                      <Target className="h-4 w-4" />
+                      <span>Current Strategy</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
+                    <Link href={`/project/${selectedProject.id}`}>
+                      <Brain className="h-4 w-4" />
+                      <span>Thinking</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/outcomes`}>
+                    <Link href={`/project/${selectedProject.id}/outcomes`}>
+                      <TrendingUp className="h-4 w-4" />
+                      <span>Outcomes</span>
+                      <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* Your Lunastak */}
         <SidebarGroup>
@@ -385,7 +424,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     <SidebarMenuButton>
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>
-                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -428,6 +466,19 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       )}
+                      {session && selectedProject && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <button
+                              onClick={() => setProjectToDelete(selectedProject)}
+                              className="w-full text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Delete Current Project</span>
+                            </button>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
@@ -440,7 +491,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     <SidebarMenuButton>
                       <BookOpen className="h-4 w-4" />
                       <span>Documentation</span>
-                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>

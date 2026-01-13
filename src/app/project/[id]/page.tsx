@@ -392,129 +392,24 @@ export default function ProjectPage() {
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            {projectData?.name || 'Thinking'}
+            Refine Your Strategic Direction
           </h1>
           <p className="text-muted-foreground">
             Your second brain for strategy. Capture ideas, explore questions, and refine your thinking.
           </p>
         </div>
 
-        {/* Top Section: What Luna Knows + Summary Stats */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* What Luna Knows - Left */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="h-5 w-5 text-green-600" />
-                What Luna Knows
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {projectData?.knowledgeSummary ? (
-                <div className="space-y-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {projectData.knowledgeSummary}
-                  </p>
-                  {projectData.knowledgeUpdatedAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Last updated: {new Date(projectData.knowledgeUpdatedAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No knowledge yet</p>
-                  <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
-                  <Button asChild size="sm">
-                    <Link href={`/?projectId=${projectId}`}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Start a Conversation
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Knowledge Base - Right */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Database className="h-5 w-5 text-green-600" />
-                Knowledge Base
-              </CardTitle>
-              <CardDescription>
-                What Luna knows about your strategy
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Stats Row */}
-              <div className="grid grid-cols-4 gap-2">
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.fragmentCount}</div>
-                  <div className="text-xs text-muted-foreground">Fragments</div>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.conversationCount}</div>
-                  <div className="text-xs text-muted-foreground">Chats</div>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.documentCount}</div>
-                  <div className="text-xs text-muted-foreground">Docs</div>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{coveragePercentage}%</div>
-                  <div className="text-xs text-muted-foreground">Coverage</div>
-                </div>
-              </div>
-
-              {/* 10 Dimensions Section */}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                  Coverage across 10 strategic dimensions
-                </h4>
-                <div className="space-y-1.5">
-                  {TIER_1_DIMENSIONS.map((dimension) => {
-                    const coverage = stats.dimensionalCoverage[dimension]
-                    const fragmentCount = coverage?.fragmentCount || 0
-                    const synthesis = projectData?.syntheses?.find(s => s.dimension === dimension)
-                    const confidence = synthesis?.confidence || (fragmentCount > 0 ? 'MEDIUM' : 'LOW')
-
-                    return (
-                      <div
-                        key={dimension}
-                        className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <ConfidenceIcon confidence={confidence} />
-                          <span className="text-muted-foreground">
-                            {DIMENSION_LABELS[dimension]}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {fragmentCount > 0 ? `${fragmentCount}` : '—'}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Middle Section: Inputs | Conversations | Outputs */}
+        {/* Documents | Chats | Generated Strategies */}
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Inputs Column */}
+          {/* Documents Column */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Upload className="h-4 w-4" />
-                Inputs
+                Documents & Uploads
               </CardTitle>
               <CardDescription className="text-xs">
-                Documents that inform your strategy
+                Files that inform your strategy
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -575,15 +470,15 @@ export default function ProjectPage() {
             </CardContent>
           </Card>
 
-          {/* Conversations Column */}
+          {/* Chats Column */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <MessageSquare className="h-4 w-4" />
-                Conversations
+                Chats
               </CardTitle>
               <CardDescription className="text-xs">
-                Your sessions with Luna
+                Your conversations with Luna
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -690,15 +585,15 @@ export default function ProjectPage() {
             </CardContent>
           </Card>
 
-          {/* Outputs Column */}
+          {/* Generated Strategy Column */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Target className="h-4 w-4" />
-                Outputs
+                Generated Strategies
               </CardTitle>
               <CardDescription className="text-xs">
-                Your synthesized strategy
+                Decision stacks from Luna
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -752,17 +647,122 @@ export default function ProjectPage() {
           </Card>
         </div>
 
+        {/* Strategic Dimensions + Knowledge Base */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* What Luna Knows - Left */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Sparkles className="h-5 w-5 text-green-600" />
+                What Luna Knows
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {projectData?.knowledgeSummary ? (
+                <div className="space-y-3">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {projectData.knowledgeSummary}
+                  </p>
+                  {projectData.knowledgeUpdatedAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Last updated: {new Date(projectData.knowledgeUpdatedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No knowledge yet</p>
+                  <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
+                  <Button asChild size="sm">
+                    <Link href={`/?projectId=${projectId}`}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Start a Conversation
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Knowledge Base - Right */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Database className="h-5 w-5 text-green-600" />
+                10 Strategic Dimensions
+              </CardTitle>
+              <CardDescription>
+                Luna's knowledge map for your strategy
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Stats Row */}
+              <div className="grid grid-cols-4 gap-2">
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.fragmentCount}</div>
+                  <div className="text-xs text-muted-foreground">Fragments</div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.conversationCount}</div>
+                  <div className="text-xs text-muted-foreground">Chats</div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.documentCount}</div>
+                  <div className="text-xs text-muted-foreground">Docs</div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-600">{coveragePercentage}%</div>
+                  <div className="text-xs text-muted-foreground">Coverage</div>
+                </div>
+              </div>
+
+              {/* 10 Dimensions Section */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                  Coverage across 10 strategic dimensions
+                </h4>
+                <div className="space-y-1.5">
+                  {TIER_1_DIMENSIONS.map((dimension) => {
+                    const coverage = stats.dimensionalCoverage[dimension]
+                    const fragmentCount = coverage?.fragmentCount || 0
+                    const synthesis = projectData?.syntheses?.find(s => s.dimension === dimension)
+                    const confidence = synthesis?.confidence || (fragmentCount > 0 ? 'MEDIUM' : 'LOW')
+
+                    return (
+                      <div
+                        key={dimension}
+                        className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ConfidenceIcon confidence={confidence} />
+                          <span className="text-muted-foreground">
+                            {DIMENSION_LABELS[dimension]}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {fragmentCount > 0 ? `${fragmentCount}` : '—'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Bottom Section: Luna's Questions + Areas of Focus */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Luna's Questions */}
+          {/* Provocations */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Lightbulb className="h-5 w-5 text-green-600" />
-                Luna Wonders...
+                Provocations
               </CardTitle>
               <CardDescription>
-                Questions Luna thinks are worth exploring
+                Questions that might unlock new strategic insights
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -968,27 +968,17 @@ export default function ProjectPage() {
           </Card>
         </div>
 
-        {/* Second row: Coming Soon + Worth Exploring */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Coming Soon placeholder */}
-          <Card className="border-dashed bg-muted/30">
-            <CardContent className="flex items-center justify-center h-full min-h-[200px]">
-              <div className="text-center text-muted-foreground">
-                <p className="text-sm font-medium">Notes &amp; Voice Memos</p>
-                <p className="text-xs mt-1">Coming soon...</p>
-              </div>
-            </CardContent>
-          </Card>
-
+        {/* Worth Exploring */}
+        <div className="grid gap-6 lg:grid-cols-1">
           {/* Worth Exploring */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertCircle className="h-5 w-5 text-amber-500" />
-                Worth Exploring
+                Close Gaps with 10 Strategic Dimensions
               </CardTitle>
               <CardDescription>
-                Luna suggests exploring these to improve coverage of strategic dimensions
+                Luna suggests exploring these areas to improve your strategic coverage
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1006,10 +996,26 @@ export default function ProjectPage() {
                           Needs attention
                         </Badge>
                       </div>
-                      {area.gaps.length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Gap: {area.gaps[0]}
+                      {area.summary && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {area.summary}
                         </p>
+                      )}
+                      {area.gaps.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-amber-600">Gaps to explore:</p>
+                          <ul className="text-xs text-muted-foreground space-y-0.5">
+                            {area.gaps.slice(0, 3).map((gap, idx) => (
+                              <li key={idx} className="flex items-start gap-1">
+                                <span className="text-amber-500 mt-0.5">•</span>
+                                <span className="line-clamp-1">{gap}</span>
+                              </li>
+                            ))}
+                            {area.gaps.length > 3 && (
+                              <li className="text-amber-500 text-xs">+{area.gaps.length - 3} more</li>
+                            )}
+                          </ul>
+                        </div>
                       )}
                       {/* Compact action button group */}
                       <div className="flex items-center gap-1 pt-1">

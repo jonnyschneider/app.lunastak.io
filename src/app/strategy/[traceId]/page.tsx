@@ -14,6 +14,7 @@ export default function StrategyViewPage() {
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
   const [thoughts, setThoughts] = useState<string>('')
   const [conversationId, setConversationId] = useState<string>('')
+  const [projectName, setProjectName] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,6 +42,7 @@ export default function StrategyViewPage() {
       setStrategy(data.output)
       setThoughts(data.claudeThoughts || '')
       setConversationId(data.conversationId)
+      setProjectName(data.projectName)
     } catch (error) {
       console.error('Failed to fetch strategy:', error)
       setError('Failed to load strategy')
@@ -79,18 +81,27 @@ export default function StrategyViewPage() {
 
   return (
     <AppLayout>
-      <main className="h-screen bg-background flex flex-col">
-        <div className="container mx-auto py-8 flex-1 flex flex-col">
-          {strategy && conversationId && (
-            <StrategyDisplay
-              strategy={strategy}
-              thoughts={thoughts}
-              conversationId={conversationId}
-              traceId={traceId}
-            />
-          )}
+      <div className="container mx-auto px-6 py-8 space-y-8">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {projectName || 'Strategy'}
+          </h1>
+          <p className="text-muted-foreground">
+            Your current strategic direction
+          </p>
         </div>
-      </main>
+
+        {/* Strategy Content */}
+        {strategy && conversationId && (
+          <StrategyDisplay
+            strategy={strategy}
+            thoughts={thoughts}
+            conversationId={conversationId}
+            traceId={traceId}
+          />
+        )}
+      </div>
     </AppLayout>
   )
 }
