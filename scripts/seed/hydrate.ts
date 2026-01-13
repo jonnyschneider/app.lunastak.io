@@ -307,7 +307,23 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       }
     }
 
-    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments`);
+    // Create dimensional syntheses
+    for (const synthFixture of projectFixture.syntheses || []) {
+      await prisma.dimensionalSynthesis.create({
+        data: {
+          projectId: project.id,
+          dimension: synthFixture.dimension,
+          summary: synthFixture.summary,
+          keyThemes: synthFixture.keyThemes,
+          gaps: synthFixture.gaps,
+          confidence: synthFixture.confidence,
+          fragmentCount: synthFixture.fragmentCount,
+        },
+      });
+    }
+
+    const synthCount = projectFixture.syntheses?.length || 0;
+    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses`);
   }
 
   console.log(`\n[OK] Hydration complete for ${options.email}\n`);

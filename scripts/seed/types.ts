@@ -87,6 +87,16 @@ export interface FixtureDocument {
   deepDiveId?: string;
 }
 
+// Dimensional synthesis in fixture
+export interface FixtureSynthesis {
+  dimension: string;
+  summary?: string;
+  keyThemes: string[];
+  gaps: string[];
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  fragmentCount: number;
+}
+
 // Project in fixture
 export interface FixtureProject {
   id: string; // "{{PROJECT_ID}}" placeholder
@@ -99,6 +109,7 @@ export interface FixtureProject {
   fragments: FixtureFragment[];
   deepDives: FixtureDeepDive[];
   documents: FixtureDocument[];
+  syntheses?: FixtureSynthesis[];
 }
 
 // Complete fixture file

@@ -14,7 +14,7 @@ export default function StrategyViewPage() {
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
   const [thoughts, setThoughts] = useState<string>('')
   const [conversationId, setConversationId] = useState<string>('')
-  const [projectName, setProjectName] = useState<string | null>(null)
+  const [timestamp, setTimestamp] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,7 +42,7 @@ export default function StrategyViewPage() {
       setStrategy(data.output)
       setThoughts(data.claudeThoughts || '')
       setConversationId(data.conversationId)
-      setProjectName(data.projectName)
+      setTimestamp(data.timestamp)
     } catch (error) {
       console.error('Failed to fetch strategy:', error)
       setError('Failed to load strategy')
@@ -85,10 +85,10 @@ export default function StrategyViewPage() {
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            {projectName || 'Strategy'}
+            Decision Stack
           </h1>
           <p className="text-muted-foreground">
-            Your current strategic direction
+            {timestamp ? `Generated ${new Date(timestamp).toLocaleDateString()}` : 'Historical strategy'}
           </p>
         </div>
 

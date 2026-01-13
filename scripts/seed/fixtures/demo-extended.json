@@ -551,6 +551,138 @@
           "uploadContext": "Feature-by-feature comparison of Buildertrend, CoConstruct, and Houzz Pro",
           "status": "complete"
         }
+      ],
+      "syntheses": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "summary": "Clear identification of the custom home builder pain point - existing tools are built for production builders or commercial contractors, leaving custom builders juggling spreadsheets, texts, and whiteboards.",
+          "keyThemes": [
+            "Selection coordination chaos across hundreds of decisions",
+            "Costly mistakes from miscommunication",
+            "Tools like Buildertrend overwhelming due to production-builder assumptions"
+          ],
+          "gaps": [],
+          "confidence": "HIGH",
+          "fragmentCount": 3
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "summary": "Well-defined ICP: custom home builders doing 5-50 homes/year, $3M-$15M revenue, 3-10 employees. Currently using spreadsheets or have tried and abandoned Buildertrend.",
+          "keyThemes": [
+            "35,000 custom home builders in US market",
+            "Average project value $400K-$2M",
+            "Low technology adoption compared to commercial contractors"
+          ],
+          "gaps": [],
+          "confidence": "HIGH",
+          "fragmentCount": 3
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "summary": "Selection Tracker provides single source of truth for homeowner, builder, and trades. Homeowner-first design philosophy differentiates from competitor's builder-centric approach.",
+          "keyThemes": [
+            "78% of custom home buyers want more visibility",
+            "65% frustrated with communication during builds",
+            "Selection tracking and deadlines are top feature priorities"
+          ],
+          "gaps": [],
+          "confidence": "HIGH",
+          "fragmentCount": 4
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "summary": "Unique positioning as 'custom home project execution' category creator. Competitors either too complex (Procore), too generic (Buildertrend), or focused on pre-sale (CoConstruct).",
+          "keyThemes": [
+            "Structured flexibility vs rigid templates",
+            "Homeowner experience as primary design driver",
+            "Category creation opportunity"
+          ],
+          "gaps": [],
+          "confidence": "HIGH",
+          "fragmentCount": 3
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "summary": "Clear gap in market - no tool optimizes specifically for custom home project execution. Procore is enterprise, Buildertrend overwhelms with features, CoConstruct focuses on pre-sale.",
+          "keyThemes": [
+            "Construction tech market projected $30B by 2027",
+            "Residential segment underserved vs commercial",
+            "Feature bloat is core competitor weakness"
+          ],
+          "gaps": [],
+          "confidence": "HIGH",
+          "fragmentCount": 2
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "summary": "Selection Tracker is hero feature. Friction-free sub integration via text/email. Premium client portal features validated by survey data.",
+          "keyThemes": [
+            "Real-time photo updates most requested (89%)",
+            "Home book as lifetime-value play",
+            "Subs notified via existing channels, no new app required"
+          ],
+          "gaps": [],
+          "confidence": "HIGH",
+          "fragmentCount": 4
+        },
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "summary": "Tiered pricing model: $150/month base + $50-100 per project. B2B2C opportunity with homeowner upgrades at $500-1000.",
+          "keyThemes": [
+            "Pricing scales with builder size",
+            "Survey shows $600 average willingness to pay for premium features",
+            "High retention expected due to switching costs"
+          ],
+          "gaps": [
+            "No real CAC data from non-warm-intro acquisitions",
+            "LTV and payback period still theoretical"
+          ],
+          "confidence": "MEDIUM",
+          "fragmentCount": 2
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "summary": "Early stage team with intensive onboarding process. Need to productize setup and training to scale.",
+          "keyThemes": [
+            "High-touch onboarding currently required",
+            "Long sales cycles due to builder skepticism"
+          ],
+          "gaps": [
+            "Onboarding doesn't scale - needs productization",
+            "Team capabilities not fully documented"
+          ],
+          "confidence": "MEDIUM",
+          "fragmentCount": 1
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "summary": "Early exploration of channels but no validated playbook. Word of mouth through beta users so far.",
+          "keyThemes": [
+            "Builder community is tight-knit - referral potential",
+            "Local associations and trade shows mentioned"
+          ],
+          "gaps": [
+            "No defined go-to-market strategy",
+            "Pricing not validated with real customers",
+            "Designer/architect referral channel unexplored",
+            "Traditional SaaS marketing may not work for this audience"
+          ],
+          "confidence": "LOW",
+          "fragmentCount": 0
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "summary": "Limited exploration of risks and constraints. Some awareness of operational challenges but no systematic risk assessment.",
+          "keyThemes": [],
+          "gaps": [
+            "No risk assessment documented",
+            "Competition response not considered",
+            "Market timing risks not evaluated",
+            "Resource constraints not defined"
+          ],
+          "confidence": "LOW",
+          "fragmentCount": 0
+        }
       ]
     }
   ]

@@ -22,6 +22,7 @@ import {
   Bell,
   LogOut,
   FolderKanban,
+  FolderPlus,
   Upload,
   MessageSquare,
   Trash2,
@@ -30,6 +31,7 @@ import {
   Brain,
   TrendingUp,
   Lock,
+  NotebookPen,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -80,6 +82,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command'
 import {
   Popover,
@@ -87,6 +90,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
+import { FakeDoorDialog } from '@/components/FakeDoorDialog'
+import { useProjectActions } from '@/hooks/use-project-actions'
 import { cn } from '@/lib/utils'
 
 interface Project {
@@ -153,10 +158,18 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isRestoringDemo, setIsRestoringDemo] = useState(false)
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null)
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
+  const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
+
+  const {
+    createProject,
+    restoreDemo,
+    deleteProject,
+    isCreating: isCreatingProject,
+    isRestoring: isRestoringDemo,
+    isDeleting,
+  } = useProjectActions()
 
   // Derive selected project from pathname
   const selectedProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
@@ -186,61 +199,44 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const handleDeleteProject = async () => {
     if (!projectToDelete) return
 
-    setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
-        method: 'DELETE',
-      })
-      if (response.ok) {
-        const remainingProjects = projects.filter(p => p.id !== projectToDelete.id)
-        setProjects(remainingProjects)
-        setProjectToDelete(null)
+    const success = await deleteProject(projectToDelete.id)
+    if (success) {
+      const remainingProjects = projects.filter(p => p.id !== projectToDelete.id)
+      setProjects(remainingProjects)
+      setProjectToDelete(null)
+      setProjectSwitcherOpen(false)
 
-        // Notify listeners that a project was deleted (pattern from SessionTransferProvider)
-        // TODO: Replace with proper state management when designing app-wide state
-        window.dispatchEvent(new CustomEvent('projectDeleted', {
-          detail: { projectId: projectToDelete.id }
-        }))
+      // Notify listeners that a project was deleted
+      window.dispatchEvent(new CustomEvent('projectDeleted', {
+        detail: { projectId: projectToDelete.id }
+      }))
 
-        // Check if we're currently viewing the deleted project or its content
-        const isViewingDeletedProject = pathname?.includes(projectToDelete.id)
+      // Check if we're currently viewing the deleted project
+      const isViewingDeletedProject = pathname?.includes(projectToDelete.id)
 
-        if (remainingProjects.length === 0) {
-          // No projects left - go to homepage (shows empty state)
-          router.push('/')
-        } else if (isViewingDeletedProject) {
-          // Was viewing deleted project - go to first remaining
-          router.push(`/project/${remainingProjects[0].id}`)
-        }
-        // Otherwise stay on current page
-      } else {
-        console.error('Failed to delete project')
+      if (remainingProjects.length === 0) {
+        router.push('/')
+      } else if (isViewingDeletedProject) {
+        router.push(`/project/${remainingProjects[0].id}`)
       }
-    } catch (error) {
-      console.error('Failed to delete project:', error)
-    } finally {
-      setIsDeleting(false)
     }
   }
 
   const handleRestoreDemo = async () => {
-    setIsRestoringDemo(true)
-    try {
-      const response = await fetch('/api/projects/restore-demo', {
-        method: 'POST',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        // Refresh projects list and navigate to demo
-        await fetchProjects()
-        router.push(`/project/${data.projectId}`)
-      } else {
-        console.error('Failed to restore demo project')
-      }
-    } catch (error) {
-      console.error('Failed to restore demo:', error)
-    } finally {
-      setIsRestoringDemo(false)
+    const projectId = await restoreDemo()
+    if (projectId) {
+      await fetchProjects()
+      setProjectSwitcherOpen(false)
+      router.push(`/project/${projectId}`)
+    }
+  }
+
+  const handleCreateProject = async () => {
+    const projectId = await createProject()
+    if (projectId) {
+      await fetchProjects()
+      setProjectSwitcherOpen(false)
+      router.push(`/project/${projectId}`)
     }
   }
 
@@ -340,6 +336,33 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                       </CommandItem>
                     ))}
                   </CommandGroup>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={handleCreateProject}
+                      disabled={isCreatingProject}
+                      className="text-primary"
+                    >
+                      <FolderPlus className="h-4 w-4 shrink-0" />
+                      <span>{isCreatingProject ? 'Creating...' : 'Add Project'}</span>
+                    </CommandItem>
+                    <CommandItem
+                      onSelect={handleRestoreDemo}
+                      disabled={isRestoringDemo}
+                    >
+                      <RotateCcw className={`h-4 w-4 shrink-0 ${isRestoringDemo ? 'animate-spin' : ''}`} />
+                      <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo'}</span>
+                    </CommandItem>
+                    {selectedProject && (
+                      <CommandItem
+                        onSelect={() => setProjectToDelete(selectedProject)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 shrink-0" />
+                        <span>Delete Current Project</span>
+                      </CommandItem>
+                    )}
+                  </CommandGroup>
                 </CommandList>
               </Command>
             </PopoverContent>
@@ -369,6 +392,12 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   >
                     <Upload className="h-4 w-4" />
                     <span>Upload Document</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setFakeDoorOpen(true)}>
+                    <NotebookPen className="h-4 w-4" />
+                    <span>Add Memo</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -452,33 +481,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                           </a>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      {session && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild>
-                            <button
-                              onClick={handleRestoreDemo}
-                              disabled={isRestoringDemo}
-                              className="w-full"
-                            >
-                              <RotateCcw className={`h-4 w-4 ${isRestoringDemo ? 'animate-spin' : ''}`} />
-                              <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo Project'}</span>
-                            </button>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
-                      {session && selectedProject && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild>
-                            <button
-                              onClick={() => setProjectToDelete(selectedProject)}
-                              className="w-full text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span>Delete Current Project</span>
-                            </button>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
@@ -645,6 +647,20 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Memo Fake Door Dialog */}
+      <FakeDoorDialog
+        open={fakeDoorOpen}
+        onOpenChange={setFakeDoorOpen}
+        featureName="Memos"
+        description="Capture quick thoughts, voice notes, or observations directly in your project.
+
+Jot down ideas from meetings, record voice memos on the go, or capture spontaneous insights. Luna will extract strategic themes from your memos."
+        onInterest={() => {
+          // Log interest for now
+          console.log(`[FakeDoor] User interested in: Add Memo (sidebar)`)
+        }}
+      />
     </Sidebar>
   )
 }

@@ -2,18 +2,17 @@
 /**
  * Demo Project Seeding
  *
- * Loads demo-simulated fixture and hydrates it for a specific user.
+ * Loads demo-extended fixture and hydrates it for a specific user.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { prisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions';
 import type { Fixture } from '../../scripts/seed/types';
 
 const FIXTURES_DIR = path.join(process.cwd(), 'scripts/seed/fixtures');
-const DEMO_FIXTURE = 'demo-simulated.json';
+const DEMO_FIXTURE = 'demo-extended.json';
 
 function generateCuid(): string {
   const timestamp = Date.now().toString(36);
@@ -95,6 +94,14 @@ export interface TransformedFixture {
       status: string;
       deepDiveId?: string;
     }>;
+    syntheses: Array<{
+      dimension: string;
+      summary?: string;
+      keyThemes: string[];
+      gaps: string[];
+      confidence: string;
+      fragmentCount: number;
+    }>;
   }>;
 }
 
@@ -117,7 +124,7 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
     projects: fixture.projects.map((p) => ({
       id: resolveId(p.id),
       userId,
-      name: 'Demo: Catalyst Strategy',
+      name: 'Demo: BuildFlow Strategy',
       status: p.status,
       isDemo: true,
       description: p.description,
@@ -142,21 +149,34 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
         id: resolveId(d.id),
         deepDiveId: d.deepDiveId ? resolveId(d.deepDiveId) : undefined,
       })),
+      syntheses: (p.syntheses || []).map((s) => ({
+        ...s,
+      })),
     })),
   };
 }
 
-async function initializeSynthesisRecords(projectId: string): Promise<void> {
-  const records = TIER_1_DIMENSIONS.map((dimension) => ({
+async function createSynthesisRecords(
+  projectId: string,
+  syntheses: Array<{
+    dimension: string;
+    summary?: string;
+    keyThemes: string[];
+    gaps: string[];
+    confidence: string;
+    fragmentCount: number;
+  }>
+): Promise<void> {
+  const records = syntheses.map((s) => ({
     projectId,
-    dimension,
-    summary: null,
-    keyThemes: [],
+    dimension: s.dimension,
+    summary: s.summary || null,
+    keyThemes: s.keyThemes,
     keyQuotes: [],
-    gaps: [],
+    gaps: s.gaps,
     contradictions: [],
-    confidence: 'LOW' as const,
-    fragmentCount: 0,
+    confidence: s.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
+    fragmentCount: s.fragmentCount,
     lastSynthesizedAt: new Date(),
     synthesizedBy: 'demo-seed',
   }));
@@ -278,8 +298,10 @@ export async function seedDemoProject(userId: string): Promise<string> {
       }
     }
 
-    // Initialize synthesis records
-    await initializeSynthesisRecords(project.id);
+    // Create synthesis records from fixture
+    if (projectData.syntheses.length > 0) {
+      await createSynthesisRecords(project.id, projectData.syntheses);
+    }
 
     return project.id;
   }

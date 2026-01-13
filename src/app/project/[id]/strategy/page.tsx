@@ -98,7 +98,7 @@ export default function StrategyPage() {
         {/* Header */}
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">
-            {data?.projectName || 'Strategy'}
+            Current Strategy: Decision Stack
           </h1>
           <p className="text-muted-foreground">
             Your current strategic direction
