@@ -143,6 +143,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRestoringDemo, setIsRestoringDemo] = useState(false)
+  const [uploadProjectId, setUploadProjectId] = useState<string | null>(null)
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -511,13 +512,16 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       </SidebarFooter>
 
       {/* Upload Dialog */}
-      {firstProjectId && (
+      {uploadProjectId && (
         <DocumentUploadDialog
-          projectId={firstProjectId}
+          projectId={uploadProjectId}
           open={uploadDialogOpen}
-          onOpenChange={setUploadDialogOpen}
+          onOpenChange={(open) => {
+            setUploadDialogOpen(open)
+            if (!open) setUploadProjectId(null)
+          }}
           onUploadComplete={() => {
-            // Could refresh project data here if needed
+            fetchProjects()
           }}
         />
       )}
