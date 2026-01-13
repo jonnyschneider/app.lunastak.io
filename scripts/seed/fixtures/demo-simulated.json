@@ -158,19 +158,49 @@
                 "strategy": "Build the definitive predictive customer success platform for mid-market B2B SaaS by combining leading indicator detection with prescriptive playbook recommendations—something the enterprise-focused incumbents are too complex to deliver and the lightweight tools are too simple to attempt.",
                 "objectives": [
                   {
-                    "text": "Achieve 50 paying customers with average contract value of $30K",
-                    "timeframe": "12M",
-                    "metric": "from 0 to 50 customers"
+                    "id": "obj-1",
+                    "pithy": "Achieve 50 paying customers with $30K average contract value, validating product-market fit and establishing repeatable sales motion.",
+                    "metric": {
+                      "full": "Grow from 0 to 50 customers within 12 months",
+                      "summary": "50 customers",
+                      "category": "Growth",
+                      "direction": "increase",
+                      "timeframe": "12M",
+                      "metricName": "Paying customers",
+                      "metricValue": "from 0 to 50"
+                    },
+                    "explanation": "This objective focuses on acquiring initial paying customers to validate product-market fit and build a foundation for growth.",
+                    "successCriteria": "Achievement will be measured through customer count and average contract value."
                   },
                   {
-                    "text": "Build pattern matching engine with 1000+ intervention patterns",
-                    "timeframe": "9M",
-                    "metric": "from 0 to 1000 patterns"
+                    "id": "obj-2",
+                    "pithy": "Build pattern matching engine with 1000+ intervention patterns, creating the data moat that powers prescriptive recommendations.",
+                    "metric": {
+                      "full": "Grow from 0 to 1000 intervention patterns within 9 months",
+                      "summary": "1000 patterns",
+                      "category": "Product",
+                      "direction": "increase",
+                      "timeframe": "9M",
+                      "metricName": "Intervention patterns",
+                      "metricValue": "from 0 to 1000"
+                    },
+                    "explanation": "This objective focuses on building the core IP that differentiates Catalyst from competitors.",
+                    "successCriteria": "Achievement will be measured through pattern library size and recommendation accuracy."
                   },
                   {
-                    "text": "Demonstrate measurable retention improvement for customers",
-                    "timeframe": "6M",
-                    "metric": "5% improvement in net retention"
+                    "id": "obj-3",
+                    "pithy": "Demonstrate measurable retention improvement for customers, proving the core value proposition of predictive intervention.",
+                    "metric": {
+                      "full": "Achieve 5% improvement in customer net retention within 6 months",
+                      "summary": "5% NRR lift",
+                      "category": "Outcomes",
+                      "direction": "increase",
+                      "timeframe": "6M",
+                      "metricName": "Net retention",
+                      "metricValue": "5% improvement"
+                    },
+                    "explanation": "This objective focuses on proving that Catalyst delivers measurable business outcomes for customers.",
+                    "successCriteria": "Achievement will be measured through customer retention metrics before and after implementation."
                   }
                 ]
               },
