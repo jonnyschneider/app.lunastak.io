@@ -259,28 +259,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {/* Quick Actions */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <div className="flex gap-2 px-2 py-2">
-              <Link
-                href={firstProjectId ? `/?projectId=${firstProjectId}` : '/'}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>New Chat</span>
-              </Link>
-              <button
-                onClick={() => setUploadDialogOpen(true)}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm border rounded-md hover:bg-accent transition-colors"
-              >
-                <Upload className="h-4 w-4" />
-                <span>Upload</span>
-              </button>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         {/* Projects */}
         <SidebarGroup>
           <SidebarGroupLabel>Projects</SidebarGroupLabel>
