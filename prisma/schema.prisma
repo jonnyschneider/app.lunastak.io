@@ -141,6 +141,7 @@ model User {
   name          String?
   image         String?
   createdAt     DateTime  @default(now())
+  isPaid        Boolean   @default(false)
 
   projects      Project[]
   conversations Conversation[]
@@ -159,6 +160,7 @@ model Project {
   name        String
   description String? @db.Text
   status      String  @default("active") // active | archived | deleted
+  isDemo      Boolean @default(false)
 
   // Luna Remembers: accumulated knowledge
   knowledgeSummary   String?   @db.Text // "What Luna Knows" - human-readable summary
