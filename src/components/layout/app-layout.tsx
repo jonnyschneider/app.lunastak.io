@@ -106,7 +106,7 @@ export function AppLayout({
   }, [session])
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <AppSidebar experimentVariant={experimentVariant} showVariantBadge={showVariantBadge} />
       <SidebarInset className="flex flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
