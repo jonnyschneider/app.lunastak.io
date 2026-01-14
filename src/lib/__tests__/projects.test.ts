@@ -16,6 +16,7 @@ jest.mock('@/lib/db', () => ({
     project: {
       create: jest.fn(),
       findFirst: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       updateMany: jest.fn(),
     },
     conversation: {
@@ -28,6 +29,11 @@ jest.mock('@/lib/db', () => ({
       createMany: jest.fn(),
     },
   },
+}))
+
+// Mock seedDemoProject to avoid complex fixture loading in tests
+jest.mock('@/lib/seed-demo', () => ({
+  seedDemoProject: jest.fn(),
 }))
 
 describe('Guest User Isolation', () => {
@@ -104,21 +110,23 @@ describe('Guest User Isolation', () => {
       jest.resetModules()
     })
 
-    it('should create guest user and project when userId is null', async () => {
+    it('should create guest user and hydrate demo project when userId is null', async () => {
       const { prisma } = require('@/lib/db')
+      const { seedDemoProject } = require('@/lib/seed-demo')
       const mockGuestUser = { id: 'guest-user-id', email: 'guest_abc@guest.lunastak.io' }
-      const mockProject = { id: 'project-id', name: 'Guest Strategy', userId: 'guest-user-id' }
+      const mockProject = { id: 'demo-project-id', name: 'Demo: BuildFlow Strategy', userId: 'guest-user-id' }
 
       prisma.user.create.mockResolvedValue(mockGuestUser)
-      prisma.project.create.mockResolvedValue(mockProject)
+      seedDemoProject.mockResolvedValue('demo-project-id')
+      prisma.project.findUniqueOrThrow.mockResolvedValue(mockProject)
 
       const { getOrCreateDefaultProject } = require('@/lib/projects')
       const result = await getOrCreateDefaultProject(null)
 
       expect(result.isGuest).toBe(true)
       expect(result.userId).toBe('guest-user-id')
-      expect(result.project.id).toBe('project-id')
-      expect(result.project.name).toBe('Guest Strategy')
+      expect(result.project.id).toBe('demo-project-id')
+      expect(seedDemoProject).toHaveBeenCalledWith('guest-user-id')
     })
 
     it('should return existing project for authenticated user', async () => {
