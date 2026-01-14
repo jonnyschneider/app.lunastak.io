@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { HomePage } from '@/components/HomePage';
 import { prisma } from '@/lib/db';
-import { getOrCreateDefaultProject, isGuestUser } from '@/lib/projects';
+import { isGuestUser } from '@/lib/projects';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
 
@@ -61,16 +61,7 @@ export default async function Page({
     // Invalid cookie or no project - fall through to create new guest
   }
 
-  // Create new guest user with demo project
-  const { userId, project } = await getOrCreateDefaultProject(null);
-
-  // Set guest cookie (functional cookie, no consent needed)
-  cookieStore.set(GUEST_COOKIE_NAME, userId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  });
-
-  redirect(`/project/${project.id}`);
+  // Redirect to API route that creates guest and sets cookie
+  // (cookies can only be set in Route Handlers, not Server Components)
+  redirect('/api/guest/init');
 }
