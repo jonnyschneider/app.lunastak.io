@@ -7,6 +7,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
+import { ExtractionStep } from '@/components/ExtractionProgress'
 
 type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy'
 
@@ -25,7 +27,30 @@ export function ChatSheet({
   initialQuestion,
   deepDiveId,
 }: ChatSheetProps) {
+  // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
+
+  // Conversation state
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL')
+  const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1')
+
+  // Extraction state
+  const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
+  const [dimensionalCoverage, setDimensionalCoverage] = useState<any>(null)
+  const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting')
+  const [extractionError, setExtractionError] = useState<string | undefined>()
+
+  // Strategy state
+  const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
+  const [thoughts, setThoughts] = useState<string>('')
+  const [traceId, setTraceId] = useState<string>('')
+
+  // Early exit state
+  const [earlyExitOffered, setEarlyExitOffered] = useState(false)
+  const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
