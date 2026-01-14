@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getOrCreateDefaultProject } from '@/lib/projects'
 
@@ -9,7 +9,7 @@ const GUEST_COOKIE_NAME = 'guestUserId'
  * Creates a new guest user with demo project, sets cookie, redirects to project.
  * Called from page.tsx when no guest cookie exists.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   // Create new guest user with demo project
   const { userId, project } = await getOrCreateDefaultProject(null)
 
@@ -22,8 +22,7 @@ export async function GET() {
     maxAge: 60 * 60 * 24 * 30, // 30 days
   })
 
-  // Redirect to project
-  return NextResponse.redirect(
-    new URL(`/project/${project.id}`, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
-  )
+  // Use request origin to stay on same domain (important for preview deployments)
+  const origin = request.nextUrl.origin
+  return NextResponse.redirect(new URL(`/project/${project.id}`, origin))
 }
