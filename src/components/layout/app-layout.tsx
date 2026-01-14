@@ -93,6 +93,7 @@ import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { PaywallModal } from '@/components/PaywallModal'
 import { DemoModeBadge } from '@/components/DemoModeBadge'
+import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
 import { cn } from '@/lib/utils'
@@ -162,6 +163,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null)
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
+  const [chatSheetOpen, setChatSheetOpen] = useState(false)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
 
@@ -388,11 +390,9 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={`/?projectId=${selectedProject.id}`}>
-                      <MessageSquare className="h-4 w-4" />
-                      <span>New Chat</span>
-                    </Link>
+                  <SidebarMenuButton onClick={() => setChatSheetOpen(true)}>
+                    <MessageSquare className="h-4 w-4" />
+                    <span>New Chat</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -635,6 +635,15 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           onUploadComplete={() => {
             fetchProjects()
           }}
+        />
+      )}
+
+      {/* Chat Sheet */}
+      {selectedProject && (
+        <ChatSheet
+          projectId={selectedProject.id}
+          open={chatSheetOpen}
+          onOpenChange={setChatSheetOpen}
         />
       )}
 
