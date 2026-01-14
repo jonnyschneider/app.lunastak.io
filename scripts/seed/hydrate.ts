@@ -322,8 +322,25 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       });
     }
 
+    // Create generated outputs (for refresh strategy testing)
+    for (const outputFixture of projectFixture.generatedOutputs || []) {
+      await prisma.generatedOutput.create({
+        data: {
+          projectId: project.id,
+          userId: user.id,
+          outputType: outputFixture.outputType,
+          version: outputFixture.version,
+          content: outputFixture.content as Prisma.InputJsonValue,
+          generatedFrom: outputFixture.generatedFrom,
+          modelUsed: outputFixture.modelUsed,
+          changeSummary: outputFixture.changeSummary,
+        },
+      });
+    }
+
     const synthCount = projectFixture.syntheses?.length || 0;
-    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses`);
+    const outputCount = projectFixture.generatedOutputs?.length || 0;
+    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses, ${outputCount} outputs`);
   }
 
   console.log(`\n[OK] Hydration complete for ${options.email}\n`);
