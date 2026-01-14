@@ -5,3 +5,4 @@ export * from './persistence';
 export * from './deep-dive';
 export * from './user';
 export * from './paywall';
+export * from './refresh-strategy';
