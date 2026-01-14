@@ -10,6 +10,7 @@ export interface UserContract {
   email: string;
   isPaid: boolean;
   name?: string;
+  apiCallCount?: number;
 }
 
 function isValidEmail(email: string): boolean {
@@ -26,6 +27,11 @@ export function validateUser(data: unknown): data is UserContract {
 
   // Optional fields
   if (obj.name !== undefined && obj.name !== null && typeof obj.name !== 'string') return false;
+  if (obj.apiCallCount !== undefined && obj.apiCallCount !== null) {
+    if (typeof obj.apiCallCount !== 'number' || obj.apiCallCount < 0 || !Number.isInteger(obj.apiCallCount)) {
+      return false;
+    }
+  }
 
   return true;
 }
