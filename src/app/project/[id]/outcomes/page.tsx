@@ -27,12 +27,8 @@ export default function OutcomesPage() {
   useEffect(() => {
     if (status === 'loading') return
 
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-
-    // Fetch project name
+    // Don't redirect to signin - guests can access projects via cookie
+    // The API will return 401 if unauthorized
     fetch(`/api/project/${projectId}`)
       .then(res => res.json())
       .then(data => {
@@ -40,7 +36,7 @@ export default function OutcomesPage() {
         setIsLoading(false)
       })
       .catch(() => setIsLoading(false))
-  }, [session, status, router, projectId])
+  }, [status, projectId])
 
   const handleNotify = () => {
     // In future, this would call an API to register interest

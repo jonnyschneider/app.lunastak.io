@@ -17,11 +17,7 @@ export default function ProjectRedirect() {
   useEffect(() => {
     if (status === 'loading') return
 
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-
+    // Don't redirect to signin - guests can access projects via cookie
     // Fetch projects and redirect to the first one
     const redirectToProject = async () => {
       try {
@@ -38,7 +34,7 @@ export default function ProjectRedirect() {
     }
 
     redirectToProject()
-  }, [session, status, router])
+  }, [status, router])
 
   return (
     <AppLayout>
