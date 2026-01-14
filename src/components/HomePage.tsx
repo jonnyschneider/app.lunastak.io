@@ -29,7 +29,7 @@ export function HomePage({ session }: HomePageProps) {
   const router = useRouter();
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall();
   const { createProject, restoreDemo } = useProjectActions({ triggerPaywall });
-  const [isLoadingProjects, setIsLoadingProjects] = useState(!!session); // Start loading if authenticated
+  const [isLoadingProjects, setIsLoadingProjects] = useState(!!session); // Only loading for auth users checking projects
   const [hasNoProjects, setHasNoProjects] = useState(false);
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // Set from API when guest session starts
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -62,25 +62,29 @@ export function HomePage({ session }: HomePageProps) {
   const [deferralTopic, setDeferralTopic] = useState('');
   const [deferralMessageId, setDeferralMessageId] = useState<string | undefined>();
 
-  // Redirect authenticated users to their project dashboard (unless they have URL params)
+  // Check if authenticated user has no projects (for empty state)
+  // Note: Redirects are handled server-side in page.tsx
   useEffect(() => {
     if (!session) {
+      // Guest users are redirected server-side, this shouldn't render
+      // But if it does (e.g., with URL params), don't show loading
       setIsLoadingProjects(false);
       return;
     }
 
-    // Don't redirect if URL has params indicating intentional navigation
+    // Don't check projects if URL has params (intentional navigation)
     const params = new URLSearchParams(window.location.search);
-    if (params.get('question') || params.get('deepDiveId') || params.get('projectId')) {
+    if (params.get('question') || params.get('deepDiveId') || params.get('projectId') || params.get('stub')) {
       setIsLoadingProjects(false);
       return;
     }
 
-    // Fetch projects and redirect to first one (or show empty state)
+    // Authenticated user - check if they have projects (for empty state)
     fetch('/api/projects')
       .then(res => res.json())
       .then(data => {
         if (data.projects && data.projects.length > 0) {
+          // Should have been redirected server-side, but handle edge case
           setHasNoProjects(false);
           router.replace(`/project/${data.projects[0].id}`);
         } else {
@@ -89,7 +93,7 @@ export function HomePage({ session }: HomePageProps) {
         }
       })
       .catch(err => {
-        console.error('Failed to fetch projects for redirect:', err);
+        console.error('Failed to fetch projects:', err);
         setIsLoadingProjects(false);
       });
   }, [session, router]);
@@ -676,7 +680,7 @@ export function HomePage({ session }: HomePageProps) {
             />
           )}
 
-          {/* Unauthenticated users: show intro card */}
+          {/* Unauthenticated users: show intro card (guests with URL params bypass server redirect) */}
           {!session && showIntro && flowStep === 'intro' && (
             <IntroCard
               onEntryPointSelect={handleEntryPointSelect}

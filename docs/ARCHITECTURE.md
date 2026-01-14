@@ -904,6 +904,14 @@ Learnings from runtime discoveries. Each notes whether the fix is **durable** (k
 
 Intentional trade-offs made during development. Not tech debt (tracked in Linear), but conscious design choices with documented rationale.
 
+### 2026-01-14: Guest Flow Simplification
+
+| Decision | Trade-off | Rationale |
+|----------|-----------|-----------|
+| **Server-side guest routing with functional cookie** | Cookie stored on user's device | Functional cookies (session identifiers) don't require GDPR consent - only tracking cookies do. Enables server-side redirect with no flash. |
+| **Guest logic in page.tsx server component** | DB queries on every homepage load | Acceptable for homepage. Keeps logic simple vs middleware complexity. Could optimize with edge caching if needed. |
+| **Cascade delete on signup** | No data migration, demo work is lost | Simpler than complex merge logic. Demo is throwaway data. Users start fresh with real projects. |
+
 ### 2026-01-13: Auth Routing & Demo Projects
 
 | Decision | Trade-off | Rationale |

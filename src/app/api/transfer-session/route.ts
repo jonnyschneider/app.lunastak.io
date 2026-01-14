@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isGuestUser } from '@/lib/projects'
+
+const GUEST_COOKIE_NAME = 'guestUserId'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,6 +44,10 @@ export async function POST(request: NextRequest) {
     await prisma.user.delete({
       where: { id: guestUserId },
     })
+
+    // Clear the guest cookie
+    const cookieStore = await cookies()
+    cookieStore.delete(GUEST_COOKIE_NAME)
 
     console.log(`[Transfer] Deleted guest user ${guestUserId} on signup`)
 
