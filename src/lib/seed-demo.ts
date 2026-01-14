@@ -212,6 +212,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
         isDemo: projectData.isDemo,
         description: projectData.description,
         knowledgeSummary: projectData.knowledgeSummary,
+        knowledgeUpdatedAt: new Date(), // Set so existing fragments don't show as "new"
         suggestedQuestions: JSON.parse(JSON.stringify(projectData.suggestedQuestions || [])),
       },
     });

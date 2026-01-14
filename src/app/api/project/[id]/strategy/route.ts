@@ -1,7 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isGuestUser } from '@/lib/projects'
+
+const GUEST_COOKIE_NAME = 'guestUserId'
+
+async function getUserId(): Promise<string | null> {
+  const session = await getServerSession(authOptions)
+  if (session?.user?.id) return session.user.id
+
+  const cookieStore = await cookies()
+  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
+  if (guestCookie?.value) {
+    const guestUser = await prisma.user.findUnique({
+      where: { id: guestCookie.value },
+      select: { email: true },
+    })
+    if (guestUser && isGuestUser(guestUser.email)) {
+      return guestCookie.value
+    }
+  }
+  return null
+}
 
 /**
  * GET /api/project/[id]/strategy
@@ -11,9 +33,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -24,7 +46,7 @@ export async function GET(
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: session.user.id,
+        userId,
       },
       select: {
         id: true,

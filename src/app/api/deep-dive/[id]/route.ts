@@ -1,9 +1,31 @@
 // src/app/api/deep-dive/[id]/route.ts
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isGuestUser } from '@/lib/projects'
 import { isValidDeepDiveStatus } from '@/lib/contracts/deep-dive'
+
+const GUEST_COOKIE_NAME = 'guestUserId'
+
+async function getUserId(): Promise<string | null> {
+  const session = await getServerSession(authOptions)
+  if (session?.user?.id) return session.user.id
+
+  const cookieStore = await cookies()
+  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
+  if (guestCookie?.value) {
+    const guestUser = await prisma.user.findUnique({
+      where: { id: guestCookie.value },
+      select: { email: true },
+    })
+    if (guestUser && isGuestUser(guestUser.email)) {
+      return guestCookie.value
+    }
+  }
+  return null
+}
 
 /**
  * GET /api/deep-dive/[id]
@@ -13,10 +35,10 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
   const { id } = await params
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -43,7 +65,7 @@ export async function GET(
     }
 
     // Verify user owns the project
-    if (deepDive.project.userId !== session.user.id) {
+    if (deepDive.project.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -90,10 +112,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
   const { id } = await params
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -116,7 +138,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Deep dive not found' }, { status: 404 })
     }
 
-    if (existing.project.userId !== session.user.id) {
+    if (existing.project.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -166,10 +188,10 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
   const { id } = await params
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -184,7 +206,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Deep dive not found' }, { status: 404 })
     }
 
-    if (existing.project.userId !== session.user.id) {
+    if (existing.project.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

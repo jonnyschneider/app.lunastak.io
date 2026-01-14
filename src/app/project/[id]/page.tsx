@@ -983,32 +983,16 @@ export default function ProjectPage() {
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <button className="p-1 rounded hover:bg-muted">
-                        <MoreHorizontal className="h-3 w-3 text-green-600" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        setChatDeepDiveId(dd.id)
-                        setChatInitialQuestion(undefined)
-                        setChatGapExploration(undefined)
-                        setChatSheetOpen(true)
-                      }}>
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Start chat
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        dismissItem('deep_dive', dd.id)
-                      }}>
-                        <X className="h-4 w-4 mr-2" />
-                        Dismiss
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      dismissItem('deep_dive', dd.id)
+                    }}
+                    className="p-1 rounded hover:bg-muted"
+                    title="Dismiss"
+                  >
+                    <X className="h-3 w-3 text-green-600" />
+                  </button>
                 </ItemActions>
               </Item>
             </React.Fragment>
