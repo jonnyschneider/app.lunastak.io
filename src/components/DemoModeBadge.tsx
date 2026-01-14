@@ -14,16 +14,17 @@ export function DemoModeBadge() {
     <Popover>
       <PopoverTrigger asChild>
         <Badge
-          variant="outline"
-          className="cursor-pointer hover:bg-accent"
+          variant="destructive"
+          className="cursor-pointer"
         >
           Demo Mode
         </Badge>
       </PopoverTrigger>
       <PopoverContent className="w-64" align="start">
         <div className="space-y-3">
+          <p className="text-sm font-medium">You're exploring a demo project</p>
           <p className="text-sm text-muted-foreground">
-            You're exploring a demo project. Create an account to build your own strategy.
+            Your work won't be saved. Create an account to build your own strategy and keep your progress.
           </p>
           <Button
             onClick={() => signIn()}

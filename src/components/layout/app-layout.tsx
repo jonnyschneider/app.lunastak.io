@@ -117,19 +117,17 @@ export function AppLayout({
   const { data: session } = useSession()
   const [projectId, setProjectId] = useState<string | null>(null)
 
-  // Fetch first project for logo link
+  // Fetch first project for logo link (works for both auth and guests via cookie)
   useEffect(() => {
-    if (session?.user?.id) {
-      fetch('/api/projects')
-        .then(res => res.json())
-        .then(data => {
-          if (data.projects && data.projects.length > 0) {
-            setProjectId(data.projects[0].id)
-          }
-        })
-        .catch(() => {})
-    }
-  }, [session])
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(data => {
+        if (data.projects && data.projects.length > 0) {
+          setProjectId(data.projects[0].id)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -180,11 +178,10 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const selectedProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0] || null
 
+  // Fetch projects for both auth users and guests (API supports both via cookie)
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchProjects()
-    }
-  }, [session])
+    fetchProjects()
+  }, [])
 
   const fetchProjects = async () => {
     setIsLoadingProjects(true)
@@ -237,6 +234,13 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   }
 
   const handleCreateProject = async () => {
+    // Guests must sign in to create projects
+    if (!session) {
+      setProjectSwitcherOpen(false)
+      router.push('/auth/signin')
+      return
+    }
+
     const projectId = await createProject()
     if (projectId) {
       await fetchProjects()
@@ -263,10 +267,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-3 py-3">
-        {/* Project Switcher */}
-        {!session ? (
-          <DemoModeBadge />
-        ) : isLoadingProjects ? (
+        {/* Project Switcher - shown for both auth and guest users */}
+        {isLoadingProjects ? (
           <div className="h-9 flex items-center text-sm text-muted-foreground">
             Loading...
           </div>
@@ -367,8 +369,19 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         )}
       </SidebarHeader>
       <SidebarContent>
-        {/* Quick Actions - only show when project selected */}
-        {session && selectedProject && (
+        {/* Demo Mode Badge - show for guests above quick actions */}
+        {!session && selectedProject && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <div className="px-2">
+                <DemoModeBadge />
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Quick Actions - show when project selected (both auth and guests) */}
+        {selectedProject && (
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -402,8 +415,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           </SidebarGroup>
         )}
 
-        {/* Project Navigation - only show when project selected */}
-        {session && selectedProject && (
+        {/* Project Navigation - show when project selected (both auth and guests) */}
+        {selectedProject && (
           <SidebarGroup>
             <SidebarGroupLabel>Navigate</SidebarGroupLabel>
             <SidebarGroupContent>
