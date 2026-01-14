@@ -8,6 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.0] - 2026-01-14
+
+### Added
+- **Structured Provocations** - Suggested questions and strategic gaps now have title + description
+  - Schema: `suggestedQuestions` and `gaps` changed from `String[]` to `Json` (structured objects)
+  - Generation prompts updated to output `{title, description}` format
+  - UI displays title prominently with description below
+  - Removes `parseProvocation()` hack that split strings on delimiters
+
+- **Slack Signup Notifications** - Get notified when new users create accounts
+  - Set `SLACK_WEBHOOK_URL` environment variable to enable
+  - Fires on NextAuth `createUser` event
+
+- **Project Page UI Polish**
+  - "Unfinished" badge now navigates to Chats with "In Progress" tab open
+  - "New to include" badge always visible (gray when 0, green when >0)
+  - Chats module uses controlled tabs for programmatic navigation
+
+### Changed
+- **Seed Fixtures** - All demo fixtures updated with structured provocation format
+  - `demo-extended.json`, `demo-dogfood.json`, `demo-simulated.json`, `test-minimal.json`
+
+### Fixed
+- **Prisma JSON Serialization** - Workaround for Prisma treating parsed JSON as text[]
+  - JSON round-trip (`JSON.parse(JSON.stringify())`) in seed scripts
+
+---
 ## [1.6.1] - 2026-01-14
 
 ### Added
