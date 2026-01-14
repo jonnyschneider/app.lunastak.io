@@ -2,12 +2,15 @@ import { getServerSession } from 'next-auth/next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import { HomePage } from '@/components/HomePage';
 import { prisma } from '@/lib/db';
 import { isGuestUser } from '@/lib/projects';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
 
+/**
+ * Root page - always redirects to a project page
+ * Nobody sees a "homepage" - all users land on their project
+ */
 export default async function Page({
   searchParams,
 }: {
@@ -16,13 +19,13 @@ export default async function Page({
   const session = await getServerSession(authOptions);
   const params = await searchParams;
 
-  // Don't redirect if URL has params indicating intentional navigation
-  if (params.question || params.deepDiveId || params.projectId || params.stub) {
-    return <HomePage session={session} />;
+  // If projectId param provided, redirect to that project
+  if (params.projectId && typeof params.projectId === 'string') {
+    redirect(`/project/${params.projectId}`);
   }
 
+  // Authenticated user - redirect to their first project
   if (session?.user?.id) {
-    // Authenticated user - redirect to their first project
     const project = await prisma.project.findFirst({
       where: { userId: session.user.id, status: 'active' },
       orderBy: { createdAt: 'asc' },
@@ -32,8 +35,8 @@ export default async function Page({
     if (project) {
       redirect(`/project/${project.id}`);
     }
-    // No projects - show empty state via HomePage
-    return <HomePage session={session} />;
+    // No projects - redirect to empty project creation flow
+    redirect('/projects/new');
   }
 
   // Guest user flow
@@ -62,6 +65,5 @@ export default async function Page({
   }
 
   // Redirect to API route that creates guest and sets cookie
-  // (cookies can only be set in Route Handlers, not Server Components)
   redirect('/api/guest/init');
 }
