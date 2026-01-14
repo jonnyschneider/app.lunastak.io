@@ -70,10 +70,14 @@ export function ChatSheet({
 
   // Conversation state
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const [conversationStatus, setConversationStatus] = useState<string>('in_progress')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL')
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1')
+
+  // Derived state
+  const isReadOnly = conversationStatus === 'extracted'
 
   // Extraction state
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
@@ -108,6 +112,7 @@ export function ChatSheet({
   useEffect(() => {
     if (!open) {
       setConversationId(null)
+      setConversationStatus('in_progress')
       setMessages([])
       setFlowStep('chat')
       setExtractedContext(null)
@@ -167,6 +172,7 @@ export function ChatSheet({
 
       const data = await response.json()
       setConversationId(convId)
+      setConversationStatus(data.status || 'in_progress')
       setMessages(data.messages.map((m: any) => ({
         id: m.id,
         conversationId: convId,
@@ -399,16 +405,24 @@ export function ChatSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(newOpen) => {
+      // Prevent closing during extraction
+      if (!newOpen && flowStep === 'extracting') {
+        return
+      }
+      onOpenChange(newOpen)
+    }}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
             {flowStep === 'chat' && (
-              deepDiveId
-                ? 'Deep Dive'
-                : gapExploration
-                  ? DIMENSION_CONTEXT[gapExploration.dimension as Tier1Dimension]?.name || 'Discussion'
-                  : 'Discussion'
+              isReadOnly
+                ? 'Past Conversation'
+                : deepDiveId
+                  ? 'Deep Dive'
+                  : gapExploration
+                    ? DIMENSION_CONTEXT[gapExploration.dimension as Tier1Dimension]?.name || 'Discussion'
+                    : 'Discussion'
             )}
             {flowStep === 'extracting' && 'Analyzing...'}
             {flowStep === 'extraction' && 'Review Insights'}
@@ -426,9 +440,9 @@ export function ChatSheet({
               messages={messages}
               onUserResponse={handleUserResponse}
               onGenerateStrategy={extractContext}
-              onEndConversation={handleEndConversation}
+              onEndConversation={isReadOnly ? undefined : handleEndConversation}
               isLoading={isLoading}
-              isComplete={false}
+              isComplete={isReadOnly}
               currentPhase={currentPhase}
               traceId={traceId}
               earlyExitOffered={earlyExitOffered}
