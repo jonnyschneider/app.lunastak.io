@@ -692,6 +692,43 @@
           "confidence": "LOW",
           "fragmentCount": 0
         }
+      ],
+      "generatedOutputs": [
+        {
+          "outputType": "full_decision_stack",
+          "version": 1,
+          "generatedFrom": "conversation",
+          "modelUsed": "claude-sonnet-4-20250514",
+          "content": {
+            "vision": "BuildFlow becomes the operating system for custom home builders, transforming how they manage the hundreds of decisions that make each home unique.",
+            "strategy": "Own the 'selection coordination' problem first - the chaotic process of tracking client decisions across cabinets, flooring, fixtures, and finishes. Use this wedge to expand into full project management for the underserved custom home builder segment.",
+            "objectives": [
+              {
+                "id": "obj-1",
+                "pithy": "Validate Selection Tracker PMF",
+                "metric": {"summary": "50 active projects", "full": "50 active projects using Selection Tracker weekly", "category": "Product"},
+                "explanation": "Prove the core feature solves a real pain point",
+                "successCriteria": "50+ projects with weekly active usage"
+              },
+              {
+                "id": "obj-2",
+                "pithy": "Prove builder acquisition channel",
+                "metric": {"summary": "3 referral sources", "full": "3 validated referral channels producing leads", "category": "Growth"},
+                "explanation": "Find repeatable ways to reach custom home builders",
+                "successCriteria": "At least 3 channels producing qualified leads"
+              },
+              {
+                "id": "obj-3",
+                "pithy": "Establish pricing power",
+                "metric": {"summary": "$300/mo average", "full": "$300/month average revenue per builder", "category": "Revenue"},
+                "explanation": "Validate willingness to pay at sustainable price point",
+                "successCriteria": "$300+ ARPU with acceptable churn"
+              }
+            ],
+            "opportunities": [],
+            "principles": []
+          }
+        }
       ]
     }
   ]

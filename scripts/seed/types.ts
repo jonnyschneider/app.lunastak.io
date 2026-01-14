@@ -103,6 +103,16 @@ export interface FixtureSynthesis {
   fragmentCount: number;
 }
 
+// Generated output in fixture
+export interface FixtureGeneratedOutput {
+  outputType: string;
+  version: number;
+  content: Record<string, unknown>;
+  generatedFrom?: string;
+  modelUsed: string;
+  changeSummary?: string;
+}
+
 // Project in fixture
 export interface FixtureProject {
   id: string; // "{{PROJECT_ID}}" placeholder
@@ -116,6 +126,7 @@ export interface FixtureProject {
   deepDives: FixtureDeepDive[];
   documents: FixtureDocument[];
   syntheses?: FixtureSynthesis[];
+  generatedOutputs?: FixtureGeneratedOutput[];
 }
 
 // Complete fixture file
