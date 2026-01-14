@@ -219,9 +219,10 @@ export async function GET(
     })
 
     // Count unsynthesized fragments (created after last knowledge summary)
+    // If never synthesized (knowledgeUpdatedAt is null), ALL fragments are new
     const unsynthesizedFragmentCount = project.knowledgeUpdatedAt
       ? project.fragments.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
-      : 0
+      : project.fragments.length
 
     // Return project data
     return NextResponse.json({
