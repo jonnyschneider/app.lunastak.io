@@ -8,6 +8,7 @@ import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments'
 import { updateAllSyntheses } from '@/lib/synthesis';
 import { logStatsigEvent } from '@/lib/statsig';
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary';
+import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -192,6 +193,17 @@ export async function POST(req: Request) {
       { error: 'Conversation not found' },
       { status: 404 }
     );
+  }
+
+  // Check guest API limit
+  if (conversation.userId) {
+    const { blocked } = await checkAndIncrementGuestApiCalls(conversation.userId);
+    if (blocked) {
+      return NextResponse.json(
+        { error: 'limit_reached', message: 'Demo limit reached. Sign up to continue.' },
+        { status: 429 }
+      );
+    }
   }
 
   // Create a streaming response

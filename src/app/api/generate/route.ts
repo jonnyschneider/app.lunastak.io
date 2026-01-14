@@ -6,6 +6,7 @@ import { EnhancedExtractedContext, StrategyStatements, Trace, ExtractedContextVa
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
 import { logStatsigEvent } from '@/lib/statsig';
+import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -110,6 +111,18 @@ export async function POST(req: Request) {
         { error: 'Conversation not found' },
         { status: 404 }
       );
+    }
+
+    // Check guest API limit
+    if (conversation.userId) {
+      const { blocked } = await checkAndIncrementGuestApiCalls(conversation.userId);
+      if (blocked) {
+        console.log('[Generate API] Guest API limit reached');
+        return NextResponse.json(
+          { error: 'limit_reached', message: 'Demo limit reached. Sign up to continue.' },
+          { status: 429 }
+        );
+      }
     }
 
     console.log('[Generate API] Conversation found, preparing context...');
