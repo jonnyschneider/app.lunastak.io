@@ -4,6 +4,7 @@ import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ConversationPhase } from '@/lib/types';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
+import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -42,6 +43,18 @@ export async function POST(req: Request) {
         { error: 'Conversation not found' },
         { status: 404 }
       );
+    }
+
+    // Check guest API limit
+    if (conversation.userId) {
+      const { blocked } = await checkAndIncrementGuestApiCalls(conversation.userId);
+      if (blocked) {
+        console.log('[Continue API] Guest API limit reached');
+        return NextResponse.json(
+          { error: 'limit_reached', message: 'Demo limit reached. Sign up to continue.' },
+          { status: 429 }
+        );
+      }
     }
 
     const currentStep = conversation.messages.length + 1;
