@@ -5,6 +5,7 @@ import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
 import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
 import { StatsigProvider } from '@/components/StatsigProvider'
+import { Toaster } from 'sonner'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
@@ -35,6 +36,7 @@ export default async function RootLayout({
           <SessionTransferProvider>
             <StatsigProvider>
               {children}
+              <Toaster position="bottom-right" />
             </StatsigProvider>
           </SessionTransferProvider>
         </SessionProvider>
