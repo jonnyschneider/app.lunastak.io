@@ -102,6 +102,14 @@ export interface TransformedFixture {
       confidence: string;
       fragmentCount: number;
     }>;
+    generatedOutputs: Array<{
+      outputType: string;
+      version: number;
+      content: Record<string, unknown>;
+      generatedFrom?: string;
+      modelUsed: string;
+      changeSummary?: string;
+    }>;
   }>;
 }
 
@@ -151,6 +159,9 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
       })),
       syntheses: (p.syntheses || []).map((s) => ({
         ...s,
+      })),
+      generatedOutputs: (p.generatedOutputs || []).map((o) => ({
+        ...o,
       })),
     })),
   };
@@ -317,6 +328,22 @@ export async function seedDemoProject(userId: string): Promise<string> {
     // Create synthesis records from fixture
     if (projectData.syntheses.length > 0) {
       await createSynthesisRecords(project.id, projectData.syntheses);
+    }
+
+    // Create generated outputs (for refresh strategy)
+    for (const output of projectData.generatedOutputs) {
+      await prisma.generatedOutput.create({
+        data: {
+          projectId: project.id,
+          userId,
+          outputType: output.outputType,
+          version: output.version,
+          content: output.content as Prisma.InputJsonValue,
+          generatedFrom: output.generatedFrom,
+          modelUsed: output.modelUsed,
+          changeSummary: output.changeSummary,
+        },
+      });
     }
 
     return project.id;
