@@ -183,7 +183,6 @@ async function hydrate(options: HydrateOptions): Promise<void> {
         description: projectFixture.description,
         status: projectFixture.status,
         knowledgeSummary: projectFixture.knowledgeSummary,
-        knowledgeUpdatedAt: new Date(), // Set so existing fragments don't show as "new"
         suggestedQuestions: JSON.parse(JSON.stringify(projectFixture.suggestedQuestions || [])),
       },
     });
@@ -338,6 +337,13 @@ async function hydrate(options: HydrateOptions): Promise<void> {
         },
       });
     }
+
+    // Set knowledgeUpdatedAt AFTER all fragments are created
+    // This ensures existing fragments don't count as "new"
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { knowledgeUpdatedAt: new Date() },
+    });
 
     const synthCount = projectFixture.syntheses?.length || 0;
     const outputCount = projectFixture.generatedOutputs?.length || 0;

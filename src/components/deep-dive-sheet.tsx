@@ -195,25 +195,33 @@ export function DeepDiveSheet({
             )}
 
             {/* Tabbed content */}
-            <Tabs defaultValue="docs" className="mt-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="docs">
-                  Docs & Memos
-                  {documents.length > 0 && (
-                    <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
-                      {documents.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="chats">
-                  Chats
-                  {conversations.length > 0 && (
-                    <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
-                      {conversations.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="chats" className="mt-6">
+              <div className="border-b">
+                <TabsList className="h-10 bg-transparent p-0 gap-4">
+                  <TabsTrigger
+                    value="chats"
+                    className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  >
+                    Chats
+                    {conversations.length > 0 && (
+                      <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                        {conversations.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="docs"
+                    className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  >
+                    Docs & Memos
+                    {documents.length > 0 && (
+                      <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                        {documents.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Documents & Memos Tab */}
               <TabsContent value="docs" className="mt-4">

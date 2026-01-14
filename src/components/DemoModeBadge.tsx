@@ -1,40 +1,37 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { Badge } from '@/components/ui/badge';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+const APP_VERSION = '1.7.0';
 
 export function DemoModeBadge() {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Badge
-          variant="destructive"
-          className="cursor-pointer"
+    <TooltipProvider>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help">
+              Demo v{APP_VERSION}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[200px] text-center">
+            <p>Exploring a demo project. Your work won't be saved.</p>
+          </TooltipContent>
+        </Tooltip>
+        <span className="text-border">|</span>
+        <button
+          onClick={() => signIn()}
+          className="hover:text-foreground hover:underline transition-colors"
         >
-          Demo Mode
-        </Badge>
-      </PopoverTrigger>
-      <PopoverContent className="w-64" side="bottom" align="start" sideOffset={8}>
-        <div className="space-y-3">
-          <p className="text-sm font-medium">You're exploring a demo project</p>
-          <p className="text-sm text-muted-foreground">
-            Your work won't be saved. Create an account to build your own strategy and keep your progress.
-          </p>
-          <Button
-            onClick={() => signIn()}
-            className="w-full"
-            size="sm"
-          >
-            Create Account
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+          Sign in
+        </button>
+      </div>
+    </TooltipProvider>
   );
 }
