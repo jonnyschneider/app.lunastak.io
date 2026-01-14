@@ -345,14 +345,16 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                       <FolderPlus className="h-4 w-4 shrink-0" />
                       <span>{isCreatingProject ? 'Creating...' : 'Add Project'}</span>
                     </CommandItem>
-                    <CommandItem
-                      onSelect={handleRestoreDemo}
-                      disabled={isRestoringDemo}
-                    >
-                      <RotateCcw className={`h-4 w-4 shrink-0 ${isRestoringDemo ? 'animate-spin' : ''}`} />
-                      <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo'}</span>
-                    </CommandItem>
-                    {selectedProject && (
+                    {session && (
+                      <CommandItem
+                        onSelect={handleRestoreDemo}
+                        disabled={isRestoringDemo}
+                      >
+                        <RotateCcw className={`h-4 w-4 shrink-0 ${isRestoringDemo ? 'animate-spin' : ''}`} />
+                        <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo'}</span>
+                      </CommandItem>
+                    )}
+                    {session && selectedProject && (
                       <CommandItem
                         onSelect={() => setProjectToDelete(selectedProject)}
                         className="text-destructive"
