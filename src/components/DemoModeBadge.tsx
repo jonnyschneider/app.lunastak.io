@@ -20,7 +20,7 @@ export function DemoModeBadge() {
           Demo Mode
         </Badge>
       </PopoverTrigger>
-      <PopoverContent className="w-64" align="start">
+      <PopoverContent className="w-64" side="right" align="start">
         <div className="space-y-3">
           <p className="text-sm font-medium">You're exploring a demo project</p>
           <p className="text-sm text-muted-foreground">
