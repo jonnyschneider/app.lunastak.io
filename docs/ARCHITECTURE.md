@@ -899,6 +899,7 @@ Learnings from runtime discoveries. Each notes whether the fix is **durable** (k
 | **Cross-component state (project deletion)** | Window events (pattern from `SessionTransferProvider`) | **Okay for now** - not idiomatic React. Revisit: proper state management when designing app-wide state |
 | **Conversation resumption refetches all messages** | API call on sheet open, reconstruct Message[] in state | **Okay for now** - simple, correct. Revisit: SWR/React Query caching if conversations grow large |
 | **Fragment/in-progress counts stale in same session** | Server component fetches counts on page load | **Okay for now** - counts update on next navigation or refresh. Revisit: real-time updates via polling or websockets |
+| **Extraction dies if sheet closes** | Prevent sheet close during extraction (flowStep === 'extracting') | **Okay for now** - stopgap. Revisit: server-side background jobs (Inngest/QStash) with status polling and badge updates |
 
 ---
 
