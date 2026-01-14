@@ -462,6 +462,13 @@ export async function POST(req: Request) {
           }
         }
 
+        // Update conversation status to 'extracted'
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { status: 'extracted' },
+        });
+        console.log(`[Extract] Updated conversation status to 'extracted'`);
+
         // Step 5: Complete
         sendProgress({
           step: 'complete',
