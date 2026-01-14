@@ -30,6 +30,7 @@ interface ChatInterfaceProps {
   onEntryPointSelect?: (option: EntryPoint) => void;
   onGenerateStrategy?: () => void;
   onDeferToDeepDive?: (messageContent: string, messageId: string) => void;
+  onEndConversation?: () => void;
   isLoading: boolean;
   isComplete: boolean;
   currentPhase: ConversationPhase;
@@ -45,6 +46,7 @@ export default function ChatInterface({
   onEntryPointSelect,
   onGenerateStrategy,
   onDeferToDeepDive,
+  onEndConversation,
   isLoading,
   isComplete,
   currentPhase,
@@ -176,52 +178,63 @@ export default function ChatInterface({
       {/* Input */}
       {!isComplete && (
         <form onSubmit={handleSubmit} className="border-t border-border p-4">
-          <div className="flex gap-2 items-end">
-            <textarea
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              placeholder={getPlaceholderText()}
-              disabled={isLoading}
-              rows={8}
-              className="flex-1 px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !userInput.trim()}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-            >
-              Send
-            </button>
-          </div>
-          <div className="flex items-center justify-between mt-2">
+          <textarea
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder={getPlaceholderText()}
+            disabled={isLoading}
+            rows={6}
+            className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <div className="flex items-center justify-between mt-3">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
               <span className="mx-1">or</span>
               <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
               <span className="ml-1">to send</span>
             </p>
-            {onDeferToDeepDive && hasUserResponded && (
+            <div className="flex items-center gap-2">
+              {onDeferToDeepDive && hasUserResponded && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Use the latest assistant message for deferral
+                    const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+                    if (lastAssistantMessage) {
+                      onDeferToDeepDive(lastAssistantMessage.content, lastAssistantMessage.id);
+                    }
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  <Crosshair className="h-3 w-3" />
+                  Defer to Deep Dive
+                </button>
+              )}
+              {onEndConversation && hasUserResponded && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onEndConversation}
+                  disabled={isLoading}
+                >
+                  End
+                </Button>
+              )}
               <button
-                type="button"
-                onClick={() => {
-                  // Use the latest assistant message for deferral
-                  const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
-                  if (lastAssistantMessage) {
-                    onDeferToDeepDive(lastAssistantMessage.content, lastAssistantMessage.id);
-                  }
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                type="submit"
+                disabled={isLoading || !userInput.trim()}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
               >
-                <Crosshair className="h-3 w-3" />
-                Defer to Deep Dive
+                Send
               </button>
-            )}
+            </div>
           </div>
         </form>
       )}
