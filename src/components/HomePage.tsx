@@ -9,7 +9,6 @@ import StrategyDisplay from '@/components/StrategyDisplay';
 import FeedbackButtons from '@/components/FeedbackButtons';
 import { AppLayout } from '@/components/layout/app-layout';
 import { IntroCard } from '@/components/IntroCard';
-import { RegistrationBanner } from '@/components/RegistrationBanner';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { FakeDoorDialog } from '@/components/FakeDoorDialog';
 import { ExtractionProgress, ExtractionStep } from '@/components/ExtractionProgress';
@@ -51,7 +50,6 @@ export function HomePage({ session }: HomePageProps) {
     description: string;
     eventData: Record<string, any>;
   } | null>(null);
-  const [showRegistrationBanner, setShowRegistrationBanner] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting');
   const [extractionError, setExtractionError] = useState<string | undefined>();
@@ -95,13 +93,6 @@ export function HomePage({ session }: HomePageProps) {
         setIsLoadingProjects(false);
       });
   }, [session, router]);
-
-  // Show registration banner when strategy is displayed and user is not authenticated
-  useEffect(() => {
-    if (flowStep === 'strategy' && !session) {
-      setShowRegistrationBanner(true);
-    }
-  }, [flowStep, session]);
 
   // Fetch user's project ID for deep dive deferral
   useEffect(() => {
@@ -230,14 +221,6 @@ export function HomePage({ session }: HomePageProps) {
       });
     };
   }, [flowStep, traceId]);
-
-  // Session transfer is now handled globally by SessionTransferProvider
-  // Hide registration banner when user is authenticated
-  useEffect(() => {
-    if (session?.user?.id) {
-      setShowRegistrationBanner(false);
-    }
-  }, [session]);
 
   // Listen for project deletion and reset conversation state
   // Pattern from SessionTransferProvider - TODO: Replace with proper state management
@@ -739,12 +722,6 @@ export function HomePage({ session }: HomePageProps) {
 
           {!showIntro && flowStep === 'strategy' && strategy && conversationId && (
             <>
-              {showRegistrationBanner && guestUserId && (
-                <RegistrationBanner
-                  guestUserId={guestUserId}
-                  onDismiss={() => setShowRegistrationBanner(false)}
-                />
-              )}
               <StrategyDisplay
                 strategy={strategy}
                 thoughts={thoughts}
