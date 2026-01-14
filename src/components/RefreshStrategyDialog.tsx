@@ -55,6 +55,7 @@ export function RefreshStrategyDialog({
   const [currentStep, setCurrentStep] = useState<RefreshStrategyStep>('loading_context')
   const [error, setError] = useState<string | undefined>()
   const [changeSummary, setChangeSummary] = useState<string | null>(null)
+  const [completedTraceId, setCompletedTraceId] = useState<string | null>(null)
   const refreshRunningRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
 
@@ -67,6 +68,7 @@ export function RefreshStrategyDialog({
       setCurrentStep('loading_context')
       setError(undefined)
       setChangeSummary(null)
+      setCompletedTraceId(null)
       refreshRunningRef.current = false
       return
     }
@@ -109,9 +111,7 @@ export function RefreshStrategyDialog({
                 setError(update.error || 'Refresh failed')
               } else if (update.step === 'complete') {
                 setChangeSummary(update.changeSummary)
-                setTimeout(() => {
-                  onCompleteRef.current(update.traceId)
-                }, 1500)
+                setCompletedTraceId(update.traceId)
               }
             } catch (parseError) {
               console.error('Failed to parse progress:', line, parseError)
@@ -235,10 +235,18 @@ export function RefreshStrategyDialog({
             </p>
           </div>
 
-          {/* Close button */}
+          {/* Action button */}
           {(isComplete || isError) && (
             <div className="mt-4 flex justify-center">
-              <Button onClick={() => onOpenChange(false)}>
+              <Button
+                onClick={() => {
+                  if (isComplete && completedTraceId) {
+                    onComplete(completedTraceId)
+                  } else {
+                    onOpenChange(false)
+                  }
+                }}
+              >
                 {isComplete ? 'View Strategy' : 'Close'}
               </Button>
             </div>
