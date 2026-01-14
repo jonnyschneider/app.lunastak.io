@@ -25,7 +25,9 @@ Synthesize these fragments into structured understanding:
 
 3. **Key Quotes** (3-5 quotes): Verbatim quotes that capture the essence. Use exact wording from fragments.
 
-4. **Gaps** (list): What's missing? What would deepen our understanding of {dimension}?
+4. **Gaps** (list of objects): What's missing? Each gap should have:
+   - "title": A punchy, attention-grabbing title (max 60 chars)
+   - "description": The full question or explanation of what's missing
 
 5. **Contradictions** (list): Are there conflicting fragments? Surface tensions, don't hide them.
 
@@ -38,7 +40,7 @@ Synthesize these fragments into structured understanding:
 
 IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
 
-{"summary": "...", "keyThemes": ["...", "..."], "keyQuotes": ["...", "..."], "gaps": ["...", "..."], "contradictions": ["...", "..."], "subdimensions": null, "confidence": "MEDIUM"}`
+{"summary": "...", "keyThemes": ["...", "..."], "keyQuotes": ["...", "..."], "gaps": [{"title": "Short title", "description": "Full question or explanation"}], "contradictions": ["...", "..."], "subdimensions": null, "confidence": "MEDIUM"}`
 
 export async function fullSynthesis(
   dimension: Tier1Dimension,
@@ -49,7 +51,10 @@ export async function fullSynthesis(
       summary: '',
       keyThemes: [],
       keyQuotes: [],
-      gaps: [`No fragments captured yet for ${dimension}`],
+      gaps: [{
+        title: 'No insights yet',
+        description: `No fragments captured yet for ${dimension.replace(/_/g, ' ').toLowerCase()}`
+      }],
       contradictions: [],
       subdimensions: null,
       confidence: 'LOW'
@@ -86,7 +91,10 @@ export async function fullSynthesis(
       summary: '',
       keyThemes: [],
       keyQuotes: [],
-      gaps: ['Synthesis failed - could not parse LLM response'],
+      gaps: [{
+        title: 'Synthesis failed',
+        description: 'Could not parse LLM response - please try again'
+      }],
       contradictions: [],
       subdimensions: null,
       confidence: 'LOW'

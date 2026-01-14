@@ -14,7 +14,10 @@
       "description": "A minimal test project",
       "status": "active",
       "knowledgeSummary": null,
-      "suggestedQuestions": ["What's your biggest challenge?", "Who is your target customer?"],
+      "suggestedQuestions": [
+        {"title": "Biggest challenge", "description": "What's your biggest challenge?"},
+        {"title": "Target customer", "description": "Who is your target customer?"}
+      ],
       "conversations": [
         {
           "id": "{{CONV_0_ID}}",

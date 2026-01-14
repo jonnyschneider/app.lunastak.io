@@ -87,12 +87,18 @@ export interface FixtureDocument {
   deepDiveId?: string;
 }
 
+// Structured provocation for suggested questions and gaps
+export interface FixtureProvocation {
+  title: string;
+  description: string;
+}
+
 // Dimensional synthesis in fixture
 export interface FixtureSynthesis {
   dimension: string;
   summary?: string;
   keyThemes: string[];
-  gaps: string[];
+  gaps: FixtureProvocation[];
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   fragmentCount: number;
 }
@@ -104,7 +110,7 @@ export interface FixtureProject {
   description?: string;
   status: 'active' | 'archived' | 'deleted';
   knowledgeSummary?: string;
-  suggestedQuestions: string[];
+  suggestedQuestions: FixtureProvocation[];
   conversations: FixtureConversation[];
   fragments: FixtureFragment[];
   deepDives: FixtureDeepDive[];

@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'
 import ExtractionConfirm from '@/components/ExtractionConfirm'
+import ExtractionSummary from '@/components/ExtractionSummary'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import FeedbackButtons from '@/components/FeedbackButtons'
 
@@ -39,7 +40,7 @@ function ChatSkeleton() {
   )
 }
 
-type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy'
+type FlowStep = 'chat' | 'extracting' | 'extraction' | 'summary' | 'strategy'
 
 export interface GapExploration {
   dimension: string
@@ -54,6 +55,7 @@ interface ChatSheetProps {
   deepDiveId?: string
   gapExploration?: GapExploration
   resumeConversationId?: string
+  hasExistingStrategy?: boolean
 }
 
 export function ChatSheet({
@@ -64,6 +66,7 @@ export function ChatSheet({
   deepDiveId,
   gapExploration,
   resumeConversationId,
+  hasExistingStrategy = false,
 }: ChatSheetProps) {
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
@@ -264,7 +267,11 @@ export function ChatSheet({
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId }),
+        body: JSON.stringify({
+          conversationId,
+          // Lightweight mode for follow-on conversations (skip heavy synthesis)
+          lightweight: hasExistingStrategy,
+        }),
       })
 
       if (!response.ok) {
@@ -303,8 +310,11 @@ export function ChatSheet({
                 // User clicked End - close sheet with toast
                 toast.success('Added to your knowledge base')
                 onOpenChange(false)
+              } else if (hasExistingStrategy) {
+                // Subsequent conversation - show summary only
+                setFlowStep('summary')
               } else {
-                // Automatic extraction - show confirmation
+                // First conversation - show extraction confirm with generate option
                 setFlowStep('extraction')
               }
             } else if (update.step === 'error') {
@@ -426,6 +436,7 @@ export function ChatSheet({
             )}
             {flowStep === 'extracting' && 'Analyzing...'}
             {flowStep === 'extraction' && 'Review Insights'}
+            {flowStep === 'summary' && 'Insights Captured'}
             {flowStep === 'strategy' && 'Your Strategy'}
           </SheetTitle>
         </SheetHeader>
@@ -463,6 +474,13 @@ export function ChatSheet({
               onGenerate={handleGenerate}
               onContinue={handleContinue}
               isGenerating={isLoading}
+            />
+          )}
+
+          {flowStep === 'summary' && conversationId && (
+            <ExtractionSummary
+              conversationId={conversationId}
+              onDone={() => onOpenChange(false)}
             />
           )}
 

@@ -10,7 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { prisma } from '../../src/lib/db';
-import type { Fixture, ExportOptions } from './types';
+import type { Fixture, ExportOptions, FixtureProvocation } from './types';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
@@ -144,7 +144,7 @@ async function exportByEmail(email: string): Promise<Fixture> {
       description: project.description || undefined,
       status: project.status as 'active' | 'archived' | 'deleted',
       knowledgeSummary: project.knowledgeSummary || undefined,
-      suggestedQuestions: project.suggestedQuestions,
+      suggestedQuestions: project.suggestedQuestions as unknown as FixtureProvocation[],
       conversations: project.conversations.map(conv => ({
         id: idMap.get(conv.id)!,
         title: conv.title || undefined,

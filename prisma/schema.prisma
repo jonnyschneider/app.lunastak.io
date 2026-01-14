@@ -166,7 +166,7 @@ model Project {
   // Luna Remembers: accumulated knowledge
   knowledgeSummary   String?   @db.Text // "What Luna Knows" - human-readable summary
   knowledgeUpdatedAt DateTime? // Last time knowledge was synthesized
-  suggestedQuestions String[]  @default([]) // Suggested questions based on gaps
+  suggestedQuestions Json      @default("[]") // Array of { title: string, description: string }
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -318,7 +318,7 @@ model DimensionalSynthesis {
   summary        String?  @db.Text
   keyThemes      String[] @default([])
   keyQuotes      String[] @default([])
-  gaps           String[] @default([])
+  gaps           Json     @default("[]") // Array of { title: string, description: string }
   contradictions String[] @default([])
 
   // JSONB for emergent Tier 2 subdimensions

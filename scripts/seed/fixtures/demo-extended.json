@@ -14,9 +14,18 @@
       "status": "active",
       "knowledgeSummary": "You're building BuildFlow as a project management platform specifically designed for custom home builders - small to mid-sized construction companies building 5-50 homes per year. Your core insight is that existing tools like Procore and Buildertrend are built for large commercial contractors, leaving custom home builders with software that's either way too complex or frustratingly basic.\n\nThe pain is real: builders are juggling client selections, subcontractor schedules, material orders, and change orders across spreadsheets, text threads, and whiteboards. Every project is unique (that's the nature of custom homes), so cookie-cutter templates don't work. They need flexibility without chaos.\n\nBuildFlow takes a 'structured flexibility' approach - providing guardrails and best practices while letting builders adapt to each project's quirks. The killer feature is your 'Selection Tracker' that keeps clients, builders, and designers aligned on the hundreds of decisions that go into a custom home - from cabinet hardware to flooring transitions.\n\nYour target builder is doing $3M-$15M annual revenue, has 3-10 employees, and is currently 'making it work' with a patchwork of tools. They've probably tried Buildertrend and found it overwhelming, or they're limping along with spreadsheets and are ready to professionalize.\n\nThe competitive landscape has a clear gap: Procore is enterprise, Buildertrend is trying to be everything, CoConstruct focuses heavily on pre-sale. You're the only one treating 'project execution for custom homes' as its own category worth optimizing.",
       "suggestedQuestions": [
-        "You mention builders are 'making it work' with spreadsheets and texts - what's the breaking point that finally makes them search for a real solution? Is it a specific project size, a costly mistake, or something else?",
-        "The Selection Tracker sounds like a differentiator, but how do you prevent it from becoming a bottleneck when clients are slow to make decisions? Does the system help accelerate decisions or just track them?",
-        "Custom home builders often have deep relationships with their subcontractors - how does BuildFlow fit into those existing relationships without feeling like you're inserting yourself between them?"
+        {
+          "title": "Breaking point trigger",
+          "description": "You mention builders are 'making it work' with spreadsheets and texts - what's the breaking point that finally makes them search for a real solution? Is it a specific project size, a costly mistake, or something else?"
+        },
+        {
+          "title": "Selection Tracker bottleneck",
+          "description": "The Selection Tracker sounds like a differentiator, but how do you prevent it from becoming a bottleneck when clients are slow to make decisions? Does the system help accelerate decisions or just track them?"
+        },
+        {
+          "title": "Subcontractor relationships",
+          "description": "Custom home builders often have deep relationships with their subcontractors - how does BuildFlow fit into those existing relationships without feeling like you're inserting yourself between them?"
+        }
       ],
       "conversations": [
         {
@@ -634,8 +643,8 @@
             "High retention expected due to switching costs"
           ],
           "gaps": [
-            "No real CAC data from non-warm-intro acquisitions",
-            "LTV and payback period still theoretical"
+            {"title": "CAC data gap", "description": "No real CAC data from non-warm-intro acquisitions"},
+            {"title": "LTV assumptions", "description": "LTV and payback period still theoretical"}
           ],
           "confidence": "MEDIUM",
           "fragmentCount": 2
@@ -648,8 +657,8 @@
             "Long sales cycles due to builder skepticism"
           ],
           "gaps": [
-            "Onboarding doesn't scale - needs productization",
-            "Team capabilities not fully documented"
+            {"title": "Onboarding scalability", "description": "Onboarding doesn't scale - needs productization"},
+            {"title": "Team documentation", "description": "Team capabilities not fully documented"}
           ],
           "confidence": "MEDIUM",
           "fragmentCount": 1
@@ -662,10 +671,10 @@
             "Local associations and trade shows mentioned"
           ],
           "gaps": [
-            "No defined go-to-market strategy",
-            "Pricing not validated with real customers",
-            "Designer/architect referral channel unexplored",
-            "Traditional SaaS marketing may not work for this audience"
+            {"title": "GTM strategy missing", "description": "No defined go-to-market strategy"},
+            {"title": "Pricing validation", "description": "Pricing not validated with real customers"},
+            {"title": "Referral channel", "description": "Designer/architect referral channel unexplored"},
+            {"title": "Marketing approach", "description": "Traditional SaaS marketing may not work for this audience"}
           ],
           "confidence": "LOW",
           "fragmentCount": 0
@@ -675,10 +684,10 @@
           "summary": "Limited exploration of risks and constraints. Some awareness of operational challenges but no systematic risk assessment.",
           "keyThemes": [],
           "gaps": [
-            "No risk assessment documented",
-            "Competition response not considered",
-            "Market timing risks not evaluated",
-            "Resource constraints not defined"
+            {"title": "Risk assessment", "description": "No risk assessment documented"},
+            {"title": "Competition response", "description": "Competition response not considered"},
+            {"title": "Market timing", "description": "Market timing risks not evaluated"},
+            {"title": "Resource constraints", "description": "Resource constraints not defined"}
           ],
           "confidence": "LOW",
           "fragmentCount": 0
