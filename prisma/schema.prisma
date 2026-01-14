@@ -373,6 +373,14 @@ model GeneratedOutput {
   feedbackAt      DateTime?
   refinementNotes String?   @db.Text
 
+  // Version chain for incremental refresh
+  previousOutputId String?
+  previousOutput   GeneratedOutput?  @relation("VersionChain", fields: [previousOutputId], references: [id])
+  nextOutputs      GeneratedOutput[] @relation("VersionChain")
+
+  // Change tracking
+  changeSummary String? @db.Text
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
