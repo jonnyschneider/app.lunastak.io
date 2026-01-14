@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -8,7 +8,11 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
-import { ExtractionStep } from '@/components/ExtractionProgress'
+import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
+import ChatInterface from '@/components/ChatInterface'
+import ExtractionConfirm from '@/components/ExtractionConfirm'
+import StrategyDisplay from '@/components/StrategyDisplay'
+import FeedbackButtons from '@/components/FeedbackButtons'
 
 type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy'
 
@@ -51,6 +55,27 @@ export function ChatSheet({
   // Early exit state
   const [earlyExitOffered, setEarlyExitOffered] = useState(false)
   const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null)
+
+  // Auto-start conversation when sheet opens
+  useEffect(() => {
+    if (open && !conversationId) {
+      startConversationWithQuestion(initialQuestion)
+    }
+  }, [open])
+
+  // Reset state when sheet closes
+  useEffect(() => {
+    if (!open) {
+      setConversationId(null)
+      setMessages([])
+      setFlowStep('chat')
+      setExtractedContext(null)
+      setStrategy(null)
+      setCurrentPhase('INITIAL')
+      setEarlyExitOffered(false)
+      setSuggestedQuestion(null)
+    }
+  }, [open])
 
   // Start a new conversation
   const startConversationWithQuestion = async (question?: string) => {
@@ -296,9 +321,49 @@ export function ChatSheet({
             {flowStep === 'strategy' && 'Your Strategy'}
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-6">
-          {/* Flow content will go here */}
-          <p className="text-muted-foreground">Chat flow placeholder</p>
+        <div className="mt-6 flex flex-col h-[calc(100vh-8rem)]">
+          {flowStep === 'chat' && (
+            <ChatInterface
+              conversationId={conversationId}
+              messages={messages}
+              onUserResponse={handleUserResponse}
+              onGenerateStrategy={extractContext}
+              isLoading={isLoading}
+              isComplete={false}
+              currentPhase={currentPhase}
+              traceId={traceId}
+              earlyExitOffered={earlyExitOffered}
+              suggestedQuestion={suggestedQuestion}
+            />
+          )}
+
+          {flowStep === 'extracting' && (
+            <ExtractionProgress
+              currentStep={extractionStep}
+              error={extractionError}
+            />
+          )}
+
+          {flowStep === 'extraction' && extractedContext && (
+            <ExtractionConfirm
+              extractedContext={extractedContext}
+              onGenerate={handleGenerate}
+              onContinue={handleContinue}
+              isGenerating={isLoading}
+            />
+          )}
+
+          {flowStep === 'strategy' && strategy && conversationId && (
+            <div className="space-y-4">
+              <StrategyDisplay
+                strategy={strategy}
+                thoughts={thoughts}
+                conversationId={conversationId}
+                traceId={traceId}
+              />
+              <FeedbackButtons traceId={traceId} />
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
