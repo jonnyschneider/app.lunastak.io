@@ -53,6 +53,7 @@ interface ChatSheetProps {
   initialQuestion?: string
   deepDiveId?: string
   gapExploration?: GapExploration
+  resumeConversationId?: string
 }
 
 export function ChatSheet({
@@ -62,6 +63,7 @@ export function ChatSheet({
   initialQuestion,
   deepDiveId,
   gapExploration,
+  resumeConversationId,
 }: ChatSheetProps) {
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
@@ -91,10 +93,14 @@ export function ChatSheet({
   // Explicit end state (user clicked End button)
   const [isExplicitEnd, setIsExplicitEnd] = useState(false)
 
-  // Auto-start conversation when sheet opens
+  // Auto-start or resume conversation when sheet opens
   useEffect(() => {
     if (open && !conversationId) {
-      startConversationWithQuestion(initialQuestion)
+      if (resumeConversationId) {
+        resumeConversation(resumeConversationId)
+      } else {
+        startConversationWithQuestion(initialQuestion)
+      }
     }
   }, [open])
 
@@ -145,6 +151,36 @@ export function ChatSheet({
     } catch (error) {
       console.error('Failed to start conversation:', error)
       return null
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Resume an existing conversation
+  const resumeConversation = async (convId: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/conversation/${convId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversation')
+      }
+
+      const data = await response.json()
+      setConversationId(convId)
+      setMessages(data.messages.map((m: any) => ({
+        id: m.id,
+        conversationId: convId,
+        role: m.role,
+        content: m.content,
+        stepNumber: m.stepNumber,
+        timestamp: new Date(m.timestamp),
+      })))
+      setCurrentPhase(data.currentPhase || 'QUESTIONING')
+      setExperimentVariant(data.experimentVariant || 'baseline-v1')
+    } catch (error) {
+      console.error('Failed to resume conversation:', error)
+      toast.error('Failed to load conversation')
+      onOpenChange(false)
     } finally {
       setIsLoading(false)
     }
