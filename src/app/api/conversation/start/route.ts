@@ -84,11 +84,12 @@ interface GapExploration {
 
 export async function POST(req: Request) {
   try {
-    const { variantOverride, suggestedQuestion, deepDiveId, gapExploration } = await req.json() as {
+    const { variantOverride, suggestedQuestion, deepDiveId, gapExploration, projectId: requestedProjectId } = await req.json() as {
       variantOverride?: string;
       suggestedQuestion?: string;
       deepDiveId?: string;
       gapExploration?: GapExploration;
+      projectId?: string;
     };
 
     // Get session to check if user is authenticated
@@ -98,9 +99,28 @@ export async function POST(req: Request) {
     // For guests, userId will be null initially
     const authenticatedUserId = session?.user?.id || null;
 
-    // Get or create project FIRST (creates guest user + project for unauthenticated users)
+    // Get or create project (creates guest user + project for unauthenticated users)
     // This ensures we have a consistent database user ID for Statsig
-    const { userId, project, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
+    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
+
+    // Use the requested project if provided and user has access, otherwise use default
+    let targetProjectId = defaultProject.id;
+    if (requestedProjectId) {
+      // Verify user has access to the requested project
+      const requestedProject = await prisma.project.findFirst({
+        where: {
+          id: requestedProjectId,
+          userId: userId,
+          status: 'active',
+        },
+        select: { id: true },
+      });
+      if (requestedProject) {
+        targetProjectId = requestedProject.id;
+      } else {
+        console.warn('[Start] Requested project not found or not owned by user, using default');
+      }
+    }
 
     // Use database userId for Statsig (ensures consistency with event logging)
     const experimentVariant = await getExperimentVariant(userId, variantOverride);
@@ -111,7 +131,7 @@ export async function POST(req: Request) {
       deepDive = await prisma.deepDive.findFirst({
         where: {
           id: deepDiveId,
-          projectId: project.id,
+          projectId: targetProjectId,
         },
       });
     }
@@ -120,7 +140,7 @@ export async function POST(req: Request) {
     const conversation = await prisma.conversation.create({
       data: {
         userId, // guest user ID or authenticated user ID
-        projectId: project.id,
+        projectId: targetProjectId,
         deepDiveId: deepDive?.id || null,
         status: 'in_progress',
         experimentVariant,
@@ -135,7 +155,7 @@ export async function POST(req: Request) {
       firstQuestion = suggestedQuestion;
     } else {
       // Check if user has existing project knowledge (Luna Remembers)
-      const projectKnowledge = await getProjectKnowledgeForPrompt(project.id);
+      const projectKnowledge = await getProjectKnowledgeForPrompt(targetProjectId);
       const hasProjectKnowledge = projectKnowledge && projectKnowledge.length > 100;
 
       // Select the appropriate prompt based on context
