@@ -147,9 +147,142 @@ export function ChatSheet({
     }
   }
 
-  // Placeholder for extractContext - will be added in Task 4
+  // Extract context from conversation
   const extractContext = async () => {
-    console.log('extractContext placeholder')
+    if (!conversationId) return
+
+    setFlowStep('extracting')
+    setIsLoading(true)
+    setExtractionStep('starting')
+    setExtractionError(undefined)
+
+    try {
+      const response = await fetch('/api/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Extraction failed: ${response.status}`)
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('No response body')
+      }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+
+          try {
+            const update = JSON.parse(line)
+
+            if (update.step === 'complete') {
+              const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
+              setExtractedContext(ctx)
+              setDimensionalCoverage(coverage)
+              setFlowStep('extraction')
+            } else if (update.step === 'error') {
+              throw new Error(update.error || 'Extraction failed')
+            } else {
+              setExtractionStep(update.step)
+            }
+          } catch (parseError) {
+            console.error('Failed to parse progress update:', line, parseError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to extract context:', error)
+      setExtractionStep('error')
+      setExtractionError(error instanceof Error ? error.message : 'Something went wrong')
+      setTimeout(() => {
+        setFlowStep('chat')
+        setCurrentPhase('QUESTIONING')
+      }, 2000)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Generate strategy from extracted context
+  const handleGenerate = async () => {
+    if (!conversationId || !extractedContext) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          extractedContext,
+          dimensionalCoverage,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(`Generation failed: ${response.status} - ${errorData.error || response.statusText}`)
+      }
+
+      const data = await response.json()
+      setStrategy(data.statements)
+      setThoughts(data.thoughts)
+      setTraceId(data.traceId)
+      setFlowStep('strategy')
+
+      // Notify listeners
+      window.dispatchEvent(new Event('strategySaved'))
+    } catch (error) {
+      console.error('Failed to generate strategy:', error)
+      alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Continue conversation after reviewing extraction
+  const handleContinue = async () => {
+    if (conversationId) {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          eventType: 'extraction_choice',
+          eventData: { choice: 'continue' },
+        }),
+      }).catch(err => console.error('Failed to log event:', err))
+    }
+
+    setCurrentPhase('QUESTIONING')
+    setFlowStep('chat')
+
+    if (extractedContext?.reflective_summary?.thought_prompt) {
+      const thoughtMessage: Message = {
+        id: `msg_${Date.now()}`,
+        conversationId: conversationId!,
+        role: 'assistant',
+        content: extractedContext.reflective_summary.thought_prompt,
+        stepNumber: messages.length + 1,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, thoughtMessage])
+    }
   }
 
   return (
