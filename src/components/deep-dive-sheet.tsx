@@ -2,7 +2,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import {
   Sheet,
   SheetContent,
@@ -56,6 +55,7 @@ interface DeepDiveSheetProps {
   onDismiss: (deepDiveId: string) => void
   onStartChat: (deepDiveId: string) => void
   onUploadDoc: (deepDiveId: string) => void
+  onViewConversation: (conversationId: string) => void
   conversationCount?: number
 }
 
@@ -67,6 +67,7 @@ export function DeepDiveSheet({
   onDismiss,
   onStartChat,
   onUploadDoc,
+  onViewConversation,
   conversationCount = 0,
 }: DeepDiveSheetProps) {
   const [deepDive, setDeepDive] = useState<DeepDiveDetail | null>(null)
@@ -211,10 +212,10 @@ export function DeepDiveSheet({
                 {conversations.length > 0 ? (
                   <div className="space-y-2">
                     {conversations.map((conv) => (
-                      <Link
+                      <button
                         key={conv.id}
-                        href={`/conversation/${conv.id}`}
-                        className="flex items-center justify-between p-2 rounded border hover:bg-accent transition-colors text-sm"
+                        onClick={() => onViewConversation(conv.id)}
+                        className="w-full flex items-center justify-between p-2 rounded border hover:bg-accent transition-colors text-sm text-left"
                       >
                         <div>
                           <div className="text-xs font-medium">{formatDate(conv.createdAt)}</div>
@@ -223,7 +224,7 @@ export function DeepDiveSheet({
                           </div>
                         </div>
                         <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                      </Link>
+                      </button>
                     ))}
                   </div>
                 ) : (
