@@ -10,7 +10,15 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Item,
+  ItemGroup,
+  ItemContent,
+  ItemTitle,
+  ItemDescription,
+  ItemSeparator,
+} from '@/components/ui/item'
 import {
   MessageSquare,
   Upload,
@@ -19,6 +27,7 @@ import {
   Loader2,
   CheckCircle2,
   X,
+  NotebookPen,
 } from 'lucide-react'
 
 interface DeepDiveConversation {
@@ -68,13 +77,14 @@ export function DeepDiveSheet({
   onStartChat,
   onUploadDoc,
   onViewConversation,
-  conversationCount = 0,
 }: DeepDiveSheetProps) {
   const [deepDive, setDeepDive] = useState<DeepDiveDetail | null>(null)
   const [conversations, setConversations] = useState<DeepDiveConversation[]>([])
   const [documents, setDocuments] = useState<DeepDiveDocument[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isResolving, setIsResolving] = useState(false)
+  const [showAllDocs, setShowAllDocs] = useState(false)
+  const [showAllChats, setShowAllChats] = useState(false)
 
   useEffect(() => {
     if (deepDiveId && open) {
@@ -130,6 +140,8 @@ export function DeepDiveSheet({
     document: 'From document',
   }
 
+  const ITEM_LIMIT = 3
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[400px] sm:w-[540px]">
@@ -140,19 +152,7 @@ export function DeepDiveSheet({
         ) : deepDive ? (
           <>
             <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                {deepDive.topic}
-                <Badge
-                  variant={deepDive.status === 'active' ? 'outline' : 'secondary'}
-                  className={deepDive.status === 'active' ? 'text-xs text-amber-600 border-amber-300' : 'text-xs'}
-                >
-                  {deepDive.status === 'resolved'
-                    ? 'Resolved'
-                    : conversations.length > 0
-                      ? 'In progress'
-                      : 'Ready to explore'}
-                </Badge>
-              </SheetTitle>
+              <SheetTitle>{deepDive.topic}</SheetTitle>
               <SheetDescription>
                 {originLabel[deepDive.origin as keyof typeof originLabel] || deepDive.origin} on {formatDate(deepDive.createdAt)}
               </SheetDescription>
@@ -164,99 +164,180 @@ export function DeepDiveSheet({
               </div>
             )}
 
-            <div className="mt-6 flex gap-2">
-              <Button size="sm" onClick={() => onStartChat(deepDive.id)}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                New Chat
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => onUploadDoc(deepDive.id)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </Button>
-              {deepDive.status === 'active' && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleResolve}
-                    disabled={isResolving}
-                  >
-                    {isResolving ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                    )}
-                    Resolve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      onOpenChange(false)
-                      onDismiss(deepDive.id)
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Dismiss
-                  </Button>
-                </>
-              )}
-            </div>
-
-            <div className="mt-6 space-y-4">
-              {/* Conversations */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">
-                  Conversations ({conversations.length})
-                </h4>
-                {conversations.length > 0 ? (
-                  <div className="space-y-2">
-                    {conversations.map((conv) => (
-                      <button
-                        key={conv.id}
-                        onClick={() => onViewConversation(conv.id)}
-                        className="w-full flex items-center justify-between p-2 rounded border hover:bg-accent transition-colors text-sm text-left"
-                      >
-                        <div>
-                          <div className="text-xs font-medium">{formatDate(conv.createdAt)}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {conv.messageCount} messages
-                          </div>
-                        </div>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No conversations yet</p>
-                )}
+            {/* Header actions - minimal */}
+            {deepDive.status === 'active' && (
+              <div className="mt-4 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResolve}
+                  disabled={isResolving}
+                >
+                  {isResolving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
+                  Resolve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    onOpenChange(false)
+                    onDismiss(deepDive.id)
+                  }}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Dismiss
+                </Button>
               </div>
+            )}
 
-              {/* Documents */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">
-                  Documents ({documents.length})
-                </h4>
+            {/* Tabbed content */}
+            <Tabs defaultValue="docs" className="mt-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="docs">
+                  Docs & Memos
+                  {documents.length > 0 && (
+                    <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                      {documents.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="chats">
+                  Chats
+                  {conversations.length > 0 && (
+                    <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                      {conversations.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Documents & Memos Tab */}
+              <TabsContent value="docs" className="mt-4">
                 {documents.length > 0 ? (
-                  <div className="space-y-2">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center gap-2 p-2 rounded border text-sm"
-                      >
-                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="truncate flex-1 text-xs">{doc.fileName}</span>
-                        <Badge variant="secondary" className="text-xs shrink-0">
-                          {doc.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <ItemGroup>
+                      {(showAllDocs ? documents : documents.slice(0, ITEM_LIMIT)).map((doc, index) => (
+                        <div key={doc.id}>
+                          {index > 0 && <ItemSeparator />}
+                          <Item size="sm">
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <ItemContent>
+                              <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
+                              <ItemDescription className="text-xs">
+                                {doc.status === 'complete' ? 'Processed' : doc.status}
+                              </ItemDescription>
+                            </ItemContent>
+                          </Item>
+                        </div>
+                      ))}
+                      {documents.length > ITEM_LIMIT && (
+                        <>
+                          <ItemSeparator />
+                          <div className="px-4 py-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-muted-foreground"
+                              onClick={() => setShowAllDocs(!showAllDocs)}
+                            >
+                              {showAllDocs ? 'Show less' : `Show ${documents.length - ITEM_LIMIT} more`}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </ItemGroup>
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => onUploadDoc(deepDive.id)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Doc
+                      </Button>
+                      <Button size="sm" variant="outline" disabled>
+                        <NotebookPen className="h-4 w-4 mr-2" />
+                        Add Memo
+                      </Button>
+                    </div>
+                  </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No documents yet</p>
+                  <div className="text-center py-8">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-4">No documents or memos yet</p>
+                    <div className="flex gap-2 justify-center">
+                      <Button size="sm" onClick={() => onUploadDoc(deepDive.id)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Doc
+                      </Button>
+                      <Button size="sm" variant="outline" disabled>
+                        <NotebookPen className="h-4 w-4 mr-2" />
+                        Add Memo
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
+              </TabsContent>
+
+              {/* Chats Tab */}
+              <TabsContent value="chats" className="mt-4">
+                {conversations.length > 0 ? (
+                  <>
+                    <ItemGroup>
+                      {(showAllChats ? conversations : conversations.slice(0, ITEM_LIMIT)).map((conv, index) => (
+                        <div key={conv.id}>
+                          {index > 0 && <ItemSeparator />}
+                          <Item
+                            size="sm"
+                            className="cursor-pointer hover:bg-accent/50"
+                            onClick={() => onViewConversation(conv.id)}
+                          >
+                            <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <ItemContent>
+                              <ItemTitle className="text-xs">{formatDate(conv.createdAt)}</ItemTitle>
+                              <ItemDescription className="text-xs">
+                                {conv.messageCount} messages
+                              </ItemDescription>
+                            </ItemContent>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                          </Item>
+                        </div>
+                      ))}
+                      {conversations.length > ITEM_LIMIT && (
+                        <>
+                          <ItemSeparator />
+                          <div className="px-4 py-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-muted-foreground"
+                              onClick={() => setShowAllChats(!showAllChats)}
+                            >
+                              {showAllChats ? 'Show less' : `Show ${conversations.length - ITEM_LIMIT} more`}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </ItemGroup>
+                    <div className="mt-4">
+                      <Button size="sm" onClick={() => onStartChat(deepDive.id)}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        New Chat
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-4">No chats yet</p>
+                    <Button size="sm" onClick={() => onStartChat(deepDive.id)}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Start Chat
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">

@@ -183,6 +183,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
         description: projectFixture.description,
         status: projectFixture.status,
         knowledgeSummary: projectFixture.knowledgeSummary,
+        knowledgeUpdatedAt: new Date(), // Set so existing fragments don't show as "new"
         suggestedQuestions: JSON.parse(JSON.stringify(projectFixture.suggestedQuestions || [])),
       },
     });

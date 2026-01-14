@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import { Message, ConversationPhase } from '@/lib/types';
 import {
@@ -43,6 +43,12 @@ export default function ChatInterface({
   suggestedQuestion,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when messages change or loading state changes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   // Check if user has started the conversation (any user messages exist)
   const hasUserResponded = messages.some((m) => m.role === 'user');
@@ -140,6 +146,9 @@ export default function ChatInterface({
             )}
           </div>
         )}
+
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
