@@ -212,7 +212,6 @@ export async function seedDemoProject(userId: string): Promise<string> {
         isDemo: projectData.isDemo,
         description: projectData.description,
         knowledgeSummary: projectData.knowledgeSummary,
-        knowledgeUpdatedAt: new Date(), // Set so existing fragments don't show as "new"
         suggestedQuestions: JSON.parse(JSON.stringify(projectData.suggestedQuestions || [])),
       },
     });
@@ -346,6 +345,13 @@ export async function seedDemoProject(userId: string): Promise<string> {
         },
       });
     }
+
+    // Set knowledgeUpdatedAt AFTER all fragments are created
+    // This ensures existing fragments don't count as "new"
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { knowledgeUpdatedAt: new Date() },
+    });
 
     return project.id;
   }

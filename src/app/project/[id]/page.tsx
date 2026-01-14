@@ -313,7 +313,13 @@ export default function ProjectPage() {
   }
 
   const handleStartDeepDiveChat = (deepDiveId: string) => {
-    router.push(`/?deepDiveId=${deepDiveId}`)
+    // Close deep dive sheet and open chat with deep dive context
+    setDeepDiveSheetOpen(false)
+    setChatDeepDiveId(deepDiveId)
+    setChatInitialQuestion(undefined) // Let user guide direction
+    setChatGapExploration(undefined)
+    setChatResumeConversationId(undefined)
+    setChatSheetOpen(true)
   }
 
   const handleUploadToDeepDive = (deepDiveId: string) => {
