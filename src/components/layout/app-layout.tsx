@@ -92,6 +92,7 @@ import {
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { PaywallModal } from '@/components/PaywallModal'
+import { DemoModeBadge } from '@/components/DemoModeBadge'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
 import { cn } from '@/lib/utils'
@@ -264,15 +265,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       <SidebarHeader className="border-b px-3 py-3">
         {/* Project Switcher */}
         {!session ? (
-          <div className="text-sm text-muted-foreground">
-            <Link
-              href="/auth/signin"
-              className="text-primary hover:text-primary/80 underline"
-            >
-              Sign in
-            </Link>{' '}
-            to see your projects
-          </div>
+          <DemoModeBadge />
         ) : isLoadingProjects ? (
           <div className="h-9 flex items-center text-sm text-muted-foreground">
             Loading...
