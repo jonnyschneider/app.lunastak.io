@@ -43,4 +43,24 @@ describe('UserContract', () => {
     const invalid = { ...validUser, email: 'not-an-email' };
     expect(validateUser(invalid)).toBe(false);
   });
+
+  it('should validate user with apiCallCount', () => {
+    const userWithCalls = { ...validUser, apiCallCount: 15 };
+    expect(validateUser(userWithCalls)).toBe(true);
+  });
+
+  it('should validate user with zero apiCallCount', () => {
+    const userWithZero = { ...validUser, apiCallCount: 0 };
+    expect(validateUser(userWithZero)).toBe(true);
+  });
+
+  it('should reject user with negative apiCallCount', () => {
+    const invalid = { ...validUser, apiCallCount: -1 };
+    expect(validateUser(invalid)).toBe(false);
+  });
+
+  it('should reject user with non-integer apiCallCount', () => {
+    const invalid = { ...validUser, apiCallCount: 5.5 };
+    expect(validateUser(invalid)).toBe(false);
+  });
 });

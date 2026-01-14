@@ -142,6 +142,7 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   isPaid        Boolean   @default(false)
+  apiCallCount  Int       @default(0)
 
   projects      Project[]
   conversations Conversation[]
