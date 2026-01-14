@@ -169,7 +169,10 @@ function parseEmergentThemes(xml: string): ParsedTheme[] {
 }
 
 export async function POST(req: Request) {
-  const { conversationId } = await req.json();
+  const { conversationId, lightweight } = await req.json() as {
+    conversationId: string;
+    lightweight?: boolean; // Skip heavy synthesis for follow-on conversations
+  };
 
   if (!conversationId) {
     return NextResponse.json(
@@ -446,14 +449,20 @@ export async function POST(req: Request) {
               );
               console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
 
-              // Trigger synthesis update, then knowledge summary
-              // IMPORTANT: Must await - Vercel terminates after stream closes
-              // Knowledge summary must run AFTER synthesis so fragmentCount is accurate
-              try {
-                await updateAllSyntheses(projectId);
-                await generateKnowledgeSummary(projectId);
-              } catch (error) {
-                console.error('[Extract] Failed to update syntheses or generate knowledge summary:', error);
+              // Only run heavy synthesis for first conversations (not lightweight mode)
+              // Follow-on conversations skip full synthesis to stay fast
+              if (!lightweight) {
+                // Trigger synthesis update, then knowledge summary
+                // IMPORTANT: Must await - Vercel terminates after stream closes
+                // Knowledge summary must run AFTER synthesis so fragmentCount is accurate
+                try {
+                  await updateAllSyntheses(projectId);
+                  await generateKnowledgeSummary(projectId);
+                } catch (error) {
+                  console.error('[Extract] Failed to update syntheses or generate knowledge summary:', error);
+                }
+              } else {
+                console.log('[Extract] Lightweight mode - skipping full synthesis');
               }
             } catch (error) {
               // Log but don't fail extraction if fragment creation fails

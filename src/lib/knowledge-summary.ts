@@ -8,6 +8,7 @@ import { prisma } from '@/lib/db'
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
+import { StructuredProvocation } from '@/lib/types'
 
 // Dimension display names for prompts
 const DIMENSION_NAMES: Record<Tier1Dimension, string> = {
@@ -48,9 +49,19 @@ Your conversational summary here
 </summary>
 
 <suggested_questions>
-<question>A thought-provoking question about a gap or area to explore further</question>
-<question>Another question that could deepen their strategic thinking</question>
-<question>A third question connecting different aspects of their strategy</question>
+For each question, provide a punchy title (max 60 chars) and fuller description:
+<question>
+<title>Short, attention-grabbing title</title>
+<description>The full thought-provoking question about a gap or area to explore further</description>
+</question>
+<question>
+<title>Another punchy title</title>
+<description>Another question that could deepen their strategic thinking</description>
+</question>
+<question>
+<title>Third provocative title</title>
+<description>A third question connecting different aspects of their strategy</description>
+</question>
 </suggested_questions>
 
 <dimension_gaps>
@@ -59,14 +70,17 @@ For each gap dimension listed above, generate ONE specific question that:
 - Frames the gap in context of their specific situation
 - Would help deepen understanding of that dimension
 
-Format each as:
-<gap dimension="DIMENSION_NAME">Your contextual question here</gap>
+Format each with a punchy title and fuller description:
+<gap dimension="DIMENSION_NAME">
+<title>Short, attention-grabbing title (max 60 chars)</title>
+<description>Your contextual question here as a fuller explanation</description>
+</gap>
 </dimension_gaps>`
 
 interface KnowledgeSummaryResult {
   summary: string
-  suggestedQuestions: string[]
-  dimensionGaps: Record<string, string> // dimension -> contextual gap question
+  suggestedQuestions: StructuredProvocation[]
+  dimensionGaps: Record<string, StructuredProvocation> // dimension -> structured gap
 }
 
 /**
@@ -148,25 +162,30 @@ export async function generateKnowledgeSummary(
 
     // Parse response
     const summary = extractXML(responseText, 'summary')?.trim() || ''
-    const suggestedQuestions: string[] = []
+    const suggestedQuestions: StructuredProvocation[] = []
 
+    // Parse structured questions with title/description
     const questionRegex = /<question>([\s\S]*?)<\/question>/g
     let match
     while ((match = questionRegex.exec(responseText)) !== null) {
-      const question = match[1].trim()
-      if (question) {
-        suggestedQuestions.push(question)
+      const questionContent = match[1]
+      const title = extractXML(questionContent, 'title')?.trim() || ''
+      const description = extractXML(questionContent, 'description')?.trim() || ''
+      if (title && description) {
+        suggestedQuestions.push({ title, description })
       }
     }
 
-    // Parse dimension-specific gaps
-    const dimensionGaps: Record<string, string> = {}
+    // Parse dimension-specific gaps with structured format
+    const dimensionGaps: Record<string, StructuredProvocation> = {}
     const gapRegex = /<gap dimension="([^"]+)">([\s\S]*?)<\/gap>/g
     while ((match = gapRegex.exec(responseText)) !== null) {
       const dimension = match[1].trim()
-      const gapQuestion = match[2].trim()
-      if (dimension && gapQuestion) {
-        dimensionGaps[dimension] = gapQuestion
+      const gapContent = match[2]
+      const title = extractXML(gapContent, 'title')?.trim() || ''
+      const description = extractXML(gapContent, 'description')?.trim() || ''
+      if (dimension && title && description) {
+        dimensionGaps[dimension] = { title, description }
       }
     }
 
@@ -176,13 +195,13 @@ export async function generateKnowledgeSummary(
       data: {
         knowledgeSummary: summary,
         knowledgeUpdatedAt: new Date(),
-        suggestedQuestions,
+        suggestedQuestions: suggestedQuestions as unknown as Parameters<typeof prisma.project.update>[0]['data']['suggestedQuestions'],
       },
     })
 
     // Update DimensionalSynthesis records with contextual gaps
     if (Object.keys(dimensionGaps).length > 0) {
-      for (const [dimension, gapQuestion] of Object.entries(dimensionGaps)) {
+      for (const [dimension, gap] of Object.entries(dimensionGaps)) {
         await prisma.dimensionalSynthesis.updateMany({
           where: {
             projectId,
@@ -190,7 +209,7 @@ export async function generateKnowledgeSummary(
             fragmentCount: 0, // Only update dimensions with no fragments
           },
           data: {
-            gaps: [gapQuestion],
+            gaps: [gap] as unknown as Parameters<typeof prisma.dimensionalSynthesis.updateMany>[0]['data']['gaps'],
           },
         })
       }
@@ -268,10 +287,11 @@ export async function getProjectKnowledgeForPrompt(
   }
 
   // Add suggested exploration areas based on gaps
-  if (project.suggestedQuestions && project.suggestedQuestions.length > 0) {
-    const questions = project.suggestedQuestions
+  const suggestedQuestions = project.suggestedQuestions as StructuredProvocation[] | null
+  if (suggestedQuestions && suggestedQuestions.length > 0) {
+    const questions = suggestedQuestions
       .slice(0, 3)
-      .map(q => `- ${q}`)
+      .map(q => `- ${q.title}: ${q.description}`)
       .join('\n')
 
     parts.push(`## Suggested Areas to Explore\n\n${questions}`)

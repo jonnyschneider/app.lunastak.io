@@ -14,9 +14,18 @@
       "status": "active",
       "knowledgeSummary": "You're building Catalyst as an AI-powered customer success platform for mid-market B2B SaaS companies (50-500 employees, $10M-$100M ARR). Your core insight is that customer success teams are drowning in reactive churn-fighting rather than proactive value delivery. The current tools—Gainsight, ChurnZero, Totango—are essentially dashboards that surface problems after they've already happened.\n\nCatalyst takes a fundamentally different approach: predictive intervention. By analyzing product usage patterns, support ticket sentiment, and engagement signals, you identify at-risk accounts 60-90 days before traditional health scores would flag them. But the real innovation isn't the prediction—it's the prescription. Catalyst doesn't just say 'this account is at risk,' it recommends specific playbooks based on what's worked for similar accounts.\n\nYour ICP is crystal clear: VP of Customer Success at Series B/C SaaS companies who've just hired their 5th CSM and realized their spreadsheet-based processes won't scale. They need to prove CS ROI to their board, and you give them the data to do it. The competition is either too enterprise (Gainsight requires a dedicated admin) or too lightweight (basic health scores without actionable recommendations).\n\nYou're pursuing a land-and-expand model: start with the CS team, prove value through retention metrics, then expand into Sales (renewal forecasting) and Product (adoption analytics). Your advisory board includes two former Gainsight executives who understand where the market leader has created gaps.",
       "suggestedQuestions": [
-        "How will you prevent Catalyst from becoming just another dashboard that CS teams check once a week—what's the 'pull' mechanism that brings users back daily and makes the insights actionable in their actual workflow?",
-        "Your 60-90 day prediction window is compelling, but what happens when a CSM gets 50 'at-risk' alerts simultaneously? How do you help them prioritize which accounts actually need intervention vs. which are false positives?",
-        "As you expand from CS into Sales and Product, how do you maintain the focused value proposition that got you initial traction—or do you risk becoming another 'platform' that tries to do everything?"
+        {
+          "title": "Daily engagement mechanism",
+          "description": "How will you prevent Catalyst from becoming just another dashboard that CS teams check once a week—what's the 'pull' mechanism that brings users back daily and makes the insights actionable in their actual workflow?"
+        },
+        {
+          "title": "Alert prioritization",
+          "description": "Your 60-90 day prediction window is compelling, but what happens when a CSM gets 50 'at-risk' alerts simultaneously? How do you help them prioritize which accounts actually need intervention vs. which are false positives?"
+        },
+        {
+          "title": "Platform expansion risk",
+          "description": "As you expand from CS into Sales and Product, how do you maintain the focused value proposition that got you initial traction—or do you risk becoming another 'platform' that tries to do everything?"
+        }
       ],
       "conversations": [
         {

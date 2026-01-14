@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -16,18 +16,17 @@ import {
   Plus,
   Upload,
   Loader2,
-  ArrowRight,
   Sparkles,
   Lightbulb,
   AlertCircle,
   CheckCircle2,
-  Circle,
   X,
   MoreHorizontal,
   Crosshair,
   Database,
   Star,
   NotebookPen,
+  RefreshCw,
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -40,13 +39,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Item,
+  ItemGroup,
+  ItemContent,
+  ItemTitle,
+  ItemDescription,
+  ItemActions,
+  ItemSeparator,
+} from '@/components/ui/item'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
+import { SynthesisDialog } from '@/components/SynthesisDialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { StructuredProvocation } from '@/lib/types'
 
 interface ProjectStats {
   fragmentCount: number
   conversationCount: number
   documentCount: number
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
+  unsynthesizedFragmentCount: number
 }
 
 interface ConversationSummary {
@@ -87,7 +107,7 @@ interface DimensionalSynthesis {
   dimension: string
   summary: string | null
   keyThemes: string[]
-  gaps: string[]
+  gaps: StructuredProvocation[]
   confidence: string
   fragmentCount: number
 }
@@ -114,7 +134,7 @@ interface ProjectData {
   syntheses: DimensionalSynthesis[]
   knowledgeSummary: string | null
   knowledgeUpdatedAt: string | null
-  suggestedQuestions: string[]
+  suggestedQuestions: StructuredProvocation[]
 }
 
 // Dimension display names
@@ -132,16 +152,44 @@ const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
   STRATEGIC_INTENT: 'Strategic Intent',
 }
 
-// Get confidence icon
-function ConfidenceIcon({ confidence }: { confidence: string }) {
-  switch (confidence) {
-    case 'HIGH':
-      return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-    case 'MEDIUM':
-      return <Circle className="h-3.5 w-3.5 text-green-500" />
-    default:
-      return <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+// Harvey ball for confidence visualization
+function HarveyBall({ confidence }: { confidence: string }) {
+  const size = 14
+  const radius = 6
+  const cx = 7
+  const cy = 7
+
+  // Map confidence to fill percentage
+  const fillPercent = confidence === 'HIGH' ? 100 : confidence === 'MEDIUM' ? 50 : 0
+
+  if (fillPercent === 0) {
+    // Empty circle
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-muted-foreground/40">
+        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    )
   }
+
+  if (fillPercent === 100) {
+    // Full circle
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-green-600">
+        <circle cx={cx} cy={cy} r={radius} fill="currentColor" />
+      </svg>
+    )
+  }
+
+  // Half circle (50%)
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-green-600">
+      <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d={`M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`}
+        fill="currentColor"
+      />
+    </svg>
+  )
 }
 
 // Dismissal types
@@ -169,10 +217,8 @@ export default function ProjectPage() {
 
   // Expand/collapse state for sections
   const [showAllFocusAreas, setShowAllFocusAreas] = useState(false)
-  const [showAllConversations, setShowAllConversations] = useState(false)
   const [showAllInputs, setShowAllInputs] = useState(false)
   const [showAllOutputs, setShowAllOutputs] = useState(false)
-  const [showAllDeepDives, setShowAllDeepDives] = useState(false)
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
   const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
@@ -182,6 +228,9 @@ export default function ProjectPage() {
     description: string
     feature: string
   } | null>(null)
+  const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
+  const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
+  const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -278,6 +327,10 @@ export default function ProjectPage() {
       'Add Memo': {
         name: 'Memos',
         description: 'Capture quick thoughts, voice notes, or observations directly in your project.\n\nJot down ideas from meetings, record voice memos on the go, or capture spontaneous insights. Luna will extract strategic themes from your memos.',
+      },
+      'Create from Blank': {
+        name: 'Blank Canvas Strategy',
+        description: 'Start with a fresh strategic framework, unconstrained by your existing inputs.\n\nBuild your decision stack from first principles, defining vision, strategy, and objectives without prior context.',
       },
     }
 
@@ -399,6 +452,7 @@ export default function ProjectPage() {
     conversationCount: 0,
     documentCount: 0,
     dimensionalCoverage: {},
+    unsynthesizedFragmentCount: 0,
   }
 
   // Calculate coverage percentage (dimensions with at least 1 fragment)
@@ -416,9 +470,9 @@ export default function ProjectPage() {
   const areasOfFocus = showAllFocusAreas ? allAreasOfFocus : allAreasOfFocus.slice(0, FOCUS_AREA_LIMIT)
   const hasMoreFocusAreas = allAreasOfFocus.length > FOCUS_AREA_LIMIT
 
-  // Filter suggested questions to exclude dismissed ones
+  // Filter suggested questions to exclude dismissed ones (use description as identifier)
   const visibleQuestions = (projectData?.suggestedQuestions || [])
-    .filter(q => !isItemDismissed('suggested_question', q))
+    .filter(q => !isItemDismissed('suggested_question', q.description))
 
   return (
     <AppLayout>
@@ -446,71 +500,77 @@ export default function ProjectPage() {
                 Files and notes that inform your strategy
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {projectData?.documents && projectData.documents.length > 0 ? (
-                <div className="space-y-2">
-                  {(() => {
-                    const INPUT_LIMIT = 10
-                    const allDocs = projectData.documents
-                    const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
-                    const hasMore = allDocs.length > INPUT_LIMIT
+                (() => {
+                  const INPUT_LIMIT = 10
+                  const allDocs = projectData.documents
+                  const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
+                  const hasMore = allDocs.length > INPUT_LIMIT
 
-                    return (
-                      <>
-                        {visibleDocs.map((doc) => (
-                          <div key={doc.id} className="flex items-center gap-2 p-2 rounded border text-sm">
-                            <FileText className="h-4 w-4 text-muted-foreground shrink-0 self-start mt-0.5" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium truncate">{doc.fileName}</div>
-                              <div className="text-xs text-muted-foreground">
+                  return (
+                    <ItemGroup>
+                      {visibleDocs.map((doc, index) => (
+                        <React.Fragment key={doc.id}>
+                          {index > 0 && <ItemSeparator />}
+                          <Item size="sm">
+                            <ItemContent>
+                              <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
+                              <ItemDescription className="text-xs">
                                 {doc.status === 'complete'
                                   ? `${doc.fragmentCount} fragments`
                                   : doc.status === 'processing'
                                     ? 'Processing...'
                                     : doc.status}
-                              </div>
-                            </div>
+                              </ItemDescription>
+                            </ItemContent>
+                          </Item>
+                        </React.Fragment>
+                      ))}
+                      {hasMore && (
+                        <>
+                          <ItemSeparator />
+                          <div className="px-4 py-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-muted-foreground"
+                              onClick={() => setShowAllInputs(!showAllInputs)}
+                            >
+                              {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
+                            </Button>
                           </div>
-                        ))}
-                        {hasMore && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full text-muted-foreground"
-                            onClick={() => setShowAllInputs(!showAllInputs)}
-                          >
-                            {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
-                          </Button>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
+                        </>
+                      )}
+                    </ItemGroup>
+                  )
+                })()
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-4 px-6 text-muted-foreground">
                   <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
                   <p className="text-xs">No documents yet</p>
                 </div>
               )}
-              <div className="flex gap-2 mt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setUploadDialogOpen(true)}
-                >
-                  <Upload className="h-3 w-3 mr-1" />
-                  Upload Doc
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleFakeDoor('Add Memo')}
-                >
-                  <NotebookPen className="h-3 w-3 mr-1" />
-                  Add Memo
-                </Button>
+              <div className="p-4 pt-3 border-t">
+                <div className="flex w-full">
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-r-none"
+                    onClick={() => setUploadDialogOpen(true)}
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Upload Doc
+                  </Button>
+                  <div className="w-px bg-primary-foreground/20" />
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-l-none"
+                    onClick={() => handleFakeDoor('Add Memo')}
+                  >
+                    <NotebookPen className="h-3 w-3 mr-1" />
+                    Add Memo
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -526,40 +586,32 @@ export default function ProjectPage() {
                 Your conversations with Luna
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {projectData?.conversations && projectData.conversations.length > 0 ? (
-                <div className="space-y-2">
-                  {(() => {
-                    const STARRED_LIMIT = 3
-                    const RECENT_LIMIT = 3
-                    const starredConversations = projectData.conversations.filter(c => c.starred)
-                    const recentConversations = projectData.conversations.filter(c => !c.starred)
-                    const visibleStarred = showAllConversations
-                      ? starredConversations
-                      : starredConversations.slice(0, STARRED_LIMIT)
-                    const visibleRecent = showAllConversations
-                      ? recentConversations
-                      : recentConversations.slice(0, RECENT_LIMIT)
-                    const totalHidden = (starredConversations.length - visibleStarred.length) +
-                      (recentConversations.length - visibleRecent.length)
+                (() => {
+                  const analysedConversations = projectData.conversations.filter(
+                    c => c.status === 'extracted' || c.fragmentCount > 0
+                  )
+                  const inProgressConversations = projectData.conversations.filter(
+                    c => c.status === 'in_progress'
+                  )
 
-                    const renderConversationItem = (conv: ConversationSummary) => {
-                      const isInProgress = conv.status === 'in_progress'
-                      const isExtracted = conv.status === 'extracted' || conv.fragmentCount > 0
+                  const renderConversationItem = (conv: ConversationSummary, index: number) => {
+                    const handleClick = () => {
+                      setChatInitialQuestion(undefined)
+                      setChatDeepDiveId(undefined)
+                      setChatGapExploration(undefined)
+                      setChatResumeConversationId(conv.id)
+                      setChatSheetOpen(true)
+                    }
 
-                      const handleClick = () => {
-                        // Open all conversations in ChatSheet
-                        setChatInitialQuestion(undefined)
-                        setChatDeepDiveId(undefined)
-                        setChatGapExploration(undefined)
-                        setChatResumeConversationId(conv.id)
-                        setChatSheetOpen(true)
-                      }
-
-                      return (
-                        <div
-                          key={conv.id}
-                          className="flex items-center gap-1 p-2 rounded border hover:bg-accent transition-colors text-sm cursor-pointer"
+                    return (
+                      <React.Fragment key={conv.id}>
+                        {index > 0 && <ItemSeparator />}
+                        <Item
+                          size="sm"
+                          className="cursor-pointer hover:bg-accent/50"
+                          onClick={handleClick}
                         >
                           <button
                             onClick={(e) => {
@@ -572,82 +624,95 @@ export default function ProjectPage() {
                           >
                             <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
                           </button>
-                          <button onClick={handleClick} className="flex-1 min-w-0 mr-1 text-left">
-                            <div className="text-xs font-medium truncate">
+                          <ItemContent>
+                            <ItemTitle className="text-xs truncate">
                               {conv.title || 'Untitled conversation'}
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-2">
-                              <span>{formatShortDate(conv.createdAt)}</span>
-                              {isInProgress ? (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-800">
-                                  In progress
-                                </Badge>
-                              ) : isExtracted ? (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-green-700 border-green-300">
-                                  Analysed
-                                </Badge>
-                              ) : null}
-                            </div>
-                          </button>
-                          <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                        </div>
-                      )
-                    }
-
-                    return (
-                      <>
-                        {/* Starred section */}
-                        {visibleStarred.length > 0 && (
-                          <>
-                            <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 pt-1">
-                              <Star className="h-3 w-3 fill-current" />
-                              Starred
-                            </div>
-                            {visibleStarred.map(renderConversationItem)}
-                          </>
-                        )}
-                        {/* Recent section */}
-                        {visibleRecent.length > 0 && (
-                          <>
-                            {visibleStarred.length > 0 && (
-                              <div className="text-xs font-medium text-muted-foreground pt-2">
-                                Recent
-                              </div>
-                            )}
-                            {visibleRecent.map(renderConversationItem)}
-                          </>
-                        )}
-                        {totalHidden > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full text-muted-foreground"
-                            onClick={() => setShowAllConversations(!showAllConversations)}
-                          >
-                            {showAllConversations ? 'Show less' : `Show ${totalHidden} more`}
-                          </Button>
-                        )}
-                      </>
+                            </ItemTitle>
+                            <ItemDescription className="text-xs">
+                              {formatShortDate(conv.createdAt)}
+                            </ItemDescription>
+                          </ItemContent>
+                        </Item>
+                      </React.Fragment>
                     )
-                  })()}
-                </div>
+                  }
+
+                  return (
+                    <Tabs
+                      value={chatsActiveTab ?? (inProgressConversations.length > 0 ? 'in-progress' : 'analysed')}
+                      onValueChange={setChatsActiveTab}
+                      className="h-full"
+                    >
+                      <div className="border-b px-4">
+                        <TabsList className="h-10 bg-transparent p-0 gap-4">
+                          <TabsTrigger
+                            value="analysed"
+                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                          >
+                            Analysed
+                            {analysedConversations.length > 0 && (
+                              <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                                {analysedConversations.length}
+                              </span>
+                            )}
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="in-progress"
+                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                          >
+                            In Progress
+                            {inProgressConversations.length > 0 && (
+                              <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                                {inProgressConversations.length}
+                              </span>
+                            )}
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
+                      <TabsContent value="analysed" className="mt-0">
+                        {analysedConversations.length > 0 ? (
+                          <ItemGroup>
+                            {analysedConversations.map((conv, index) => renderConversationItem(conv, index))}
+                          </ItemGroup>
+                        ) : (
+                          <div className="text-center py-6 text-muted-foreground">
+                            <p className="text-xs">No analysed conversations yet</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                      <TabsContent value="in-progress" className="mt-0">
+                        {inProgressConversations.length > 0 ? (
+                          <ItemGroup>
+                            {inProgressConversations.map((conv, index) => renderConversationItem(conv, index))}
+                          </ItemGroup>
+                        ) : (
+                          <div className="text-center py-6 text-muted-foreground">
+                            <p className="text-xs">No conversations in progress</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  )
+                })()
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-4 px-6 text-muted-foreground">
                   <MessageSquare className="h-6 w-6 mx-auto mb-1 opacity-50" />
                   <p className="text-xs">No conversations yet</p>
                 </div>
               )}
-              <Button
-                size="sm"
-                className="w-full mt-3"
-                onClick={() => {
-                  setChatInitialQuestion(undefined)
-                  setChatSheetOpen(true)
-                }}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                New Chat
-              </Button>
+              <div className="p-4 pt-3 border-t">
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setChatInitialQuestion(undefined)
+                    setChatSheetOpen(true)
+                  }}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  New Chat
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -662,53 +727,77 @@ export default function ProjectPage() {
                 Decision stacks from Luna
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {projectData?.strategyOutputs && projectData.strategyOutputs.length > 0 ? (
-                <div className="space-y-2">
-                  {(() => {
-                    const OUTPUT_LIMIT = 5
-                    const allOutputs = projectData.strategyOutputs
-                    const visibleOutputs = showAllOutputs ? allOutputs : allOutputs.slice(0, OUTPUT_LIMIT)
-                    const hasMore = allOutputs.length > OUTPUT_LIMIT
+                (() => {
+                  const OUTPUT_LIMIT = 5
+                  const allOutputs = projectData.strategyOutputs
+                  const visibleOutputs = showAllOutputs ? allOutputs : allOutputs.slice(0, OUTPUT_LIMIT)
+                  const hasMore = allOutputs.length > OUTPUT_LIMIT
 
-                    return (
-                      <>
-                        {visibleOutputs.map((output) => (
-                          <Link
-                            key={output.id}
-                            href={`/strategy/${output.id}`}
-                            className="flex items-center justify-between p-2 rounded border hover:bg-accent transition-colors text-sm"
-                          >
-                            <div>
-                              <div className="text-xs font-medium">Decision Stack</div>
-                              <div className="text-xs text-muted-foreground">
-                                {new Date(output.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                          </Link>
-                        ))}
-                        {hasMore && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full text-muted-foreground"
-                            onClick={() => setShowAllOutputs(!showAllOutputs)}
-                          >
-                            {showAllOutputs ? 'Show less' : `Show ${allOutputs.length - OUTPUT_LIMIT} more`}
-                          </Button>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
+                  return (
+                    <ItemGroup>
+                      {visibleOutputs.map((output, index) => (
+                        <React.Fragment key={output.id}>
+                          {index > 0 && <ItemSeparator />}
+                          <Item asChild size="sm" className="cursor-pointer hover:bg-accent/50">
+                            <Link href={`/strategy/${output.id}`}>
+                              <ItemContent>
+                                <ItemTitle className="text-xs">Decision Stack</ItemTitle>
+                                <ItemDescription className="text-xs">
+                                  {new Date(output.createdAt).toLocaleDateString()}
+                                </ItemDescription>
+                              </ItemContent>
+                            </Link>
+                          </Item>
+                        </React.Fragment>
+                      ))}
+                      {hasMore && (
+                        <>
+                          <ItemSeparator />
+                          <div className="px-4 py-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-muted-foreground"
+                              onClick={() => setShowAllOutputs(!showAllOutputs)}
+                            >
+                              {showAllOutputs ? 'Show less' : `Show ${allOutputs.length - OUTPUT_LIMIT} more`}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </ItemGroup>
+                  )
+                })()
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-4 px-6 text-muted-foreground">
                   <Target className="h-6 w-6 mx-auto mb-1 opacity-50" />
                   <p className="text-xs">No outputs yet</p>
                   <p className="text-xs mt-1">Complete a chat to generate</p>
                 </div>
               )}
+              <div className="p-4 pt-3 border-t">
+                <div className="flex w-full">
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-r-none"
+                    onClick={() => setRefreshStrategyDialogOpen(true)}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Refresh Strategy
+                  </Button>
+                  <div className="w-px bg-primary-foreground/20" />
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-l-none"
+                    onClick={() => handleFakeDoor('Create from Blank')}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Blank Canvas
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -722,59 +811,93 @@ export default function ProjectPage() {
                 <Sparkles className="h-5 w-5 text-green-600" />
                 What Luna Knows
               </CardTitle>
-              <CardDescription className="text-xs">
-                Key themes behind your strategy
+              <CardDescription>
+                Key strategic insights from your thinking
               </CardDescription>
             </CardHeader>
             <CardContent>
               {(() => {
-                const inProgressCount = projectData?.conversations?.filter(c => c.status === 'in_progress').length || 0
+                const unfinishedCount = projectData?.conversations?.filter(c => c.status === 'in_progress').length || 0
                 const fragmentCount = stats.fragmentCount
+                const chatCount = stats.conversationCount
+                const docCount = stats.documentCount
+                const newInsightsCount = stats.unsynthesizedFragmentCount
 
                 return projectData?.knowledgeSummary ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    {/* Metadata header - Counters */}
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs border border-green-600 text-green-700 flex items-center justify-center">
+                          {fragmentCount}
+                        </span>
+                        <span>insights</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs border border-green-600 text-green-700 flex items-center justify-center">
+                          {chatCount}
+                        </span>
+                        <span>chats</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs border border-green-600 text-green-700 flex items-center justify-center">
+                          {docCount}
+                        </span>
+                        <span>docs</span>
+                      </div>
+                      {unfinishedCount > 0 && (
+                        <button
+                          onClick={() => {
+                            setChatsActiveTab('in-progress')
+                            document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
+                          }}
+                          className="flex items-center gap-1.5 text-red-600 hover:text-red-700 hover:underline"
+                        >
+                          <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs bg-red-500 text-white flex items-center justify-center">
+                            {unfinishedCount}
+                          </span>
+                          unfinished
+                        </button>
+                      )}
+                      <button
+                        onClick={() => newInsightsCount > 0 && setSynthesisDialogOpen(true)}
+                        className={`flex items-center gap-1.5 ${
+                          newInsightsCount > 0
+                            ? 'text-green-700 hover:text-green-800 hover:underline cursor-pointer'
+                            : 'text-muted-foreground cursor-default'
+                        }`}
+                        disabled={newInsightsCount === 0}
+                      >
+                        <span className={`h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs flex items-center justify-center ${
+                          newInsightsCount > 0
+                            ? 'bg-green-500 text-white'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {newInsightsCount}
+                        </span>
+                        new to include
+                      </button>
+                    </div>
+
+                    {/* Summary */}
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                       {projectData.knowledgeSummary}
                     </p>
-
-                    {/* Stats section */}
-                    <div className="pt-2 border-t space-y-1">
-                      {fragmentCount > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Based on {fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}
-                        </p>
-                      )}
-                      {inProgressCount > 0 && (
-                        <button
-                          onClick={() => {
-                            // Scroll to chats section
-                            document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
-                          }}
-                          className="text-xs text-amber-600 hover:text-amber-700 hover:underline"
-                        >
-                          {inProgressCount} conversation{inProgressCount !== 1 ? 's' : ''} in progress
-                        </button>
-                      )}
-                      {projectData.knowledgeUpdatedAt && (
-                        <p className="text-xs text-muted-foreground">
-                          Last updated: {new Date(projectData.knowledgeUpdatedAt).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-6 text-muted-foreground">
                     <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No knowledge yet</p>
                     <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
-                    {inProgressCount > 0 && (
+                    {unfinishedCount > 0 && (
                       <button
                         onClick={() => {
+                          setChatsActiveTab('in-progress')
                           document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
                         }}
                         className="text-xs text-amber-600 hover:text-amber-700 hover:underline block mx-auto mb-4"
                       >
-                        {inProgressCount} conversation{inProgressCount !== 1 ? 's' : ''} in progress
+                        {unfinishedCount} unfinished thread{unfinishedCount !== 1 ? 's' : ''}
                       </button>
                     )}
                     <Button asChild size="sm">
@@ -796,67 +919,211 @@ export default function ProjectPage() {
                 <Database className="h-5 w-5 text-green-600" />
                 10 Strategic Dimensions
               </CardTitle>
-              <CardDescription>
-                Luna's knowledge map for your strategy
+              <CardDescription className="flex items-center gap-2">
+                <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                  {coveragePercentage}%
+                </span>
+                coverage of strategic areas
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Stats Row */}
-              <div className="grid grid-cols-4 gap-2">
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.fragmentCount}</div>
-                  <div className="text-xs text-muted-foreground">Fragments</div>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.conversationCount}</div>
-                  <div className="text-xs text-muted-foreground">Chats</div>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.documentCount}</div>
-                  <div className="text-xs text-muted-foreground">Docs</div>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-600">{coveragePercentage}%</div>
-                  <div className="text-xs text-muted-foreground">Coverage</div>
-                </div>
-              </div>
+            <CardContent>
+              <div className="space-y-1.5">
+                {TIER_1_DIMENSIONS.map((dimension) => {
+                  const coverage = stats.dimensionalCoverage[dimension]
+                  const fragmentCount = coverage?.fragmentCount || 0
+                  const synthesis = projectData?.syntheses?.find(s => s.dimension === dimension)
+                  const confidence = synthesis?.confidence || (fragmentCount > 0 ? 'MEDIUM' : 'LOW')
 
-              {/* 10 Dimensions Section */}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                  Coverage across 10 strategic dimensions
-                </h4>
-                <div className="space-y-1.5">
-                  {TIER_1_DIMENSIONS.map((dimension) => {
-                    const coverage = stats.dimensionalCoverage[dimension]
-                    const fragmentCount = coverage?.fragmentCount || 0
-                    const synthesis = projectData?.syntheses?.find(s => s.dimension === dimension)
-                    const confidence = synthesis?.confidence || (fragmentCount > 0 ? 'MEDIUM' : 'LOW')
-
-                    return (
-                      <div
-                        key={dimension}
-                        className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <ConfidenceIcon confidence={confidence} />
-                          <span className="text-muted-foreground">
-                            {DIMENSION_LABELS[dimension]}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {fragmentCount > 0 ? `${fragmentCount}` : '—'}
+                  return (
+                    <div
+                      key={dimension}
+                      className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <HarveyBall confidence={confidence} />
+                        <span className="text-muted-foreground">
+                          {DIMENSION_LABELS[dimension]}
                         </span>
                       </div>
-                    )
-                  })}
-                </div>
+                      <span className="text-xs text-muted-foreground">
+                        {fragmentCount > 0 ? `${fragmentCount}` : '—'}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Bottom Section: Luna's Questions + Areas of Focus */}
+        {/* Deep Dives - Full Width Panel */}
+        {(() => {
+          const allDeepDives = projectData?.deepDives?.filter(
+            dd => !isItemDismissed('deep_dive', dd.id)
+          ) || []
+          const inProgress = allDeepDives.filter(dd => dd.conversationCount > 0)
+          const readyToExplore = allDeepDives.filter(dd => dd.conversationCount === 0)
+          const totalCount = allDeepDives.length
+
+          const renderDeepDiveItem = (dd: DeepDiveSummary, index: number) => (
+            <React.Fragment key={dd.id}>
+              {index > 0 && <ItemSeparator />}
+              <Item
+                size="sm"
+                className="cursor-pointer hover:bg-accent/50"
+                onClick={() => openDeepDiveSheet(dd.id)}
+              >
+                <ItemContent>
+                  <ItemTitle>{dd.topic}</ItemTitle>
+                  <ItemDescription className="text-xs">
+                    {dd.conversationCount > 0
+                      ? `${dd.conversationCount} chat${dd.conversationCount !== 1 ? 's' : ''}`
+                      : 'Not started'}
+                  </ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <button className="p-1 rounded hover:bg-muted">
+                        <MoreHorizontal className="h-3 w-3 text-green-600" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation()
+                        setChatDeepDiveId(dd.id)
+                        setChatInitialQuestion(undefined)
+                        setChatGapExploration(undefined)
+                        setChatSheetOpen(true)
+                      }}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Start chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation()
+                        dismissItem('deep_dive', dd.id)
+                      }}>
+                        <X className="h-4 w-4 mr-2" />
+                        Dismiss
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </ItemActions>
+              </Item>
+            </React.Fragment>
+          )
+
+          return (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Crosshair className="h-5 w-5 text-green-600" />
+                  Deep Dives
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="grid lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x">
+                  {/* Left: Tabbed List */}
+                  <div className="min-h-[200px] flex flex-col">
+                    <div className="flex-1">
+                    {totalCount > 0 ? (
+                      <Tabs defaultValue={inProgress.length > 0 ? 'in-progress' : 'ready'} className="h-full">
+                        <div className="border-b px-4">
+                          <TabsList className="h-10 bg-transparent p-0 gap-4">
+                            <TabsTrigger
+                              value="in-progress"
+                              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                            >
+                              In Progress
+                              {inProgress.length > 0 && (
+                                <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                                  {inProgress.length}
+                                </span>
+                              )}
+                            </TabsTrigger>
+                            <TabsTrigger
+                              value="ready"
+                              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                            >
+                              Ready to Explore
+                              {readyToExplore.length > 0 && (
+                                <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                                  {readyToExplore.length}
+                                </span>
+                              )}
+                            </TabsTrigger>
+                          </TabsList>
+                        </div>
+                        <TabsContent value="in-progress" className="mt-0">
+                          {inProgress.length > 0 ? (
+                            <ItemGroup>
+                              {inProgress.map((dd, index) => renderDeepDiveItem(dd, index))}
+                            </ItemGroup>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p className="text-sm">No deep dives in progress</p>
+                            </div>
+                          )}
+                        </TabsContent>
+                        <TabsContent value="ready" className="mt-0">
+                          {readyToExplore.length > 0 ? (
+                            <ItemGroup>
+                              {readyToExplore.map((dd, index) => renderDeepDiveItem(dd, index))}
+                            </ItemGroup>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p className="text-sm">No deep dives ready to explore</p>
+                            </div>
+                          )}
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div className="flex items-center justify-center h-full py-8 text-muted-foreground">
+                        <div className="text-center">
+                          <Crosshair className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No deep dives yet</p>
+                          <p className="text-xs mt-1">Flag topics to explore further</p>
+                        </div>
+                      </div>
+                    )}
+                    </div>
+                    <div className="p-4 pt-3 border-t mt-auto">
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setAddDeepDiveOpen(true)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Deep Dive
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Right: Explainer */}
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">What are Deep Dives?</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Deep Dives are topics you&apos;ve flagged for focused exploration.
+                        Unlike quick conversations, these are threads you return to multiple times
+                        to build deeper understanding.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">How to create one</h4>
+                      <p className="text-sm text-muted-foreground">
+                        During any conversation, tell Luna you want to explore a topic further.
+                        You can also promote uploaded documents or create one directly using the Add button.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })()}
+
+        {/* Provocations + Strategic Gaps */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Provocations */}
           <Card>
@@ -866,47 +1133,52 @@ export default function ProjectPage() {
                 Provocations
               </CardTitle>
               <CardDescription>
-                Questions that might unlock new strategic insights
+                Sharp perspectives that unlock new insights
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {visibleQuestions.length > 0 ? (
-                <div className="space-y-2">
+                <ItemGroup>
                   {visibleQuestions.map((question, index) => (
-                    <div
-                      key={index}
-                      className="flex items-stretch rounded-lg border hover:border-green-200 transition-colors text-sm overflow-hidden"
-                    >
-                      <button
-                        onClick={() => {
-                          setChatInitialQuestion(question)
-                          setChatSheetOpen(true)
-                        }}
-                        className="flex-1 p-3 hover:bg-accent transition-colors text-left"
-                      >
-                        {question}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          dismissItem('suggested_question', question)
-                        }}
-                        className="px-3 flex items-center justify-center border-l hover:bg-green-50 dark:hover:bg-green-950 transition-colors"
-                        title="Dismiss"
-                      >
-                        <X className="h-4 w-4 text-green-600" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                      <React.Fragment key={index}>
+                        {index > 0 && <ItemSeparator />}
+                        <Item
+                          size="sm"
+                          className="cursor-pointer hover:bg-accent/50"
+                          onClick={() => {
+                            setChatInitialQuestion(question.description)
+                            setChatSheetOpen(true)
+                          }}
+                        >
+                          <ItemContent>
+                            <ItemTitle>{question.title}</ItemTitle>
+                            <ItemDescription className="text-xs">{question.description}</ItemDescription>
+                          </ItemContent>
+                          <ItemActions>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                dismissItem('suggested_question', question.description)
+                              }}
+                              className="p-1 rounded hover:bg-muted"
+                              title="Dismiss"
+                            >
+                              <X className="h-3 w-3 text-green-600" />
+                            </button>
+                          </ItemActions>
+                        </Item>
+                      </React.Fragment>
+                    )
+                  )}
+                </ItemGroup>
               ) : projectData?.suggestedQuestions && projectData.suggestedQuestions.length > 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
+                <div className="text-center py-6 px-6 text-muted-foreground">
                   <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                   <p className="text-sm">All suggestions addressed</p>
                   <p className="text-xs mt-1">New suggestions will appear as you continue exploring</p>
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground">
+                <div className="text-center py-6 px-6 text-muted-foreground">
                   <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Luna hasn&apos;t started wondering yet</p>
                   <p className="text-xs mt-1">Questions will appear as Luna learns more about your strategy</p>
@@ -915,318 +1187,93 @@ export default function ProjectPage() {
             </CardContent>
           </Card>
 
-          {/* Your Deep Dives */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Crosshair className="h-5 w-5 text-green-600" />
-                    Your Deep Dives
-                  </CardTitle>
-                  <CardDescription>
-                    Topics you&apos;ve flagged for further exploration
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAddDeepDiveOpen(true)}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Topic
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {projectData?.deepDives && projectData.deepDives.length > 0 ? (
-                <div className="space-y-3">
-                  {(() => {
-                    const DEEP_DIVE_LIMIT = 3
-                    // Filter out dismissed deep dives
-                    const allDeepDives = projectData.deepDives.filter(
-                      dd => !isItemDismissed('deep_dive', dd.id)
-                    )
-                    const visibleDeepDives = showAllDeepDives
-                      ? allDeepDives
-                      : allDeepDives.slice(0, DEEP_DIVE_LIMIT)
-                    const hasMore = allDeepDives.length > DEEP_DIVE_LIMIT
-
-                    return (
-                      <>
-                        {visibleDeepDives.map((dd) => (
-                          <div
-                            key={dd.id}
-                            className="flex items-stretch rounded-lg border overflow-hidden hover:border-green-200 transition-colors"
-                          >
-                            {/* Clickable content area - opens sheet */}
-                            <button
-                              className="flex-1 p-3 space-y-2 text-left hover:bg-accent/50 transition-colors"
-                              onClick={() => openDeepDiveSheet(dd.id)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-sm">{dd.topic}</span>
-                                <Badge
-                                  variant={dd.status === 'active' ? 'outline' : 'secondary'}
-                                  className={dd.status === 'active' ? 'text-xs text-green-600 border-green-300' : 'text-xs'}
-                                >
-                                  {dd.status === 'resolved'
-                                    ? 'Resolved'
-                                    : dd.conversationCount > 0
-                                      ? 'In progress'
-                                      : 'Ready to explore'}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span>{dd.conversationCount} chats</span>
-                                <span>{dd.documentCount} docs</span>
-                                <span>
-                                  Last activity: {new Date(dd.lastActivityAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              {/* Action button group */}
-                              <div className="flex items-center gap-1 pt-1" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 px-2"
-                                  title="Chat"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setChatInitialQuestion(undefined)
-                                    setChatGapExploration(undefined)
-                                    setChatDeepDiveId(dd.id)
-                                    setChatSheetOpen(true)
-                                  }}
-                                >
-                                  <MessageSquare className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 px-2"
-                                  title="Upload Doc"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setUploadDialogOpen(true)
-                                  }}
-                                >
-                                  <Upload className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 px-2"
-                                  title="Add Memo"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleFakeDoor('Add Memo')
-                                  }}
-                                >
-                                  <NotebookPen className="h-3.5 w-3.5" />
-                                </Button>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-7 px-2">
-                                      <MoreHorizontal className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        openDeepDiveSheet(dd.id)
-                                      }}
-                                    >
-                                      View details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        dismissItem('deep_dive', dd.id)
-                                      }}
-                                    >
-                                      <X className="h-3.5 w-3.5 mr-2" />
-                                      Dismiss
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </button>
-                            {/* Dismiss button - full height */}
-                            <button
-                              onClick={() => dismissItem('deep_dive', dd.id)}
-                              className="px-3 flex items-center justify-center border-l hover:bg-green-50 dark:hover:bg-green-950 transition-colors"
-                              title="Dismiss"
-                            >
-                              <X className="h-4 w-4 text-green-500" />
-                            </button>
-                          </div>
-                        ))}
-                        {hasMore && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full text-muted-foreground"
-                            onClick={() => setShowAllDeepDives(!showAllDeepDives)}
-                          >
-                            {showAllDeepDives
-                              ? 'Show less'
-                              : `Show ${allDeepDives.length - DEEP_DIVE_LIMIT} more`}
-                          </Button>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Crosshair className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No deep dives yet</p>
-                  <p className="text-xs mt-1">
-                    Flag a topic to explore, or defer from a conversation
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Worth Exploring */}
-        <div className="grid gap-6 lg:grid-cols-1">
-          {/* Worth Exploring */}
+          {/* Strategic Gaps */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertCircle className="h-5 w-5 text-amber-500" />
-                Close Gaps with 10 Strategic Dimensions
+                Strategic Gaps
               </CardTitle>
               <CardDescription>
-                Luna suggests exploring these areas to improve your strategic coverage
+                Cover your bases by focussing on gaps
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
             {areasOfFocus.length > 0 ? (
-              <div className="space-y-3">
-                {areasOfFocus.map((area) => (
-                  <div key={area.dimension} className="flex items-stretch rounded-lg border overflow-hidden">
-                    {/* Main content */}
-                    <div className="flex-1 p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">
-                          {DIMENSION_LABELS[area.dimension as Tier1Dimension] || area.dimension}
-                        </span>
-                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                          Needs attention
-                        </Badge>
-                      </div>
-                      {area.summary && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {area.summary}
-                        </p>
-                      )}
-                      {area.gaps.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-amber-600">Gaps to explore:</p>
-                          <ul className="text-xs text-muted-foreground space-y-0.5">
-                            {area.gaps.slice(0, 3).map((gap, idx) => (
-                              <li key={idx} className="flex items-start gap-1">
-                                <span className="text-amber-500 mt-0.5">•</span>
-                                <span className="line-clamp-1">{gap}</span>
-                              </li>
-                            ))}
-                            {area.gaps.length > 3 && (
-                              <li className="text-amber-500 text-xs">+{area.gaps.length - 3} more</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {/* Compact action button group */}
-                      <div className="flex items-center gap-1 pt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2"
-                          title="Chat"
-                          onClick={() => {
-                            setChatDeepDiveId(undefined)
-                            setChatInitialQuestion(undefined)
-                            setChatGapExploration({
-                              dimension: area.dimension,
-                              summary: area.summary || undefined,
-                            })
-                            setChatSheetOpen(true)
-                          }}
-                        >
-                          <MessageSquare className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2"
-                          title="Upload Doc"
-                          onClick={() => setUploadDialogOpen(true)}
-                        >
-                          <Upload className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2"
-                          title="Add Memo"
-                          onClick={() => handleFakeDoor('Add Memo')}
-                        >
-                          <NotebookPen className="h-3.5 w-3.5" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 px-2">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => dismissItem('focus_area', area.dimension)}
-                            >
-                              <X className="h-3.5 w-3.5 mr-2" />
-                              Dismiss
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    {/* Dismiss button - full height */}
-                    <button
-                      onClick={() => dismissItem('focus_area', area.dimension)}
-                      className="px-3 flex items-center justify-center border-l hover:bg-amber-50 dark:hover:bg-amber-950 transition-colors"
-                      title="Dismiss"
-                    >
-                      <X className="h-4 w-4 text-amber-500" />
-                    </button>
-                  </div>
-                ))}
+              <ItemGroup>
+                {areasOfFocus.map((area, index) => {
+                  // Use first gap as the main content, dimension as subtle label
+                  const gap = area.gaps[0]
+                  const title = gap?.title || 'Explore this area'
+                  const description = gap?.description || area.summary || ''
+                  const dimensionLabel = DIMENSION_LABELS[area.dimension as Tier1Dimension] || area.dimension
+
+                  return (
+                    <React.Fragment key={area.dimension}>
+                      {index > 0 && <ItemSeparator />}
+                      <Item
+                        size="sm"
+                        className="cursor-pointer hover:bg-accent/50"
+                        onClick={() => {
+                          setChatDeepDiveId(undefined)
+                          setChatInitialQuestion(undefined)
+                          setChatGapExploration({
+                            dimension: area.dimension,
+                            summary: area.summary || undefined,
+                          })
+                          setChatSheetOpen(true)
+                        }}
+                      >
+                        <ItemContent>
+                          <ItemTitle>{title}</ItemTitle>
+                          <ItemDescription className="text-xs">{description}</ItemDescription>
+                          <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5 mt-1 w-fit">
+                            {dimensionLabel}
+                          </span>
+                        </ItemContent>
+                        <ItemActions>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              dismissItem('focus_area', area.dimension)
+                            }}
+                            className="p-1 rounded hover:bg-muted"
+                            title="Dismiss"
+                          >
+                            <X className="h-3 w-3 text-green-600" />
+                          </button>
+                        </ItemActions>
+                      </Item>
+                    </React.Fragment>
+                  )
+                })}
                 {hasMoreFocusAreas && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-muted-foreground"
-                    onClick={() => setShowAllFocusAreas(!showAllFocusAreas)}
-                  >
-                    {showAllFocusAreas ? 'Show less' : `Show ${allAreasOfFocus.length - FOCUS_AREA_LIMIT} more`}
-                  </Button>
+                  <>
+                    <ItemSeparator />
+                    <div className="px-4 py-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-muted-foreground"
+                        onClick={() => setShowAllFocusAreas(!showAllFocusAreas)}
+                      >
+                        {showAllFocusAreas ? 'Show less' : `Show ${allAreasOfFocus.length - FOCUS_AREA_LIMIT} more`}
+                      </Button>
+                    </div>
+                  </>
                 )}
-              </div>
+              </ItemGroup>
             ) : stats.fragmentCount > 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
+              <div className="text-center py-6 px-6 text-muted-foreground">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                 <p className="text-sm">Looking good!</p>
-                <p className="text-xs mt-1">No major gaps detected in your strategy</p>
+                <p className="text-xs mt-1">No major gaps detected</p>
               </div>
             ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No data yet</p>
-                <p className="text-xs mt-1">Have conversations to identify focus areas</p>
+              <div className="text-center py-6 px-6 text-muted-foreground">
+                <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No gaps identified yet</p>
+                <p className="text-xs mt-1">Chat with Luna to discover areas to explore</p>
               </div>
             )}
             </CardContent>
@@ -1253,12 +1300,15 @@ export default function ProjectPage() {
             setChatDeepDiveId(undefined)
             setChatGapExploration(undefined)
             setChatResumeConversationId(undefined)
+            // Refresh data after conversation to update knowledge base
+            fetchProjectData()
           }
         }}
         initialQuestion={chatInitialQuestion}
         deepDiveId={chatDeepDiveId}
         gapExploration={chatGapExploration}
         resumeConversationId={chatResumeConversationId}
+        hasExistingStrategy={(projectData?.strategyOutputs?.length ?? 0) > 0}
       />
 
       {/* Add Deep Dive Dialog */}
@@ -1299,6 +1349,56 @@ export default function ProjectPage() {
           onInterest={handleFakeDoorInterest}
         />
       )}
+
+      {/* Synthesis Dialog */}
+      <SynthesisDialog
+        projectId={projectId}
+        open={synthesisDialogOpen}
+        onOpenChange={setSynthesisDialogOpen}
+        onComplete={fetchProjectData}
+      />
+
+      {/* Refresh Strategy Dialog */}
+      <Dialog open={refreshStrategyDialogOpen} onOpenChange={setRefreshStrategyDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Refresh Your Strategy</DialogTitle>
+            <DialogDescription>
+              Generate a new version of your decision stack incorporating recent inputs.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="h-6 min-w-6 rounded-full px-2 font-mono tabular-nums text-xs bg-green-100 text-green-700 flex items-center justify-center">
+                {stats.unsynthesizedFragmentCount}
+              </span>
+              <span className="text-muted-foreground">new fragments to include</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="h-6 min-w-6 rounded-full px-2 font-mono tabular-nums text-xs bg-amber-100 text-amber-700 flex items-center justify-center">
+                {projectData?.conversations?.filter(c => c.status === 'in_progress').length || 0}
+              </span>
+              <span className="text-muted-foreground">unfinished conversations</span>
+            </div>
+            <p className="text-sm text-muted-foreground pt-2">
+              Your previous strategy versions will be preserved. Luna will create a fresh decision stack based on all your current insights.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefreshStrategyDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              setRefreshStrategyDialogOpen(false)
+              setChatInitialQuestion(undefined)
+              setChatSheetOpen(true)
+            }}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Generate New Strategy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   )
 }

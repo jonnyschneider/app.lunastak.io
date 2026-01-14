@@ -220,3 +220,9 @@ export interface DimensionalCoverage {
   analysisTimestamp: string;
   modelUsed: string;
 }
+
+// Structured Provocation (for suggested questions and strategic gaps)
+export interface StructuredProvocation {
+  title: string;       // Short, attention-grabbing title (max ~60 chars)
+  description: string; // Fuller explanation or question text
+}

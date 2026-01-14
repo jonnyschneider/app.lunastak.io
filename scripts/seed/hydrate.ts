@@ -183,7 +183,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
         description: projectFixture.description,
         status: projectFixture.status,
         knowledgeSummary: projectFixture.knowledgeSummary,
-        suggestedQuestions: projectFixture.suggestedQuestions || [],
+        suggestedQuestions: JSON.parse(JSON.stringify(projectFixture.suggestedQuestions || [])),
       },
     });
 
@@ -315,7 +315,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
           dimension: synthFixture.dimension,
           summary: synthFixture.summary,
           keyThemes: synthFixture.keyThemes,
-          gaps: synthFixture.gaps,
+          gaps: JSON.parse(JSON.stringify(synthFixture.gaps || [])),
           confidence: synthFixture.confidence,
           fragmentCount: synthFixture.fragmentCount,
         },

@@ -5,6 +5,23 @@ import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
 import { seedDemoProject } from "@/lib/seed-demo"
 
+async function notifySlackNewUser(email: string) {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL
+  if (!webhookUrl) return
+
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `🎉 New user signed up: ${email}`,
+      }),
+    })
+  } catch (err) {
+    console.error('[Slack] Failed to send notification:', err)
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -39,6 +56,11 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     createUser: async ({ user }) => {
+      // Notify Slack of new signup
+      if (user.email) {
+        notifySlackNewUser(user.email)
+      }
+
       // Seed demo project for new users
       await seedDemoProject(user.id).catch((err) =>
         console.error('Failed to seed demo project:', err)

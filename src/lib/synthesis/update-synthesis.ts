@@ -127,7 +127,7 @@ export async function updateDimensionalSynthesis(
       summary: result.summary || null,
       keyThemes: result.keyThemes,
       keyQuotes: result.keyQuotes,
-      gaps: result.gaps,
+      gaps: result.gaps as unknown as Parameters<typeof prisma.dimensionalSynthesis.update>[0]['data']['gaps'],
       contradictions: result.contradictions,
       subdimensions: result.subdimensions ?? Prisma.JsonNull,
       confidence: result.confidence,

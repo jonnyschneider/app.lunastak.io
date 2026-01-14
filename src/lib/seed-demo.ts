@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { prisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import type { Fixture } from '../../scripts/seed/types';
+import type { Fixture, FixtureProvocation } from '../../scripts/seed/types';
 
 const FIXTURES_DIR = path.join(process.cwd(), 'scripts/seed/fixtures');
 const DEMO_FIXTURE = 'demo-extended.json';
@@ -36,7 +36,7 @@ export interface TransformedFixture {
     isDemo: boolean;
     description?: string;
     knowledgeSummary?: string;
-    suggestedQuestions?: string[];
+    suggestedQuestions?: FixtureProvocation[];
     conversations: Array<{
       id: string;
       title?: string;
@@ -98,7 +98,7 @@ export interface TransformedFixture {
       dimension: string;
       summary?: string;
       keyThemes: string[];
-      gaps: string[];
+      gaps: FixtureProvocation[];
       confidence: string;
       fragmentCount: number;
     }>;
@@ -162,7 +162,7 @@ async function createSynthesisRecords(
     dimension: string;
     summary?: string;
     keyThemes: string[];
-    gaps: string[];
+    gaps: FixtureProvocation[];
     confidence: string;
     fragmentCount: number;
   }>
@@ -173,7 +173,7 @@ async function createSynthesisRecords(
     summary: s.summary || null,
     keyThemes: s.keyThemes,
     keyQuotes: [],
-    gaps: s.gaps,
+    gaps: s.gaps as unknown as Prisma.InputJsonValue,
     contradictions: [],
     confidence: s.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
     fragmentCount: s.fragmentCount,
@@ -201,7 +201,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
         isDemo: projectData.isDemo,
         description: projectData.description,
         knowledgeSummary: projectData.knowledgeSummary,
-        suggestedQuestions: projectData.suggestedQuestions || [],
+        suggestedQuestions: JSON.parse(JSON.stringify(projectData.suggestedQuestions || [])),
       },
     });
 

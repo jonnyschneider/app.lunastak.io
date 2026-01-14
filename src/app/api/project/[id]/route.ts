@@ -218,6 +218,11 @@ export async function GET(
       }
     })
 
+    // Count unsynthesized fragments (created after last knowledge summary)
+    const unsynthesizedFragmentCount = project.knowledgeUpdatedAt
+      ? project.fragments.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
+      : 0
+
     // Return project data
     return NextResponse.json({
       id: project.id,
@@ -227,6 +232,7 @@ export async function GET(
         conversationCount: project.conversations.length,
         documentCount: project.documents.length,
         dimensionalCoverage,
+        unsynthesizedFragmentCount,
       },
       conversations,
       documents,

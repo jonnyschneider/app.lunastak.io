@@ -14,9 +14,18 @@
       "status": "active",
       "knowledgeSummary": "You're building Luna as a continuous strategic companion for leaders drowning in reactive mode—those founders and executives at growth-stage companies (8-15M ARR, 60-150 staff) who have great strategic instincts but struggle to clarify and operationalize them. You've identified a critical insight: executives never need a new strategy, they need help clarifying the muddy one they already have. The chaos of constant firefighting, shifting priorities, and being the organizational bottleneck creates a \"clarity crisis\" that looks like execution problems but is actually strategic vagueness.\n\nLuna democratizes what McKinsey partners provide—being there for decision coaching, outside perspective, and making strategy actionable—but continuously and affordably rather than in expensive, delayed engagements. You're positioning this as a \"longitudinal strategy coach\" rather than one-off deck generators like Xavier AI or execution-only platforms like WorkBoard. Leaders can drop in snippets and chaos anytime, and Luna helps wrangle it into coherent strategy that bridges from annual offsites through quarterly planning to monthly business reviews.\n\nYour evolution path is clear: start with individual leaders preparing for strategy moments, then expand to multi-user platforms that track strategy evolution and automate 75% of business reviews. You're combining strategic frameworks (7 Powers, Porter's 5 Forces) with execution methodologies (OKRs) and backing the AI with veteran strategy consultants—expert-augmented rather than pure automation.\n\nThe market gap is real: no one combines deep strategic elicitation, continuous coaching, and operational integration for this underserved segment.",
       "suggestedQuestions": [
-        "How will you balance being accessible enough for reactive leaders to actually use Luna in chaotic moments, while still delivering the depth of strategic insight that distinguishes you from simpler AI tools?",
-        "What's your hypothesis about why growth-stage leaders would choose Luna over just hiring a fractional Chief Strategy Officer or part-time consultant—especially given the \"expert-backed\" positioning suggests human expertise matters?",
-        "As Luna evolves from single-user tool to multi-user organizational platform, how do you prevent it from becoming just another \"strategy software\" that leadership mandates but teams ignore—the very \"decoration\" problem you identified?"
+        {
+          "title": "Accessibility vs depth tradeoff",
+          "description": "How will you balance being accessible enough for reactive leaders to actually use Luna in chaotic moments, while still delivering the depth of strategic insight that distinguishes you from simpler AI tools?"
+        },
+        {
+          "title": "Fractional CSO alternative",
+          "description": "What's your hypothesis about why growth-stage leaders would choose Luna over just hiring a fractional Chief Strategy Officer or part-time consultant—especially given the \"expert-backed\" positioning suggests human expertise matters?"
+        },
+        {
+          "title": "Platform adoption risk",
+          "description": "As Luna evolves from single-user tool to multi-user organizational platform, how do you prevent it from becoming just another \"strategy software\" that leadership mandates but teams ignore—the very \"decoration\" problem you identified?"
+        }
       ],
       "conversations": [
         {
