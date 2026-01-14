@@ -516,7 +516,7 @@ export default function ProjectPage() {
           </Card>
 
           {/* Chats Column */}
-          <Card>
+          <Card data-section="chats">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <MessageSquare className="h-4 w-4" />
@@ -736,30 +736,65 @@ export default function ProjectPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {projectData?.knowledgeSummary ? (
-                <div className="space-y-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {projectData.knowledgeSummary}
-                  </p>
-                  {projectData.knowledgeUpdatedAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Last updated: {new Date(projectData.knowledgeUpdatedAt).toLocaleDateString()}
+              {(() => {
+                const inProgressCount = projectData?.conversations?.filter(c => c.status === 'in_progress').length || 0
+                const fragmentCount = stats.fragmentCount
+
+                return projectData?.knowledgeSummary ? (
+                  <div className="space-y-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {projectData.knowledgeSummary}
                     </p>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No knowledge yet</p>
-                  <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
-                  <Button asChild size="sm">
-                    <Link href={`/?projectId=${projectId}`}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Start a Conversation
-                    </Link>
-                  </Button>
-                </div>
-              )}
+
+                    {/* Stats section */}
+                    <div className="pt-2 border-t space-y-1">
+                      {fragmentCount > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Based on {fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}
+                        </p>
+                      )}
+                      {inProgressCount > 0 && (
+                        <button
+                          onClick={() => {
+                            // Scroll to chats section
+                            document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
+                          }}
+                          className="text-xs text-amber-600 hover:text-amber-700 hover:underline"
+                        >
+                          {inProgressCount} conversation{inProgressCount !== 1 ? 's' : ''} in progress
+                        </button>
+                      )}
+                      {projectData.knowledgeUpdatedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Last updated: {new Date(projectData.knowledgeUpdatedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No knowledge yet</p>
+                    <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
+                    {inProgressCount > 0 && (
+                      <button
+                        onClick={() => {
+                          document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
+                        }}
+                        className="text-xs text-amber-600 hover:text-amber-700 hover:underline block mx-auto mb-4"
+                      >
+                        {inProgressCount} conversation{inProgressCount !== 1 ? 's' : ''} in progress
+                      </button>
+                    )}
+                    <Button asChild size="sm">
+                      <Link href={`/?projectId=${projectId}`}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Start a Conversation
+                      </Link>
+                    </Button>
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
 
