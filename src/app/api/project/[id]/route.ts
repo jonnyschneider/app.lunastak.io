@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
+import { isGuestUser } from '@/lib/projects'
+
+const GUEST_COOKIE_NAME = 'guestUserId'
 
 /**
  * GET /api/project/[id]
  * Fetches a specific project's data including stats, conversations, and documents
+ * Supports both authenticated users and guests (via cookie)
  */
 export async function GET(
   request: Request,
@@ -15,7 +20,28 @@ export async function GET(
   const session = await getServerSession(authOptions)
   const { id: projectId } = await params
 
-  if (!session?.user?.id) {
+  // Determine user ID from session or guest cookie
+  let userId: string | null = session?.user?.id || null
+
+  if (!userId) {
+    // Check for guest cookie
+    const cookieStore = await cookies()
+    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
+
+    if (guestCookie?.value) {
+      // Validate it's a real guest user
+      const guestUser = await prisma.user.findUnique({
+        where: { id: guestCookie.value },
+        select: { email: true },
+      })
+
+      if (guestUser && isGuestUser(guestUser.email)) {
+        userId = guestCookie.value
+      }
+    }
+  }
+
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -24,7 +50,7 @@ export async function GET(
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: session.user.id,
+        userId: userId,
         status: 'active',
       },
       include: {

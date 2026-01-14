@@ -222,14 +222,11 @@ export default function ProjectPage() {
   useEffect(() => {
     if (status === 'loading') return
 
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-
+    // Don't redirect to signin - guests can access projects via cookie
+    // The API will return 401 if unauthorized
     fetchProjectData()
     fetchDismissals()
-  }, [session, status, router, projectId])
+  }, [status, projectId])
 
   const fetchProjectData = async () => {
     setIsLoading(true)
