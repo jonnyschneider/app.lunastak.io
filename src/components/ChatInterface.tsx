@@ -150,7 +150,7 @@ export default function ChatInterface({
             onChange={(e) => setUserInput(e.target.value)}
             placeholder={getPlaceholderText()}
             disabled={isLoading}
-            rows={6}
+            rows={3}
             className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
