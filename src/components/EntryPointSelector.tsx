@@ -91,7 +91,8 @@ export function EntryPointSelector({ onSelect }: EntryPointSelectorProps) {
       <SignInGateDialog
         open={gateDialogOpen}
         onOpenChange={setGateDialogOpen}
-        featureName={gatedFeatureName}
+        title={`Sign in to unlock ${gatedFeatureName}`}
+        description="Create a free account to save your strategy and access premium features."
       />
     </>
   );

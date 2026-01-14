@@ -897,12 +897,35 @@ Learnings from runtime discoveries. Each notes whether the fix is **durable** (k
 | **Dimensional synthesis records must exist** | Initialize all 11 records on project creation | **Okay for now** - upfront allocation. Revisit if dimensions become dynamic |
 | **Guest-to-auth duplicate projects** | Merge guest data into existing, delete guest project | **Okay for now** - works but brittle. Revisit: proper session-to-user binding at auth layer |
 | **Cross-component state (project deletion)** | Window events (pattern from `SessionTransferProvider`) | **Okay for now** - not idiomatic React. Revisit: proper state management when designing app-wide state |
+| **Conversation resumption refetches all messages** | API call on sheet open, reconstruct Message[] in state | **Okay for now** - simple, correct. Revisit: SWR/React Query caching if conversations grow large |
+| **Fragment/in-progress counts stale in same session** | Server component fetches counts on page load | **Okay for now** - counts update on next navigation or refresh. Revisit: real-time updates via polling or websockets |
 
 ---
 
 ## Decision Log
 
 Intentional trade-offs made during development. Not tech debt (tracked in Linear), but conscious design choices with documented rationale.
+
+### 2026-01-14: Chat Flow Extraction
+
+| Decision | Trade-off | Rationale |
+|----------|-----------|-----------|
+| **ChatSheet as universal component** | Duplicates some HomePage logic initially | Follows DocumentUploadDialog pattern. Self-contained, reusable from anywhere (sidebar, project page). Enables future inline rendering. |
+| **Remove HomePage as chat host** | Breaking change for any direct HomePage usage | HomePage was legacy - conflated routing with UI. Project page is now the hub; ChatSheet is the overlay. Cleaner separation. |
+| **Sheet opens from RHS** | Takes significant screen space | Chat needs room for messages. Sheet dismissible. Can render inline later if needed for deep pages with breadcrumbs. |
+| **Root page always redirects** | No landing page for unauthenticated users | All users land on project page. Guests get demo project auto-created. Consistent experience for auth and guest. |
+
+### 2026-01-14: Conversation Lifecycle
+
+| Decision | Trade-off | Rationale |
+|----------|-----------|-----------|
+| **Explicit "End" button for extraction** | Extra click vs automatic extraction | User controls when insights are captured. Supports half-formed thoughts that need revisiting. Matches mental model of "ending a meeting". |
+| **Conversation status as String, not enum** | No type safety at DB level | Avoids migrations when adding states (`'extracted'`). Status validated in application code. Good enough for beta. |
+| **Decoupled extraction from synthesis** | User must explicitly generate strategy | Extraction = per-conversation, cumulative. Synthesis = on-demand from panel. Supports continuous strategic development vs one-shot generation. |
+| **Keep raw conversations in DB** | Storage cost, privacy considerations | Enables backtesting extraction improvements. Useful for error analysis and prompt iteration. Fragments are the primary artifact. |
+| **No confirmation dialog on End** | User might accidentally end | Extraction is low-stakes and cumulative. Can always start new conversation. Reduces friction for time-poor executives. |
+| **Auto-save on sheet close** | Inconsistent with typical "discard" behavior | Better UX for busy users who get interrupted. Conversation stays `in_progress`, resumable. No data loss. |
+| **Status badges on conversation list** | Visual clutter | Clear at-a-glance state. Amber "In progress" = resumable action. Green "Analysed" = extracted, done. |
 
 ### 2026-01-14: Guest Flow Simplification
 
@@ -934,4 +957,4 @@ Intentional trade-offs made during development. Not tech debt (tracked in Linear
 - Prioritize learning and iteration over perfect design
 - Update this document as architecture changes
 
-**Last major update:** Known Compromises + Decision Log sections (2026-01-13)
+**Last major update:** Conversation Lifecycle decision log (2026-01-14)
