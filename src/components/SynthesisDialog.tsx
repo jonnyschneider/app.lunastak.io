@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -60,6 +60,13 @@ export function SynthesisDialog({
 }: SynthesisDialogProps) {
   const [currentStep, setCurrentStep] = useState<SynthesisStep>('starting')
   const [error, setError] = useState<string | undefined>()
+  const synthesisRunningRef = useRef(false)
+  const onCompleteRef = useRef(onComplete)
+
+  // Keep onComplete ref updated without triggering effect
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  }, [onComplete])
 
   // Start synthesis when dialog opens
   useEffect(() => {
@@ -67,8 +74,15 @@ export function SynthesisDialog({
       // Reset state when closed
       setCurrentStep('starting')
       setError(undefined)
+      synthesisRunningRef.current = false
       return
     }
+
+    // Prevent duplicate synthesis calls
+    if (synthesisRunningRef.current) {
+      return
+    }
+    synthesisRunningRef.current = true
 
     const runSynthesis = async () => {
       try {
@@ -109,7 +123,7 @@ export function SynthesisDialog({
               } else if (update.step === 'complete') {
                 // Trigger refresh after a brief moment
                 setTimeout(() => {
-                  onComplete()
+                  onCompleteRef.current()
                 }, 1500)
               }
             } catch (parseError) {
@@ -125,7 +139,7 @@ export function SynthesisDialog({
     }
 
     runSynthesis()
-  }, [open, projectId, onComplete])
+  }, [open, projectId])
 
   const stepConfig = STEP_MESSAGES[currentStep]
   const isError = currentStep === 'error'
