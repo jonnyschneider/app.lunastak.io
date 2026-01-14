@@ -548,27 +548,18 @@ export default function ProjectPage() {
                       const isExtracted = conv.status === 'extracted' || conv.fragmentCount > 0
 
                       const handleClick = () => {
-                        if (isInProgress) {
-                          // Resume in-progress conversation in ChatSheet
-                          setChatInitialQuestion(undefined)
-                          setChatDeepDiveId(undefined)
-                          setChatGapExploration(undefined)
-                          setChatResumeConversationId(conv.id)
-                          setChatSheetOpen(true)
-                        }
+                        // Open all conversations in ChatSheet
+                        setChatInitialQuestion(undefined)
+                        setChatDeepDiveId(undefined)
+                        setChatGapExploration(undefined)
+                        setChatResumeConversationId(conv.id)
+                        setChatSheetOpen(true)
                       }
-
-                      const ContentWrapper = isInProgress ? 'button' : Link
-                      const contentProps = isInProgress
-                        ? { onClick: handleClick, className: 'flex-1 min-w-0 mr-1 text-left' }
-                        : { href: `/conversation/${conv.id}`, className: 'flex-1 min-w-0 mr-1' }
 
                       return (
                         <div
                           key={conv.id}
-                          className={`flex items-center gap-1 p-2 rounded border hover:bg-accent transition-colors text-sm ${
-                            isInProgress ? 'cursor-pointer' : ''
-                          }`}
+                          className="flex items-center gap-1 p-2 rounded border hover:bg-accent transition-colors text-sm cursor-pointer"
                         >
                           <button
                             onClick={(e) => {
@@ -581,7 +572,7 @@ export default function ProjectPage() {
                           >
                             <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
                           </button>
-                          <ContentWrapper {...contentProps as any}>
+                          <button onClick={handleClick} className="flex-1 min-w-0 mr-1 text-left">
                             <div className="text-xs font-medium truncate">
                               {conv.title || 'Untitled conversation'}
                             </div>
@@ -597,7 +588,7 @@ export default function ProjectPage() {
                                 </Badge>
                               ) : null}
                             </div>
-                          </ContentWrapper>
+                          </button>
                           <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
                         </div>
                       )
@@ -1287,6 +1278,15 @@ export default function ProjectPage() {
         onDismiss={(id) => dismissItem('deep_dive', id)}
         onStartChat={handleStartDeepDiveChat}
         onUploadDoc={handleUploadToDeepDive}
+        onViewConversation={(conversationId) => {
+          // Close deep dive sheet and open conversation in ChatSheet
+          setDeepDiveSheetOpen(false)
+          setChatInitialQuestion(undefined)
+          setChatDeepDiveId(undefined)
+          setChatGapExploration(undefined)
+          setChatResumeConversationId(conversationId)
+          setChatSheetOpen(true)
+        }}
       />
 
       {/* Fake Door Dialog */}
