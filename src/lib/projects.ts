@@ -5,6 +5,7 @@
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
+import { seedDemoProject } from '@/lib/seed-demo'
 
 /**
  * Generate a random ID (similar to cuid but simpler)
@@ -72,18 +73,13 @@ export async function getOrCreateDefaultProject(userId: string | null): Promise<
   isGuest: boolean
 }> {
   if (!userId) {
-    // Create guest user and project
+    // Create guest user and hydrate demo project
     const guestUser = await createGuestUser()
-    const project = await prisma.project.create({
-      data: {
-        userId: guestUser.id,
-        name: 'Guest Strategy',
-        status: 'active',
-      }
-    })
+    const projectId = await seedDemoProject(guestUser.id)
 
-    // Initialize synthesis records for the new project
-    await initializeSynthesisRecords(project.id)
+    const project = await prisma.project.findUniqueOrThrow({
+      where: { id: projectId },
+    })
 
     return {
       userId: guestUser.id,
@@ -127,4 +123,36 @@ export async function getUserProjects(userId: string) {
     where: { userId },
     orderBy: { createdAt: 'asc' }
   })
+}
+
+/**
+ * Guest API call limit
+ */
+export const GUEST_API_LIMIT = 20
+
+/**
+ * Check if a guest user has exceeded their API call limit.
+ * If not exceeded, increments the counter.
+ * Returns { blocked: true } if limit reached.
+ */
+export async function checkAndIncrementGuestApiCalls(userId: string): Promise<{ blocked: boolean }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, apiCallCount: true },
+  })
+
+  if (!user) return { blocked: false }
+  if (!isGuestUser(user.email)) return { blocked: false }
+
+  if (user.apiCallCount >= GUEST_API_LIMIT) {
+    return { blocked: true }
+  }
+
+  // Increment counter
+  await prisma.user.update({
+    where: { id: userId },
+    data: { apiCallCount: { increment: 1 } },
+  })
+
+  return { blocked: false }
 }
