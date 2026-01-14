@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { transferGuestSession } from '@/lib/transferSession'
+import { prisma } from '@/lib/db'
+import { isGuestUser } from '@/lib/projects'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,12 +24,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Transfer guest session to authenticated user
-    await transferGuestSession(guestUserId, session.user.id)
+    // Verify it's actually a guest user
+    const guestUser = await prisma.user.findUnique({
+      where: { id: guestUserId },
+      select: { email: true },
+    })
+
+    if (!guestUser || !isGuestUser(guestUser.email)) {
+      return NextResponse.json(
+        { error: 'Invalid guest user' },
+        { status: 400 }
+      )
+    }
+
+    // Cascade delete the guest user and all their data
+    await prisma.user.delete({
+      where: { id: guestUserId },
+    })
+
+    console.log(`[Transfer] Deleted guest user ${guestUserId} on signup`)
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to transfer session:', error)
+    console.error('Failed to process signup:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
