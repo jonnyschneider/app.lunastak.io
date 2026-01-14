@@ -326,6 +326,12 @@ export async function POST(
           },
         })
 
+        // Reset unsynthesized fragment count by updating knowledgeUpdatedAt
+        await prisma.project.update({
+          where: { id: projectId },
+          data: { knowledgeUpdatedAt: new Date() },
+        })
+
         // Complete
         sendProgress({ step: 'complete' })
         controller.enqueue(
