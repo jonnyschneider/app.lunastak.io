@@ -51,6 +51,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
+import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import {
   Dialog,
   DialogContent,
@@ -1359,46 +1360,15 @@ export default function ProjectPage() {
       />
 
       {/* Refresh Strategy Dialog */}
-      <Dialog open={refreshStrategyDialogOpen} onOpenChange={setRefreshStrategyDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Refresh Your Strategy</DialogTitle>
-            <DialogDescription>
-              Generate a new version of your decision stack incorporating recent inputs.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="h-6 min-w-6 rounded-full px-2 font-mono tabular-nums text-xs bg-green-100 text-green-700 flex items-center justify-center">
-                {stats.unsynthesizedFragmentCount}
-              </span>
-              <span className="text-muted-foreground">new fragments to include</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="h-6 min-w-6 rounded-full px-2 font-mono tabular-nums text-xs bg-amber-100 text-amber-700 flex items-center justify-center">
-                {projectData?.conversations?.filter(c => c.status === 'in_progress').length || 0}
-              </span>
-              <span className="text-muted-foreground">unfinished conversations</span>
-            </div>
-            <p className="text-sm text-muted-foreground pt-2">
-              Your previous strategy versions will be preserved. Luna will create a fresh decision stack based on all your current insights.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefreshStrategyDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              setRefreshStrategyDialogOpen(false)
-              setChatInitialQuestion(undefined)
-              setChatSheetOpen(true)
-            }}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Generate New Strategy
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RefreshStrategyDialog
+        projectId={projectId}
+        open={refreshStrategyDialogOpen}
+        onOpenChange={setRefreshStrategyDialogOpen}
+        onComplete={(traceId) => {
+          setRefreshStrategyDialogOpen(false)
+          router.push(`/strategy/${traceId}`)
+        }}
+      />
     </AppLayout>
   )
 }
