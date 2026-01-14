@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import {
   Sheet,
   SheetContent,
@@ -9,12 +10,41 @@ import {
 } from '@/components/ui/sheet'
 import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'
 import ExtractionConfirm from '@/components/ExtractionConfirm'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import FeedbackButtons from '@/components/FeedbackButtons'
 
+function ChatSkeleton() {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Message area */}
+      <div className="flex-1 space-y-4 p-4">
+        {/* Assistant message skeleton */}
+        <div className="flex gap-3">
+          <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      </div>
+      {/* Input area skeleton */}
+      <div className="border-t p-4">
+        <Skeleton className="h-10 w-full rounded-md" />
+      </div>
+    </div>
+  )
+}
+
 type FlowStep = 'chat' | 'extracting' | 'extraction' | 'strategy'
+
+export interface GapExploration {
+  dimension: string
+  summary?: string
+}
 
 interface ChatSheetProps {
   projectId: string
@@ -22,6 +52,7 @@ interface ChatSheetProps {
   onOpenChange: (open: boolean) => void
   initialQuestion?: string
   deepDiveId?: string
+  gapExploration?: GapExploration
 }
 
 export function ChatSheet({
@@ -30,6 +61,7 @@ export function ChatSheet({
   onOpenChange,
   initialQuestion,
   deepDiveId,
+  gapExploration,
 }: ChatSheetProps) {
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
@@ -56,6 +88,9 @@ export function ChatSheet({
   const [earlyExitOffered, setEarlyExitOffered] = useState(false)
   const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null)
 
+  // Explicit end state (user clicked End button)
+  const [isExplicitEnd, setIsExplicitEnd] = useState(false)
+
   // Auto-start conversation when sheet opens
   useEffect(() => {
     if (open && !conversationId) {
@@ -74,6 +109,7 @@ export function ChatSheet({
       setCurrentPhase('INITIAL')
       setEarlyExitOffered(false)
       setSuggestedQuestion(null)
+      setIsExplicitEnd(false)
     }
   }, [open])
 
@@ -88,6 +124,7 @@ export function ChatSheet({
           projectId,
           ...(question && { suggestedQuestion: question }),
           ...(deepDiveId && { deepDiveId }),
+          ...(gapExploration && { gapExploration }),
         }),
       })
 
@@ -219,7 +256,15 @@ export function ChatSheet({
               const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
               setExtractedContext(ctx)
               setDimensionalCoverage(coverage)
-              setFlowStep('extraction')
+
+              if (isExplicitEnd) {
+                // User clicked End - close sheet with toast
+                toast.success('Added to your knowledge base')
+                onOpenChange(false)
+              } else {
+                // Automatic extraction - show confirmation
+                setFlowStep('extraction')
+              }
             } else if (update.step === 'error') {
               throw new Error(update.error || 'Extraction failed')
             } else {
@@ -310,24 +355,42 @@ export function ChatSheet({
     }
   }
 
+  // End conversation explicitly - trigger extraction and close
+  const handleEndConversation = () => {
+    if (!conversationId) return
+    setIsExplicitEnd(true)
+    extractContext()
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {flowStep === 'chat' && 'Strategy Conversation'}
+            {flowStep === 'chat' && (
+              deepDiveId
+                ? 'Deep Dive'
+                : gapExploration
+                  ? DIMENSION_CONTEXT[gapExploration.dimension as Tier1Dimension]?.name || 'Discussion'
+                  : 'Discussion'
+            )}
             {flowStep === 'extracting' && 'Analyzing...'}
             {flowStep === 'extraction' && 'Review Insights'}
             {flowStep === 'strategy' && 'Your Strategy'}
           </SheetTitle>
         </SheetHeader>
         <div className="mt-6 flex flex-col h-[calc(100vh-8rem)]">
-          {flowStep === 'chat' && (
+          {flowStep === 'chat' && messages.length === 0 && isLoading && (
+            <ChatSkeleton />
+          )}
+
+          {flowStep === 'chat' && messages.length > 0 && (
             <ChatInterface
               conversationId={conversationId}
               messages={messages}
               onUserResponse={handleUserResponse}
               onGenerateStrategy={extractContext}
+              onEndConversation={handleEndConversation}
               isLoading={isLoading}
               isComplete={false}
               currentPhase={currentPhase}
