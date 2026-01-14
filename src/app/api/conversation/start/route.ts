@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
@@ -7,6 +8,8 @@ import { getExperimentVariant } from '@/lib/statsig';
 import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions';
+
+const GUEST_COOKIE_NAME = 'guestUserId';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -95,13 +98,17 @@ export async function POST(req: Request) {
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
 
-    // Only use userId if user is authenticated (User exists in DB)
-    // For guests, userId will be null initially
-    const authenticatedUserId = session?.user?.id || null;
+    // Check for existing guest cookie FIRST - before creating new users
+    const cookieStore = await cookies();
+    const existingGuestId = cookieStore.get(GUEST_COOKIE_NAME)?.value;
 
-    // Get or create project (creates guest user + project for unauthenticated users)
-    // This ensures we have a consistent database user ID for Statsig
-    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(authenticatedUserId);
+    // Determine user identity: authenticated > existing guest > new guest
+    const authenticatedUserId = session?.user?.id || null;
+    const existingUserId = authenticatedUserId || existingGuestId || null;
+
+    // Get or create project - pass existing user ID if available
+    // This ensures we use the existing guest's projects, not create a new user
+    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(existingUserId);
 
     // Use the requested project if provided and user has access, otherwise use default
     let targetProjectId = defaultProject.id;
@@ -118,7 +125,7 @@ export async function POST(req: Request) {
       if (requestedProject) {
         targetProjectId = requestedProject.id;
       } else {
-        console.warn('[Start] Requested project not found or not owned by user, using default');
+        console.warn('[Start] Requested project not found or not owned by user, using default. Requested:', requestedProjectId, 'User:', userId);
       }
     }
 
