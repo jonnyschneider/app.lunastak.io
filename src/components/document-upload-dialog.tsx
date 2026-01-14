@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { FileText, Upload, X, Loader2 } from 'lucide-react'
+import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateDialog'
 
 interface DocumentUploadDialogProps {
   projectId: string
@@ -32,12 +34,25 @@ export function DocumentUploadDialog({
   onOpenChange,
   onUploadComplete,
 }: DocumentUploadDialogProps) {
+  const { data: session } = useSession()
   const [state, setState] = useState<UploadState>('idle')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadContext, setUploadContext] = useState('')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Guest users need to sign in to upload documents
+  if (!session?.user) {
+    return (
+      <SignInGateDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={SIGN_IN_GATE_PRESETS.uploadDocument.title}
+        description={SIGN_IN_GATE_PRESETS.uploadDocument.description}
+      />
+    )
+  }
 
   const resetState = () => {
     setState('idle')

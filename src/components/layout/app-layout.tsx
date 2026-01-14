@@ -92,6 +92,7 @@ import {
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { PaywallModal } from '@/components/PaywallModal'
+import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateDialog'
 import { DemoModeBadge } from '@/components/DemoModeBadge'
 import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
@@ -164,6 +165,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
+  const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
 
@@ -239,7 +241,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     // Guests must sign in to create projects
     if (!session) {
       setProjectSwitcherOpen(false)
-      router.push('/auth/signin')
+      setSignUpDialogOpen(true)
       return
     }
 
@@ -420,7 +422,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         {/* Project Navigation - show when project selected (both auth and guests) */}
         {selectedProject && (
           <SidebarGroup>
-            <SidebarGroupLabel>Navigate</SidebarGroupLabel>
+            <SidebarGroupLabel>Focus</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -435,7 +437,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
                     <Link href={`/project/${selectedProject.id}`}>
                       <Brain className="h-4 w-4" />
-                      <span>Thinking</span>
+                      <span>Your Thinking</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -668,6 +670,14 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Sign Up Required Dialog (for guests adding projects) */}
+      <SignInGateDialog
+        open={signUpDialogOpen}
+        onOpenChange={setSignUpDialogOpen}
+        title={SIGN_IN_GATE_PRESETS.addProject.title}
+        description={SIGN_IN_GATE_PRESETS.addProject.description}
+      />
 
       {/* Memo Fake Door Dialog */}
       <FakeDoorDialog
