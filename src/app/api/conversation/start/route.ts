@@ -6,6 +6,7 @@ import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
 import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
+import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -43,9 +44,50 @@ Ask a focused opening question that:
 
 IMPORTANT: Output ONLY the question itself. No preambles like "I'm happy to help" or "I'd be glad to". Just the direct question focused on the deep dive topic.`;
 
+const FIRST_QUESTION_PROMPT_GAP_EXPLORATION = `You are Luna, a strategic consultant helping someone articulate their business strategy.
+
+{projectKnowledge}
+
+---
+
+## Gap Exploration Context
+
+The user wants to strengthen their thinking around **{dimensionName}**.
+
+**What we're trying to understand in this dimension:**
+{understandingQuestions}
+
+**Where to focus (based on analysis of their current strategic coverage):**
+{focusSummary}
+
+**Related strategic frameworks (use as soft boundaries):**
+{frameworks}
+
+---
+
+Ask a focused opening question that:
+1. Warmly acknowledges you've noticed an opportunity to strengthen their thinking in this area
+2. Uses the focus summary to guide where to start the conversation
+3. Draws from the "what we're understanding" questions to shape your inquiry
+4. Keeps it conversational, curious, and not overwhelming
+
+The goal is to help them articulate their thinking in this dimension, not to quiz them.
+
+IMPORTANT: Output ONLY the question itself. No preambles like "I'm happy to help" or "I'd be glad to". Just the direct, warm question.`;
+
+interface GapExploration {
+  dimension: string;
+  summary?: string;
+}
+
 export async function POST(req: Request) {
   try {
-    const { variantOverride, suggestedQuestion, deepDiveId } = await req.json();
+    const { variantOverride, suggestedQuestion, deepDiveId, gapExploration } = await req.json() as {
+      variantOverride?: string;
+      suggestedQuestion?: string;
+      deepDiveId?: string;
+      gapExploration?: GapExploration;
+    };
 
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
@@ -104,6 +146,29 @@ export async function POST(req: Request) {
           .replace('{projectKnowledge}', projectKnowledge || '')
           .replace('{deepDiveTopic}', deepDive.topic);
         promptType = 'deep_dive';
+      } else if (gapExploration) {
+        // Gap exploration conversation - use taxonomy context
+        const dimensionKey = gapExploration.dimension as Tier1Dimension;
+        const context = DIMENSION_CONTEXT[dimensionKey];
+
+        if (!context) {
+          console.warn(`[Start] Unknown dimension: ${gapExploration.dimension}, falling back to returning user prompt`);
+          prompt = hasProjectKnowledge
+            ? FIRST_QUESTION_PROMPT_RETURNING_USER.replace('{projectKnowledge}', projectKnowledge || '')
+            : FIRST_QUESTION_PROMPT_NEW_USER;
+          promptType = 'gap_exploration_fallback';
+        } else {
+          const understandingQuestions = context.understanding.map(q => `- ${q}`).join('\n');
+          const focusSummary = gapExploration.summary || 'No specific focus identified yet - explore broadly within this dimension.';
+
+          prompt = FIRST_QUESTION_PROMPT_GAP_EXPLORATION
+            .replace('{projectKnowledge}', projectKnowledge || '')
+            .replace('{dimensionName}', context.name)
+            .replace('{understandingQuestions}', understandingQuestions)
+            .replace('{focusSummary}', focusSummary)
+            .replace('{frameworks}', context.frameworks);
+          promptType = 'gap_exploration';
+        }
       } else if (hasProjectKnowledge) {
         // Returning user with knowledge
         prompt = FIRST_QUESTION_PROMPT_RETURNING_USER.replace('{projectKnowledge}', projectKnowledge);
