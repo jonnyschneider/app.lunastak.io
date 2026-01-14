@@ -33,6 +33,7 @@ import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import { DeepDiveSheet } from '@/components/deep-dive-sheet'
+import { ChatSheet } from '@/components/chat-sheet'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -159,6 +160,8 @@ export default function ProjectPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [chatSheetOpen, setChatSheetOpen] = useState(false)
+  const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>()
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -615,11 +618,16 @@ export default function ProjectPage() {
                   <p className="text-xs">No conversations yet</p>
                 </div>
               )}
-              <Button asChild size="sm" className="w-full mt-3">
-                <Link href={`/?projectId=${projectId}`}>
-                  <Plus className="h-3 w-3 mr-1" />
-                  New Chat
-                </Link>
+              <Button
+                size="sm"
+                className="w-full mt-3"
+                onClick={() => {
+                  setChatInitialQuestion(undefined)
+                  setChatSheetOpen(true)
+                }}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                New Chat
               </Button>
             </CardContent>
           </Card>
@@ -812,12 +820,15 @@ export default function ProjectPage() {
                       key={index}
                       className="flex items-stretch rounded-lg border hover:border-green-200 transition-colors text-sm overflow-hidden"
                     >
-                      <Link
-                        href={`/?question=${encodeURIComponent(question)}`}
-                        className="flex-1 p-3 hover:bg-accent transition-colors"
+                      <button
+                        onClick={() => {
+                          setChatInitialQuestion(question)
+                          setChatSheetOpen(true)
+                        }}
+                        className="flex-1 p-3 hover:bg-accent transition-colors text-left"
                       >
                         {question}
-                      </Link>
+                      </button>
                       <button
                         onClick={(e) => {
                           e.preventDefault()
@@ -1159,6 +1170,14 @@ export default function ProjectPage() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUploadComplete={fetchProjectData}
+      />
+
+      {/* Chat Sheet */}
+      <ChatSheet
+        projectId={projectId}
+        open={chatSheetOpen}
+        onOpenChange={setChatSheetOpen}
+        initialQuestion={chatInitialQuestion}
       />
 
       {/* Add Deep Dive Dialog */}
