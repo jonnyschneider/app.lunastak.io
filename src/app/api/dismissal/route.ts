@@ -1,16 +1,49 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isGuestUser } from '@/lib/projects'
+
+const GUEST_COOKIE_NAME = 'guestUserId'
+
+/**
+ * Get user ID from session or guest cookie
+ */
+async function getUserId(): Promise<string | null> {
+  const session = await getServerSession(authOptions)
+
+  if (session?.user?.id) {
+    return session.user.id
+  }
+
+  // Check for guest cookie
+  const cookieStore = await cookies()
+  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
+
+  if (guestCookie?.value) {
+    const guestUser = await prisma.user.findUnique({
+      where: { id: guestCookie.value },
+      select: { email: true },
+    })
+
+    if (guestUser && isGuestUser(guestUser.email)) {
+      return guestCookie.value
+    }
+  }
+
+  return null
+}
 
 /**
  * POST /api/dismissal
  * Creates a dismissal record for an item
+ * Supports both authenticated users and guests
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -32,7 +65,7 @@ export async function POST(request: Request) {
     await prisma.userDismissal.upsert({
       where: {
         userId_itemType_itemKey_projectId: {
-          userId: session.user.id,
+          userId,
           itemType,
           itemKey,
           projectId: projectId || null,
@@ -40,7 +73,7 @@ export async function POST(request: Request) {
       },
       update: {},
       create: {
-        userId: session.user.id,
+        userId,
         itemType,
         itemKey,
         projectId: projectId || null,
@@ -57,11 +90,12 @@ export async function POST(request: Request) {
 /**
  * GET /api/dismissal
  * Gets all dismissals for the current user, optionally filtered by project
+ * Supports both authenticated users and guests
  */
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -71,7 +105,7 @@ export async function GET(request: Request) {
 
     const dismissals = await prisma.userDismissal.findMany({
       where: {
-        userId: session.user.id,
+        userId,
         ...(projectId ? { projectId } : {}),
       },
       select: {
@@ -91,11 +125,12 @@ export async function GET(request: Request) {
 /**
  * DELETE /api/dismissal
  * Removes a dismissal record (restore an item)
+ * Supports both authenticated users and guests
  */
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
+  const userId = await getUserId()
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -114,7 +149,7 @@ export async function DELETE(request: Request) {
 
     await prisma.userDismissal.deleteMany({
       where: {
-        userId: session.user.id,
+        userId,
         itemType,
         itemKey,
         projectId: projectId || null,
