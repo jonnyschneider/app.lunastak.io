@@ -4,13 +4,6 @@ import { useState } from 'react';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import { Message, ConversationPhase } from '@/lib/types';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -18,16 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Kbd } from '@/components/ui/kbd';
 import { Button } from '@/components/ui/button';
-import { EntryPointSelector } from '@/components/EntryPointSelector';
 import { MoreHorizontal, Crosshair } from 'lucide-react';
-
-type EntryPoint = 'guided' | 'document' | 'canvas' | 'fast-track';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
   messages: Message[];
   onUserResponse: (response: string) => void;
-  onEntryPointSelect?: (option: EntryPoint) => void;
   onGenerateStrategy?: () => void;
   onDeferToDeepDive?: (messageContent: string, messageId: string) => void;
   onEndConversation?: () => void;
@@ -43,7 +32,6 @@ export default function ChatInterface({
   conversationId,
   messages,
   onUserResponse,
-  onEntryPointSelect,
   onGenerateStrategy,
   onDeferToDeepDive,
   onEndConversation,
@@ -55,7 +43,6 @@ export default function ChatInterface({
   suggestedQuestion,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
-  const [entryPointSheetOpen, setEntryPointSheetOpen] = useState(false);
 
   // Check if user has started the conversation (any user messages exist)
   const hasUserResponded = messages.some((m) => m.role === 'user');
@@ -70,15 +57,6 @@ export default function ChatInterface({
 
     onUserResponse(userInput);
     setUserInput('');
-  };
-
-  const handleAlternateOptionsClick = () => {
-    setEntryPointSheetOpen(true);
-  };
-
-  const handleEntryPointSelection = (option: EntryPoint) => {
-    setEntryPointSheetOpen(false);
-    onEntryPointSelect?.(option);
   };
 
   return (
@@ -121,17 +99,6 @@ export default function ChatInterface({
               )}
             </div>
 
-            {/* Entry point options link - only show before user has responded */}
-            {message.role === 'assistant' && message.stepNumber === 1 && !hasUserResponded && (
-              <div className="flex justify-start mt-2">
-                <button
-                  onClick={handleAlternateOptionsClick}
-                  className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
-                >
-                  see other options to get started?
-                </button>
-              </div>
-            )}
           </div>
         ))}
 
@@ -238,19 +205,6 @@ export default function ChatInterface({
           </div>
         </form>
       )}
-
-      {/* Entry point selection sheet */}
-      <Sheet open={entryPointSheetOpen} onOpenChange={setEntryPointSheetOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[80vh]">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Choose how to get started</SheetTitle>
-            <SheetDescription>
-              Select an option that works best for you
-            </SheetDescription>
-          </SheetHeader>
-          <EntryPointSelector onSelect={handleEntryPointSelection} />
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
