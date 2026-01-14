@@ -33,7 +33,7 @@ import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import { DeepDiveSheet } from '@/components/deep-dive-sheet'
-import { ChatSheet } from '@/components/chat-sheet'
+import { ChatSheet, GapExploration } from '@/components/chat-sheet'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,6 +162,9 @@ export default function ProjectPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>()
+  const [chatDeepDiveId, setChatDeepDiveId] = useState<string | undefined>()
+  const [chatGapExploration, setChatGapExploration] = useState<GapExploration | undefined>()
+  const [chatResumeConversationId, setChatResumeConversationId] = useState<string | undefined>()
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -540,40 +543,65 @@ export default function ProjectPage() {
                     const totalHidden = (starredConversations.length - visibleStarred.length) +
                       (recentConversations.length - visibleRecent.length)
 
-                    const renderConversationItem = (conv: ConversationSummary) => (
-                      <div
-                        key={conv.id}
-                        className="flex items-center gap-1 p-2 rounded border hover:bg-accent transition-colors text-sm"
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            toggleConversationStar(conv.id, conv.starred)
-                          }}
-                          className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
-                          title={conv.starred ? 'Unstar' : 'Star'}
+                    const renderConversationItem = (conv: ConversationSummary) => {
+                      const isInProgress = conv.status === 'in_progress'
+                      const isExtracted = conv.status === 'extracted' || conv.fragmentCount > 0
+
+                      const handleClick = () => {
+                        if (isInProgress) {
+                          // Resume in-progress conversation in ChatSheet
+                          setChatInitialQuestion(undefined)
+                          setChatDeepDiveId(undefined)
+                          setChatGapExploration(undefined)
+                          setChatResumeConversationId(conv.id)
+                          setChatSheetOpen(true)
+                        }
+                      }
+
+                      const ContentWrapper = isInProgress ? 'button' : Link
+                      const contentProps = isInProgress
+                        ? { onClick: handleClick, className: 'flex-1 min-w-0 mr-1 text-left' }
+                        : { href: `/conversation/${conv.id}`, className: 'flex-1 min-w-0 mr-1' }
+
+                      return (
+                        <div
+                          key={conv.id}
+                          className={`flex items-center gap-1 p-2 rounded border hover:bg-accent transition-colors text-sm ${
+                            isInProgress ? 'cursor-pointer' : ''
+                          }`}
                         >
-                          <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
-                        </button>
-                        <Link
-                          href={`/conversation/${conv.id}`}
-                          className="flex-1 min-w-0 mr-1"
-                        >
-                          <div className="text-xs font-medium truncate">
-                            {conv.title || 'Untitled conversation'}
-                          </div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-2">
-                            <span>{formatShortDate(conv.createdAt)}</span>
-                            {conv.fragmentCount > 0 && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                Analysed
-                              </Badge>
-                            )}
-                          </div>
-                        </Link>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                      </div>
-                    )
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              toggleConversationStar(conv.id, conv.starred)
+                            }}
+                            className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
+                            title={conv.starred ? 'Unstar' : 'Star'}
+                          >
+                            <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
+                          </button>
+                          <ContentWrapper {...contentProps as any}>
+                            <div className="text-xs font-medium truncate">
+                              {conv.title || 'Untitled conversation'}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>{formatShortDate(conv.createdAt)}</span>
+                              {isInProgress ? (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-800">
+                                  In progress
+                                </Badge>
+                              ) : isExtracted ? (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-green-700 border-green-300">
+                                  Analysed
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </ContentWrapper>
+                          <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                        </div>
+                      )
+                    }
 
                     return (
                       <>
@@ -703,6 +731,9 @@ export default function ProjectPage() {
                 <Sparkles className="h-5 w-5 text-green-600" />
                 What Luna Knows
               </CardTitle>
+              <CardDescription className="text-xs">
+                Key themes behind your strategy
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {projectData?.knowledgeSummary ? (
@@ -911,7 +942,7 @@ export default function ProjectPage() {
                                 <span className="font-medium text-sm">{dd.topic}</span>
                                 <Badge
                                   variant={dd.status === 'active' ? 'outline' : 'secondary'}
-                                  className={dd.status === 'active' ? 'text-xs text-amber-600 border-amber-300' : 'text-xs'}
+                                  className={dd.status === 'active' ? 'text-xs text-green-600 border-green-300' : 'text-xs'}
                                 >
                                   {dd.status === 'resolved'
                                     ? 'Resolved'
@@ -936,7 +967,10 @@ export default function ProjectPage() {
                                   title="Chat"
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    router.push(`/?deepDiveId=${dd.id}`)
+                                    setChatInitialQuestion(undefined)
+                                    setChatGapExploration(undefined)
+                                    setChatDeepDiveId(dd.id)
+                                    setChatSheetOpen(true)
                                   }}
                                 >
                                   <MessageSquare className="h-3.5 w-3.5" />
@@ -996,10 +1030,10 @@ export default function ProjectPage() {
                             {/* Dismiss button - full height */}
                             <button
                               onClick={() => dismissItem('deep_dive', dd.id)}
-                              className="px-3 flex items-center justify-center border-l hover:bg-amber-50 dark:hover:bg-amber-950 transition-colors"
+                              className="px-3 flex items-center justify-center border-l hover:bg-green-50 dark:hover:bg-green-950 transition-colors"
                               title="Dismiss"
                             >
-                              <X className="h-4 w-4 text-amber-500" />
+                              <X className="h-4 w-4 text-green-500" />
                             </button>
                           </div>
                         ))}
@@ -1083,13 +1117,23 @@ export default function ProjectPage() {
                       )}
                       {/* Compact action button group */}
                       <div className="flex items-center gap-1 pt-1">
-                        <Link
-                          href={`/?question=${encodeURIComponent(`Tell me more about your ${DIMENSION_LABELS[area.dimension as Tier1Dimension]?.toLowerCase() || area.dimension}`)}`}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2"
+                          title="Chat"
+                          onClick={() => {
+                            setChatDeepDiveId(undefined)
+                            setChatInitialQuestion(undefined)
+                            setChatGapExploration({
+                              dimension: area.dimension,
+                              summary: area.summary || undefined,
+                            })
+                            setChatSheetOpen(true)
+                          }}
                         >
-                          <Button variant="outline" size="sm" className="h-7 px-2" title="Chat">
-                            <MessageSquare className="h-3.5 w-3.5" />
-                          </Button>
-                        </Link>
+                          <MessageSquare className="h-3.5 w-3.5" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1176,8 +1220,19 @@ export default function ProjectPage() {
       <ChatSheet
         projectId={projectId}
         open={chatSheetOpen}
-        onOpenChange={setChatSheetOpen}
+        onOpenChange={(open) => {
+          setChatSheetOpen(open)
+          if (!open) {
+            setChatInitialQuestion(undefined)
+            setChatDeepDiveId(undefined)
+            setChatGapExploration(undefined)
+            setChatResumeConversationId(undefined)
+          }
+        }}
         initialQuestion={chatInitialQuestion}
+        deepDiveId={chatDeepDiveId}
+        gapExploration={chatGapExploration}
+        resumeConversationId={chatResumeConversationId}
       />
 
       {/* Add Deep Dive Dialog */}
