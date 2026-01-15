@@ -958,4 +958,43 @@ Intentional trade-offs made during development. Not tech debt (tracked in Linear
 - Prioritize learning and iteration over perfect design
 - Update this document as architecture changes
 
-**Last major update:** Conversation Lifecycle decision log (2026-01-14)
+**Last major update:** v1.7.0 Beta Launch (2026-01-15)
+
+---
+
+## v1.7.0 Beta Launch Updates
+
+### Deep Dives Feature
+
+Deep Dives are focused research areas within a project. They can originate from:
+- Manual creation by user
+- Automatic suggestion from gaps in dimensional coverage
+- Extraction from conversation themes
+
+**Key relationships:**
+- `Conversation.deepDiveId` - links conversations to deep dives
+- `Document.deepDiveId` - links uploaded documents to deep dives
+- Deep Dive sheet shows filtered artifacts (only items with matching deepDiveId)
+
+### Refresh Strategy
+
+Strategy can be refreshed after accumulating more knowledge:
+- Compare existing fragments vs new (using `knowledgeUpdatedAt` timestamp)
+- Generate change summary highlighting what's new
+- Version chain via `GeneratedOutput.previousOutputId`
+
+### Guest Flow
+
+Unauthenticated users get:
+- Auto-created guest user (cookie-based `guestUserId`)
+- Demo project with pre-seeded data (hydrated from fixtures)
+- Full feature access except: create new project, restore demo
+
+**Fixture bundling:** `outputFileTracingIncludes` in next.config.js ensures fixture JSON files are included in Vercel's standalone build.
+
+### View-Only Conversations
+
+Initial conversations (the original strategy-generating conversation) are view-only to prevent overwriting the original decision stack. Identified by:
+- `deepDiveId = null`
+- `status = 'extracted'`
+- Oldest by `createdAt`

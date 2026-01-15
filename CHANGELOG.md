@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.1] - 2026-01-15
+
+### Added
+- **Refresh Strategy Feature** - Regenerate strategy with new knowledge
+  - Compare existing vs new fragments using `knowledgeUpdatedAt` timestamp
+  - Generate change summary highlighting what's new
+  - Version chain via `GeneratedOutput.previousOutputId`
+
+- **Deep Dive Document Linking** - Documents uploaded from deep dive sheet are linked
+  - `deepDiveId` passed through upload flow
+  - Documents show in deep dive sheet's "Docs & Memos" tab
+
+- **View-Only Initial Conversations** - Original strategy conversation is read-only
+  - Prevents overwriting decision stack by continuing initial conversation
+  - Identified by: no deepDiveId, extracted status, oldest createdAt
+
+- **Early Access Preview Label** - Version badge in sidebar footer
+  - Shows "Early Access Preview v1.7.x" for all users
+  - Replaced demo mode badge
+
+### Changed
+- **Deep Dive Sheet Refactor** - Tabbed layout with Chats and Docs tabs
+  - Removed resolve/dismiss buttons (redundant stubs)
+  - ItemGroup pattern with "show more" for long lists
+  - Consistent styling with Chats module tabs
+
+- **Chat Scroll Anchoring** - Messages container auto-scrolls to latest
+
+### Fixed
+- **Guest User API Routes** - All deep dive and strategy routes now support guest cookies
+- **Demo Seeding in Vercel** - Fixture files bundled via `outputFileTracingIncludes`
+- **Insights Counter** - Fixed "all fragments new" by setting `knowledgeUpdatedAt` after fragment creation
+- **Schema Sync** - `previousOutputId` column added to production database
+
+---
 ## [1.7.0] - 2026-01-14
 
 ### Added
