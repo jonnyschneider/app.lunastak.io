@@ -93,7 +93,6 @@ import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { PaywallModal } from '@/components/PaywallModal'
 import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateDialog'
-import { DemoModeBadge } from '@/components/DemoModeBadge'
 import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
@@ -375,17 +374,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         )}
       </SidebarHeader>
       <SidebarContent>
-        {/* Demo Mode Badge - show for guests above quick actions */}
-        {!session && selectedProject && (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <div className="px-2">
-                <DemoModeBadge />
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
         {/* Quick Actions - show when project selected (both auth and guests) */}
         {selectedProject && (
           <SidebarGroup>
@@ -545,12 +533,13 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       </SidebarContent>
 
       <SidebarFooter>
-        {/* Version and variant indicator for testing/debugging - only shown during active conversation */}
-        {showVariantBadge && experimentVariant && (
-          <div className="px-3 py-1.5 text-[10px] font-mono text-muted-foreground/50 truncate border-t border-border/50">
-            v{process.env.NEXT_PUBLIC_APP_VERSION} · {experimentVariant}
-          </div>
-        )}
+        {/* Early Access Preview label */}
+        <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border/50">
+          <span className="text-muted-foreground/70">Early Access Preview</span>
+          <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/50">
+            v{process.env.NEXT_PUBLIC_APP_VERSION}
+          </span>
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             {session ? (
