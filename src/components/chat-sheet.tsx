@@ -460,6 +460,7 @@ export function ChatSheet({
               traceId={traceId}
               earlyExitOffered={earlyExitOffered}
               suggestedQuestion={suggestedQuestion}
+              isFirstStrategy={!hasExistingStrategy && !deepDiveId && !gapExploration}
             />
           )}
 
