@@ -26,6 +26,7 @@ interface ChatInterfaceProps {
   traceId?: string;
   earlyExitOffered?: boolean;
   suggestedQuestion?: string | null;
+  isFirstStrategy?: boolean;
 }
 
 export default function ChatInterface({
@@ -41,6 +42,7 @@ export default function ChatInterface({
   traceId,
   earlyExitOffered,
   suggestedQuestion,
+  isFirstStrategy = false,
 }: ChatInterfaceProps) {
   const [userInput, setUserInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -69,6 +71,13 @@ export default function ChatInterface({
     <div className="flex flex-col h-full max-w-3xl mx-auto">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* First strategy info banner */}
+        {isFirstStrategy && !isComplete && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-muted-foreground">
+            This is your first strategy chat. I'll let you know when I have enough context to draft your strategy—usually takes 4-6 turns.
+          </div>
+        )}
+
         {messages.map((message) => (
           <div key={message.id}>
             <div
