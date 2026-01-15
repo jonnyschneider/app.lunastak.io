@@ -838,23 +838,43 @@ export default function ProjectPage() {
               )}
               <div className="p-4 pt-3 border-t">
                 <div className="flex w-full">
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-r-none"
-                    onClick={() => setRefreshStrategyDialogOpen(true)}
-                  >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Refresh Strategy
-                  </Button>
-                  <div className="w-px bg-primary-foreground/20" />
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-l-none"
-                    onClick={() => handleFakeDoor('Create from Blank')}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Blank Canvas
-                  </Button>
+                  {(projectData?.strategyOutputs?.length ?? 0) > 0 ? (
+                    <>
+                      <Button
+                        size="sm"
+                        className="flex-1 rounded-r-none"
+                        onClick={() => setRefreshStrategyDialogOpen(true)}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Refresh Strategy
+                      </Button>
+                      <div className="w-px bg-primary-foreground/20" />
+                      <Button
+                        size="sm"
+                        className="flex-1 rounded-l-none"
+                        onClick={() => handleFakeDoor('Create from Blank')}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Blank Canvas
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setChatInitialQuestion(undefined)
+                        setChatDeepDiveId(undefined)
+                        setChatGapExploration(undefined)
+                        setChatResumeConversationId(undefined)
+                        setChatViewOnly(false)
+                        setChatSheetOpen(true)
+                      }}
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Draft First Strategy
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
