@@ -25,8 +25,6 @@ import {
   FileText,
   ArrowRight,
   Loader2,
-  CheckCircle2,
-  X,
   NotebookPen,
 } from 'lucide-react'
 
@@ -60,20 +58,15 @@ interface DeepDiveSheetProps {
   deepDiveId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onResolve: () => void
-  onDismiss: (deepDiveId: string) => void
   onStartChat: (deepDiveId: string) => void
   onUploadDoc: (deepDiveId: string) => void
   onViewConversation: (conversationId: string) => void
-  conversationCount?: number
 }
 
 export function DeepDiveSheet({
   deepDiveId,
   open,
   onOpenChange,
-  onResolve,
-  onDismiss,
   onStartChat,
   onUploadDoc,
   onViewConversation,
@@ -82,7 +75,6 @@ export function DeepDiveSheet({
   const [conversations, setConversations] = useState<DeepDiveConversation[]>([])
   const [documents, setDocuments] = useState<DeepDiveDocument[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isResolving, setIsResolving] = useState(false)
   const [showAllDocs, setShowAllDocs] = useState(false)
   const [showAllChats, setShowAllChats] = useState(false)
 
@@ -107,26 +99,6 @@ export function DeepDiveSheet({
       console.error('Error fetching deep dive:', err)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleResolve = async () => {
-    if (!deepDiveId) return
-    setIsResolving(true)
-    try {
-      const response = await fetch(`/api/deep-dive/${deepDiveId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'resolved' }),
-      })
-      if (response.ok) {
-        onOpenChange(false)
-        onResolve()
-      }
-    } catch (err) {
-      console.error('Error resolving deep dive:', err)
-    } finally {
-      setIsResolving(false)
     }
   }
 
@@ -161,36 +133,6 @@ export function DeepDiveSheet({
             {deepDive.notes && (
               <div className="mt-4 p-3 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">{deepDive.notes}</p>
-              </div>
-            )}
-
-            {/* Header actions - minimal */}
-            {deepDive.status === 'active' && (
-              <div className="mt-4 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleResolve}
-                  disabled={isResolving}
-                >
-                  {isResolving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  Resolve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    onOpenChange(false)
-                    onDismiss(deepDive.id)
-                  }}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Dismiss
-                </Button>
               </div>
             )}
 
