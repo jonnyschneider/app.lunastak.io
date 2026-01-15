@@ -1315,8 +1315,6 @@ export default function ProjectPage() {
         deepDiveId={selectedDeepDiveId}
         open={deepDiveSheetOpen}
         onOpenChange={setDeepDiveSheetOpen}
-        onResolve={fetchProjectData}
-        onDismiss={(id) => dismissItem('deep_dive', id)}
         onStartChat={handleStartDeepDiveChat}
         onUploadDoc={handleUploadToDeepDive}
         onViewConversation={(conversationId) => {
