@@ -21,7 +21,11 @@ const nextConfig = {
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
     NEXTAUTH_URL: getNextAuthUrl(),
-  }
+  },
+  // Include fixture files for runtime seeding
+  outputFileTracingIncludes: {
+    '/api/auth/[...nextauth]': ['./scripts/seed/fixtures/**/*.json'],
+  },
 }
 
 module.exports = nextConfig
