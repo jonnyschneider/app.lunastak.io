@@ -79,6 +79,7 @@ interface ConversationSummary {
   fragmentCount: number
   starred: boolean
   starredAt: string | null
+  deepDiveId: string | null
 }
 
 // Format date as "13 Jan '26"
@@ -215,6 +216,7 @@ export default function ProjectPage() {
   const [chatDeepDiveId, setChatDeepDiveId] = useState<string | undefined>()
   const [chatGapExploration, setChatGapExploration] = useState<GapExploration | undefined>()
   const [chatResumeConversationId, setChatResumeConversationId] = useState<string | undefined>()
+  const [chatViewOnly, setChatViewOnly] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -320,6 +322,7 @@ export default function ProjectPage() {
     setChatInitialQuestion(undefined) // Let user guide direction
     setChatGapExploration(undefined)
     setChatResumeConversationId(undefined)
+    setChatViewOnly(false)
     setChatSheetOpen(true)
   }
 
@@ -612,12 +615,20 @@ export default function ProjectPage() {
                     c => c.status === 'in_progress'
                   )
 
+                  // Find the initial conversation (oldest extracted conversation without deepDiveId)
+                  // This is the original strategy-generating conversation - view only
+                  const initialConversationId = projectData.conversations
+                    .filter(c => !c.deepDiveId && c.status === 'extracted')
+                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id
+
                   const renderConversationItem = (conv: ConversationSummary, index: number) => {
+                    const isInitialConversation = conv.id === initialConversationId
                     const handleClick = () => {
                       setChatInitialQuestion(undefined)
                       setChatDeepDiveId(undefined)
                       setChatGapExploration(undefined)
                       setChatResumeConversationId(conv.id)
+                      setChatViewOnly(isInitialConversation)
                       setChatSheetOpen(true)
                     }
 
@@ -722,6 +733,10 @@ export default function ProjectPage() {
                   className="w-full"
                   onClick={() => {
                     setChatInitialQuestion(undefined)
+                    setChatDeepDiveId(undefined)
+                    setChatGapExploration(undefined)
+                    setChatResumeConversationId(undefined)
+                    setChatViewOnly(false)
                     setChatSheetOpen(true)
                   }}
                 >
@@ -1147,6 +1162,10 @@ export default function ProjectPage() {
                           className="cursor-pointer hover:bg-accent/50"
                           onClick={() => {
                             setChatInitialQuestion(question.description)
+                            setChatDeepDiveId(undefined)
+                            setChatGapExploration(undefined)
+                            setChatResumeConversationId(undefined)
+                            setChatViewOnly(false)
                             setChatSheetOpen(true)
                           }}
                         >
@@ -1221,6 +1240,8 @@ export default function ProjectPage() {
                             dimension: area.dimension,
                             summary: area.summary || undefined,
                           })
+                          setChatResumeConversationId(undefined)
+                          setChatViewOnly(false)
                           setChatSheetOpen(true)
                         }}
                       >
@@ -1301,6 +1322,7 @@ export default function ProjectPage() {
             setChatDeepDiveId(undefined)
             setChatGapExploration(undefined)
             setChatResumeConversationId(undefined)
+            setChatViewOnly(false)
             // Refresh data after conversation to update knowledge base
             fetchProjectData()
           }
@@ -1310,6 +1332,7 @@ export default function ProjectPage() {
         gapExploration={chatGapExploration}
         resumeConversationId={chatResumeConversationId}
         hasExistingStrategy={(projectData?.strategyOutputs?.length ?? 0) > 0}
+        viewOnly={chatViewOnly}
       />
 
       {/* Add Deep Dive Dialog */}
@@ -1334,6 +1357,7 @@ export default function ProjectPage() {
           setChatDeepDiveId(undefined)
           setChatGapExploration(undefined)
           setChatResumeConversationId(conversationId)
+          setChatViewOnly(false)
           setChatSheetOpen(true)
         }}
       />
