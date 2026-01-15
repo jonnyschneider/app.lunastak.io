@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File | null
     const projectId = formData.get('projectId') as string
     const uploadContext = formData.get('uploadContext') as string | null
+    const deepDiveId = formData.get('deepDiveId') as string | null
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
         fileType,
         fileSizeBytes: file.size,
         uploadContext: uploadContext || null,
+        deepDiveId: deepDiveId || null,
         status: 'pending',
       },
     })
