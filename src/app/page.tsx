@@ -26,17 +26,25 @@ export default async function Page({
 
   // Authenticated user - redirect to their first project
   if (session?.user?.id) {
-    const project = await prisma.project.findFirst({
+    let project = await prisma.project.findFirst({
       where: { userId: session.user.id, status: 'active' },
       orderBy: { createdAt: 'asc' },
       select: { id: true },
     });
 
-    if (project) {
-      redirect(`/project/${project.id}`);
+    if (!project) {
+      // No projects - create an empty one
+      project = await prisma.project.create({
+        data: {
+          userId: session.user.id,
+          name: 'My Strategy',
+          status: 'active',
+        },
+        select: { id: true },
+      });
     }
-    // No projects - redirect to empty project creation flow
-    redirect('/projects/new');
+
+    redirect(`/project/${project.id}`);
   }
 
   // Guest user flow
