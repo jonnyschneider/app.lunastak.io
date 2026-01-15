@@ -21,6 +21,7 @@ interface DocumentUploadDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onUploadComplete: () => void
+  deepDiveId?: string
 }
 
 type UploadState = 'idle' | 'selected' | 'uploading' | 'processing' | 'complete' | 'error'
@@ -33,6 +34,7 @@ export function DocumentUploadDialog({
   open,
   onOpenChange,
   onUploadComplete,
+  deepDiveId,
 }: DocumentUploadDialogProps) {
   const { data: session } = useSession()
   const [state, setState] = useState<UploadState>('idle')
@@ -88,6 +90,9 @@ export function DocumentUploadDialog({
       formData.append('file', selectedFile)
       formData.append('projectId', projectId)
       formData.append('uploadContext', uploadContext)
+      if (deepDiveId) {
+        formData.append('deepDiveId', deepDiveId)
+      }
 
       setProgress(30)
 

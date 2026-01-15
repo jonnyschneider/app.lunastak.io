@@ -209,6 +209,7 @@ export default function ProjectPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [uploadDeepDiveId, setUploadDeepDiveId] = useState<string | undefined>()
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>()
   const [chatDeepDiveId, setChatDeepDiveId] = useState<string | undefined>()
@@ -323,8 +324,9 @@ export default function ProjectPage() {
   }
 
   const handleUploadToDeepDive = (deepDiveId: string) => {
-    // Close sheet and open upload dialog
+    // Close sheet and open upload dialog with deep dive context
     setDeepDiveSheetOpen(false)
+    setUploadDeepDiveId(deepDiveId)
     setUploadDialogOpen(true)
   }
 
@@ -442,13 +444,17 @@ export default function ProjectPage() {
         <ProjectEmptyState
           projectId={projectId}
           onStartConversation={() => router.push(`/?projectId=${projectId}`)}
-          onUploadDocument={() => setUploadDialogOpen(true)}
+          onUploadDocument={() => {
+            setUploadDeepDiveId(undefined)
+            setUploadDialogOpen(true)
+          }}
         />
         <DocumentUploadDialog
           projectId={projectId}
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
           onUploadComplete={() => fetchProjectData()}
+          deepDiveId={uploadDeepDiveId}
         />
       </AppLayout>
     )
@@ -563,7 +569,10 @@ export default function ProjectPage() {
                   <Button
                     size="sm"
                     className="flex-1 rounded-r-none"
-                    onClick={() => setUploadDialogOpen(true)}
+                    onClick={() => {
+                      setUploadDeepDiveId(undefined)
+                      setUploadDialogOpen(true)
+                    }}
                   >
                     <Upload className="h-3 w-3 mr-1" />
                     Upload Doc
@@ -1278,6 +1287,7 @@ export default function ProjectPage() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUploadComplete={fetchProjectData}
+        deepDiveId={uploadDeepDiveId}
       />
 
       {/* Chat Sheet */}
