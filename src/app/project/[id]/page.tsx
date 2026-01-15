@@ -446,7 +446,14 @@ export default function ProjectPage() {
       <AppLayout>
         <ProjectEmptyState
           projectId={projectId}
-          onStartConversation={() => router.push(`/?projectId=${projectId}`)}
+          onStartConversation={() => {
+            setChatInitialQuestion(undefined)
+            setChatDeepDiveId(undefined)
+            setChatGapExploration(undefined)
+            setChatResumeConversationId(undefined)
+            setChatViewOnly(false)
+            setChatSheetOpen(true)
+          }}
           onUploadDocument={() => {
             setUploadDeepDiveId(undefined)
             setUploadDialogOpen(true)
@@ -458,6 +465,27 @@ export default function ProjectPage() {
           onOpenChange={setUploadDialogOpen}
           onUploadComplete={() => fetchProjectData()}
           deepDiveId={uploadDeepDiveId}
+        />
+        <ChatSheet
+          projectId={projectId}
+          open={chatSheetOpen}
+          onOpenChange={(open) => {
+            setChatSheetOpen(open)
+            if (!open) {
+              setChatInitialQuestion(undefined)
+              setChatDeepDiveId(undefined)
+              setChatGapExploration(undefined)
+              setChatResumeConversationId(undefined)
+              setChatViewOnly(false)
+              fetchProjectData()
+            }
+          }}
+          initialQuestion={chatInitialQuestion}
+          deepDiveId={chatDeepDiveId}
+          gapExploration={chatGapExploration}
+          resumeConversationId={chatResumeConversationId}
+          hasExistingStrategy={false}
+          viewOnly={chatViewOnly}
         />
       </AppLayout>
     )
