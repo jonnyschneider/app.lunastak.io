@@ -168,6 +168,7 @@ export async function GET(
         fragmentCount: conv.fragments.length,
         starred: hasStarredTrace,
         starredAt: hasStarredTrace ? conv.traces[0].starredAt?.toISOString() || null : null,
+        deepDiveId: conv.deepDiveId || null,
       }
     })
 

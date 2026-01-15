@@ -56,6 +56,7 @@ interface ChatSheetProps {
   gapExploration?: GapExploration
   resumeConversationId?: string
   hasExistingStrategy?: boolean
+  viewOnly?: boolean
 }
 
 export function ChatSheet({
@@ -67,6 +68,7 @@ export function ChatSheet({
   gapExploration,
   resumeConversationId,
   hasExistingStrategy = false,
+  viewOnly = false,
 }: ChatSheetProps) {
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
@@ -80,7 +82,7 @@ export function ChatSheet({
   const [experimentVariant, setExperimentVariant] = useState<string>('baseline-v1')
 
   // Derived state
-  const isReadOnly = conversationStatus === 'extracted'
+  const isReadOnly = conversationStatus === 'extracted' || viewOnly
 
   // Extraction state
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
