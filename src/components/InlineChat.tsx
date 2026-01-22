@@ -92,12 +92,13 @@ export function InlineChat({ projectId, initialMessage, onConversationStart }: I
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/conversation/respond', {
+      const response = await fetch('/api/conversation/continue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: convId,
-          response: content,
+          userResponse: content,
+          currentPhase,
         }),
       })
 
