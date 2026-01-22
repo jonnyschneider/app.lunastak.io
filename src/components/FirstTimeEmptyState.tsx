@@ -42,9 +42,13 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
     setUploadDialogOpen(false)
     if (fileName) {
       setUploadedFileName(fileName)
+      setChatStarted(true)
+      // Don't call onUploadComplete here - it would refresh data and kick us out
+      // of FirstTimeEmptyState. Data will refresh when conversation completes.
+    } else {
+      // No file name means upload failed or was cancelled - refresh data
+      onUploadComplete?.()
     }
-    setChatStarted(true)
-    onUploadComplete?.()
   }
 
   return (
