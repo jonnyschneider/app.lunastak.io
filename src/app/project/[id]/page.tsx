@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/app-layout'
-import { ProjectEmptyState } from '@/components/ProjectEmptyState'
+import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -444,48 +444,9 @@ export default function ProjectPage() {
   if (isEmpty && projectData) {
     return (
       <AppLayout>
-        <ProjectEmptyState
+        <FirstTimeEmptyState
           projectId={projectId}
-          onStartConversation={() => {
-            setChatInitialQuestion(undefined)
-            setChatDeepDiveId(undefined)
-            setChatGapExploration(undefined)
-            setChatResumeConversationId(undefined)
-            setChatViewOnly(false)
-            setChatSheetOpen(true)
-          }}
-          onUploadDocument={() => {
-            setUploadDeepDiveId(undefined)
-            setUploadDialogOpen(true)
-          }}
-        />
-        <DocumentUploadDialog
-          projectId={projectId}
-          open={uploadDialogOpen}
-          onOpenChange={setUploadDialogOpen}
           onUploadComplete={() => fetchProjectData()}
-          deepDiveId={uploadDeepDiveId}
-        />
-        <ChatSheet
-          projectId={projectId}
-          open={chatSheetOpen}
-          onOpenChange={(open) => {
-            setChatSheetOpen(open)
-            if (!open) {
-              setChatInitialQuestion(undefined)
-              setChatDeepDiveId(undefined)
-              setChatGapExploration(undefined)
-              setChatResumeConversationId(undefined)
-              setChatViewOnly(false)
-              fetchProjectData()
-            }
-          }}
-          initialQuestion={chatInitialQuestion}
-          deepDiveId={chatDeepDiveId}
-          gapExploration={chatGapExploration}
-          resumeConversationId={chatResumeConversationId}
-          hasExistingStrategy={false}
-          viewOnly={chatViewOnly}
         />
       </AppLayout>
     )
