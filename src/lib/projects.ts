@@ -38,6 +38,41 @@ export async function createGuestUser() {
 }
 
 /**
+ * Create an empty project for a guest user (no demo data)
+ */
+export async function createEmptyGuestProject(userId: string): Promise<string> {
+  const project = await prisma.project.create({
+    data: {
+      userId,
+      name: 'My Strategy',
+      status: 'active',
+    },
+  })
+
+  // Initialize synthesis records
+  const records = TIER_1_DIMENSIONS.map(dimension => ({
+    projectId: project.id,
+    dimension,
+    summary: null,
+    keyThemes: [],
+    keyQuotes: [],
+    gaps: [],
+    contradictions: [],
+    confidence: 'LOW' as const,
+    fragmentCount: 0,
+    lastSynthesizedAt: new Date(),
+    synthesizedBy: 'init',
+  }))
+
+  await prisma.dimensionalSynthesis.createMany({
+    data: records,
+    skipDuplicates: true,
+  })
+
+  return project.id
+}
+
+/**
  * Initialize dimensional synthesis records for a project
  * Creates empty synthesis records for all 11 tier-1 dimensions
  */
