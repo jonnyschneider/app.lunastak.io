@@ -63,8 +63,10 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
 
         {/* Inline Chat */}
         <InlineChat
+          key={uploadedFileName || 'default'}
           projectId={projectId}
           initialMessage={uploadedFileName ? `I've uploaded ${uploadedFileName}. Let's discuss it.` : undefined}
+          autoStart={!!uploadedFileName}
           onConversationStart={() => setChatStarted(true)}
         />
 
