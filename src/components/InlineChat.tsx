@@ -16,16 +16,18 @@ interface InlineMessage {
 interface InlineChatProps {
   projectId: string
   initialMessage?: string
+  autoStart?: boolean
   onConversationStart?: (conversationId: string) => void
 }
 
-export function InlineChat({ projectId, initialMessage, onConversationStart }: InlineChatProps) {
+export function InlineChat({ projectId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
   const [input, setInput] = useState(initialMessage || '')
   const [messages, setMessages] = useState<InlineMessage[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('INITIAL')
+  const [hasAutoStarted, setHasAutoStarted] = useState(false)
 
   // Transition to sheet for extraction
   const [showSheet, setShowSheet] = useState(false)
@@ -36,6 +38,14 @@ export function InlineChat({ projectId, initialMessage, onConversationStart }: I
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Auto-start conversation if autoStart is true and we have an initial message
+  useEffect(() => {
+    if (autoStart && initialMessage && !hasAutoStarted && !conversationId) {
+      setHasAutoStarted(true)
+      startConversation(initialMessage)
+    }
+  }, [autoStart, initialMessage, hasAutoStarted, conversationId])
 
   // Check if we should transition to sheet (ready for extraction)
   const shouldTransitionToSheet = currentPhase === 'EXTRACTION' ||
