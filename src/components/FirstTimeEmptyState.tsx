@@ -17,6 +17,7 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [isLoadingDemo, setIsLoadingDemo] = useState(false)
   const [chatStarted, setChatStarted] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
 
   const handleSeeExample = async () => {
     setIsLoadingDemo(true)
@@ -37,8 +38,11 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
     }
   }
 
-  const handleUploadComplete = () => {
+  const handleUploadComplete = (fileName?: string) => {
     setUploadDialogOpen(false)
+    if (fileName) {
+      setUploadedFileName(fileName)
+    }
     setChatStarted(true)
     onUploadComplete?.()
   }
@@ -60,6 +64,7 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
         {/* Inline Chat */}
         <InlineChat
           projectId={projectId}
+          initialMessage={uploadedFileName ? `I've uploaded ${uploadedFileName}. Let's discuss it.` : undefined}
           onConversationStart={() => setChatStarted(true)}
         />
 
