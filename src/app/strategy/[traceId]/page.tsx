@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { AppLayout } from '@/components/layout/app-layout'
 import StrategyDisplay from '@/components/StrategyDisplay'
+import { GuestSaveBanner } from '@/components/GuestSaveBanner'
 import { StrategyStatements } from '@/lib/types'
 
 export default function StrategyViewPage() {
@@ -17,6 +19,9 @@ export default function StrategyViewPage() {
   const [timestamp, setTimestamp] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const { data: session } = useSession()
+  const isGuest = !session
 
   useEffect(() => {
     fetchStrategy()
@@ -91,6 +96,9 @@ export default function StrategyViewPage() {
             {timestamp ? `Generated ${new Date(timestamp).toLocaleDateString()}` : 'Historical strategy'}
           </p>
         </div>
+
+        {/* Guest Save Banner */}
+        {isGuest && <GuestSaveBanner />}
 
         {/* Strategy Content */}
         {strategy && conversationId && (
