@@ -20,7 +20,7 @@ interface DocumentUploadDialogProps {
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUploadComplete: () => void
+  onUploadComplete: (fileName?: string) => void
   deepDiveId?: string
 }
 
@@ -119,7 +119,7 @@ export function DocumentUploadDialog({
 
       // Close dialog and refresh after a brief delay
       setTimeout(() => {
-        onUploadComplete()
+        onUploadComplete(selectedFile.name)
         onOpenChange(false)
         resetState()
       }, 1000)
