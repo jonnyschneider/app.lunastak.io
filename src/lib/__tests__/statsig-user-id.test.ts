@@ -163,12 +163,13 @@ describe('Edge cases', () => {
     expect(statsigCalls).toHaveLength(0)
   })
 
-  it('should return baseline variant when Statsig unavailable', async () => {
+  it('should return default variant when Statsig unavailable', async () => {
     delete process.env.STATSIG_SERVER_SECRET_KEY
 
     const variant = await getExperimentVariant('user-123')
 
-    expect(variant).toBe('baseline-v1')
+    // Default fallback is emergent-extraction-e1a when Statsig is unavailable
+    expect(variant).toBe('emergent-extraction-e1a')
   })
 
   it('should reject invalid variant overrides', async () => {
