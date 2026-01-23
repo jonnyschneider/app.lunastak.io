@@ -6,7 +6,9 @@ import { useSession } from 'next-auth/react'
 import { AppLayout } from '@/components/layout/app-layout'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { GuestSaveBanner } from '@/components/GuestSaveBanner'
-import { StrategyStatements } from '@/lib/types'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { StrategyStatements, ExtractedContextVariant } from '@/lib/types'
+import { LunasThinking } from '@/components/LunasThinking'
 
 export default function StrategyViewPage() {
   const params = useParams()
@@ -14,6 +16,7 @@ export default function StrategyViewPage() {
   const traceId = params.traceId as string
 
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
+  const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
   const [thoughts, setThoughts] = useState<string>('')
   const [conversationId, setConversationId] = useState<string>('')
   const [timestamp, setTimestamp] = useState<string | null>(null)
@@ -25,10 +28,19 @@ export default function StrategyViewPage() {
 
   useEffect(() => {
     fetchStrategy()
+
+    // Re-fetch when session transfer completes (guest → authenticated)
+    const handleStrategySaved = () => {
+      console.log('[StrategyPage] Refreshing after session transfer')
+      fetchStrategy()
+    }
+    window.addEventListener('strategySaved', handleStrategySaved)
+    return () => window.removeEventListener('strategySaved', handleStrategySaved)
   }, [traceId])
 
   const fetchStrategy = async () => {
     setIsLoading(true)
+    setError(null) // Clear previous error on retry
     try {
       const response = await fetch(`/api/trace/${traceId}`)
 
@@ -45,6 +57,7 @@ export default function StrategyViewPage() {
 
       const data = await response.json()
       setStrategy(data.output)
+      setExtractedContext(data.extractedContext || null)
       setThoughts(data.claudeThoughts || '')
       setConversationId(data.conversationId)
       setTimestamp(data.timestamp)
@@ -86,29 +99,76 @@ export default function StrategyViewPage() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-6 py-8 space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Decision Stack
-          </h1>
-          <p className="text-muted-foreground">
-            {timestamp ? `Generated ${new Date(timestamp).toLocaleDateString()}` : 'Historical strategy'}
-          </p>
-        </div>
+      <div className="container mx-auto px-6 py-6">
+        {/* Tabbed Content */}
+        <Tabs defaultValue="strategy" className="w-full">
+          {/* Line-style tabs */}
+          <TabsList className="h-10 w-full justify-center bg-transparent p-0 gap-8 border-b">
+            <TabsTrigger
+              value="strategy"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              Your Strategy
+            </TabsTrigger>
+            <TabsTrigger
+              value="thinking"
+              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              Luna&apos;s Thinking
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Guest Save Banner */}
-        {isGuest && <GuestSaveBanner />}
+          <TabsContent value="strategy" className="mt-8">
+            {/* Guest Save Banner */}
+            {isGuest && <GuestSaveBanner />}
 
-        {/* Strategy Content */}
-        {strategy && conversationId && (
-          <StrategyDisplay
-            strategy={strategy}
-            thoughts={thoughts}
-            conversationId={conversationId}
-            traceId={traceId}
-          />
-        )}
+            {/* Decision Stack Card */}
+            <div className="max-w-6xl mx-auto rounded-lg overflow-hidden border border-border shadow-sm">
+              {/* Branded Header */}
+              <div className="bg-[#0A2933] p-8">
+                <div className="flex items-center justify-between">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/Decision Stack Logo.svg"
+                    alt="Decision Stack"
+                    className="h-16"
+                  />
+                  <a
+                    href="https://www.thedecisionstack.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#E0FF4F] text-sm hover:text-white transition-colors"
+                  >
+                    Learn more about The Decision Stack →
+                  </a>
+                </div>
+              </div>
+
+              {/* Strategy Content */}
+              <div className="bg-[#EEF8FC] p-6">
+                {timestamp && (
+                  <p className="text-center text-xs text-gray-400 mb-6">
+                    Generated {new Date(timestamp).toLocaleDateString()}
+                  </p>
+                )}
+                {strategy && conversationId && (
+                  <StrategyDisplay
+                    strategy={strategy}
+                    conversationId={conversationId}
+                    traceId={traceId}
+                  />
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="thinking" className="mt-8">
+            <LunasThinking
+              extractedContext={extractedContext}
+              thoughts={thoughts}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   )

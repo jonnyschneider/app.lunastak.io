@@ -3,23 +3,16 @@
 import { useMemo, useState } from 'react';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { FakeDoorDialog } from './FakeDoorDialog';
 import { InfoDialog } from './InfoDialog';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
-  thoughts?: string;
   conversationId: string;
   traceId: string;
 }
 
-export default function StrategyDisplay({ strategy, thoughts, conversationId, traceId }: StrategyDisplayProps) {
+export default function StrategyDisplay({ strategy, conversationId, traceId }: StrategyDisplayProps) {
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const [fakeDoorConfig, setFakeDoorConfig] = useState<{
     name: string;
@@ -109,37 +102,19 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Strategic Thinking Accordion */}
-      {thoughts && (
-        <Accordion type="single" collapsible className="bg-muted border border-border rounded-lg">
-          <AccordionItem value="thinking" className="border-0">
-            <AccordionTrigger className="px-4 hover:no-underline">
-              <span className="font-semibold text-foreground">
-                How to talk to this strategy
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <p className="text-muted-foreground whitespace-pre-wrap text-sm">
-                {thoughts}
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      )}
-
+    <div className="space-y-6">
       {/* Strategy Output */}
       <div className="space-y-4">
         {/* Vision Card */}
-        <div className="bg-primary rounded-lg p-6 shadow-sm relative group">
+        <div className="bg-white border border-[#0A2933] rounded-lg p-6 relative group">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-primary-foreground/70 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-[#0A2933]/70 uppercase tracking-wide">
               Vision
             </h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => showInfoModal('Vision', 'A Vision statement describes your aspirational future state (3+ years). It should be customer-centric, specific, and inspiring but grounded in reality.\n\n**Like this...**\nTo organize the world\'s information and make it universally accessible and useful\n\n**Not this...**\nTo be the best-in-class solution provider')}
-                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
+                className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors"
                 title="Learn about Vision statements"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -148,7 +123,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
               <button
                 onClick={() => handleFakeDoor('Edit Vision')}
-                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+                className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit Vision"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,21 +132,21 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <p className="text-lg font-medium text-primary-foreground leading-relaxed">
+          <p className="text-lg font-medium text-[#0A2933] leading-relaxed">
             {strategy.vision}
           </p>
         </div>
 
         {/* Strategy Card */}
-        <div className="bg-primary/80 rounded-lg p-6 shadow-sm relative group">
+        <div className="bg-white border border-[#0A2933] rounded-lg p-6 relative group">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-primary-foreground/70 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-[#0A2933]/70 uppercase tracking-wide">
               Strategy
             </h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => showInfoModal('Strategy', 'A Strategy statement describes your coherent set of choices for achieving the vision (12-18 months). It should provide direction and alignment without being tactical.\n\n**Like this...**\nTo capture an unrivalled store of data, understand it, and leverage it to better deliver what users want, when they want it.\n\n**Not this...**\nProvide innovative solutions to customers')}
-                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors"
+                className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors"
                 title="Learn about Strategy statements"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -180,7 +155,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
               <button
                 onClick={() => handleFakeDoor('Edit Strategy')}
-                className="text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+                className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit Strategy"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +164,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <p className="text-lg font-medium text-primary-foreground leading-relaxed">
+          <p className="text-lg font-medium text-[#0A2933] leading-relaxed">
             {strategy.strategy}
           </p>
         </div>
@@ -216,11 +191,11 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
             {objectives.map((objective) => (
               <div
                 key={objective.id}
-                className="bg-card border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative group"
+                className="bg-white border border-[#0A2933] rounded-lg p-4 hover:shadow-md transition-shadow relative group"
               >
                 {/* Timeframe badge - top left */}
                 {objective.metric.timeframe && (
-                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded">
+                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
                     {objective.metric.timeframe}
                   </span>
                 )}
@@ -228,7 +203,7 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 {/* Edit button - top right */}
                 <button
                   onClick={() => handleFakeDoor('Edit Objective')}
-                  className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                  className="absolute top-3 right-3 text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
                   title="Edit Objective"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,13 +212,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
                 </button>
 
                 {/* Objective text */}
-                <p className="text-sm font-medium text-foreground mb-3 mt-6">
+                <p className="text-sm font-medium text-[#0A2933] mb-3 mt-6">
                   {objective.pithy}
                 </p>
 
                 {/* Metric information */}
                 {objective.metric.direction && objective.metric.metricName && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-[#7F556D]">
                     <span>
                       {objective.metric.direction === 'increase' ? '↑' : '↓'}
                     </span>
@@ -283,13 +258,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
+          <div className="bg-white border border-dashed border-[#0A2933] rounded-lg p-12 text-center">
             <p className="text-muted-foreground mb-4">
               Define opportunities that support your objectives
             </p>
             <button
               onClick={() => handleFakeDoor('Create Opportunities')}
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="px-6 py-2 bg-[#E0FF4F] text-[#0A2933] font-medium rounded-lg hover:bg-[#E0FF4F]/80 transition-colors"
             >
               Create Opportunities
             </button>
@@ -314,13 +289,13 @@ export default function StrategyDisplay({ strategy, thoughts, conversationId, tr
               </button>
             </div>
           </div>
-          <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
+          <div className="bg-white border border-dashed border-[#0A2933] rounded-lg p-12 text-center">
             <p className="text-muted-foreground mb-4">
               Define principles that guide your decision-making
             </p>
             <button
               onClick={() => handleFakeDoor('Define Principles')}
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="px-6 py-2 bg-[#E0FF4F] text-[#0A2933] font-medium rounded-lg hover:bg-[#E0FF4F]/80 transition-colors"
             >
               Define Principles
             </button>

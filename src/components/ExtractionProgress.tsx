@@ -1,5 +1,6 @@
 'use client';
 
+// Extraction steps
 export type ExtractionStep =
   | 'starting'
   | 'extracting_themes'
@@ -9,12 +10,24 @@ export type ExtractionStep =
   | 'complete'
   | 'error';
 
+// Generation steps (from streaming generate API)
+export type GenerationStep =
+  | 'preparing'
+  | 'generating'
+  | 'saving'
+  | 'complete'
+  | 'error';
+
+// Combined type for the progress component
+export type ProgressStep = ExtractionStep | GenerationStep;
+
 interface StepConfig {
   title: string;
   description: string;
 }
 
-const STEP_MESSAGES: Record<ExtractionStep, StepConfig> = {
+const STEP_MESSAGES: Record<ProgressStep, StepConfig> = {
+  // Extraction steps
   starting: {
     title: 'Getting ready',
     description: 'Preparing to analyze your conversation',
@@ -35,9 +48,23 @@ const STEP_MESSAGES: Record<ExtractionStep, StepConfig> = {
     title: 'Saving your insights',
     description: 'Preserving what we learned for your strategy',
   },
+  // Generation steps
+  preparing: {
+    title: 'Preparing context',
+    description: 'Gathering your insights for strategy generation',
+  },
+  generating: {
+    title: 'Generating your strategy',
+    description: 'Crafting your vision, strategy, and objectives',
+  },
+  saving: {
+    title: 'Saving your strategy',
+    description: 'Preserving your decision stack',
+  },
+  // Shared steps
   complete: {
     title: 'All done!',
-    description: 'Your summary is ready',
+    description: 'Your strategy is ready',
   },
   error: {
     title: 'Something went wrong',
@@ -45,16 +72,30 @@ const STEP_MESSAGES: Record<ExtractionStep, StepConfig> = {
   },
 };
 
+type ProgressMode = 'extraction' | 'generation';
+
 interface ExtractionProgressProps {
-  currentStep: ExtractionStep;
+  currentStep: ProgressStep;
   error?: string;
+  mode?: ProgressMode;
 }
 
-export function ExtractionProgress({ currentStep, error }: ExtractionProgressProps) {
+const EXTRACTION_STEPS = ['extracting_themes', 'analyzing_dimensions', 'generating_summary', 'saving_insights'] as const;
+const EXTRACTION_ORDER = ['starting', 'extracting_themes', 'analyzing_dimensions', 'generating_summary', 'saving_insights', 'complete'] as const;
+
+const GENERATION_STEPS = ['preparing', 'generating', 'saving'] as const;
+const GENERATION_ORDER = ['preparing', 'generating', 'saving', 'complete'] as const;
+
+export function ExtractionProgress({ currentStep, error, mode = 'extraction' }: ExtractionProgressProps) {
   const stepConfig = STEP_MESSAGES[currentStep];
 
   const isError = currentStep === 'error';
   const isComplete = currentStep === 'complete';
+  const isGenerating = mode === 'generation';
+
+  // Determine which steps to show based on mode
+  const progressSteps = isGenerating ? GENERATION_STEPS : EXTRACTION_STEPS;
+  const stepOrder = isGenerating ? GENERATION_ORDER : EXTRACTION_ORDER;
 
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -68,10 +109,9 @@ export function ExtractionProgress({ currentStep, error }: ExtractionProgressPro
           {!isComplete && !isError && (
             <div className="mb-6">
               <div className="flex justify-center space-x-1.5">
-                {['extracting_themes', 'analyzing_dimensions', 'generating_summary', 'saving_insights'].map((step) => {
-                  const stepOrder = ['starting', 'extracting_themes', 'analyzing_dimensions', 'generating_summary', 'saving_insights', 'complete'];
-                  const currentIdx = stepOrder.indexOf(currentStep);
-                  const stepIdx = stepOrder.indexOf(step);
+                {progressSteps.map((step) => {
+                  const currentIdx = stepOrder.indexOf(currentStep as any);
+                  const stepIdx = stepOrder.indexOf(step as any);
                   const isActive = stepIdx === currentIdx;
                   const isDone = stepIdx < currentIdx;
 

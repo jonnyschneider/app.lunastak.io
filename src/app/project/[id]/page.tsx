@@ -16,19 +16,31 @@ import {
   Plus,
   Upload,
   Loader2,
-  Sparkles,
   Lightbulb,
   AlertCircle,
   CheckCircle2,
   X,
-  MoreHorizontal,
   Crosshair,
-  Database,
   Star,
   NotebookPen,
   RefreshCw,
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
+
+// Dimension display names
+const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
+  CUSTOMER_MARKET: 'Customer & Market',
+  PROBLEM_OPPORTUNITY: 'Problem & Opportunity',
+  VALUE_PROPOSITION: 'Value Proposition',
+  DIFFERENTIATION_ADVANTAGE: 'Differentiation',
+  COMPETITIVE_LANDSCAPE: 'Competition',
+  BUSINESS_MODEL_ECONOMICS: 'Business Model',
+  GO_TO_MARKET: 'Go-to-Market',
+  PRODUCT_EXPERIENCE: 'Product & Experience',
+  CAPABILITIES_ASSETS: 'Capabilities',
+  RISKS_CONSTRAINTS: 'Risks & Constraints',
+  STRATEGIC_INTENT: 'Strategic Intent',
+}
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import { DeepDiveSheet } from '@/components/deep-dive-sheet'
@@ -52,6 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
+import { LunasMemoryHeader } from '@/components/LunasMemoryHeader'
 import {
   Dialog,
   DialogContent,
@@ -139,61 +152,6 @@ interface ProjectData {
   suggestedQuestions: StructuredProvocation[]
 }
 
-// Dimension display names
-const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
-  CUSTOMER_MARKET: 'Customer & Market',
-  PROBLEM_OPPORTUNITY: 'Problem & Opportunity',
-  VALUE_PROPOSITION: 'Value Proposition',
-  DIFFERENTIATION_ADVANTAGE: 'Differentiation',
-  COMPETITIVE_LANDSCAPE: 'Competition',
-  BUSINESS_MODEL_ECONOMICS: 'Business Model',
-  GO_TO_MARKET: 'Go-to-Market',
-  PRODUCT_EXPERIENCE: 'Product & Experience',
-  CAPABILITIES_ASSETS: 'Capabilities',
-  RISKS_CONSTRAINTS: 'Risks & Constraints',
-  STRATEGIC_INTENT: 'Strategic Intent',
-}
-
-// Harvey ball for confidence visualization
-function HarveyBall({ confidence }: { confidence: string }) {
-  const size = 14
-  const radius = 6
-  const cx = 7
-  const cy = 7
-
-  // Map confidence to fill percentage
-  const fillPercent = confidence === 'HIGH' ? 100 : confidence === 'MEDIUM' ? 50 : 0
-
-  if (fillPercent === 0) {
-    // Empty circle
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-muted-foreground/40">
-        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
-      </svg>
-    )
-  }
-
-  if (fillPercent === 100) {
-    // Full circle
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-green-600">
-        <circle cx={cx} cy={cy} r={radius} fill="currentColor" />
-      </svg>
-    )
-  }
-
-  // Half circle (50%)
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-green-600">
-      <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d={`M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`}
-        fill="currentColor"
-      />
-    </svg>
-  )
-}
-
 // Dismissal types
 interface Dismissal {
   itemType: string
@@ -223,6 +181,7 @@ export default function ProjectPage() {
   const [showAllFocusAreas, setShowAllFocusAreas] = useState(false)
   const [showAllInputs, setShowAllInputs] = useState(false)
   const [showAllOutputs, setShowAllOutputs] = useState(false)
+  const [showAllProvocations, setShowAllProvocations] = useState(false)
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
   const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
@@ -476,8 +435,12 @@ export default function ProjectPage() {
   const hasMoreFocusAreas = allAreasOfFocus.length > FOCUS_AREA_LIMIT
 
   // Filter suggested questions to exclude dismissed ones (use description as identifier)
-  const visibleQuestions = (projectData?.suggestedQuestions || [])
+  const allVisibleQuestions = (projectData?.suggestedQuestions || [])
     .filter(q => !isItemDismissed('suggested_question', q.description))
+
+  const PROVOCATION_LIMIT = 3
+  const visibleQuestions = showAllProvocations ? allVisibleQuestions : allVisibleQuestions.slice(0, PROVOCATION_LIMIT)
+  const hasMoreProvocations = allVisibleQuestions.length > PROVOCATION_LIMIT
 
   return (
     <AppLayout>
@@ -491,6 +454,19 @@ export default function ProjectPage() {
             Your second brain for strategy. Capture ideas, explore questions, and refine your thinking.
           </p>
         </div>
+
+        {/* Luna's Memory Header */}
+        <LunasMemoryHeader
+          fragmentCount={stats.fragmentCount}
+          chatCount={stats.conversationCount}
+          docCount={stats.documentCount}
+          coveragePercentage={coveragePercentage}
+          newInsightsCount={stats.unsynthesizedFragmentCount}
+          knowledgeSummary={projectData?.knowledgeSummary || null}
+          dimensionalCoverage={stats.dimensionalCoverage}
+          syntheses={projectData?.syntheses || []}
+          onNewInsightsClick={() => setSynthesisDialogOpen(true)}
+        />
 
         {/* Documents | Chats | Generated Strategies */}
         <div className="grid gap-6 md:grid-cols-3">
@@ -842,160 +818,6 @@ export default function ProjectPage() {
           </Card>
         </div>
 
-        {/* Strategic Dimensions + Knowledge Base */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* What Luna Knows - Left */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="h-5 w-5 text-green-600" />
-                What Luna Knows
-              </CardTitle>
-              <CardDescription>
-                Key strategic insights from your thinking
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const unfinishedCount = projectData?.conversations?.filter(c => c.status === 'in_progress').length || 0
-                const fragmentCount = stats.fragmentCount
-                const chatCount = stats.conversationCount
-                const docCount = stats.documentCount
-                const newInsightsCount = stats.unsynthesizedFragmentCount
-
-                return projectData?.knowledgeSummary ? (
-                  <div className="space-y-4">
-                    {/* Metadata header - Counters */}
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs border border-green-600 text-green-700 flex items-center justify-center">
-                          {fragmentCount}
-                        </span>
-                        <span>insights</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs border border-green-600 text-green-700 flex items-center justify-center">
-                          {chatCount}
-                        </span>
-                        <span>chats</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs border border-green-600 text-green-700 flex items-center justify-center">
-                          {docCount}
-                        </span>
-                        <span>docs</span>
-                      </div>
-                      {unfinishedCount > 0 && (
-                        <button
-                          onClick={() => {
-                            setChatsActiveTab('in-progress')
-                            document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
-                          }}
-                          className="flex items-center gap-1.5 text-red-600 hover:text-red-700 hover:underline"
-                        >
-                          <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs bg-red-500 text-white flex items-center justify-center">
-                            {unfinishedCount}
-                          </span>
-                          unfinished
-                        </button>
-                      )}
-                      <button
-                        onClick={() => newInsightsCount > 0 && setSynthesisDialogOpen(true)}
-                        className={`flex items-center gap-1.5 ${
-                          newInsightsCount > 0
-                            ? 'text-green-700 hover:text-green-800 hover:underline cursor-pointer'
-                            : 'text-muted-foreground cursor-default'
-                        }`}
-                        disabled={newInsightsCount === 0}
-                      >
-                        <span className={`h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs flex items-center justify-center ${
-                          newInsightsCount > 0
-                            ? 'bg-green-500 text-white'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {newInsightsCount}
-                        </span>
-                        new to include
-                      </button>
-                    </div>
-
-                    {/* Summary */}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {projectData.knowledgeSummary}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No knowledge yet</p>
-                    <p className="text-xs mt-1 mb-4">Have conversations with Luna to build context</p>
-                    {unfinishedCount > 0 && (
-                      <button
-                        onClick={() => {
-                          setChatsActiveTab('in-progress')
-                          document.querySelector('[data-section="chats"]')?.scrollIntoView({ behavior: 'smooth' })
-                        }}
-                        className="text-xs text-amber-600 hover:text-amber-700 hover:underline block mx-auto mb-4"
-                      >
-                        {unfinishedCount} unfinished thread{unfinishedCount !== 1 ? 's' : ''}
-                      </button>
-                    )}
-                    <Button asChild size="sm">
-                      <Link href={`/?projectId=${projectId}`}>
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Start a Conversation
-                      </Link>
-                    </Button>
-                  </div>
-                )
-              })()}
-            </CardContent>
-          </Card>
-
-          {/* Knowledge Base - Right */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Database className="h-5 w-5 text-green-600" />
-                10 Strategic Dimensions
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <span className="h-5 min-w-5 rounded-full px-1.5 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
-                  {coveragePercentage}%
-                </span>
-                coverage of strategic areas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5">
-                {TIER_1_DIMENSIONS.map((dimension) => {
-                  const coverage = stats.dimensionalCoverage[dimension]
-                  const fragmentCount = coverage?.fragmentCount || 0
-                  const synthesis = projectData?.syntheses?.find(s => s.dimension === dimension)
-                  const confidence = synthesis?.confidence || (fragmentCount > 0 ? 'MEDIUM' : 'LOW')
-
-                  return (
-                    <div
-                      key={dimension}
-                      className="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <HarveyBall confidence={confidence} />
-                        <span className="text-muted-foreground">
-                          {DIMENSION_LABELS[dimension]}
-                        </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {fragmentCount > 0 ? `${fragmentCount}` : '—'}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Deep Dives - Full Width Panel */}
         {(() => {
           const allDeepDives = projectData?.deepDives?.filter(
@@ -1197,6 +1019,21 @@ export default function ProjectPage() {
                         </Item>
                       </React.Fragment>
                     )
+                  )}
+                  {hasMoreProvocations && (
+                    <>
+                      <ItemSeparator />
+                      <div className="px-4 py-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground"
+                          onClick={() => setShowAllProvocations(!showAllProvocations)}
+                        >
+                          {showAllProvocations ? 'Show less' : `Show ${allVisibleQuestions.length - PROVOCATION_LIMIT} more`}
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </ItemGroup>
               ) : projectData?.suggestedQuestions && projectData.suggestedQuestions.length > 0 ? (

@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
-import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
+import { ExtractionStep, GenerationStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'
@@ -40,7 +40,7 @@ function ChatSkeleton() {
   )
 }
 
-type FlowStep = 'chat' | 'extracting' | 'extraction' | 'summary' | 'strategy'
+type FlowStep = 'chat' | 'extracting' | 'extraction' | 'summary' | 'generating' | 'strategy'
 
 export interface GapExploration {
   dimension: string
@@ -90,6 +90,10 @@ export function ChatSheet({
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting')
   const [extractionError, setExtractionError] = useState<string | undefined>()
 
+  // Generation state
+  const [generationStep, setGenerationStep] = useState<GenerationStep>('preparing')
+  const [generationError, setGenerationError] = useState<string | undefined>()
+
   // Strategy state
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
   const [thoughts, setThoughts] = useState<string>('')
@@ -126,6 +130,8 @@ export function ChatSheet({
       setEarlyExitOffered(false)
       setSuggestedQuestion(null)
       setIsExplicitEnd(false)
+      setGenerationStep('preparing')
+      setGenerationError(undefined)
     }
   }, [open])
 
@@ -346,7 +352,11 @@ export function ChatSheet({
   const handleGenerate = async () => {
     if (!conversationId || !extractedContext) return
 
+    setFlowStep('generating')
     setIsLoading(true)
+    setGenerationStep('preparing')
+    setGenerationError(undefined)
+
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -363,17 +373,55 @@ export function ChatSheet({
         throw new Error(`Generation failed: ${response.status} - ${errorData.error || response.statusText}`)
       }
 
-      const data = await response.json()
-      setStrategy(data.statements)
-      setThoughts(data.thoughts)
-      setTraceId(data.traceId)
-      setFlowStep('strategy')
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('No response body')
+      }
 
-      // Notify listeners
-      window.dispatchEvent(new Event('strategySaved'))
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+
+          try {
+            const update = JSON.parse(line)
+
+            if (update.step === 'complete') {
+              const { traceId: newTraceId, thoughts: newThoughts, statements } = update.data
+              setStrategy(statements)
+              setThoughts(newThoughts || '')
+              setTraceId(newTraceId)
+              setFlowStep('strategy')
+
+              // Notify listeners
+              window.dispatchEvent(new Event('strategySaved'))
+            } else if (update.step === 'error') {
+              throw new Error(update.error || 'Generation failed')
+            } else {
+              setGenerationStep(update.step)
+            }
+          } catch (parseError) {
+            console.error('Failed to parse progress update:', line, parseError)
+          }
+        }
+      }
     } catch (error) {
       console.error('Failed to generate strategy:', error)
-      alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setGenerationStep('error')
+      setGenerationError(error instanceof Error ? error.message : 'Something went wrong')
+      setTimeout(() => {
+        setFlowStep('extraction')
+      }, 2000)
     } finally {
       setIsLoading(false)
     }
@@ -418,8 +466,8 @@ export function ChatSheet({
 
   return (
     <Sheet open={open} onOpenChange={(newOpen) => {
-      // Prevent closing during extraction
-      if (!newOpen && flowStep === 'extracting') {
+      // Prevent closing during extraction or generation
+      if (!newOpen && (flowStep === 'extracting' || flowStep === 'generating')) {
         return
       }
       onOpenChange(newOpen)
@@ -439,6 +487,7 @@ export function ChatSheet({
             {flowStep === 'extracting' && 'Analyzing...'}
             {flowStep === 'extraction' && 'Review Insights'}
             {flowStep === 'summary' && 'Insights Captured'}
+            {flowStep === 'generating' && 'Generating Strategy...'}
             {flowStep === 'strategy' && 'Your Strategy'}
           </SheetTitle>
         </SheetHeader>
@@ -468,6 +517,15 @@ export function ChatSheet({
             <ExtractionProgress
               currentStep={extractionStep}
               error={extractionError}
+              mode="extraction"
+            />
+          )}
+
+          {flowStep === 'generating' && (
+            <ExtractionProgress
+              currentStep={generationStep}
+              error={generationError}
+              mode="generation"
             />
           )}
 
@@ -491,7 +549,6 @@ export function ChatSheet({
             <div className="space-y-4">
               <StrategyDisplay
                 strategy={strategy}
-                thoughts={thoughts}
                 conversationId={conversationId}
                 traceId={traceId}
               />
