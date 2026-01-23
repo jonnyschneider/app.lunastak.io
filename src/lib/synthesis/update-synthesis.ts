@@ -102,7 +102,13 @@ export async function updateDimensionalSynthesis(
     f => f.capturedAt > existingSynthesis.lastSynthesizedAt
   )
 
-  // 4. Decide: full or incremental?
+  // 4. Early exit: if no new fragments and we have an existing synthesis, skip entirely
+  if (newFragments.length === 0 && existingSynthesis.summary) {
+    console.log(`[Synthesis] Skipping ${dimension} - no new fragments`)
+    return
+  }
+
+  // 5. Decide: full or incremental?
   const useFullSynthesis = shouldFullSynthesis(
     existingSynthesis,
     allFragments.length,
@@ -111,7 +117,7 @@ export async function updateDimensionalSynthesis(
 
   console.log(`[Synthesis] Using ${useFullSynthesis ? 'FULL' : 'INCREMENTAL'} synthesis (${newFragments.length} new fragments)`)
 
-  // 5. Run synthesis
+  // 6. Run synthesis
   const fragmentsForSynthesis: FragmentForSynthesis[] = useFullSynthesis
     ? allFragments
     : newFragments
@@ -120,7 +126,7 @@ export async function updateDimensionalSynthesis(
     ? await fullSynthesis(dimension, fragmentsForSynthesis)
     : await incrementalSynthesis(dimension, existingSynthesis, fragmentsForSynthesis)
 
-  // 6. Save result
+  // 7. Save result
   await prisma.dimensionalSynthesis.update({
     where: { id: existingSynthesis.id },
     data: {

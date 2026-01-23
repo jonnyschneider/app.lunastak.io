@@ -8,6 +8,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.2] - 2026-01-24
+
+### Added
+
+- **Dashboard Progressive Disclosure** - Cleaner information architecture
+  - **Luna's Memory Header** - Collapsed bar showing insights, chats, coverage stats
+    - Expands to reveal full knowledge summary and 10 strategic dimensions
+    - "X new to include" action opens synthesis dialog directly
+  - **Layout Reorder** - Deep Dives moved up after action row (Docs/Chats/Strategies)
+  - **Provocations Limit** - Shows 3 items with "Show X more" button (matches Gaps pattern)
+
+- **Decision Stack Branding** - Strategy view visual refresh
+  - Branded header with bottle green (#0A2933) background and logo
+  - "Learn more about The Decision Stack" link to thedecisionstack.com
+  - Strategy cards with white backgrounds, bottle green borders
+  - Neon (#E0FF4F) timeframe badges and CTA buttons
+  - Aubergine (#7F556D) metric text
+  - Hint of teal (#EEF8FC) content area background
+
+- **Streaming Generation Progress** - Consistent progress UI
+  - `/api/generate` now streams progress updates (preparing → generating → saving → complete)
+  - `ExtractionProgress` component supports both extraction and generation modes
+  - `chat-sheet.tsx` and `InlineChat.tsx` consume streaming responses
+
+- **Luna's Thinking Tab** - Redesigned insights display
+  - Themes as full cards in 2-column grid (not hidden behind pills)
+  - Reflection accordion with 3-card layout (Strengths, Emerging, Opportunities)
+  - Reasoning accordion for Claude's strategic thinking
+  - Monotone design matching app visual language
+
+### Changed
+
+- **Strategy Page Tabs** - Line-style tabs with centered layout
+- **StrategyDisplay** - Removed internal max-width (parent container controls)
+
+### Fixed
+
+- **Synthesis Loop** - Fixed dialog re-triggering on complete
+  - Removed automatic `onComplete` call during dialog open state
+  - Data refresh now only happens when user clicks "Done"
+  - Prevents component remount/re-trigger race condition
+
+- **Unnecessary Synthesis Runs** - Skip dimensions with no new fragments
+  - Added early exit when existing synthesis exists and no new data
+  - Prevents redundant LLM calls during synthesis
+
+---
 ## [1.7.1] - 2026-01-15
 
 ### Added

@@ -120,12 +120,8 @@ export function SynthesisDialog({
 
               if (update.step === 'error') {
                 setError(update.error || 'Synthesis failed')
-              } else if (update.step === 'complete') {
-                // Trigger refresh after a brief moment
-                setTimeout(() => {
-                  onCompleteRef.current()
-                }, 1500)
               }
+              // Note: onComplete is called when user clicks "Done" button, not automatically
             } catch (parseError) {
               console.error('Failed to parse progress update:', line, parseError)
             }
@@ -229,7 +225,13 @@ export function SynthesisDialog({
           {/* Close button for complete/error states */}
           {(isComplete || isError) && (
             <div className="mt-4 flex justify-center">
-              <Button onClick={() => onOpenChange(false)}>
+              <Button onClick={() => {
+                onOpenChange(false)
+                if (isComplete) {
+                  // Refresh data after dialog closes
+                  onCompleteRef.current()
+                }
+              }}>
                 {isComplete ? 'Done' : 'Close'}
               </Button>
             </div>
