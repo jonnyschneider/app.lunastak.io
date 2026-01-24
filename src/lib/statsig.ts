@@ -1,6 +1,7 @@
 import Statsig from 'statsig-node';
 
 let statsigInitialized = false;
+let statsigInitFailed = false;
 
 // Get environment tier for Statsig
 // VERCEL_ENV: 'production' | 'preview' | 'development' (Vercel-specific)
@@ -9,18 +10,36 @@ function getEnvironmentTier(): string {
   return process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
 }
 
+// Helper to add timeout to a promise
+function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(errorMsg)), ms)
+  );
+  return Promise.race([promise, timeout]);
+}
+
 export async function initializeStatsig() {
   if (!statsigInitialized && process.env.STATSIG_SERVER_SECRET_KEY) {
     try {
       const tier = getEnvironmentTier();
       console.log('[Statsig] Initializing with environment:', tier);
-      await Statsig.initialize(process.env.STATSIG_SERVER_SECRET_KEY, {
-        environment: { tier },
-      });
+
+      // Add 5 second timeout to prevent blocking
+      await withTimeout(
+        Statsig.initialize(process.env.STATSIG_SERVER_SECRET_KEY, {
+          environment: { tier },
+        }),
+        5000,
+        'Statsig initialization timed out after 5s'
+      );
+
       statsigInitialized = true;
       console.log('[Statsig] Successfully initialized');
     } catch (error) {
       console.error('[Statsig] Initialization error:', error);
+      // Mark as initialized anyway to prevent repeated attempts
+      statsigInitialized = true;
+      statsigInitFailed = true;
     }
   } else if (!process.env.STATSIG_SERVER_SECRET_KEY) {
     console.log('[Statsig] No server secret key found in environment');
@@ -33,9 +52,9 @@ export async function checkFeatureGate(
 ): Promise<boolean> {
   await initializeStatsig();
 
-  if (!process.env.STATSIG_SERVER_SECRET_KEY) {
-    console.log('[Statsig] No STATSIG_SERVER_SECRET_KEY found, returning baseline');
-    // Fallback to baseline if Statsig not configured
+  if (!process.env.STATSIG_SERVER_SECRET_KEY || statsigInitFailed) {
+    console.log('[Statsig] Not available (no key or init failed), returning baseline');
+    // Fallback to baseline if Statsig not configured or failed to initialize
     return false;
   }
 
@@ -67,9 +86,9 @@ export async function getExperimentVariant(
 
   await initializeStatsig();
 
-  if (!process.env.STATSIG_SERVER_SECRET_KEY) {
-    console.log('[Statsig] No STATSIG_SERVER_SECRET_KEY found, returning baseline');
-    return 'baseline-v1';
+  if (!process.env.STATSIG_SERVER_SECRET_KEY || statsigInitFailed) {
+    console.log('[Statsig] Not available (no key or init failed), returning default variant');
+    return 'emergent-extraction-e1a';
   }
 
   // Get variant from Statsig experiment
@@ -121,7 +140,7 @@ export async function logStatsigEvent(
 ) {
   await initializeStatsig();
 
-  if (!process.env.STATSIG_SERVER_SECRET_KEY) {
+  if (!process.env.STATSIG_SERVER_SECRET_KEY || statsigInitFailed) {
     return;
   }
 

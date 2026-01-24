@@ -55,6 +55,7 @@ export async function GET(
     return NextResponse.json({
       id: trace.id,
       output: trace.output,
+      extractedContext: trace.extractedContext,
       claudeThoughts: trace.claudeThoughts,
       conversationId: trace.conversationId,
       timestamp: trace.timestamp,
