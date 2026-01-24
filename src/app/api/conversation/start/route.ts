@@ -86,6 +86,9 @@ interface GapExploration {
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+  console.log('[Start API] Request started');
+
   try {
     const { variantOverride, suggestedQuestion, deepDiveId, gapExploration, projectId: requestedProjectId } = await req.json() as {
       variantOverride?: string;
@@ -94,9 +97,11 @@ export async function POST(req: Request) {
       gapExploration?: GapExploration;
       projectId?: string;
     };
+    console.log(`[Start API] Parsed body in ${Date.now() - startTime}ms, suggestedQuestion: ${!!suggestedQuestion}`);
 
     // Get session to check if user is authenticated
     const session = await getServerSession(authOptions);
+    console.log(`[Start API] Got session in ${Date.now() - startTime}ms`);
 
     // Check for existing guest cookie FIRST - before creating new users
     const cookieStore = await cookies();
@@ -109,6 +114,7 @@ export async function POST(req: Request) {
     // Get or create project - pass existing user ID if available
     // This ensures we use the existing guest's projects, not create a new user
     const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(existingUserId);
+    console.log(`[Start API] Got project in ${Date.now() - startTime}ms`);
 
     // Use the requested project if provided and user has access, otherwise use default
     let targetProjectId = defaultProject.id;
@@ -131,6 +137,7 @@ export async function POST(req: Request) {
 
     // Use database userId for Statsig (ensures consistency with event logging)
     const experimentVariant = await getExperimentVariant(userId, variantOverride);
+    console.log(`[Start API] Got experiment variant in ${Date.now() - startTime}ms`);
 
     // Look up deep dive if provided
     let deepDive = null;
@@ -153,12 +160,13 @@ export async function POST(req: Request) {
         experimentVariant,
       },
     });
+    console.log(`[Start API] Created conversation in ${Date.now() - startTime}ms`);
 
     let firstQuestion: string;
 
     // If a suggested question was provided, use it directly
     if (suggestedQuestion && typeof suggestedQuestion === 'string') {
-      console.log('[Start] Using suggested question');
+      console.log(`[Start API] Using suggested question (skipping Claude call) at ${Date.now() - startTime}ms`);
       firstQuestion = suggestedQuestion;
     } else {
       // Check if user has existing project knowledge (Luna Remembers)
@@ -208,9 +216,10 @@ export async function POST(req: Request) {
         promptType = 'new_user';
       }
 
-      console.log('[Start] Using prompt type:', promptType);
+      console.log(`[Start API] Using prompt type: ${promptType} at ${Date.now() - startTime}ms`);
 
       // Generate first question
+      const claudeStart = Date.now();
       const response = await createMessage({
         model: CLAUDE_MODEL,
         max_tokens: 200,
@@ -220,6 +229,7 @@ export async function POST(req: Request) {
         }],
         temperature: 0.7
       }, 'conversation_start');
+      console.log(`[Start API] Claude responded in ${Date.now() - claudeStart}ms (total: ${Date.now() - startTime}ms)`);
 
       firstQuestion = response.content[0]?.type === 'text'
         ? response.content[0].text
@@ -235,6 +245,7 @@ export async function POST(req: Request) {
         stepNumber: 1,
       },
     });
+    console.log(`[Start API] Request complete in ${Date.now() - startTime}ms`);
 
     return NextResponse.json({
       conversationId: conversation.id,

@@ -9,8 +9,8 @@ if (!apiKey) {
 
 export const anthropic = new Anthropic({
   apiKey,
-  maxRetries: 3,
-  timeout: 180_000, // 3 minute timeout
+  maxRetries: 2,
+  timeout: 60_000, // 1 minute timeout (was 3 min which caused 2+ min delays on retry)
 });
 
 export const CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';

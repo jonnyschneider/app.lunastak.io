@@ -52,27 +52,31 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
-      <div className="max-w-xl w-full space-y-6">
+    <div className={`flex flex-col px-6 ${chatStarted ? 'h-[calc(100vh-4rem)]' : 'min-h-[60vh] justify-center'}`}>
+      <div className={`max-w-xl w-full mx-auto ${chatStarted ? 'flex flex-col flex-1 min-h-0' : 'space-y-6'}`}>
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className={`text-center space-y-2 ${chatStarted ? 'shrink-0 pt-6 pb-4' : ''}`}>
           <h1 className="text-2xl font-semibold tracking-tight">
             Hi, I'm Luna. Let's clarify your strategic thinking.
           </h1>
-          <p className="text-muted-foreground">
-            To start, tell me about your strategic challenge, upload an existing doc and we can
-            brainstorm from there, or check out an example to see what the output looks like.
-          </p>
+          {!chatStarted && (
+            <p className="text-muted-foreground">
+              To start, tell me about your strategic challenge, upload an existing doc and we can
+              brainstorm from there, or check out an example to see what the output looks like.
+            </p>
+          )}
         </div>
 
         {/* Inline Chat */}
-        <InlineChat
-          key={uploadedFileName || 'default'}
-          projectId={projectId}
-          initialMessage={uploadedFileName ? `I've uploaded ${uploadedFileName}. Let's discuss it.` : undefined}
-          autoStart={!!uploadedFileName}
-          onConversationStart={() => setChatStarted(true)}
-        />
+        <div className={chatStarted ? 'flex-1 min-h-0' : ''}>
+          <InlineChat
+            key={uploadedFileName || 'default'}
+            projectId={projectId}
+            initialMessage={uploadedFileName ? `I've uploaded ${uploadedFileName}. Let's discuss it.` : undefined}
+            autoStart={!!uploadedFileName}
+            onConversationStart={() => setChatStarted(true)}
+          />
+        </div>
 
         {/* Action buttons - hide once chat started */}
         {!chatStarted && (

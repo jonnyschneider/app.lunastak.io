@@ -433,7 +433,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/outcomes`}>
                     <Link href={`/project/${selectedProject.id}/outcomes`}>
                       <TrendingUp className="h-4 w-4" />
-                      <span>Outcomes</span>
+                      <span>Manage Outcomes</span>
                       <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
                     </Link>
                   </SidebarMenuButton>
@@ -589,7 +589,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     Notifications
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
+                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
                     <LogOut className="h-4 w-4" />
                     Log out
                   </DropdownMenuItem>

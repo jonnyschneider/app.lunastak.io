@@ -56,7 +56,7 @@ export default function ChatInterface({
   const hasUserResponded = messages.some((m) => m.role === 'user');
 
   const getPlaceholderText = () => {
-    return 'Type your response...';
+    return 'Tell me more...';
   };
 
   const handleSubmit = (e: React.FormEvent) => {
