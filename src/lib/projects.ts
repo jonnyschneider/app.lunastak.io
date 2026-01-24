@@ -5,7 +5,6 @@
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
-import { seedDemoProject } from '@/lib/seed-demo'
 
 /**
  * Generate a random ID (similar to cuid but simpler)
@@ -108,9 +107,9 @@ export async function getOrCreateDefaultProject(userId: string | null): Promise<
   isGuest: boolean
 }> {
   if (!userId) {
-    // Create guest user and hydrate demo project
+    // Create guest user with empty project (no demo - user must click "See an example")
     const guestUser = await createGuestUser()
-    const projectId = await seedDemoProject(guestUser.id)
+    const projectId = await createEmptyGuestProject(guestUser.id)
 
     const project = await prisma.project.findUniqueOrThrow({
       where: { id: projectId },
