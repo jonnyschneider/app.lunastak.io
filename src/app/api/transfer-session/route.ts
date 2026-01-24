@@ -7,7 +7,7 @@ import { isGuestUser } from '@/lib/projects'
 
 const GUEST_COOKIE_NAME = 'guestUserId'
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -18,13 +18,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { guestUserId } = await request.json()
+    const authenticatedUserId = session.user.id
+
+    // Read guestUserId from httpOnly cookie (not accessible via JavaScript)
+    const cookieStore = await cookies()
+    const guestUserId = cookieStore.get(GUEST_COOKIE_NAME)?.value
+
+    // Clear cookie immediately to prevent race conditions from concurrent calls
+    cookieStore.delete(GUEST_COOKIE_NAME)
 
     if (!guestUserId) {
-      return NextResponse.json(
-        { error: 'Missing guestUserId' },
-        { status: 400 }
-      )
+      // No guest session to transfer - this is fine
+      console.log('[Transfer] No guest cookie found, nothing to transfer')
+      return NextResponse.json({ success: true })
+    }
+
+    // Don't transfer if guest and authenticated are the same user
+    if (guestUserId === authenticatedUserId) {
+      console.log(`[Transfer] Guest and authenticated user are the same, skipping`)
+      return NextResponse.json({ success: true })
     }
 
     // Verify it's actually a guest user
@@ -40,20 +52,55 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Cascade delete the guest user and all their data
-    await prisma.user.delete({
-      where: { id: guestUserId },
+    // Transfer ownership of all guest data to authenticated user
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // Transfer projects
+      const projectsUpdated = await tx.project.updateMany({
+        where: { userId: guestUserId },
+        data: { userId: authenticatedUserId },
+      })
+      console.log(`[Transfer] Transferred ${projectsUpdated.count} projects`)
+
+      // Transfer conversations
+      const conversationsUpdated = await tx.conversation.updateMany({
+        where: { userId: guestUserId },
+        data: { userId: authenticatedUserId },
+      })
+      console.log(`[Transfer] Transferred ${conversationsUpdated.count} conversations`)
+
+      // Transfer traces
+      const tracesUpdated = await tx.trace.updateMany({
+        where: { userId: guestUserId },
+        data: { userId: authenticatedUserId },
+      })
+      console.log(`[Transfer] Transferred ${tracesUpdated.count} traces`)
+
+      // Transfer feedbacks
+      const feedbacksUpdated = await tx.feedback.updateMany({
+        where: { userId: guestUserId },
+        data: { userId: authenticatedUserId },
+      })
+      console.log(`[Transfer] Transferred ${feedbacksUpdated.count} feedbacks`)
+
+      // Transfer user dismissals
+      const dismissalsUpdated = await tx.userDismissal.updateMany({
+        where: { userId: guestUserId },
+        data: { userId: authenticatedUserId },
+      })
+      console.log(`[Transfer] Transferred ${dismissalsUpdated.count} dismissals`)
+
+      // Now delete the empty guest user (use deleteMany to avoid error if already deleted by concurrent call)
+      await tx.user.deleteMany({
+        where: { id: guestUserId },
+      })
     })
 
-    // Clear the guest cookie
-    const cookieStore = await cookies()
-    cookieStore.delete(GUEST_COOKIE_NAME)
-
-    console.log(`[Transfer] Deleted guest user ${guestUserId} on signup`)
+    console.log(`[Transfer] Successfully transferred data from guest ${guestUserId} to user ${authenticatedUserId}`)
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to process signup:', error)
+    console.error('Failed to transfer session:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
