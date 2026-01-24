@@ -164,6 +164,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
+  const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
@@ -623,7 +624,16 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             setUploadDialogOpen(open)
             if (!open) setUploadProjectId(null)
           }}
-          onUploadComplete={() => {
+          onUploadComplete={(fileName) => {
+            // Check if this was an empty project (first document = first-time experience)
+            if (selectedProject &&
+                selectedProject.fragmentCount === 0 &&
+                selectedProject.conversationCount === 0 &&
+                fileName) {
+              // Launch chat sheet with context about the uploaded doc
+              setChatInitialQuestion(`I've uploaded ${fileName}. Let's discuss it.`)
+              setChatSheetOpen(true)
+            }
             fetchProjects()
           }}
         />
@@ -634,7 +644,11 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         <ChatSheet
           projectId={selectedProject.id}
           open={chatSheetOpen}
-          onOpenChange={setChatSheetOpen}
+          onOpenChange={(open) => {
+            setChatSheetOpen(open)
+            if (!open) setChatInitialQuestion(undefined)
+          }}
+          initialQuestion={chatInitialQuestion}
         />
       )}
 
