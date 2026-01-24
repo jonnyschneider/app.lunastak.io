@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.3] - 2026-01-24
+
+### Fixed
+
+- **Neon Database Cold Starts** - Serverless adapter for reliable connections
+  - Added `@neondatabase/serverless` and `@prisma/adapter-neon` for HTTP-based queries
+  - Eliminates `Error { kind: Closed, cause: None }` on cold starts
+
+- **Demo Auto-Seeding Removed** - New users start with empty project
+  - Removed demo seeding from NextAuth `createUser` event
+  - Users now land in first-time experience, not demo project
+
+- **Chat Counter After Strategy** - Correct "first strategy" banner logic
+  - Added `hasStrategy` field to projects API response
+  - Sidebar chat now correctly hides first-time banner after strategy generation
+
+- **Sidebar Upload First-Time UX** - Launch chat after first document
+  - When uploading first document via sidebar, inline chat auto-opens
+
+### Changed
+
+- **Beta Preview** - Sidebar label changed from "Early Access Preview" to "Beta Preview"
+
+- **Timeouts & Reliability** - Prevent long hangs
+  - Statsig initialization timeout reduced to 5 seconds
+  - Claude API timeout reduced to 60 seconds (from 180s)
+
+---
 ## [1.7.2] - 2026-01-24
 
 ### Added

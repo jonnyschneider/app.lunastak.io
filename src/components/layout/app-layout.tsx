@@ -103,6 +103,7 @@ interface Project {
   name: string
   fragmentCount: number
   conversationCount: number
+  hasStrategy: boolean
   updatedAt: string
 }
 
@@ -534,9 +535,9 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       </SidebarContent>
 
       <SidebarFooter>
-        {/* Early Access Preview label */}
+        {/* Beta Preview label */}
         <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border/50">
-          <span className="text-muted-foreground/70">Early Access Preview</span>
+          <span className="text-muted-foreground/70">Beta Preview</span>
           <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/50">
             v{process.env.NEXT_PUBLIC_APP_VERSION}
           </span>
@@ -649,6 +650,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             if (!open) setChatInitialQuestion(undefined)
           }}
           initialQuestion={chatInitialQuestion}
+          hasExistingStrategy={selectedProject.hasStrategy}
         />
       )}
 
