@@ -51,19 +51,21 @@ export async function GET() {
           select: {
             fragments: { where: { status: 'active' } },
             conversations: { where: { status: { not: 'abandoned' } } },
+            generatedOutputs: true,
           },
         },
       },
       orderBy: { updatedAt: 'desc' },
     })
 
-    // Format response (include isDemo flag)
+    // Format response (include isDemo flag and strategy status)
     const formattedProjects = projects.map((project) => ({
       id: project.id,
       name: project.name,
       isDemo: project.isDemo,
       fragmentCount: project._count.fragments,
       conversationCount: project._count.conversations,
+      hasStrategy: project._count.generatedOutputs > 0,
       updatedAt: project.updatedAt.toISOString(),
     }))
 
