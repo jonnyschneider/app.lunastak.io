@@ -3,7 +3,6 @@ import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
-import { seedDemoProject } from "@/lib/seed-demo"
 
 async function notifySlackNewUser(email: string) {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL
@@ -60,11 +59,8 @@ export const authOptions: NextAuthOptions = {
       if (user.email) {
         notifySlackNewUser(user.email)
       }
-
-      // Seed demo project for new users
-      await seedDemoProject(user.id).catch((err) =>
-        console.error('Failed to seed demo project:', err)
-      );
+      // Note: We no longer seed demo projects on signup.
+      // New users get an empty project, with "See an example" available on-demand.
     },
   },
   callbacks: {
