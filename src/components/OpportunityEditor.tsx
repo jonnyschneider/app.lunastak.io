@@ -5,20 +5,35 @@ import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching'
 import { OpportunityCoaching } from './OpportunityCoaching';
 import { FakeDoorDialog } from './FakeDoorDialog';
 
+interface ObjectiveContribution {
+  objectiveId: string;
+  contribution: string;
+}
+
+interface ObjectiveForLinking {
+  id: string;
+  pithy: string;
+}
+
 interface OpportunityEditorProps {
   initialContent?: string;
-  onSave: (content: string, status: 'draft' | 'complete') => Promise<void>;
+  initialContributions?: ObjectiveContribution[];
+  objectives: ObjectiveForLinking[];
+  onSave: (content: string, status: 'draft' | 'complete', contributions: ObjectiveContribution[]) => Promise<void>;
   onCancel: () => void;
   saving?: boolean;
 }
 
 export function OpportunityEditor({
   initialContent = '',
+  initialContributions = [],
+  objectives,
   onSave,
   onCancel,
   saving = false,
 }: OpportunityEditorProps) {
   const [content, setContent] = useState(initialContent);
+  const [contributions, setContributions] = useState<ObjectiveContribution[]>(initialContributions);
   const [coaching, setCoaching] = useState<CoachingResult | null>(null);
   const [showCoaching, setShowCoaching] = useState(false);
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
@@ -51,41 +66,61 @@ export function OpportunityEditor({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
-    contentRef.current = newContent; // Update ref immediately
+    contentRef.current = newContent;
     setShowCoaching(false);
 
-    // Clear existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-
-    // Set new timeout for 2s pause
     timeoutRef.current = setTimeout(evaluateContent, 2000);
   };
 
   const handleBlur = () => {
-    // Clear debounce timeout and evaluate immediately
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     evaluateContent();
   };
 
+  // Objective linking handlers
+  const isObjectiveLinked = (objectiveId: string) => {
+    return contributions.some(c => c.objectiveId === objectiveId);
+  };
+
+  const toggleObjective = (objectiveId: string) => {
+    if (isObjectiveLinked(objectiveId)) {
+      setContributions(prev => prev.filter(c => c.objectiveId !== objectiveId));
+    } else {
+      setContributions(prev => [...prev, { objectiveId, contribution: '' }]);
+    }
+  };
+
+  const updateContribution = (objectiveId: string, contribution: string) => {
+    setContributions(prev =>
+      prev.map(c => c.objectiveId === objectiveId ? { ...c, contribution } : c)
+    );
+  };
+
   const handleSave = async () => {
     if (!content.trim() || saving) return;
 
-    // Determine status based on coaching
+    // Determine status: strong coaching + at least one linked objective with contribution = complete
     const result = coaching || evaluateOpportunity(content);
-    const status = result.overallStrength === 'strong' ? 'complete' : 'draft';
+    const hasLinkedObjectives = contributions.length > 0;
+    const hasContributions = contributions.some(c => c.contribution.trim().length > 0);
 
-    await onSave(content, status);
+    const status = (result.overallStrength === 'strong' || result.overallStrength === 'okay')
+      && hasLinkedObjectives && hasContributions
+      ? 'complete'
+      : 'draft';
+
+    await onSave(content, status, contributions);
   };
 
   const handleRewriteClick = () => {
     setFakeDoorOpen(true);
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -94,18 +129,27 @@ export function OpportunityEditor({
     };
   }, []);
 
-  return (
-    <div className="space-y-3">
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="Describe your opportunity... (e.g., 'Launch MVP in Q2 → Core features, beta testing, 10 pilot customers')"
-        className="w-full min-h-[100px] p-3 border border-input rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-        disabled={saving}
-      />
+  const linkedObjectives = objectives.filter(obj => isObjectiveLinked(obj.id));
 
+  return (
+    <div className="space-y-4 bg-white border border-[#0A2933] rounded-lg p-4">
+      {/* Content textarea */}
+      <div>
+        <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+          Opportunity
+        </label>
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="Describe your opportunity... (e.g., 'Prove builders will pay for selection coordination')"
+          className="w-full min-h-[80px] p-3 border border-input rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+          disabled={saving}
+        />
+      </div>
+
+      {/* Coaching feedback */}
       {showCoaching && coaching && (
         <OpportunityCoaching
           result={coaching}
@@ -113,7 +157,63 @@ export function OpportunityEditor({
         />
       )}
 
-      <div className="flex justify-end gap-2">
+      {/* Objective linking */}
+      {objectives.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+            Which objectives does this support?
+          </label>
+          <div className="space-y-2">
+            {objectives.map(obj => (
+              <label
+                key={obj.id}
+                className="flex items-start gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={isObjectiveLinked(obj.id)}
+                  onChange={() => toggleObjective(obj.id)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  disabled={saving}
+                />
+                <span className="text-sm text-foreground">{obj.pithy}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Contribution inputs for linked objectives */}
+      {linkedObjectives.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+            Expected contribution (for each objective)
+          </label>
+          <div className="space-y-3">
+            {linkedObjectives.map(obj => {
+              const contribution = contributions.find(c => c.objectiveId === obj.id);
+              return (
+                <div key={obj.id} className="border border-input rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-2 truncate">
+                    {obj.pithy}
+                  </p>
+                  <input
+                    type="text"
+                    value={contribution?.contribution || ''}
+                    onChange={(e) => updateContribution(obj.id, e.target.value)}
+                    placeholder="e.g., 'First 10 paying customers' or 'Validate willingness to pay'"
+                    className="w-full p-2 border border-input rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    disabled={saving}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2 pt-2 border-t">
         <button
           onClick={onCancel}
           disabled={saving}
@@ -136,7 +236,7 @@ export function OpportunityEditor({
         featureName="AI Rewrite"
         description="Get AI-powered suggestions to improve your opportunity based on the coaching feedback.
 
-This feature would rewrite your opportunity to include timeframes, specific deliverables, and clearer action items."
+This feature would help clarify outcomes and rationale while keeping your core idea intact."
         onInterest={() => {
           console.log('[FakeDoor] User interested in: AI Rewrite for Opportunities');
         }}

@@ -2,11 +2,23 @@
 
 import { parseOpportunityContent } from '@/lib/opportunity-coaching';
 
+interface ObjectiveContribution {
+  objectiveId: string;
+  contribution: string;
+}
+
+interface ObjectiveForLinking {
+  id: string;
+  pithy: string;
+}
+
 interface OpportunityCardProps {
   id: string;
   content: string;
   status: 'draft' | 'complete';
   coachingDismissed?: boolean;
+  objectiveContributions?: ObjectiveContribution[];
+  objectives: ObjectiveForLinking[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -16,24 +28,27 @@ export function OpportunityCard({
   content,
   status,
   coachingDismissed,
+  objectiveContributions = [],
+  objectives,
   onEdit,
   onDelete,
 }: OpportunityCardProps) {
   const parsed = parseOpportunityContent(content);
   const showWarning = status === 'draft' && !coachingDismissed;
 
+  // Get linked objectives with their contributions
+  const linkedObjectives = objectiveContributions
+    .map(oc => {
+      const obj = objectives.find(o => o.id === oc.objectiveId);
+      return obj ? { ...obj, contribution: oc.contribution } : null;
+    })
+    .filter(Boolean) as (ObjectiveForLinking & { contribution: string })[];
+
   return (
     <div className={`
       bg-white border rounded-lg p-4 relative group transition-shadow hover:shadow-md
       ${status === 'draft' ? 'border-dashed border-muted-foreground/50' : 'border-[#0A2933]'}
     `}>
-      {/* Timeframe badge */}
-      {parsed.timeframe && (
-        <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
-          {parsed.timeframe}
-        </span>
-      )}
-
       {/* Status badges */}
       <div className="absolute top-3 right-3 flex items-center gap-2">
         {status === 'draft' && (
@@ -43,7 +58,7 @@ export function OpportunityCard({
         )}
         {showWarning && (
           <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
-            Could improve
+            Needs links
           </span>
         )}
 
@@ -71,7 +86,7 @@ export function OpportunityCard({
       </div>
 
       {/* Content */}
-      <div className={parsed.timeframe ? 'mt-6' : ''}>
+      <div className="pr-20">
         <p className="text-sm font-medium text-[#0A2933]">
           {parsed.title}
         </p>
@@ -81,6 +96,38 @@ export function OpportunityCard({
           </p>
         )}
       </div>
+
+      {/* Linked objectives with contributions */}
+      {linkedObjectives.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="space-y-1.5">
+            {linkedObjectives.map(obj => (
+              <div key={obj.id} className="flex items-start gap-2 text-xs">
+                <span className="text-[#0A2933]/50">→</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-muted-foreground truncate block">
+                    {obj.pithy}
+                  </span>
+                  {obj.contribution && (
+                    <span className="text-[#0A2933] font-medium">
+                      {obj.contribution}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No links indicator */}
+      {linkedObjectives.length === 0 && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <p className="text-xs text-muted-foreground italic">
+            No objectives linked
+          </p>
+        </div>
+      )}
     </div>
   );
 }

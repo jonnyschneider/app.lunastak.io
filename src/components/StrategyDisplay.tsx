@@ -243,7 +243,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
         </div>
 
         {/* Opportunities Section */}
-        <OpportunitySection projectId={projectId} />
+        <OpportunitySection projectId={projectId} objectives={objectives} />
 
         {/* Principles Section - Blank with CTA */}
         <div>
