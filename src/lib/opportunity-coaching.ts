@@ -2,7 +2,15 @@
  * Opportunity Coaching
  *
  * Client-side heuristics to evaluate opportunity quality.
- * Provides real-time feedback without API calls.
+ * Focuses on strategic clarity (outcomes, rationale) over project-speak (deliverables, timelines).
+ *
+ * Good opportunities:
+ * - Clear outcome focus (what changes if this succeeds)
+ * - Rationale present (why this, why now)
+ * - Directional, not prescriptive (leaves room for teams to figure out HOW)
+ *
+ * When we detect project-speak, we reframe it as "possible candidates for HOW"
+ * and nudge toward the outcome/rationale.
  */
 
 export interface CoachingCriterion {
@@ -17,78 +25,111 @@ export interface CoachingResult {
   overallStrength: 'weak' | 'okay' | 'strong';
 }
 
-// Timeframe patterns: Q1-Q4, year, months, weeks
-const TIMEFRAME_PATTERN = /\b(Q[1-4]|20\d{2}|\d+\s*(month|week|M|W)s?)\b/i;
+// Project-speak: delivery-focused language (candidates for HOW, not the opportunity itself)
+const PROJECT_VERBS = /\b(build|ship|deliver|launch|deploy|implement|develop|create|release|migrate)\b/i;
 
-// Deliverable indicators: arrows, bullets, semicolons, "deliver", "launch", "ship"
-const DELIVERABLE_PATTERN = /→|•|;|\bdeliver\b|\blaunch\b|\bship\b|\bbuild\b|\bcreate\b/i;
+// Timeframe without context often signals project-speak
+const TIMELINE_PATTERN = /\b(Q[1-4]|20\d{2}|\d+\s*(month|week|M|W)s?|by\s+(end\s+of\s+)?(Q[1-4]|January|February|March|April|May|June|July|August|September|October|November|December))\b/i;
 
-// Vague phrases that indicate low specificity
-const VAGUE_PATTERNS = [
-  /^improve\s+\w+$/i,
-  /^enhance\s+\w+$/i,
-  /^better\s+\w+$/i,
-  /^optimize\s+\w+$/i,
-  /^increase\s+\w+$/i,
-  /^grow\s+\w+$/i,
-];
+// Feature/deliverable nouns that suggest HOW not WHY
+const FEATURE_NOUNS = /\b(feature|functionality|module|component|system|tool|platform|MVP|prototype|integration|API|dashboard|portal)\b/i;
 
-// Specific action verbs that indicate good specificity
-const ACTION_VERBS = /\b(launch|build|create|develop|implement|deploy|integrate|establish|partner|hire|acquire|migrate|design|test|validate|ship|deliver)\b/i;
+// Outcome language: signals strategic thinking
+const OUTCOME_PATTERNS = /\b(prove|validate|increase|reduce|improve|understand|learn|discover|achieve|enable|unlock|drive|accelerate)\b/i;
+
+// Rationale language: signals evidence-based thinking
+const RATIONALE_PATTERNS = /\b(because|evidence|data\s+shows|suggests|indicates|we've\s+seen|customers?\s+(want|need|ask)|market|opportunity|risk|bet)\b/i;
+
+// Trade-off awareness: signals strategic prioritization
+const TRADEOFF_PATTERNS = /\b(instead\s+of|rather\s+than|not\s+\w+,?\s+but|focus\s+on|prioritize|over\s+\w+)\b/i;
 
 /**
  * Evaluates an opportunity and returns coaching feedback
+ *
+ * Philosophy: Better to have clear WHY with vague HOW than the reverse.
+ * When we see project-speak, acknowledge it as valid thinking while nudging toward rationale.
  */
 export function evaluateOpportunity(content: string): CoachingResult {
   const trimmed = content.trim();
   const criteria: CoachingCriterion[] = [];
-
-  // Criterion 1: Has timeframe
-  const hasTimeframe = TIMEFRAME_PATTERN.test(trimmed);
-  criteria.push({
-    id: 'timeframe',
-    label: 'Has a timeframe',
-    passed: hasTimeframe,
-    suggestion: hasTimeframe ? undefined : 'Add when this should happen (e.g., "Q2", "within 3 months")',
-  });
-
-  // Criterion 2: Has deliverables
-  const hasDeliverables = DELIVERABLE_PATTERN.test(trimmed);
-  criteria.push({
-    id: 'deliverables',
-    label: 'Clear deliverables',
-    passed: hasDeliverables,
-    suggestion: hasDeliverables ? undefined : 'Add what you\'ll deliver (use → to list outcomes)',
-  });
-
-  // Criterion 3: Specific (not vague)
-  const isVague = VAGUE_PATTERNS.some(pattern => pattern.test(trimmed));
-  const hasActionVerb = ACTION_VERBS.test(trimmed);
-  const isSpecific = !isVague && (hasActionVerb || trimmed.length > 30);
-  criteria.push({
-    id: 'specific',
-    label: 'Specific action',
-    passed: isSpecific,
-    suggestion: isSpecific ? undefined : 'Be more specific about what you\'ll actually do',
-  });
-
-  // Criterion 4: Sufficient detail (word count)
   const wordCount = trimmed.split(/\s+/).length;
-  const hasSufficientDetail = wordCount >= 5;
+
+  // Detect patterns
+  const hasProjectVerbs = PROJECT_VERBS.test(trimmed);
+  const hasTimeline = TIMELINE_PATTERN.test(trimmed);
+  const hasFeatureNouns = FEATURE_NOUNS.test(trimmed);
+  const hasOutcomeLanguage = OUTCOME_PATTERNS.test(trimmed);
+  const hasRationale = RATIONALE_PATTERNS.test(trimmed);
+  const hasTradeoffs = TRADEOFF_PATTERNS.test(trimmed);
+
+  // Is this mostly project-speak? (has delivery language without outcome/rationale)
+  const isProjectHeavy = (hasProjectVerbs || hasFeatureNouns) && !hasOutcomeLanguage && !hasRationale;
+  const isTimelineOnly = hasTimeline && !hasRationale;
+
+  // Criterion 1: Outcome clarity
   criteria.push({
-    id: 'detail',
-    label: 'Enough detail',
-    passed: hasSufficientDetail,
-    suggestion: hasSufficientDetail ? undefined : 'Add more detail about this opportunity',
+    id: 'outcome',
+    label: 'Clear outcome focus',
+    passed: hasOutcomeLanguage || hasTradeoffs,
+    suggestion: hasOutcomeLanguage || hasTradeoffs
+      ? undefined
+      : 'What changes if this succeeds? What outcome are you driving toward?',
   });
 
-  // Calculate overall strength
-  const passedCount = criteria.filter(c => c.passed).length;
+  // Criterion 2: Rationale present
+  criteria.push({
+    id: 'rationale',
+    label: 'Rationale present',
+    passed: hasRationale,
+    suggestion: hasRationale
+      ? undefined
+      : 'Why this? Why now? What evidence suggests this is worth pursuing?',
+  });
+
+  // Criterion 3: Project-speak check (inverted - we want LESS of this)
+  // If heavy on project language, reframe as candidates
+  if (isProjectHeavy) {
+    criteria.push({
+      id: 'reframe',
+      label: 'Possible candidates identified',
+      passed: false,
+      suggestion: 'These look like candidates for HOW to achieve this. What\'s the outcome driving them?',
+    });
+  }
+
+  // Criterion 4: Timeline without context
+  if (isTimelineOnly) {
+    criteria.push({
+      id: 'timeline-context',
+      label: 'Timeline has context',
+      passed: false,
+      suggestion: 'Why this timing? What changes if we wait?',
+    });
+  }
+
+  // Criterion 5: Sufficient context (not just a heading)
+  // Headings are fine, but if there's more, it should add value
+  const isJustHeading = wordCount <= 5;
+  const hasEnoughContext = isJustHeading || wordCount >= 10;
+
+  if (!isJustHeading && wordCount < 10 && !hasOutcomeLanguage && !hasRationale) {
+    criteria.push({
+      id: 'context',
+      label: 'Enough context',
+      passed: false,
+      suggestion: 'Add a sentence on why this matters and what you expect to learn or achieve.',
+    });
+  }
+
+  // Calculate overall strength based on strategic clarity
+  const positiveSignals = [hasOutcomeLanguage, hasRationale, hasTradeoffs].filter(Boolean).length;
+  const negativeSignals = [isProjectHeavy, isTimelineOnly].filter(Boolean).length;
+
   let overallStrength: 'weak' | 'okay' | 'strong';
 
-  if (passedCount >= 4) {
+  if (positiveSignals >= 2 && negativeSignals === 0) {
     overallStrength = 'strong';
-  } else if (passedCount >= 2) {
+  } else if (positiveSignals >= 1 || (isJustHeading && negativeSignals === 0)) {
     overallStrength = 'okay';
   } else {
     overallStrength = 'weak';
@@ -108,7 +149,7 @@ export function parseOpportunityContent(content: string): {
   const trimmed = content.trim();
 
   // Extract timeframe
-  const timeframeMatch = trimmed.match(TIMEFRAME_PATTERN);
+  const timeframeMatch = trimmed.match(TIMELINE_PATTERN);
   const timeframe = timeframeMatch?.[0];
 
   // Split on arrow if present
