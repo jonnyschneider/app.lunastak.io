@@ -113,6 +113,20 @@ export interface FixtureGeneratedOutput {
   changeSummary?: string;
 }
 
+// User-authored content in fixture (opportunities, principles)
+export interface FixtureUserContent {
+  id: string; // "{{UC_N_ID}}" placeholder
+  type: 'opportunity' | 'principle';
+  content: string;
+  status: 'draft' | 'complete';
+  metadata?: {
+    objectiveIds?: string[];
+    coachingDismissed?: boolean;
+    parsedTitle?: string;
+    parsedTimeframe?: string;
+  };
+}
+
 // Project in fixture
 export interface FixtureProject {
   id: string; // "{{PROJECT_ID}}" placeholder
@@ -127,6 +141,7 @@ export interface FixtureProject {
   documents: FixtureDocument[];
   syntheses?: FixtureSynthesis[];
   generatedOutputs?: FixtureGeneratedOutput[];
+  userContent?: FixtureUserContent[];
 }
 
 // Complete fixture file
