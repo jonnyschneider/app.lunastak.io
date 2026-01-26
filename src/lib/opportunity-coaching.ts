@@ -34,7 +34,7 @@ const VAGUE_PATTERNS = [
 ];
 
 // Specific action verbs that indicate good specificity
-const ACTION_VERBS = /\b(launch|build|create|develop|implement|deploy|integrate|establish|partner|hire|acquire|migrate|design|test|validate|ship)\b/i;
+const ACTION_VERBS = /\b(launch|build|create|develop|implement|deploy|integrate|establish|partner|hire|acquire|migrate|design|test|validate|ship|deliver)\b/i;
 
 /**
  * Evaluates an opportunity and returns coaching feedback

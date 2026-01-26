@@ -24,25 +24,34 @@ export function OpportunityEditor({
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contentRef = useRef(content);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   // Focus textarea on mount
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
-  // Evaluate coaching on pause (2s debounce) or blur
+  // Evaluate coaching using ref to avoid stale closure
   const evaluateContent = useCallback(() => {
-    if (content.trim().length > 0) {
-      const result = evaluateOpportunity(content);
+    const currentContent = contentRef.current;
+    if (currentContent.trim().length > 0) {
+      const result = evaluateOpportunity(currentContent);
       setCoaching(result);
       setShowCoaching(true);
     } else {
       setShowCoaching(false);
     }
-  }, [content]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
+    const newContent = e.target.value;
+    setContent(newContent);
+    contentRef.current = newContent; // Update ref immediately
     setShowCoaching(false);
 
     // Clear existing timeout
