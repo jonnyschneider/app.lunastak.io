@@ -59,6 +59,7 @@ export default function DemoStrategyPage() {
             strategy={strategy}
             conversationId="demo-conversation"
             traceId="demo-trace"
+            projectId="demo-project"
           />
         </div>
         <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
