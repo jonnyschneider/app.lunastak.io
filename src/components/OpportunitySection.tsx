@@ -5,20 +5,32 @@ import { OpportunityEditor } from './OpportunityEditor';
 import { OpportunityCard } from './OpportunityCard';
 import { InfoDialog } from './InfoDialog';
 
+interface ObjectiveContribution {
+  objectiveId: string;
+  contribution: string;
+}
+
 interface Opportunity {
   id: string;
   content: string;
   status: 'draft' | 'complete';
   metadata?: {
     coachingDismissed?: boolean;
+    objectiveContributions?: ObjectiveContribution[];
   };
+}
+
+interface ObjectiveForLinking {
+  id: string;
+  pithy: string;
 }
 
 interface OpportunitySectionProps {
   projectId: string;
+  objectives: ObjectiveForLinking[];
 }
 
-export function OpportunitySection({ projectId }: OpportunitySectionProps) {
+export function OpportunitySection({ projectId, objectives }: OpportunitySectionProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -47,7 +59,11 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
     fetchOpportunities();
   }, [fetchOpportunities]);
 
-  const handleCreate = async (content: string, status: 'draft' | 'complete') => {
+  const handleCreate = async (
+    content: string,
+    status: 'draft' | 'complete',
+    objectiveContributions: ObjectiveContribution[]
+  ) => {
     setSaving(true);
     try {
       const res = await fetch(`/api/project/${projectId}/content`, {
@@ -57,7 +73,10 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
           type: 'opportunity',
           content,
           status,
-          metadata: { coachingDismissed: status === 'draft' },
+          metadata: {
+            coachingDismissed: status === 'draft',
+            objectiveContributions,
+          },
         }),
       });
 
@@ -73,7 +92,12 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
     }
   };
 
-  const handleUpdate = async (id: string, content: string, status: 'draft' | 'complete') => {
+  const handleUpdate = async (
+    id: string,
+    content: string,
+    status: 'draft' | 'complete',
+    objectiveContributions: ObjectiveContribution[]
+  ) => {
     setSaving(true);
     try {
       const res = await fetch(`/api/project/${projectId}/content`, {
@@ -83,7 +107,10 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
           id,
           content,
           status,
-          metadata: { coachingDismissed: status === 'draft' },
+          metadata: {
+            coachingDismissed: status === 'draft',
+            objectiveContributions,
+          },
         }),
       });
 
@@ -187,7 +214,9 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
               <div key={opp.id} className="col-span-full">
                 <OpportunityEditor
                   initialContent={opp.content}
-                  onSave={(content, status) => handleUpdate(opp.id, content, status)}
+                  initialContributions={opp.metadata?.objectiveContributions || []}
+                  objectives={objectives}
+                  onSave={(content, status, contributions) => handleUpdate(opp.id, content, status, contributions)}
                   onCancel={handleCancelEdit}
                   saving={saving}
                 />
@@ -199,6 +228,8 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
                 content={opp.content}
                 status={opp.status as 'draft' | 'complete'}
                 coachingDismissed={opp.metadata?.coachingDismissed}
+                objectiveContributions={opp.metadata?.objectiveContributions}
+                objectives={objectives}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
@@ -211,6 +242,7 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
       {isAdding && !editingId && (
         <div className="mb-4">
           <OpportunityEditor
+            objectives={objectives}
             onSave={handleCreate}
             onCancel={handleCancelAdd}
             saving={saving}
@@ -232,13 +264,18 @@ export function OpportunitySection({ projectId }: OpportunitySectionProps) {
         open={infoDialogOpen}
         onOpenChange={setInfoDialogOpen}
         title="Opportunities"
-        content={`Opportunities are specific actions (3-12 months) that support your objectives. Each should have clear deliverables and timelines.
+        content={`Opportunities are areas of focus that support your objectives. They should be directional, not prescriptive - leave room for teams to figure out the HOW.
+
+**Good opportunities have:**
+- Clear connection to objectives
+- Expected contribution articulated
+- Rationale (why this, why now)
 
 **Like this...**
-Launch knowledge graph indexing (Q2) → Index 500M entities, integrate with search results, measure relevance lift
+"Prove builders will pay for selection coordination"
 
 **Not this...**
-Improve product features`}
+"Build feature X by Q3"`}
       />
     </div>
   );
