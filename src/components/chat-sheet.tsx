@@ -551,6 +551,7 @@ export function ChatSheet({
                 strategy={strategy}
                 conversationId={conversationId}
                 traceId={traceId}
+                projectId={projectId}
               />
               <FeedbackButtons traceId={traceId} />
             </div>
