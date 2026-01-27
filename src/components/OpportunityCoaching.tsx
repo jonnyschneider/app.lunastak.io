@@ -18,7 +18,7 @@ export function OpportunityCoaching({ result, onRewriteClick }: OpportunityCoach
     <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-border">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Coaching
+          Suggested improvements
         </span>
         <span className={`text-xs px-2 py-0.5 rounded ${
           overallStrength === 'strong' ? 'bg-green-100 text-green-700' :
