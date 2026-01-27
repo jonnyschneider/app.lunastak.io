@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronUp, Sparkles, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
 // Dimension display names
@@ -70,7 +71,7 @@ interface KnowledgebaseHeaderProps {
   knowledgeSummary: string | null
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
   syntheses: DimensionalSynthesis[]
-  onNewInsightsClick: () => void
+  onRefreshClick: () => void
 }
 
 export function KnowledgebaseHeader({
@@ -81,16 +82,9 @@ export function KnowledgebaseHeader({
   knowledgeSummary,
   dimensionalCoverage,
   syntheses,
-  onNewInsightsClick,
+  onRefreshClick,
 }: KnowledgebaseHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-
-  const handleNewInsightsClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (newInsightsCount > 0) {
-      onNewInsightsClick()
-    }
-  }
 
   return (
     <div className="border border-border rounded-lg bg-card overflow-hidden">
@@ -114,18 +108,27 @@ export function KnowledgebaseHeader({
             <span>{coveragePercentage}%</span>
           </div>
 
-          {/* New insights - highlighted if present */}
-          {newInsightsCount > 0 ? (
-            <button
-              onClick={handleNewInsightsClick}
-              className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 hover:underline"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <span>{newInsightsCount} new to include</span>
-            </button>
-          ) : (
-            <span className="text-sm text-muted-foreground">Up to date</span>
-          )}
+          {/* Refresh button - always visible */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (newInsightsCount > 0) {
+                onRefreshClick()
+              }
+            }}
+            disabled={newInsightsCount === 0}
+            className="h-7 text-xs"
+            title={newInsightsCount > 0
+              ? `Refresh strategy with ${newInsightsCount} new insights`
+              : 'Add more context to enable refresh'}
+          >
+            <RefreshCw className="h-3 w-3 mr-1.5" />
+            {newInsightsCount > 0
+              ? `Refresh (${newInsightsCount} new)`
+              : 'Add context to refresh'}
+          </Button>
 
           {/* Chevron */}
           {isExpanded ? (

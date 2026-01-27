@@ -465,7 +465,7 @@ export default function ProjectPage() {
           knowledgeSummary={projectData?.knowledgeSummary || null}
           dimensionalCoverage={stats.dimensionalCoverage}
           syntheses={projectData?.syntheses || []}
-          onNewInsightsClick={() => setSynthesisDialogOpen(true)}
+          onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
         />
 
         {/* Documents | Chats | Generated Strategies */}
