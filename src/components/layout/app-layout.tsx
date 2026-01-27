@@ -28,8 +28,8 @@ import {
   MessageSquare,
   Trash2,
   RotateCcw,
-  Target,
-  Brain,
+  Atom,
+  Glasses,
   TrendingUp,
   Lock,
   NotebookPen,
@@ -181,8 +181,9 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     isDeleting,
   } = useProjectActions({ triggerPaywall })
 
-  // Derive selected project from pathname
-  const selectedProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
+  // Derive selected project from pathname, fall back to first project
+  const pathnameProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
+  const selectedProjectId = pathnameProjectId || projects[0]?.id || null
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0] || null
 
   // Fetch projects for both auth users and guests (API supports both via cookie)
@@ -435,13 +436,21 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             <SidebarGroupLabel>Focus</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
+                    <Link href={`/project/${selectedProject.id}`}>
+                      <Glasses className="h-4 w-4" />
+                      <span>Your Thinking</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 {strategyHistory.length > 0 ? (
                   <Collapsible asChild defaultOpen className="group/collapsible">
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton>
-                          <Target className="h-4 w-4" />
-                          <span>Current Strategy</span>
+                          <Atom className="h-4 w-4" />
+                          <span>Your Strategy</span>
                           <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
@@ -468,20 +477,12 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/strategy`}>
                       <Link href={`/project/${selectedProject.id}/strategy`}>
-                        <Target className="h-4 w-4" />
-                        <span>Current Strategy</span>
+                        <Atom className="h-4 w-4" />
+                        <span>Your Strategy</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
-                    <Link href={`/project/${selectedProject.id}`}>
-                      <Brain className="h-4 w-4" />
-                      <span>Your Thinking</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/outcomes`}>
                     <Link href={`/project/${selectedProject.id}/outcomes`}>
