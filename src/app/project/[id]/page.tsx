@@ -3,16 +3,13 @@
 import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
-import Link from 'next/link'
 import { AppLayout } from '@/components/layout/app-layout'
 import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   FileText,
   MessageSquare,
-  Target,
   Plus,
   Upload,
   Loader2,
@@ -23,7 +20,6 @@ import {
   Crosshair,
   Star,
   NotebookPen,
-  RefreshCw,
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
@@ -46,12 +42,6 @@ import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import { DeepDiveSheet } from '@/components/deep-dive-sheet'
 import { ChatSheet, GapExploration } from '@/components/chat-sheet'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Item,
   ItemGroup,
   ItemContent,
@@ -65,14 +55,6 @@ import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { StructuredProvocation } from '@/lib/types'
 
 interface ProjectStats {
@@ -180,7 +162,6 @@ export default function ProjectPage() {
   // Expand/collapse state for sections
   const [showAllFocusAreas, setShowAllFocusAreas] = useState(false)
   const [showAllInputs, setShowAllInputs] = useState(false)
-  const [showAllOutputs, setShowAllOutputs] = useState(false)
   const [showAllProvocations, setShowAllProvocations] = useState(false)
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
@@ -468,8 +449,8 @@ export default function ProjectPage() {
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
         />
 
-        {/* Documents | Chats | Generated Strategies */}
-        <div className="grid gap-6 md:grid-cols-3">
+        {/* Documents | Chats */}
+        <div className="grid gap-6 md:grid-cols-2">
           {/* Documents Column */}
           <Card>
             <CardHeader className="pb-3">
@@ -712,110 +693,6 @@ export default function ProjectPage() {
             </CardContent>
           </Card>
 
-          {/* Generated Strategy Column */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="h-4 w-4" />
-                Generated Strategies
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Decision stacks from Luna
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projectData?.strategyOutputs && projectData.strategyOutputs.length > 0 ? (
-                (() => {
-                  const OUTPUT_LIMIT = 5
-                  const allOutputs = projectData.strategyOutputs
-                  const visibleOutputs = showAllOutputs ? allOutputs : allOutputs.slice(0, OUTPUT_LIMIT)
-                  const hasMore = allOutputs.length > OUTPUT_LIMIT
-
-                  return (
-                    <ItemGroup>
-                      {visibleOutputs.map((output, index) => (
-                        <React.Fragment key={output.id}>
-                          {index > 0 && <ItemSeparator />}
-                          <Item asChild size="sm" className="cursor-pointer hover:bg-accent/50">
-                            <Link href={`/strategy/${output.id}`}>
-                              <ItemContent>
-                                <ItemTitle className="text-xs">Decision Stack</ItemTitle>
-                                <ItemDescription className="text-xs">
-                                  {new Date(output.createdAt).toLocaleDateString()}
-                                </ItemDescription>
-                              </ItemContent>
-                            </Link>
-                          </Item>
-                        </React.Fragment>
-                      ))}
-                      {hasMore && (
-                        <>
-                          <ItemSeparator />
-                          <div className="px-4 py-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full text-muted-foreground"
-                              onClick={() => setShowAllOutputs(!showAllOutputs)}
-                            >
-                              {showAllOutputs ? 'Show less' : `Show ${allOutputs.length - OUTPUT_LIMIT} more`}
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </ItemGroup>
-                  )
-                })()
-              ) : (
-                <div className="text-center py-4 px-6 text-muted-foreground">
-                  <Target className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                  <p className="text-xs">No outputs yet</p>
-                  <p className="text-xs mt-1">Complete a chat to generate</p>
-                </div>
-              )}
-              <div className="p-4 pt-3 border-t">
-                <div className="flex w-full">
-                  {(projectData?.strategyOutputs?.length ?? 0) > 0 ? (
-                    <>
-                      <Button
-                        size="sm"
-                        className="flex-1 rounded-r-none"
-                        onClick={() => setRefreshStrategyDialogOpen(true)}
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Refresh Strategy
-                      </Button>
-                      <div className="w-px bg-primary-foreground/20" />
-                      <Button
-                        size="sm"
-                        className="flex-1 rounded-l-none"
-                        onClick={() => handleFakeDoor('Create from Blank')}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Blank Canvas
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        setChatInitialQuestion(undefined)
-                        setChatDeepDiveId(undefined)
-                        setChatGapExploration(undefined)
-                        setChatResumeConversationId(undefined)
-                        setChatViewOnly(false)
-                        setChatSheetOpen(true)
-                      }}
-                    >
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      Draft First Strategy
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Deep Dives - Full Width Panel */}
