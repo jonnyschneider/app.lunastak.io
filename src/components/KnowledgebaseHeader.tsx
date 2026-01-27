@@ -61,7 +61,7 @@ interface DimensionalSynthesis {
   fragmentCount: number
 }
 
-interface LunasMemoryHeaderProps {
+interface KnowledgebaseHeaderProps {
   fragmentCount: number
   chatCount: number
   docCount: number
@@ -73,7 +73,7 @@ interface LunasMemoryHeaderProps {
   onNewInsightsClick: () => void
 }
 
-export function LunasMemoryHeader({
+export function KnowledgebaseHeader({
   fragmentCount,
   chatCount,
   coveragePercentage,
@@ -82,7 +82,7 @@ export function LunasMemoryHeader({
   dimensionalCoverage,
   syntheses,
   onNewInsightsClick,
-}: LunasMemoryHeaderProps) {
+}: KnowledgebaseHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handleNewInsightsClick = (e: React.MouseEvent) => {
@@ -101,7 +101,7 @@ export function LunasMemoryHeader({
       >
         <div className="flex items-center gap-3">
           <Sparkles className="h-4 w-4 text-green-600" />
-          <span className="font-medium text-sm">Luna&apos;s Memory</span>
+          <span className="font-medium text-sm">Knowledgebase</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -142,7 +142,7 @@ export function LunasMemoryHeader({
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">What Luna Knows</h4>
+              <h4 className="text-sm font-medium">Knowledge Summary</h4>
               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {knowledgeSummary}
               </p>
