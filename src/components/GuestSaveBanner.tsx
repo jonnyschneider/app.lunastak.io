@@ -32,7 +32,11 @@ export function GuestSaveBanner({ onDismiss }: GuestSaveBannerProps) {
           Your strategy isn't saved yet. Create an account to keep your work.
         </span>
         <div className="flex items-center gap-2 ml-4">
-          <Button size="sm" onClick={handleSignIn}>
+          <Button
+            size="sm"
+            onClick={handleSignIn}
+            className="bg-orange-500 hover:bg-orange-600 text-white"
+          >
             Create Account
           </Button>
           <button
