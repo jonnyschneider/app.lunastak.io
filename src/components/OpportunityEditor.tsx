@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { CornerDownRight } from 'lucide-react';
 import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching';
 import { OpportunityCoaching } from './OpportunityCoaching';
 import { FakeDoorDialog } from './FakeDoorDialog';
@@ -129,15 +130,10 @@ export function OpportunityEditor({
     };
   }, []);
 
-  const linkedObjectives = objectives.filter(obj => isObjectiveLinked(obj.id));
-
   return (
     <div className="space-y-4 bg-white border border-[#0A2933] rounded-lg p-4">
       {/* Content textarea */}
       <div>
-        <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-          Opportunity
-        </label>
         <textarea
           ref={textareaRef}
           value={content}
@@ -157,58 +153,40 @@ export function OpportunityEditor({
         />
       )}
 
-      {/* Objective linking */}
+      {/* Objective linking with inline contributions */}
       {objectives.length > 0 && (
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-            Which objectives does this support?
-          </label>
-          <div className="space-y-2">
-            {objectives.map(obj => (
-              <label
-                key={obj.id}
-                className="flex items-start gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={isObjectiveLinked(obj.id)}
-                  onChange={() => toggleObjective(obj.id)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  disabled={saving}
-                />
-                <span className="text-sm text-foreground">{obj.pithy}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Contribution inputs for linked objectives */}
-      {linkedObjectives.length > 0 && (
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-            Expected contribution (for each objective)
-          </label>
-          <div className="space-y-3">
-            {linkedObjectives.map(obj => {
-              const contribution = contributions.find(c => c.objectiveId === obj.id);
-              return (
-                <div key={obj.id} className="border border-input rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-2 truncate">
-                    {obj.pithy}
-                  </p>
+        <div className="space-y-1">
+          {objectives.map(obj => {
+            const isLinked = isObjectiveLinked(obj.id);
+            const contribution = contributions.find(c => c.objectiveId === obj.id);
+            return (
+              <div key={obj.id}>
+                <label className="flex items-start gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
                   <input
-                    type="text"
-                    value={contribution?.contribution || ''}
-                    onChange={(e) => updateContribution(obj.id, e.target.value)}
-                    placeholder="e.g., 'First 10 paying customers' or 'Validate willingness to pay'"
-                    className="w-full p-2 border border-input rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    type="checkbox"
+                    checked={isLinked}
+                    onChange={() => toggleObjective(obj.id)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     disabled={saving}
                   />
-                </div>
-              );
-            })}
-          </div>
+                  <span className="text-sm text-foreground">{obj.pithy}</span>
+                </label>
+                {isLinked && (
+                  <div className="flex items-start gap-2 ml-9 mt-1 mb-2">
+                    <CornerDownRight className="h-3 w-3 text-muted-foreground mt-2.5 shrink-0" />
+                    <input
+                      type="text"
+                      value={contribution?.contribution || ''}
+                      onChange={(e) => updateContribution(obj.id, e.target.value)}
+                      placeholder="How will this opportunity contribute? (e.g., 'First 10 paying customers')"
+                      className="flex-1 p-2 border border-input rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      disabled={saving}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
