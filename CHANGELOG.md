@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.4] - 2026-01-28
+
+### Added
+
+- **Strategy History Submenu** - Browse past strategies from sidebar collapsible menu
+
+### Improved
+
+- **Opportunity Editor UX** - Better feedback and objective linking
+  - Positive feedback when all coaching criteria pass
+  - Inline contribution inputs below linked objectives
+  - "Coaching" → "Suggested improvements"
+
+- **Dashboard UX** - Simplified headers and clearer CTAs
+  - Page heading simplified to "Your Thinking"
+  - Orange "Generate new strategy" button with fragment count
+  - Guest banner moved above tabs with orange CTA
+
+- **Sidebar Navigation** - Cleaner icons and labels
+  - "Current Strategy" → "Your Strategy" (Atom icon)
+  - "Your Thinking" (Glasses icon) reordered above strategy
+
+---
 ## [1.7.3] - 2026-01-24
 
 ### Fixed
