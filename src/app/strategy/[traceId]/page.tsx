@@ -102,6 +102,9 @@ export default function StrategyViewPage() {
   return (
     <AppLayout>
       <div className="container mx-auto px-6 py-6">
+        {/* Guest Save Banner - above tabs */}
+        {isGuest && <GuestSaveBanner />}
+
         {/* Tabbed Content */}
         <Tabs defaultValue="strategy" className="w-full">
           {/* Line-style tabs */}
@@ -121,8 +124,6 @@ export default function StrategyViewPage() {
           </TabsList>
 
           <TabsContent value="strategy" className="mt-8">
-            {/* Guest Save Banner */}
-            {isGuest && <GuestSaveBanner />}
 
             {/* Decision Stack Card */}
             <div className="max-w-6xl mx-auto rounded-lg overflow-hidden border border-border shadow-sm">

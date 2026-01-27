@@ -390,10 +390,10 @@ export default function ProjectPage() {
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            Refine Your Strategic Direction
+            Your Thinking
           </h1>
           <p className="text-muted-foreground">
-            Your second brain for strategy. Capture ideas, explore questions, and refine your thinking.
+            Capture ideas, explore questions, and refine your thinking.
           </p>
         </div>
 
