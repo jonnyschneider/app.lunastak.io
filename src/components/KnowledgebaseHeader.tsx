@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Sparkles, RefreshCw } from 'lucide-react'
+import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
@@ -108,27 +108,28 @@ export function KnowledgebaseHeader({
             <span>{coveragePercentage}%</span>
           </div>
 
-          {/* Refresh button - always visible */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (newInsightsCount > 0) {
-                onRefreshClick()
-              }
-            }}
-            disabled={newInsightsCount === 0}
-            className="h-7 text-xs"
-            title={newInsightsCount > 0
-              ? `Refresh strategy with ${newInsightsCount} new insights`
-              : 'Add more context to enable refresh'}
-          >
-            <RefreshCw className="h-3 w-3 mr-1.5" />
-            {newInsightsCount > 0
-              ? `Refresh (${newInsightsCount} new)`
-              : 'Add context to refresh'}
-          </Button>
+          {/* Generate strategy - with new fragment count as leader */}
+          {newInsightsCount > 0 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-orange-600">
+                {newInsightsCount} new fragment{newInsightsCount !== 1 ? 's' : ''}
+              </span>
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRefreshClick()
+                }}
+                className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Generate new strategy
+              </Button>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              Strategy up to date
+            </span>
+          )}
 
           {/* Chevron */}
           {isExpanded ? (
