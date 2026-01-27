@@ -218,7 +218,7 @@ export function OpportunityEditor({
                       type="text"
                       value={contribution?.contribution || ''}
                       onChange={(e) => updateContribution(obj.id, e.target.value)}
-                      placeholder="How will this opportunity contribute? (e.g., 'First 10 paying customers')"
+                      placeholder="e.g. add an expected result related to this outcome"
                       className="flex-1 p-2 border border-input rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       disabled={saving}
                     />
