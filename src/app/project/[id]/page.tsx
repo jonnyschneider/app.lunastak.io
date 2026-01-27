@@ -64,7 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
-import { LunasMemoryHeader } from '@/components/LunasMemoryHeader'
+import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
 import {
   Dialog,
   DialogContent,
@@ -455,8 +455,8 @@ export default function ProjectPage() {
           </p>
         </div>
 
-        {/* Luna's Memory Header */}
-        <LunasMemoryHeader
+        {/* Knowledgebase Header */}
+        <KnowledgebaseHeader
           fragmentCount={stats.fragmentCount}
           chatCount={stats.conversationCount}
           docCount={stats.documentCount}
