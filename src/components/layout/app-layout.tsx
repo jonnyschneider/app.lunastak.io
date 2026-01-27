@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   ChevronUp,
+  ChevronRight,
   Check,
   ChevronsUpDown,
   Settings,
@@ -167,6 +168,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
+  const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[]>([])
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
 
@@ -187,6 +189,24 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  // Fetch strategy history when selected project changes
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setStrategyHistory([])
+      return
+    }
+    fetch(`/api/project/${selectedProjectId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.strategyOutputs) {
+          setStrategyHistory(data.strategyOutputs)
+        } else {
+          setStrategyHistory([])
+        }
+      })
+      .catch(() => setStrategyHistory([]))
+  }, [selectedProjectId])
 
   const fetchProjects = async () => {
     setIsLoadingProjects(true)
@@ -415,14 +435,45 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             <SidebarGroupLabel>Focus</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/strategy`}>
-                    <Link href={`/project/${selectedProject.id}/strategy`}>
-                      <Target className="h-4 w-4" />
-                      <span>Current Strategy</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {strategyHistory.length > 0 ? (
+                  <Collapsible asChild defaultOpen className="group/collapsible">
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                          <Target className="h-4 w-4" />
+                          <span>Current Strategy</span>
+                          <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {strategyHistory.map((s) => (
+                            <SidebarMenuSubItem key={s.id}>
+                              <SidebarMenuSubButton asChild isActive={pathname === `/strategy/${s.id}`}>
+                                <Link href={`/strategy/${s.id}`}>
+                                  {new Date(s.createdAt).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                ) : (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/strategy`}>
+                      <Link href={`/project/${selectedProject.id}/strategy`}>
+                        <Target className="h-4 w-4" />
+                        <span>Current Strategy</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
                     <Link href={`/project/${selectedProject.id}`}>
