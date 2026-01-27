@@ -13,30 +13,10 @@ import {
   Plus,
   Upload,
   Loader2,
-  Lightbulb,
-  AlertCircle,
-  CheckCircle2,
-  X,
-  Crosshair,
   Star,
   NotebookPen,
 } from 'lucide-react'
-import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
-
-// Dimension display names
-const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
-  CUSTOMER_MARKET: 'Customer & Market',
-  PROBLEM_OPPORTUNITY: 'Problem & Opportunity',
-  VALUE_PROPOSITION: 'Value Proposition',
-  DIFFERENTIATION_ADVANTAGE: 'Differentiation',
-  COMPETITIVE_LANDSCAPE: 'Competition',
-  BUSINESS_MODEL_ECONOMICS: 'Business Model',
-  GO_TO_MARKET: 'Go-to-Market',
-  PRODUCT_EXPERIENCE: 'Product & Experience',
-  CAPABILITIES_ASSETS: 'Capabilities',
-  RISKS_CONSTRAINTS: 'Risks & Constraints',
-  STRATEGIC_INTENT: 'Strategic Intent',
-}
+import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import { DeepDiveSheet } from '@/components/deep-dive-sheet'
@@ -55,6 +35,8 @@ import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
+import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
+import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import { StructuredProvocation } from '@/lib/types'
 
 interface ProjectStats {
@@ -160,9 +142,7 @@ export default function ProjectPage() {
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
-  const [showAllFocusAreas, setShowAllFocusAreas] = useState(false)
   const [showAllInputs, setShowAllInputs] = useState(false)
-  const [showAllProvocations, setShowAllProvocations] = useState(false)
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
   const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
@@ -403,25 +383,6 @@ export default function ProjectPage() {
   // Calculate coverage percentage (dimensions with at least 1 fragment)
   const coveredDimensions = Object.values(stats.dimensionalCoverage).filter(d => d.fragmentCount > 0).length
   const coveragePercentage = Math.round((coveredDimensions / TIER_1_DIMENSIONS.length) * 100)
-
-  // Get areas of focus (dimensions with LOW confidence or gaps), filtering out dismissed
-  // Sort by least coverage (lowest fragment count first)
-  const allAreasOfFocus = (projectData?.syntheses || [])
-    .filter(s => s.confidence === 'LOW' || s.gaps.length > 0)
-    .filter(s => !isItemDismissed('focus_area', s.dimension))
-    .sort((a, b) => a.fragmentCount - b.fragmentCount)
-
-  const FOCUS_AREA_LIMIT = 3
-  const areasOfFocus = showAllFocusAreas ? allAreasOfFocus : allAreasOfFocus.slice(0, FOCUS_AREA_LIMIT)
-  const hasMoreFocusAreas = allAreasOfFocus.length > FOCUS_AREA_LIMIT
-
-  // Filter suggested questions to exclude dismissed ones (use description as identifier)
-  const allVisibleQuestions = (projectData?.suggestedQuestions || [])
-    .filter(q => !isItemDismissed('suggested_question', q.description))
-
-  const PROVOCATION_LIMIT = 3
-  const visibleQuestions = showAllProvocations ? allVisibleQuestions : allVisibleQuestions.slice(0, PROVOCATION_LIMIT)
-  const hasMoreProvocations = allVisibleQuestions.length > PROVOCATION_LIMIT
 
   return (
     <AppLayout>
@@ -695,333 +656,48 @@ export default function ProjectPage() {
 
         </div>
 
-        {/* Deep Dives - Full Width Panel */}
-        {(() => {
-          const allDeepDives = projectData?.deepDives?.filter(
-            dd => !isItemDismissed('deep_dive', dd.id)
-          ) || []
-          const inProgress = allDeepDives.filter(dd => dd.conversationCount > 0)
-          const readyToExplore = allDeepDives.filter(dd => dd.conversationCount === 0)
-          const totalCount = allDeepDives.length
-
-          const renderDeepDiveItem = (dd: DeepDiveSummary, index: number) => (
-            <React.Fragment key={dd.id}>
-              {index > 0 && <ItemSeparator />}
-              <Item
-                size="sm"
-                className="cursor-pointer hover:bg-accent/50"
-                onClick={() => openDeepDiveSheet(dd.id)}
-              >
-                <ItemContent>
-                  <ItemTitle>{dd.topic}</ItemTitle>
-                  <ItemDescription className="text-xs">
-                    {dd.conversationCount > 0
-                      ? `${dd.conversationCount} chat${dd.conversationCount !== 1 ? 's' : ''}`
-                      : 'Not started'}
-                  </ItemDescription>
-                </ItemContent>
-                <ItemActions>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      dismissItem('deep_dive', dd.id)
-                    }}
-                    className="p-1 rounded hover:bg-muted"
-                    title="Dismiss"
-                  >
-                    <X className="h-3 w-3 text-green-600" />
-                  </button>
-                </ItemActions>
-              </Item>
-            </React.Fragment>
-          )
-
-          return (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Crosshair className="h-5 w-5 text-green-600" />
-                  Deep Dives
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="grid lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x">
-                  {/* Left: Tabbed List */}
-                  <div className="min-h-[200px] flex flex-col">
-                    <div className="flex-1">
-                    {totalCount > 0 ? (
-                      <Tabs defaultValue={inProgress.length > 0 ? 'in-progress' : 'ready'} className="h-full">
-                        <div className="border-b px-4">
-                          <TabsList className="h-10 bg-transparent p-0 gap-4">
-                            <TabsTrigger
-                              value="in-progress"
-                              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                            >
-                              In Progress
-                              {inProgress.length > 0 && (
-                                <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
-                                  {inProgress.length}
-                                </span>
-                              )}
-                            </TabsTrigger>
-                            <TabsTrigger
-                              value="ready"
-                              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                            >
-                              Ready to Explore
-                              {readyToExplore.length > 0 && (
-                                <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
-                                  {readyToExplore.length}
-                                </span>
-                              )}
-                            </TabsTrigger>
-                          </TabsList>
-                        </div>
-                        <TabsContent value="in-progress" className="mt-0">
-                          {inProgress.length > 0 ? (
-                            <ItemGroup>
-                              {inProgress.map((dd, index) => renderDeepDiveItem(dd, index))}
-                            </ItemGroup>
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <p className="text-sm">No deep dives in progress</p>
-                            </div>
-                          )}
-                        </TabsContent>
-                        <TabsContent value="ready" className="mt-0">
-                          {readyToExplore.length > 0 ? (
-                            <ItemGroup>
-                              {readyToExplore.map((dd, index) => renderDeepDiveItem(dd, index))}
-                            </ItemGroup>
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <p className="text-sm">No deep dives ready to explore</p>
-                            </div>
-                          )}
-                        </TabsContent>
-                      </Tabs>
-                    ) : (
-                      <div className="flex items-center justify-center h-full py-8 text-muted-foreground">
-                        <div className="text-center">
-                          <Crosshair className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No deep dives yet</p>
-                          <p className="text-xs mt-1">Flag topics to explore further</p>
-                        </div>
-                      </div>
-                    )}
-                    </div>
-                    <div className="p-4 pt-3 border-t mt-auto">
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setAddDeepDiveOpen(true)}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Deep Dive
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Right: Explainer */}
-                  <div className="p-6 space-y-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">What are Deep Dives?</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Deep Dives are topics you&apos;ve flagged for focused exploration.
-                        Unlike quick conversations, these are threads you return to multiple times
-                        to build deeper understanding.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">How to create one</h4>
-                      <p className="text-sm text-muted-foreground">
-                        During any conversation, tell Luna you want to explore a topic further.
-                        You can also promote uploaded documents or create one directly using the Add button.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })()}
-
-        {/* Provocations + Strategic Gaps */}
+        {/* Explore Next + Go to Strategy */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Provocations */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Lightbulb className="h-5 w-5 text-green-600" />
-                Provocations
-              </CardTitle>
-              <CardDescription>
-                Sharp perspectives that unlock new insights
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {visibleQuestions.length > 0 ? (
-                <ItemGroup>
-                  {visibleQuestions.map((question, index) => (
-                      <React.Fragment key={index}>
-                        {index > 0 && <ItemSeparator />}
-                        <Item
-                          size="sm"
-                          className="cursor-pointer hover:bg-accent/50"
-                          onClick={() => {
-                            setChatInitialQuestion(question.description)
-                            setChatDeepDiveId(undefined)
-                            setChatGapExploration(undefined)
-                            setChatResumeConversationId(undefined)
-                            setChatViewOnly(false)
-                            setChatSheetOpen(true)
-                          }}
-                        >
-                          <ItemContent>
-                            <ItemTitle>{question.title}</ItemTitle>
-                            <ItemDescription className="text-xs">{question.description}</ItemDescription>
-                          </ItemContent>
-                          <ItemActions>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                dismissItem('suggested_question', question.description)
-                              }}
-                              className="p-1 rounded hover:bg-muted"
-                              title="Dismiss"
-                            >
-                              <X className="h-3 w-3 text-green-600" />
-                            </button>
-                          </ItemActions>
-                        </Item>
-                      </React.Fragment>
-                    )
-                  )}
-                  {hasMoreProvocations && (
-                    <>
-                      <ItemSeparator />
-                      <div className="px-4 py-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full text-muted-foreground"
-                          onClick={() => setShowAllProvocations(!showAllProvocations)}
-                        >
-                          {showAllProvocations ? 'Show less' : `Show ${allVisibleQuestions.length - PROVOCATION_LIMIT} more`}
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </ItemGroup>
-              ) : projectData?.suggestedQuestions && projectData.suggestedQuestions.length > 0 ? (
-                <div className="text-center py-6 px-6 text-muted-foreground">
-                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                  <p className="text-sm">All suggestions addressed</p>
-                  <p className="text-xs mt-1">New suggestions will appear as you continue exploring</p>
-                </div>
-              ) : (
-                <div className="text-center py-6 px-6 text-muted-foreground">
-                  <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Luna hasn&apos;t started wondering yet</p>
-                  <p className="text-xs mt-1">Questions will appear as Luna learns more about your strategy</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Strategic Gaps */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <AlertCircle className="h-5 w-5 text-amber-500" />
-                Strategic Gaps
-              </CardTitle>
-              <CardDescription>
-                Cover your bases by focussing on gaps
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-            {areasOfFocus.length > 0 ? (
-              <ItemGroup>
-                {areasOfFocus.map((area, index) => {
-                  // Use first gap as the main content, dimension as subtle label
-                  const gap = area.gaps[0]
-                  const title = gap?.title || 'Explore this area'
-                  const description = gap?.description || area.summary || ''
-                  const dimensionLabel = DIMENSION_LABELS[area.dimension as Tier1Dimension] || area.dimension
-
-                  return (
-                    <React.Fragment key={area.dimension}>
-                      {index > 0 && <ItemSeparator />}
-                      <Item
-                        size="sm"
-                        className="cursor-pointer hover:bg-accent/50"
-                        onClick={() => {
-                          setChatDeepDiveId(undefined)
-                          setChatInitialQuestion(undefined)
-                          setChatGapExploration({
-                            dimension: area.dimension,
-                            summary: area.summary || undefined,
-                          })
-                          setChatResumeConversationId(undefined)
-                          setChatViewOnly(false)
-                          setChatSheetOpen(true)
-                        }}
-                      >
-                        <ItemContent>
-                          <ItemTitle>{title}</ItemTitle>
-                          <ItemDescription className="text-xs">{description}</ItemDescription>
-                          <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5 mt-1 w-fit">
-                            {dimensionLabel}
-                          </span>
-                        </ItemContent>
-                        <ItemActions>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              dismissItem('focus_area', area.dimension)
-                            }}
-                            className="p-1 rounded hover:bg-muted"
-                            title="Dismiss"
-                          >
-                            <X className="h-3 w-3 text-green-600" />
-                          </button>
-                        </ItemActions>
-                      </Item>
-                    </React.Fragment>
-                  )
-                })}
-                {hasMoreFocusAreas && (
-                  <>
-                    <ItemSeparator />
-                    <div className="px-4 py-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-muted-foreground"
-                        onClick={() => setShowAllFocusAreas(!showAllFocusAreas)}
-                      >
-                        {showAllFocusAreas ? 'Show less' : `Show ${allAreasOfFocus.length - FOCUS_AREA_LIMIT} more`}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </ItemGroup>
-            ) : stats.fragmentCount > 0 ? (
-              <div className="text-center py-6 px-6 text-muted-foreground">
-                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                <p className="text-sm">Looking good!</p>
-                <p className="text-xs mt-1">No major gaps detected</p>
-              </div>
-            ) : (
-              <div className="text-center py-6 px-6 text-muted-foreground">
-                <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No gaps identified yet</p>
-                <p className="text-xs mt-1">Chat with Luna to discover areas to explore</p>
-              </div>
-            )}
-            </CardContent>
-          </Card>
+          <ExploreNextSection
+            deepDives={projectData?.deepDives || []}
+            provocations={projectData?.suggestedQuestions || []}
+            syntheses={projectData?.syntheses || []}
+            isItemDismissed={isItemDismissed}
+            onDismissItem={dismissItem}
+            onItemClick={(item: ExploreItem) => {
+              if (item.type === 'deep-dive') {
+                const ddId = item.id.replace('dd-', '')
+                openDeepDiveSheet(ddId)
+              } else if (item.type === 'provocation') {
+                setChatInitialQuestion(item.description)
+                setChatDeepDiveId(undefined)
+                setChatGapExploration(undefined)
+                setChatResumeConversationId(undefined)
+                setChatViewOnly(false)
+                setChatSheetOpen(true)
+              } else if (item.type === 'gap') {
+                setChatDeepDiveId(undefined)
+                setChatInitialQuestion(undefined)
+                setChatGapExploration({
+                  dimension: item.dimension || '',
+                  summary: item.description,
+                })
+                setChatResumeConversationId(undefined)
+                setChatViewOnly(false)
+                setChatSheetOpen(true)
+              }
+            }}
+            onAddDeepDive={() => setAddDeepDiveOpen(true)}
+          />
+          <GoToStrategyCard
+            onGoToStrategy={() => {
+              // Scroll to strategy section or navigate
+              const strategySection = document.getElementById('current-strategy')
+              if (strategySection) {
+                strategySection.scrollIntoView({ behavior: 'smooth' })
+              }
+            }}
+          />
         </div>
       </div>
 
