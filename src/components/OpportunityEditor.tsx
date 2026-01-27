@@ -25,6 +25,22 @@ interface OpportunityEditorProps {
   saving?: boolean;
 }
 
+// Parse content into heading and summary (separated by \n\n)
+function parseContent(content: string): { heading: string; summary: string } {
+  const parts = content.split('\n\n');
+  if (parts.length >= 2) {
+    return { heading: parts[0], summary: parts.slice(1).join('\n\n') };
+  }
+  // If no separator, treat entire content as summary (legacy format)
+  return { heading: '', summary: content };
+}
+
+function combineContent(heading: string, summary: string): string {
+  if (!heading.trim()) return summary;
+  if (!summary.trim()) return heading;
+  return `${heading}\n\n${summary}`;
+}
+
 export function OpportunityEditor({
   initialContent = '',
   initialContributions = [],
@@ -33,23 +49,25 @@ export function OpportunityEditor({
   onCancel,
   saving = false,
 }: OpportunityEditorProps) {
-  const [content, setContent] = useState(initialContent);
+  const parsed = parseContent(initialContent);
+  const [heading, setHeading] = useState(parsed.heading);
+  const [summary, setSummary] = useState(parsed.summary);
   const [contributions, setContributions] = useState<ObjectiveContribution[]>(initialContributions);
   const [coaching, setCoaching] = useState<CoachingResult | null>(null);
   const [showCoaching, setShowCoaching] = useState(false);
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const headingRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const contentRef = useRef(content);
+  const contentRef = useRef(combineContent(heading, summary));
 
   // Keep ref in sync with state
   useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
+    contentRef.current = combineContent(heading, summary);
+  }, [heading, summary]);
 
-  // Focus textarea on mount
+  // Focus heading input on mount
   useEffect(() => {
-    textareaRef.current?.focus();
+    headingRef.current?.focus();
   }, []);
 
   // Evaluate coaching using ref to avoid stale closure
@@ -64,16 +82,22 @@ export function OpportunityEditor({
     }
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    setContent(newContent);
-    contentRef.current = newContent;
+  const scheduleCoachingEvaluation = () => {
     setShowCoaching(false);
-
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(evaluateContent, 2000);
+  };
+
+  const handleHeadingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHeading(e.target.value);
+    scheduleCoachingEvaluation();
+  };
+
+  const handleSummaryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setSummary(e.target.value);
+    scheduleCoachingEvaluation();
   };
 
   const handleBlur = () => {
@@ -103,6 +127,7 @@ export function OpportunityEditor({
   };
 
   const handleSave = async () => {
+    const content = combineContent(heading, summary);
     if (!content.trim() || saving) return;
 
     // Determine status: strong coaching + at least one linked objective with contribution = complete
@@ -130,17 +155,32 @@ export function OpportunityEditor({
     };
   }, []);
 
+  const hasContent = heading.trim() || summary.trim();
+
   return (
     <div className="space-y-4 bg-white border border-[#0A2933] rounded-lg p-4">
-      {/* Content textarea */}
+      {/* Heading input */}
+      <div>
+        <input
+          ref={headingRef}
+          type="text"
+          value={heading}
+          onChange={handleHeadingChange}
+          onBlur={handleBlur}
+          placeholder="Opportunity heading (e.g., 'Validate builder willingness to pay')"
+          className="w-full p-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+          disabled={saving}
+        />
+      </div>
+
+      {/* Summary textarea */}
       <div>
         <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleChange}
+          value={summary}
+          onChange={handleSummaryChange}
           onBlur={handleBlur}
-          placeholder="Describe your opportunity... (e.g., 'Prove builders will pay for selection coordination')"
-          className="w-full min-h-[80px] p-3 border border-input rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+          placeholder="Brief summary of what you'll do and why it matters..."
+          className="w-full min-h-[60px] p-3 border border-input rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring text-sm"
           disabled={saving}
         />
       </div>
@@ -201,7 +241,7 @@ export function OpportunityEditor({
         </button>
         <button
           onClick={handleSave}
-          disabled={!content.trim() || saving}
+          disabled={!hasContent || saving}
           className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? 'Saving...' : 'Save'}
