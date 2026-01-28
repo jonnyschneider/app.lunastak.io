@@ -18,6 +18,7 @@ export default async function Page({
 }) {
   const session = await getServerSession(authOptions);
   const params = await searchParams;
+  const cookieStore = await cookies();
 
   // If projectId param provided, redirect to that project
   if (params.projectId && typeof params.projectId === 'string') {
@@ -38,7 +39,15 @@ export default async function Page({
     });
 
     if (!project) {
-      // No projects - create an empty one
+      // Check if there's a guest cookie - if so, transfer will handle project creation
+      const guestCookie = cookieStore.get(GUEST_COOKIE_NAME);
+      if (guestCookie?.value) {
+        // Guest cookie exists - SessionTransferProvider will transfer projects
+        // Redirect to a loading state that will refresh after transfer
+        redirect('/project');
+      }
+
+      // No guest cookie and no projects - create an empty one
       project = await prisma.project.create({
         data: {
           userId: session.user.id,
@@ -53,7 +62,6 @@ export default async function Page({
   }
 
   // Guest user flow
-  const cookieStore = await cookies();
   const guestUserIdCookie = cookieStore.get(GUEST_COOKIE_NAME);
 
   if (guestUserIdCookie?.value) {
