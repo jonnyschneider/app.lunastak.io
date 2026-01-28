@@ -63,7 +63,7 @@ export async function POST(_request: NextRequest) {
       // If auth user already has projects, only transfer guest projects that have real work
       // This prevents duplicate empty projects when user signs out and back in
       if (authUserProjectCount > 0) {
-        // Find guest projects with actual content (fragments or conversations)
+        // Find guest projects with actual content
         const guestProjects = await tx.project.findMany({
           where: { userId: guestUserId },
           include: {
@@ -71,13 +71,19 @@ export async function POST(_request: NextRequest) {
               select: {
                 fragments: true,
                 conversations: true,
+                documents: true,
+                deepDives: true,
+                generatedOutputs: true,
               },
             },
           },
         })
 
         for (const project of guestProjects) {
-          const hasContent = project._count.fragments > 0 || project._count.conversations > 0
+          const counts = project._count
+          const hasContent = counts.fragments > 0 || counts.conversations > 0 ||
+                            counts.documents > 0 || counts.deepDives > 0 ||
+                            counts.generatedOutputs > 0
           if (hasContent) {
             // Transfer project with content
             await tx.project.update({
@@ -86,14 +92,20 @@ export async function POST(_request: NextRequest) {
             })
             console.log(`[Transfer] Transferred project ${project.id} (has content)`)
           } else {
-            // Delete empty project and its synthesis records
-            await tx.dimensionalSynthesis.deleteMany({
-              where: { projectId: project.id },
-            })
-            await tx.project.delete({
-              where: { id: project.id },
-            })
-            console.log(`[Transfer] Deleted empty guest project ${project.id}`)
+            // Delete empty project - cascade will handle related records
+            console.log(`[Transfer] Deleting empty guest project ${project.id} (counts: ${JSON.stringify(counts)})`)
+            try {
+              await tx.dimensionalSynthesis.deleteMany({
+                where: { projectId: project.id },
+              })
+              await tx.project.delete({
+                where: { id: project.id },
+              })
+              console.log(`[Transfer] Deleted empty guest project ${project.id}`)
+            } catch (deleteError) {
+              console.error(`[Transfer] Failed to delete project ${project.id}:`, deleteError)
+              // Don't throw - continue with transfer even if delete fails
+            }
           }
         }
       } else {
