@@ -247,6 +247,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
     }
 
     // Create conversations
+    let traceIndex = 0;
     for (const conv of projectData.conversations) {
       const conversation = await prisma.conversation.create({
         data: {
@@ -276,12 +277,14 @@ export async function seedDemoProject(userId: string): Promise<string> {
         });
       }
 
-      // Create traces
+      // Create traces with offset timestamps so they're unique in the UI
       for (const trace of conv.traces) {
+        const traceTimestamp = new Date(Date.now() - traceIndex * 60 * 60 * 1000); // Offset by 1 hour each
         await prisma.trace.create({
           data: {
             conversationId: conversation.id,
             userId,
+            timestamp: traceTimestamp,
             extractedContext: trace.extractedContext as Prisma.InputJsonValue,
             dimensionalCoverage: trace.dimensionalCoverage as Prisma.InputJsonValue | undefined,
             output: trace.output as Prisma.InputJsonValue,
@@ -295,6 +298,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
             starredAt: trace.starred ? new Date() : undefined,
           },
         });
+        traceIndex++;
       }
     }
 
