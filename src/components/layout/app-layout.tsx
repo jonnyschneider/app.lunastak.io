@@ -469,10 +469,11 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                             <SidebarMenuSubItem key={s.id}>
                               <SidebarMenuSubButton asChild isActive={pathname === `/strategy/${s.id}`}>
                                 <Link href={`/strategy/${s.id}`}>
-                                  {new Date(s.createdAt).toLocaleDateString(undefined, {
+                                  {new Date(s.createdAt).toLocaleString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
-                                    year: 'numeric'
+                                    hour: 'numeric',
+                                    minute: '2-digit',
                                   })}
                                 </Link>
                               </SidebarMenuSubButton>
