@@ -252,6 +252,8 @@ export async function POST(req: Request) {
       message: firstQuestion,
       stepNumber: 1,
       experimentVariant: conversation.experimentVariant,
+      // Include deep dive info if conversation is linked to one
+      ...(deepDive && { deepDive: { id: deepDive.id, topic: deepDive.topic } }),
       // Include guestUserId for session transfer when guest authenticates
       ...(isGuest && { guestUserId: userId }),
     });
