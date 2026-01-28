@@ -5,9 +5,15 @@ import { toast } from 'sonner'
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { MessageCircle, X, Plus } from 'lucide-react'
 import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
 import { ExtractionStep, GenerationStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,6 +23,11 @@ import ExtractionConfirm from '@/components/ExtractionConfirm'
 import ExtractionSummary from '@/components/ExtractionSummary'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import FeedbackButtons from '@/components/FeedbackButtons'
+
+interface DeepDiveOption {
+  id: string
+  topic: string
+}
 
 function ChatSkeleton() {
   return (
@@ -106,6 +117,33 @@ export function ChatSheet({
   // Explicit end state (user clicked End button)
   const [isExplicitEnd, setIsExplicitEnd] = useState(false)
 
+  // Topic assignment state
+  const [currentDeepDive, setCurrentDeepDive] = useState<DeepDiveOption | null>(null)
+  const [availableDeepDives, setAvailableDeepDives] = useState<DeepDiveOption[]>([])
+  const [isUpdatingTopic, setIsUpdatingTopic] = useState(false)
+
+  // Fetch available deep dives when sheet opens
+  useEffect(() => {
+    if (open && projectId) {
+      fetchDeepDives()
+    }
+  }, [open, projectId])
+
+  const fetchDeepDives = async () => {
+    try {
+      const response = await fetch(`/api/project/${projectId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAvailableDeepDives(data.deepDives?.map((dd: any) => ({
+          id: dd.id,
+          topic: dd.topic,
+        })) || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch deep dives:', error)
+    }
+  }
+
   // Auto-start or resume conversation when sheet opens
   useEffect(() => {
     if (open && !conversationId) {
@@ -132,8 +170,33 @@ export function ChatSheet({
       setIsExplicitEnd(false)
       setGenerationStep('preparing')
       setGenerationError(undefined)
+      setCurrentDeepDive(null)
     }
   }, [open])
+
+  // Update topic assignment
+  const handleTopicChange = async (newDeepDiveId: string | null) => {
+    if (!conversationId) return
+
+    setIsUpdatingTopic(true)
+    try {
+      const response = await fetch(`/api/conversation/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deepDiveId: newDeepDiveId }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentDeepDive(data.deepDive || null)
+      }
+    } catch (error) {
+      console.error('Failed to update topic:', error)
+      toast.error('Failed to update topic')
+    } finally {
+      setIsUpdatingTopic(false)
+    }
+  }
 
   // Start a new conversation
   const startConversationWithQuestion = async (question?: string) => {
@@ -194,6 +257,7 @@ export function ChatSheet({
       })))
       setCurrentPhase(data.currentPhase || 'QUESTIONING')
       setExperimentVariant(data.experimentVariant || 'baseline-v1')
+      setCurrentDeepDive(data.deepDive || null)
     } catch (error) {
       console.error('Failed to resume conversation:', error)
       toast.error('Failed to load conversation')
@@ -472,26 +536,74 @@ export function ChatSheet({
       }
       onOpenChange(newOpen)
     }}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>
-            {flowStep === 'chat' && (
-              isReadOnly
-                ? 'Past Conversation'
-                : deepDiveId
-                  ? 'Deep Dive'
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
+        {/* Header */}
+        <div className="bg-muted/50 border-b px-6 py-4">
+          <div className="flex items-center gap-3">
+            <MessageCircle className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold flex-1">
+              {flowStep === 'chat' && (
+                isReadOnly
+                  ? 'Past Conversation'
                   : gapExploration
-                    ? DIMENSION_CONTEXT[gapExploration.dimension as Tier1Dimension]?.name || 'Discussion'
-                    : 'Discussion'
-            )}
-            {flowStep === 'extracting' && 'Analyzing...'}
-            {flowStep === 'extraction' && 'Review Insights'}
-            {flowStep === 'summary' && 'Insights Captured'}
-            {flowStep === 'generating' && 'Generating Strategy...'}
-            {flowStep === 'strategy' && 'Your Strategy'}
-          </SheetTitle>
-        </SheetHeader>
-        <div className="mt-6 flex flex-col h-[calc(100vh-8rem)]">
+                    ? DIMENSION_CONTEXT[gapExploration.dimension as Tier1Dimension]?.name || 'Chat'
+                    : 'Chat'
+              )}
+              {flowStep === 'extracting' && 'Analyzing...'}
+              {flowStep === 'extraction' && 'Review Insights'}
+              {flowStep === 'summary' && 'Insights Captured'}
+              {flowStep === 'generating' && 'Generating Strategy...'}
+              {flowStep === 'strategy' && 'Your Strategy'}
+            </h2>
+          </div>
+
+          {/* Topic chip/badge - only show in chat mode */}
+          {flowStep === 'chat' && conversationId && (
+            <div className="mt-3">
+              {currentDeepDive ? (
+                <div className="inline-flex items-center gap-1 bg-primary/10 text-primary text-sm px-2.5 py-1 rounded-full">
+                  <span>{currentDeepDive.topic}</span>
+                  <Select
+                    value={currentDeepDive.id}
+                    onValueChange={(value) => handleTopicChange(value === 'none' ? null : value)}
+                    disabled={isUpdatingTopic}
+                  >
+                    <SelectTrigger className="h-auto p-0 border-0 bg-transparent w-auto focus:ring-0 [&>svg]:hidden">
+                      <button className="p-0.5 hover:bg-primary/20 rounded-full ml-1">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Remove from topic</SelectItem>
+                      {availableDeepDives
+                        .filter(dd => dd.id !== currentDeepDive.id)
+                        .map(dd => (
+                          <SelectItem key={dd.id} value={dd.id}>{dd.topic}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : availableDeepDives.length > 0 ? (
+                <Select
+                  value=""
+                  onValueChange={(value) => handleTopicChange(value)}
+                  disabled={isUpdatingTopic}
+                >
+                  <SelectTrigger className="h-auto w-auto border-dashed text-muted-foreground text-sm px-2.5 py-1 rounded-full">
+                    <Plus className="h-3 w-3 mr-1" />
+                    <SelectValue placeholder="Add to topic" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableDeepDives.map(dd => (
+                      <SelectItem key={dd.id} value={dd.id}>{dd.topic}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-4 flex flex-col h-[calc(100vh-10rem)]">
           {flowStep === 'chat' && messages.length === 0 && isLoading && (
             <ChatSkeleton />
           )}
