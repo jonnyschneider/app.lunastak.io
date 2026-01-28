@@ -530,6 +530,9 @@ export default function ProjectPage() {
 
                   const renderConversationItem = (conv: ConversationSummary, index: number) => {
                     const isInitialConversation = conv.id === initialConversationId
+                    const deepDive = conv.deepDiveId
+                      ? projectData?.deepDives?.find(dd => dd.id === conv.deepDiveId)
+                      : null
                     const handleClick = () => {
                       setChatInitialQuestion(undefined)
                       setChatDeepDiveId(undefined)
@@ -562,8 +565,20 @@ export default function ProjectPage() {
                             <ItemTitle className="text-xs truncate">
                               {conv.title || 'Untitled conversation'}
                             </ItemTitle>
-                            <ItemDescription className="text-xs">
+                            <ItemDescription className="text-xs flex items-center gap-2">
                               {formatShortDate(conv.createdAt)}
+                              {deepDive && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    openDeepDiveSheet(deepDive.id)
+                                  }}
+                                  className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                                >
+                                  {deepDive.topic}
+                                </button>
+                              )}
                             </ItemDescription>
                           </ItemContent>
                         </Item>
