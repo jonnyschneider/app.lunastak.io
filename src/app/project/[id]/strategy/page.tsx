@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import {
   Target,
   Loader2,
-  Brain,
+  Glasses,
 } from 'lucide-react'
 
 interface StrategyRedirectData {
@@ -114,7 +114,7 @@ export default function StrategyPage() {
             </p>
             <Button asChild>
               <Link href={`/project/${projectId}`}>
-                <Brain className="h-4 w-4 mr-2" />
+                <Glasses className="h-4 w-4 mr-2" />
                 Go to Thinking
               </Link>
             </Button>
