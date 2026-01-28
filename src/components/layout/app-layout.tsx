@@ -643,7 +643,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     Notifications
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/?signedOut=true' })}>
                     <LogOut className="h-4 w-4" />
                     Log out
                   </DropdownMenuItem>
