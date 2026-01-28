@@ -709,14 +709,7 @@ export default function ProjectPage() {
             }}
             onAddDeepDive={() => setAddDeepDiveOpen(true)}
           />
-          <GoToStrategyCard
-            onGoToStrategy={() => {
-              const latestStrategy = projectData?.strategyOutputs?.[0]
-              if (latestStrategy) {
-                router.push(`/strategy/${latestStrategy.id}`)
-              }
-            }}
-          />
+          <GoToStrategyCard />
         </div>
       </div>
 
