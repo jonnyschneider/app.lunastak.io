@@ -204,7 +204,7 @@ export function ExploreNextSection({
       <CardContent className="p-0">
         {/* Deep Dives Section */}
         <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deep Dives</h4>
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deep Dive Topics</h4>
           <Button
             size="sm"
             variant="ghost"
