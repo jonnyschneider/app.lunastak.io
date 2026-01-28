@@ -79,32 +79,30 @@ export function ExploreNextSection({
   onItemClick,
   onAddDeepDive,
 }: ExploreNextSectionProps) {
-  const [showAll, setShowAll] = useState(false)
-  const VISIBLE_LIMIT = 5
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false)
+  const SUGGESTIONS_LIMIT = 3
 
-  // Build unified list
-  const allItems: ExploreItem[] = []
-
-  // Add deep dives (user-added)
-  deepDives
+  // Build deep dives list (user-added topics)
+  const deepDiveItems: ExploreItem[] = deepDives
     .filter(dd => !isItemDismissed('deep_dive', dd.id))
-    .forEach(dd => {
-      allItems.push({
-        id: `dd-${dd.id}`,
-        type: 'deep-dive',
-        title: dd.topic,
-        description: dd.conversationCount > 0
-          ? `${dd.conversationCount} chat${dd.conversationCount !== 1 ? 's' : ''}`
-          : 'Not started',
-        conversationCount: dd.conversationCount,
-      })
-    })
+    .map(dd => ({
+      id: `dd-${dd.id}`,
+      type: 'deep-dive' as ExploreItemType,
+      title: dd.topic,
+      description: dd.conversationCount > 0
+        ? `${dd.conversationCount} chat${dd.conversationCount !== 1 ? 's' : ''}`
+        : 'Not started',
+      conversationCount: dd.conversationCount,
+    }))
 
-  // Add provocations (AI-generated)
+  // Build suggestions list (AI-generated provocations + gaps)
+  const suggestionItems: ExploreItem[] = []
+
+  // Add provocations
   provocations
     .filter(p => !isItemDismissed('suggested_question', p.description))
     .forEach((p, idx) => {
-      allItems.push({
+      suggestionItems.push({
         id: `prov-${idx}`,
         type: 'provocation',
         title: p.title,
@@ -112,13 +110,13 @@ export function ExploreNextSection({
       })
     })
 
-  // Add gaps from low-confidence syntheses (AI-generated)
+  // Add gaps from low-confidence syntheses
   syntheses
     .filter(s => s.confidence === 'LOW' && s.gaps.length > 0)
     .filter(s => !isItemDismissed('focus_area', s.dimension))
     .forEach(s => {
       const gap = s.gaps[0]
-      allItems.push({
+      suggestionItems.push({
         id: `gap-${s.dimension}`,
         type: 'gap',
         title: gap?.title || 'Explore this area',
@@ -128,8 +126,8 @@ export function ExploreNextSection({
       })
     })
 
-  const visibleItems = showAll ? allItems : allItems.slice(0, VISIBLE_LIMIT)
-  const hasMore = allItems.length > VISIBLE_LIMIT
+  const visibleSuggestions = showAllSuggestions ? suggestionItems : suggestionItems.slice(0, SUGGESTIONS_LIMIT)
+  const hasMoreSuggestions = suggestionItems.length > SUGGESTIONS_LIMIT
 
   const getIcon = (type: ExploreItemType) => {
     switch (type) {
@@ -153,6 +151,49 @@ export function ExploreNextSection({
     }
   }
 
+  const renderItem = (item: ExploreItem, index: number, showSeparator: boolean) => {
+    const dismissInfo = getDismissKey(item)
+    return (
+      <React.Fragment key={item.id}>
+        {showSeparator && index > 0 && <ItemSeparator />}
+        <Item
+          size="sm"
+          className="cursor-pointer hover:bg-accent/50"
+          onClick={() => onItemClick(item)}
+        >
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="mt-0.5 shrink-0">
+              {getIcon(item.type)}
+            </div>
+            <ItemContent className="min-w-0">
+              <ItemTitle>{item.title}</ItemTitle>
+              <ItemDescription className="text-xs">{item.description}</ItemDescription>
+              {item.dimension && (
+                <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5 mt-1 w-fit inline-block">
+                  {DIMENSION_LABELS[item.dimension as Tier1Dimension] || item.dimension}
+                </span>
+              )}
+            </ItemContent>
+          </div>
+          <ItemActions>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDismissItem(dismissInfo.type, dismissInfo.key)
+              }}
+              className="p-1 rounded hover:bg-muted"
+              title="Dismiss"
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </ItemActions>
+        </Item>
+      </React.Fragment>
+    )
+  }
+
+  const hasAnyContent = deepDiveItems.length > 0 || suggestionItems.length > 0
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -161,71 +202,20 @@ export function ExploreNextSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {allItems.length > 0 ? (
+        {/* Deep Dives Section */}
+        <div className="px-4 pt-3 pb-2">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deep Dives</h4>
+        </div>
+        {deepDiveItems.length > 0 ? (
           <ItemGroup>
-            {visibleItems.map((item, index) => {
-              const dismissInfo = getDismissKey(item)
-              return (
-                <React.Fragment key={item.id}>
-                  {index > 0 && <ItemSeparator />}
-                  <Item
-                    size="sm"
-                    className="cursor-pointer hover:bg-accent/50"
-                    onClick={() => onItemClick(item)}
-                  >
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="mt-0.5 shrink-0">
-                        {getIcon(item.type)}
-                      </div>
-                      <ItemContent className="min-w-0">
-                        <ItemTitle>{item.title}</ItemTitle>
-                        <ItemDescription className="text-xs">{item.description}</ItemDescription>
-                        {item.dimension && (
-                          <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5 mt-1 w-fit inline-block">
-                            {DIMENSION_LABELS[item.dimension as Tier1Dimension] || item.dimension}
-                          </span>
-                        )}
-                      </ItemContent>
-                    </div>
-                    <ItemActions>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDismissItem(dismissInfo.type, dismissInfo.key)
-                        }}
-                        className="p-1 rounded hover:bg-muted"
-                        title="Dismiss"
-                      >
-                        <X className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    </ItemActions>
-                  </Item>
-                </React.Fragment>
-              )
-            })}
-            {hasMore && (
-              <>
-                <ItemSeparator />
-                <div className="px-4 py-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-muted-foreground"
-                    onClick={() => setShowAll(!showAll)}
-                  >
-                    {showAll ? 'Show less' : `Show ${allItems.length - VISIBLE_LIMIT} more`}
-                  </Button>
-                </div>
-              </>
-            )}
+            {deepDiveItems.map((item, index) => renderItem(item, index, true))}
           </ItemGroup>
         ) : (
-          <div className="text-center py-8 px-6 text-muted-foreground">
-            <p className="text-sm">Nothing to explore yet</p>
-            <p className="text-xs mt-1">Start a chat or upload a document to generate suggestions</p>
+          <div className="px-4 pb-2 text-xs text-muted-foreground">
+            No topics yet
           </div>
         )}
-        <div className="p-4 pt-3 border-t">
+        <div className="px-4 py-3">
           <Button
             size="sm"
             variant="outline"
@@ -236,6 +226,40 @@ export function ExploreNextSection({
             Add topic
           </Button>
         </div>
+
+        {/* Suggestions Section */}
+        {suggestionItems.length > 0 && (
+          <>
+            <div className="px-4 pt-3 pb-2 border-t">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Suggestions</h4>
+            </div>
+            <ItemGroup>
+              {visibleSuggestions.map((item, index) => renderItem(item, index, true))}
+              {hasMoreSuggestions && (
+                <>
+                  <ItemSeparator />
+                  <div className="px-4 py-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-muted-foreground"
+                      onClick={() => setShowAllSuggestions(!showAllSuggestions)}
+                    >
+                      {showAllSuggestions ? 'Show less' : `Show ${suggestionItems.length - SUGGESTIONS_LIMIT} more`}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </ItemGroup>
+          </>
+        )}
+
+        {/* Empty state when nothing at all */}
+        {!hasAnyContent && (
+          <div className="text-center py-6 px-6 text-muted-foreground border-t">
+            <p className="text-sm">Start a chat or upload a document to generate suggestions</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
