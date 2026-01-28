@@ -216,6 +216,10 @@ export function ChatSheet({
       const data = await response.json()
       setConversationId(data.conversationId)
       setExperimentVariant(data.experimentVariant || 'baseline-v1')
+      // Set current deep dive if conversation was started from one
+      if (data.deepDive) {
+        setCurrentDeepDive(data.deepDive)
+      }
 
       setMessages([{
         id: `msg_${Date.now()}`,

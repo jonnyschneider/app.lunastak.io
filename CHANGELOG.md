@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Strategy History Submenu** - Browse past strategies from sidebar collapsible menu
 
+- **Deep Dive Topic Linking** - Conversations linked to topics
+  - Chats started from deep dives auto-link to that topic
+  - Topic chip in chat header shows current assignment
+  - "Part of:" indicator in chat list with clickable chip
+
+### Fixed
+
+- **Guest Session Transfer** - Prevents duplicate projects on re-login
+  - Empty guest projects deleted instead of transferred
+  - Only projects with actual content merge into authenticated account
+
 ### Improved
 
 - **Opportunity Editor UX** - Better feedback and objective linking

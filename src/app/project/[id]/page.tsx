@@ -15,6 +15,7 @@ import {
   Loader2,
   Star,
   NotebookPen,
+  CornerDownRight,
 } from 'lucide-react'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -565,21 +566,25 @@ export default function ProjectPage() {
                             <ItemTitle className="text-xs truncate">
                               {conv.title || 'Untitled conversation'}
                             </ItemTitle>
-                            <ItemDescription className="text-xs flex items-center gap-2">
+                            <ItemDescription className="text-xs">
                               {formatShortDate(conv.createdAt)}
-                              {deepDive && (
+                            </ItemDescription>
+                            {deepDive && (
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                                <CornerDownRight className="h-2.5 w-2.5" />
+                                <span>Part of:</span>
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
                                     openDeepDiveSheet(deepDive.id)
                                   }}
-                                  className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                                  className="border border-border rounded-full px-1.5 py-0.5 hover:bg-accent transition-colors"
                                 >
-                                  {deepDive.topic}
+                                  {deepDive.topic.length > 20 ? `${deepDive.topic.slice(0, 20)}…` : deepDive.topic}
                                 </button>
-                              )}
-                            </ItemDescription>
+                              </div>
+                            )}
                           </ItemContent>
                         </Item>
                       </React.Fragment>
