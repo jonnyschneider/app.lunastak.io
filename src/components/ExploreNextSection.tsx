@@ -203,29 +203,27 @@ export function ExploreNextSection({
       </CardHeader>
       <CardContent className="p-0">
         {/* Deep Dives Section */}
-        <div className="px-4 pt-3 pb-2">
+        <div className="px-4 pt-3 pb-2 flex items-center justify-between">
           <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deep Dives</h4>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+            onClick={onAddDeepDive}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add
+          </Button>
         </div>
         {deepDiveItems.length > 0 ? (
           <ItemGroup>
             {deepDiveItems.map((item, index) => renderItem(item, index, true))}
           </ItemGroup>
         ) : (
-          <div className="px-4 pb-2 text-xs text-muted-foreground">
+          <div className="px-4 pb-3 text-xs text-muted-foreground">
             No topics yet
           </div>
         )}
-        <div className="px-4 py-3">
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full"
-            onClick={onAddDeepDive}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Add topic
-          </Button>
-        </div>
 
         {/* Suggestions Section */}
         {suggestionItems.length > 0 && (
