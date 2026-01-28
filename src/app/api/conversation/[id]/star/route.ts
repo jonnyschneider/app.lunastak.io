@@ -1,7 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isGuestUser } from '@/lib/projects'
+
+const GUEST_COOKIE_NAME = 'guestUserId'
+
+async function getUserId(): Promise<string | null> {
+  const session = await getServerSession(authOptions)
+  let userId: string | null = session?.user?.id || null
+
+  if (!userId) {
+    const cookieStore = await cookies()
+    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
+
+    if (guestCookie?.value) {
+      const guestUser = await prisma.user.findUnique({
+        where: { id: guestCookie.value },
+        select: { email: true },
+      })
+
+      if (guestUser && isGuestUser(guestUser.email)) {
+        userId = guestCookie.value
+      }
+    }
+  }
+
+  return userId
+}
 
 /**
  * POST /api/conversation/[id]/star
@@ -12,9 +39,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const userId = await getUserId()
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -27,7 +54,7 @@ export async function POST(
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: conversationId,
-        userId: session.user.id,
+        userId,
       },
       include: {
         traces: {

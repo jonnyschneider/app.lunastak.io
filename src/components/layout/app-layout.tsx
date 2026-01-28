@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   ChevronUp,
+  ChevronRight,
   Check,
   ChevronsUpDown,
   Settings,
@@ -27,8 +28,8 @@ import {
   MessageSquare,
   Trash2,
   RotateCcw,
-  Target,
-  Brain,
+  Atom,
+  Glasses,
   TrendingUp,
   Lock,
   NotebookPen,
@@ -167,6 +168,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
+  const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
 
@@ -179,14 +181,34 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     isDeleting,
   } = useProjectActions({ triggerPaywall })
 
-  // Derive selected project from pathname
-  const selectedProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
+  // Derive selected project from pathname, fall back to first project
+  const pathnameProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
+  const selectedProjectId = pathnameProjectId || projects[0]?.id || null
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0] || null
 
   // Fetch projects for both auth users and guests (API supports both via cookie)
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  // Fetch strategy history when selected project changes
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setStrategyHistory([])
+      return
+    }
+    setStrategyHistory(null) // Reset to loading state
+    fetch(`/api/project/${selectedProjectId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.strategyOutputs) {
+          setStrategyHistory(data.strategyOutputs)
+        } else {
+          setStrategyHistory([])
+        }
+      })
+      .catch(() => setStrategyHistory([]))
+  }, [selectedProjectId])
 
   const fetchProjects = async () => {
     setIsLoadingProjects(true)
@@ -416,21 +438,52 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/strategy`}>
-                    <Link href={`/project/${selectedProject.id}/strategy`}>
-                      <Target className="h-4 w-4" />
-                      <span>Current Strategy</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
                     <Link href={`/project/${selectedProject.id}`}>
-                      <Brain className="h-4 w-4" />
+                      <Glasses className="h-4 w-4" />
                       <span>Your Thinking</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <Collapsible asChild defaultOpen className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton>
+                        <Atom className="h-4 w-4" />
+                        <span>Your Strategy</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {strategyHistory === null ? (
+                          <SidebarMenuSubItem>
+                            <span className="text-xs text-muted-foreground px-2 py-1">Loading...</span>
+                          </SidebarMenuSubItem>
+                        ) : strategyHistory.length === 0 ? (
+                          <SidebarMenuSubItem>
+                            <span className="text-xs text-muted-foreground px-2 py-1">No strategies yet</span>
+                          </SidebarMenuSubItem>
+                        ) : (
+                          strategyHistory.map((s) => (
+                            <SidebarMenuSubItem key={s.id}>
+                              <SidebarMenuSubButton asChild isActive={pathname === `/strategy/${s.id}`}>
+                                <Link href={`/strategy/${s.id}`}>
+                                  {new Date(s.createdAt).toLocaleString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })}
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))
+                        )}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/outcomes`}>
                     <Link href={`/project/${selectedProject.id}/outcomes`}>
@@ -591,7 +644,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     Notifications
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/?signedOut=true' })}>
                     <LogOut className="h-4 w-4" />
                     Log out
                   </DropdownMenuItem>

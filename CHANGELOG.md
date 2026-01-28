@@ -8,6 +8,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.4] - 2026-01-28
+
+### Added
+
+- **Strategy History Submenu** - Browse past strategies from sidebar collapsible menu
+
+- **Deep Dive Topic Linking** - Conversations linked to topics
+  - Chats started from deep dives auto-link to that topic
+  - Topic chip in chat header shows current assignment
+  - "Part of:" indicator in chat list with clickable chip
+
+### Fixed
+
+- **Guest Session Transfer** - Prevents duplicate projects on re-login
+  - Empty guest projects deleted instead of transferred
+  - Only projects with actual content merge into authenticated account
+  - Root page defers project creation when guest cookie exists
+
+- **Strategy Menu Stability** - Eliminates layout jank in sidebar
+  - Consistent Collapsible structure with internal loading/empty states
+  - Strategy labels now show date + time for uniqueness
+  - Demo fixture traces offset by 1 hour for unique timestamps
+
+- **GoToStrategyCard** - Simplified to static empty state ("More features shipping weekly")
+
+### Improved
+
+- **Opportunity Editor UX** - Better feedback and objective linking
+  - Positive feedback when all coaching criteria pass
+  - Inline contribution inputs below linked objectives
+  - "Coaching" → "Suggested improvements"
+
+- **Dashboard UX** - Simplified headers and clearer CTAs
+  - Page heading simplified to "Your Thinking"
+  - Orange "Generate new strategy" button with fragment count
+  - Guest banner moved above tabs with orange CTA
+
+- **Sidebar Navigation** - Cleaner icons and labels
+  - "Current Strategy" → "Your Strategy" (Atom icon)
+  - "Your Thinking" (Glasses icon) reordered above strategy
+
+---
 ## [1.7.3] - 2026-01-24
 
 ### Fixed

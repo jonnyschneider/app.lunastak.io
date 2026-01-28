@@ -52,15 +52,70 @@ export async function POST(_request: NextRequest) {
       )
     }
 
+    // Check if authenticated user already has projects
+    const authUserProjectCount = await prisma.project.count({
+      where: { userId: authenticatedUserId, status: 'active' },
+    })
+
     // Transfer ownership of all guest data to authenticated user
     // Use a transaction to ensure atomicity
     await prisma.$transaction(async (tx) => {
-      // Transfer projects
-      const projectsUpdated = await tx.project.updateMany({
-        where: { userId: guestUserId },
-        data: { userId: authenticatedUserId },
-      })
-      console.log(`[Transfer] Transferred ${projectsUpdated.count} projects`)
+      // If auth user already has projects, only transfer guest projects that have real work
+      // This prevents duplicate empty projects when user signs out and back in
+      if (authUserProjectCount > 0) {
+        // Find guest projects with actual content
+        const guestProjects = await tx.project.findMany({
+          where: { userId: guestUserId },
+          include: {
+            _count: {
+              select: {
+                fragments: true,
+                conversations: true,
+                documents: true,
+                deepDives: true,
+                generatedOutputs: true,
+              },
+            },
+          },
+        })
+
+        for (const project of guestProjects) {
+          const counts = project._count
+          const hasContent = counts.fragments > 0 || counts.conversations > 0 ||
+                            counts.documents > 0 || counts.deepDives > 0 ||
+                            counts.generatedOutputs > 0
+          if (hasContent) {
+            // Transfer project with content
+            await tx.project.update({
+              where: { id: project.id },
+              data: { userId: authenticatedUserId },
+            })
+            console.log(`[Transfer] Transferred project ${project.id} (has content)`)
+          } else {
+            // Delete empty project - cascade will handle related records
+            console.log(`[Transfer] Deleting empty guest project ${project.id} (counts: ${JSON.stringify(counts)})`)
+            try {
+              await tx.dimensionalSynthesis.deleteMany({
+                where: { projectId: project.id },
+              })
+              await tx.project.delete({
+                where: { id: project.id },
+              })
+              console.log(`[Transfer] Deleted empty guest project ${project.id}`)
+            } catch (deleteError) {
+              console.error(`[Transfer] Failed to delete project ${project.id}:`, deleteError)
+              // Don't throw - continue with transfer even if delete fails
+            }
+          }
+        }
+      } else {
+        // Auth user has no projects - transfer all guest projects
+        const projectsUpdated = await tx.project.updateMany({
+          where: { userId: guestUserId },
+          data: { userId: authenticatedUserId },
+        })
+        console.log(`[Transfer] Transferred ${projectsUpdated.count} projects`)
+      }
 
       // Transfer conversations
       const conversationsUpdated = await tx.conversation.updateMany({

@@ -729,6 +729,27 @@
             "principles": []
           }
         }
+      ],
+      "userContent": [
+        {
+          "id": "{{UC_1_ID}}",
+          "type": "opportunity",
+          "content": "Launch Selection Tracker MVP (Q2) → Core selection workflow, client portal integration, notification system for trades",
+          "status": "complete",
+          "metadata": {
+            "parsedTitle": "Launch Selection Tracker MVP",
+            "parsedTimeframe": "Q2"
+          }
+        },
+        {
+          "id": "{{UC_2_ID}}",
+          "type": "opportunity",
+          "content": "Partner with 3 regional home builder associations for distribution",
+          "status": "draft",
+          "metadata": {
+            "coachingDismissed": false
+          }
+        }
       ]
     }
   ]

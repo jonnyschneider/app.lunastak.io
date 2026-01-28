@@ -130,6 +130,13 @@ async function hydrate(options: HydrateOptions): Promise<void> {
     });
   });
 
+  // Map user content IDs
+  fixture.projects.forEach(p => {
+    p.userContent?.forEach((uc) => {
+      idMap.set(uc.id, generateCuid());
+    });
+  });
+
   const resolveId = (id: string): string => idMap.get(id) || id;
 
   // Check if user exists
@@ -338,6 +345,21 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       });
     }
 
+    // Create user content (opportunities, principles)
+    for (const ucFixture of projectFixture.userContent || []) {
+      const ucId = resolveId(ucFixture.id);
+      await prisma.userContent.create({
+        data: {
+          id: ucId,
+          projectId: project.id,
+          type: ucFixture.type,
+          content: ucFixture.content,
+          status: ucFixture.status,
+          metadata: ucFixture.metadata ? JSON.parse(JSON.stringify(ucFixture.metadata)) : undefined,
+        },
+      });
+    }
+
     // Set knowledgeUpdatedAt AFTER all fragments are created
     // This ensures existing fragments don't count as "new"
     await prisma.project.update({
@@ -347,7 +369,8 @@ async function hydrate(options: HydrateOptions): Promise<void> {
 
     const synthCount = projectFixture.syntheses?.length || 0;
     const outputCount = projectFixture.generatedOutputs?.length || 0;
-    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses, ${outputCount} outputs`);
+    const ucCount = projectFixture.userContent?.length || 0;
+    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses, ${outputCount} outputs, ${ucCount} user content`);
   }
 
   console.log(`\n[OK] Hydration complete for ${options.email}\n`);

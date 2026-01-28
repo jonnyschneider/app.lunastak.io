@@ -19,6 +19,7 @@ export default function StrategyViewPage() {
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
   const [thoughts, setThoughts] = useState<string>('')
   const [conversationId, setConversationId] = useState<string>('')
+  const [projectId, setProjectId] = useState<string>('')
   const [timestamp, setTimestamp] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,6 +61,7 @@ export default function StrategyViewPage() {
       setExtractedContext(data.extractedContext || null)
       setThoughts(data.claudeThoughts || '')
       setConversationId(data.conversationId)
+      setProjectId(data.projectId || '')
       setTimestamp(data.timestamp)
     } catch (error) {
       console.error('Failed to fetch strategy:', error)
@@ -100,6 +102,9 @@ export default function StrategyViewPage() {
   return (
     <AppLayout>
       <div className="container mx-auto px-6 py-6">
+        {/* Guest Save Banner - above tabs */}
+        {isGuest && <GuestSaveBanner />}
+
         {/* Tabbed Content */}
         <Tabs defaultValue="strategy" className="w-full">
           {/* Line-style tabs */}
@@ -119,8 +124,6 @@ export default function StrategyViewPage() {
           </TabsList>
 
           <TabsContent value="strategy" className="mt-8">
-            {/* Guest Save Banner */}
-            {isGuest && <GuestSaveBanner />}
 
             {/* Decision Stack Card */}
             <div className="max-w-6xl mx-auto rounded-lg overflow-hidden border border-border shadow-sm">
@@ -151,11 +154,12 @@ export default function StrategyViewPage() {
                     Generated {new Date(timestamp).toLocaleDateString()}
                   </p>
                 )}
-                {strategy && conversationId && (
+                {strategy && conversationId && projectId && (
                   <StrategyDisplay
                     strategy={strategy}
                     conversationId={conversationId}
                     traceId={traceId}
+                    projectId={projectId}
                   />
                 )}
               </div>

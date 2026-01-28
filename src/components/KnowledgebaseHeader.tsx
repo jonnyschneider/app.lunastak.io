@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
 // Dimension display names
@@ -61,7 +62,7 @@ interface DimensionalSynthesis {
   fragmentCount: number
 }
 
-interface LunasMemoryHeaderProps {
+interface KnowledgebaseHeaderProps {
   fragmentCount: number
   chatCount: number
   docCount: number
@@ -70,10 +71,10 @@ interface LunasMemoryHeaderProps {
   knowledgeSummary: string | null
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
   syntheses: DimensionalSynthesis[]
-  onNewInsightsClick: () => void
+  onRefreshClick: () => void
 }
 
-export function LunasMemoryHeader({
+export function KnowledgebaseHeader({
   fragmentCount,
   chatCount,
   coveragePercentage,
@@ -81,16 +82,9 @@ export function LunasMemoryHeader({
   knowledgeSummary,
   dimensionalCoverage,
   syntheses,
-  onNewInsightsClick,
-}: LunasMemoryHeaderProps) {
+  onRefreshClick,
+}: KnowledgebaseHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-
-  const handleNewInsightsClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (newInsightsCount > 0) {
-      onNewInsightsClick()
-    }
-  }
 
   return (
     <div className="border border-border rounded-lg bg-card overflow-hidden">
@@ -101,7 +95,7 @@ export function LunasMemoryHeader({
       >
         <div className="flex items-center gap-3">
           <Sparkles className="h-4 w-4 text-green-600" />
-          <span className="font-medium text-sm">Luna&apos;s Memory</span>
+          <span className="font-medium text-sm">Knowledgebase</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -114,17 +108,27 @@ export function LunasMemoryHeader({
             <span>{coveragePercentage}%</span>
           </div>
 
-          {/* New insights - highlighted if present */}
+          {/* Generate strategy - with new fragment count as leader */}
           {newInsightsCount > 0 ? (
-            <button
-              onClick={handleNewInsightsClick}
-              className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 hover:underline"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <span>{newInsightsCount} new to include</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-orange-600">
+                {newInsightsCount} new fragment{newInsightsCount !== 1 ? 's' : ''}
+              </span>
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRefreshClick()
+                }}
+                className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Generate new strategy
+              </Button>
+            </div>
           ) : (
-            <span className="text-sm text-muted-foreground">Up to date</span>
+            <span className="text-xs text-muted-foreground">
+              Strategy up to date
+            </span>
           )}
 
           {/* Chevron */}
@@ -142,7 +146,7 @@ export function LunasMemoryHeader({
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">What Luna Knows</h4>
+              <h4 className="text-sm font-medium">Knowledge Summary</h4>
               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {knowledgeSummary}
               </p>
