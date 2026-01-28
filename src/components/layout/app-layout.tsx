@@ -168,7 +168,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
-  const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[]>([])
+  const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
 
@@ -197,6 +197,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       setStrategyHistory([])
       return
     }
+    setStrategyHistory(null) // Reset to loading state
     fetch(`/api/project/${selectedProjectId}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -444,19 +445,27 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {strategyHistory.length > 0 ? (
-                  <Collapsible asChild defaultOpen className="group/collapsible">
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
-                          <Atom className="h-4 w-4" />
-                          <span>Your Strategy</span>
-                          <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {strategyHistory.map((s) => (
+                <Collapsible asChild defaultOpen className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton>
+                        <Atom className="h-4 w-4" />
+                        <span>Your Strategy</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {strategyHistory === null ? (
+                          <SidebarMenuSubItem>
+                            <span className="text-xs text-muted-foreground px-2 py-1">Loading...</span>
+                          </SidebarMenuSubItem>
+                        ) : strategyHistory.length === 0 ? (
+                          <SidebarMenuSubItem>
+                            <span className="text-xs text-muted-foreground px-2 py-1">No strategies yet</span>
+                          </SidebarMenuSubItem>
+                        ) : (
+                          strategyHistory.map((s) => (
                             <SidebarMenuSubItem key={s.id}>
                               <SidebarMenuSubButton asChild isActive={pathname === `/strategy/${s.id}`}>
                                 <Link href={`/strategy/${s.id}`}>
@@ -468,21 +477,12 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/strategy`}>
-                      <Link href={`/project/${selectedProject.id}/strategy`}>
-                        <Atom className="h-4 w-4" />
-                        <span>Your Strategy</span>
-                      </Link>
-                    </SidebarMenuButton>
+                          ))
+                        )}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
                   </SidebarMenuItem>
-                )}
+                </Collapsible>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/outcomes`}>
                     <Link href={`/project/${selectedProject.id}/outcomes`}>
