@@ -8,7 +8,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  Target,
+  Atom,
   Loader2,
   Glasses,
 } from 'lucide-react'
@@ -105,7 +105,7 @@ export default function StrategyPage() {
         {/* Empty State */}
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Target className="h-12 w-12 text-muted-foreground mb-4" />
+            <Atom className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No strategy generated yet</h3>
             <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
               {data?.thinkingCount && data.thinkingCount > 0
