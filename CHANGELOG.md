@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Guest Session Transfer** - Prevents duplicate projects on re-login
   - Empty guest projects deleted instead of transferred
   - Only projects with actual content merge into authenticated account
+  - Root page defers project creation when guest cookie exists
+
+- **Strategy Menu Stability** - Eliminates layout jank in sidebar
+  - Consistent Collapsible structure with internal loading/empty states
+  - Strategy labels now show date + time for uniqueness
+  - Demo fixture traces offset by 1 hour for unique timestamps
+
+- **GoToStrategyCard** - Simplified to static empty state ("More features shipping weekly")
 
 ### Improved
 
