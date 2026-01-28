@@ -1,5 +1,6 @@
 'use client';
 
+import { WandSparkles } from 'lucide-react';
 import { CoachingResult } from '@/lib/opportunity-coaching';
 
 interface OpportunityCoachingProps {
@@ -8,7 +9,7 @@ interface OpportunityCoachingProps {
 }
 
 export function OpportunityCoaching({ result, onRewriteClick }: OpportunityCoachingProps) {
-  const { criteria, overallStrength } = result;
+  const { criteria } = result;
 
   const allPassed = criteria.every(c => c.passed);
 
@@ -16,22 +17,12 @@ export function OpportunityCoaching({ result, onRewriteClick }: OpportunityCoach
     <div className={`mt-3 p-3 rounded-lg border ${
       allPassed ? 'bg-green-50 border-green-200' : 'bg-muted/50 border-border'
     }`}>
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2">
         <span className={`text-xs font-medium uppercase tracking-wide ${
           allPassed ? 'text-green-700' : 'text-muted-foreground'
         }`}>
           {allPassed ? 'Nice one! This is a well-crafted opportunity' : 'Suggested improvements'}
         </span>
-        {!allPassed && (
-          <span className={`text-xs px-2 py-0.5 rounded ${
-            overallStrength === 'strong' ? 'bg-green-100 text-green-700' :
-            overallStrength === 'okay' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-red-100 text-red-700'
-          }`}>
-            {overallStrength === 'strong' ? 'Strong' :
-             overallStrength === 'okay' ? 'Okay' : 'Weak'}
-          </span>
-        )}
       </div>
 
       <ul className="space-y-1.5">
@@ -48,11 +39,12 @@ export function OpportunityCoaching({ result, onRewriteClick }: OpportunityCoach
       </ul>
 
       {!allPassed && (
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3">
           <button
             onClick={onRewriteClick}
-            className="text-sm text-primary hover:underline flex items-center gap-1"
+            className="text-sm text-primary hover:underline flex items-center gap-1.5"
           >
+            <WandSparkles className="h-3.5 w-3.5" />
             Rewrite with suggestions
           </button>
         </div>

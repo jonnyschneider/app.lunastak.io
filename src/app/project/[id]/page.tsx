@@ -691,10 +691,9 @@ export default function ProjectPage() {
           />
           <GoToStrategyCard
             onGoToStrategy={() => {
-              // Scroll to strategy section or navigate
-              const strategySection = document.getElementById('current-strategy')
-              if (strategySection) {
-                strategySection.scrollIntoView({ behavior: 'smooth' })
+              const latestStrategy = projectData?.strategyOutputs?.[0]
+              if (latestStrategy) {
+                router.push(`/strategy/${latestStrategy.id}`)
               }
             }}
           />
