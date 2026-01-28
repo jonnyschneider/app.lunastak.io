@@ -24,6 +24,11 @@ export default async function Page({
     redirect(`/project/${params.projectId}`);
   }
 
+  // If user just signed out, redirect to signin page instead of creating new guest
+  if (params.signedOut === 'true') {
+    redirect('/api/auth/signin');
+  }
+
   // Authenticated user - redirect to their first project
   if (session?.user?.id) {
     let project = await prisma.project.findFirst({
