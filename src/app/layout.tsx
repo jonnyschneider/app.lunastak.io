@@ -4,8 +4,9 @@ import { IBM_Plex_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
 import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
+import { GenerationStatusProvider } from '@/components/providers/GenerationStatusProvider'
 import { StatsigProvider } from '@/components/StatsigProvider'
-import { Toaster } from 'sonner'
+import { Toaster } from '@/components/ui/sonner'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
@@ -35,8 +36,10 @@ export default async function RootLayout({
         <SessionProvider session={session}>
           <SessionTransferProvider>
             <StatsigProvider>
-              {children}
-              <Toaster position="bottom-right" />
+              <GenerationStatusProvider>
+                {children}
+                <Toaster position="bottom-right" />
+              </GenerationStatusProvider>
             </StatsigProvider>
           </SessionTransferProvider>
         </SessionProvider>
