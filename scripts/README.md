@@ -25,6 +25,9 @@ npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --varian
 | Fixture | Description |
 |---------|-------------|
 | `demo-dogfood` | Full demo with conversations, fragments, and deep dives |
+| `demo-extended` | BuildFlow demo with 4 conversations, traces, and synthesized dimensions |
+| `demo-pre-generate` | Lunastak positioning demo, stopped at extraction (for testing generate) |
+| `demo-4pl` | 4PL logistics retention strategy - full conversation ready for extraction |
 | `demo-simulated` | Simulated user journey data |
 | `empty-project` | Empty project for testing onboarding flows |
 | `test-minimal` | Minimal fixture for unit tests |
@@ -34,11 +37,22 @@ npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --varian
 | Flag | Description |
 |------|-------------|
 | `--fixture <name>` | Fixture name (required) |
-| `--email <email>` | Email for the account (required) |
-| `--reset` | Delete existing user data first |
+| `--email <email>` | Email for new account |
+| `--projectId <id>` | Hydrate into existing project (alternative to --email) |
+| `--userId <id>` | Use existing user (optional with --projectId) |
+| `--reset` | Delete existing user/project data first |
 | `--dry-run` | Preview without writing to database |
 | `--variant <variant>` | Override experiment variant on all conversations |
 | `--production` | Allow running against production DB (use with caution) |
+
+### Hydrating into Existing Projects
+
+For UAT or testing with guest sessions, hydrate directly into an existing project:
+
+```bash
+# Get project ID from URL: http://localhost:3000/project/<projectId>
+npx tsx scripts/seed/hydrate.ts --fixture demo-4pl --projectId cml1o94x0004jcz9el2i8bdnz --reset
+```
 
 ### Creating New Fixtures
 
@@ -200,3 +214,61 @@ SELECT id, conversationId, createdAt FROM Trace ORDER BY createdAt DESC LIMIT 10
 - Useful for comparing different generations side-by-side
 - Uses current `CLAUDE_MODEL` from environment
 - Temperature fixed at 0.7 (same as production)
+
+---
+
+## Pre-Generate Testing (pre-generate.ts)
+
+Test the generate API directly with pre-extracted context, bypassing the full extraction flow.
+
+### Usage
+
+```bash
+# Run generation with pre-extracted 4PL context
+npx tsx scripts/pre-generate.ts
+
+# Preview payload without calling API
+npx tsx scripts/pre-generate.ts --dry-run
+```
+
+### What it does
+
+1. Loads pre-built `extractedContext` from `fixtures/pre-generate-4pl.json`
+2. POSTs to `/api/generate` with the themes and dimensional coverage
+3. Streams the generation progress and outputs the strategy
+
+### Use Cases
+
+- Testing generation prompts without running full extraction
+- Benchmarking generation performance
+- Comparing strategy output quality across prompt versions
+
+---
+
+## API Flow Reference
+
+Current extraction → generation pipeline (as of 2026-01-31):
+
+### Extract Route (`/api/extract`)
+
+1. **Extract themes** with inline dimension tags (1 Claude call)
+2. **Compute dimensional coverage** from inline dimensions (no additional call)
+3. **Create fragments** from themes in database
+4. **Return immediately** with `extractedContext` (themes only)
+5. **Background tasks** (via `waitUntil`):
+   - `updateAllSyntheses` - Updates dimensional synthesis records
+   - `generateKnowledgeSummary` - Updates project knowledge summary
+
+### Generate Route (`/api/generate`)
+
+1. **Receive** `extractedContext` (themes) + `dimensionalCoverage`
+2. **Build prompt** from themes
+3. **Generate strategy** (vision, strategy, objectives) via Claude
+4. **Save** Trace, GeneratedOutput, ExtractionRun records
+5. **Return** streaming progress with final statements
+
+### Key Optimizations (commit 5b9707e)
+
+- Reflective summary generation removed from critical path (~5-10s saved)
+- Synthesis and knowledge summary updates deferred to background
+- Result: ~30% faster extraction-to-strategy pipeline
