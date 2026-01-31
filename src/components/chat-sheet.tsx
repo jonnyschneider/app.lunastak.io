@@ -362,6 +362,36 @@ export function ChatSheet({
       const decoder = new TextDecoder()
       let buffer = ''
 
+      const processLine = (line: string) => {
+        if (!line.trim()) return
+
+        try {
+          const update = JSON.parse(line)
+
+          if (update.step === 'complete') {
+            const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
+            setExtractedContext(ctx)
+            setDimensionalCoverage(coverage)
+
+            if (isExplicitEnd) {
+              // User clicked End - close sheet with toast
+              toast.success('Added to your knowledge base')
+              onOpenChange(false)
+            } else {
+              // Skip ExtractionConfirm, go straight to generation
+              // Pass context directly to avoid React state timing issues
+              handleGenerate(ctx, coverage)
+            }
+          } else if (update.step === 'error') {
+            throw new Error(update.error || 'Extraction failed')
+          } else {
+            setExtractionStep(update.step)
+          }
+        } catch (parseError) {
+          console.error('Failed to parse progress update:', line, parseError)
+        }
+      }
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -372,37 +402,13 @@ export function ChatSheet({
         buffer = lines.pop() || ''
 
         for (const line of lines) {
-          if (!line.trim()) continue
-
-          try {
-            const update = JSON.parse(line)
-
-            if (update.step === 'complete') {
-              const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
-              setExtractedContext(ctx)
-              setDimensionalCoverage(coverage)
-
-              if (isExplicitEnd) {
-                // User clicked End - close sheet with toast
-                toast.success('Added to your knowledge base')
-                onOpenChange(false)
-              } else if (hasExistingStrategy) {
-                // Subsequent conversation - show summary only
-                setFlowStep('summary')
-              } else {
-                // First conversation - skip ExtractionConfirm, go straight to generation
-                // Pass context directly to avoid React state timing issues
-                handleGenerate(ctx, coverage)
-              }
-            } else if (update.step === 'error') {
-              throw new Error(update.error || 'Extraction failed')
-            } else {
-              setExtractionStep(update.step)
-            }
-          } catch (parseError) {
-            console.error('Failed to parse progress update:', line, parseError)
-          }
+          processLine(line)
         }
+      }
+
+      // Process any remaining data in buffer after stream ends
+      if (buffer.trim()) {
+        processLine(buffer)
       }
     } catch (error) {
       console.error('Failed to extract context:', error)

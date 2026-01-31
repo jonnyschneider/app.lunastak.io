@@ -373,9 +373,9 @@ export async function POST(req: Request) {
               gaps: dimensionalCoverage.summary.gaps,
             });
 
-            // Log to Statsig for experiment metrics
+            // Log to Statsig for experiment metrics (fire and forget - don't block stream)
             if (conversation.userId) {
-              await logStatsigEvent(
+              logStatsigEvent(
                 conversation.userId,
                 'dimensional_coverage',
                 dimensionalCoverage.summary.coveragePercentage,
@@ -384,7 +384,7 @@ export async function POST(req: Request) {
                   dimensionsCovered: String(dimensionalCoverage.summary.dimensionsCovered),
                   gaps: dimensionalCoverage.summary.gaps.join(','),
                 }
-              );
+              ).catch(err => console.error('[Extract] Statsig event failed:', err));
             }
           }
 

@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.5] - 2026-01-31
+
+### Changed
+
+- **Skip Extraction Confirmation** - Go straight from extraction to generation
+  - Removes interstitial "Here's what I understood" screen
+  - Extraction completes → immediately triggers strategy generation
+  - Reduces clicks but total wait time still needs background generation (see docs/in-progress)
+
+### Fixed
+
+- **Null Safety in ExtractionConfirm** - Handle missing reflective_summary
+  - Emergent extraction no longer includes reflective_summary in response
+  - Component now guards against undefined fields
+
+### Added
+
+- **New Seed Fixtures** - For UAT and testing
+  - `demo-4pl.json` - 4PL logistics retention strategy conversation
+  - `pre-generate-4pl.json` - Pre-extracted context for testing generate API
+  - `pre-generate.ts` - Script to test generation with pre-extracted context
+
+- **Updated Scripts Documentation** - Expanded scripts/README.md
+  - Hydrating into existing projects (`--projectId`)
+  - Pre-generate testing workflow
+  - API flow reference section
+
+---
 ## [1.7.4] - 2026-01-28
 
 ### Added

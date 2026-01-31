@@ -257,11 +257,13 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         throw new Error('No context extracted')
       }
 
-      // Show extraction confirmation
+      // Skip confirmation, go straight to generation
       setExtractedContext(context)
       setDimensionalCoverage(coverage)
       setIsExtracting(false)
-      setShowExtractionConfirm(true)
+
+      // Immediately trigger generation (don't wait for state update)
+      await generateStrategy(context, coverage)
     } catch (err) {
       console.error('Failed to extract:', err)
       setExtractionStep('error')
@@ -274,9 +276,9 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
     }
   }
 
-  // Step 2: Generate strategy from extracted context
-  const handleGenerate = async () => {
-    if (!conversationId || !extractedContext) return
+  // Core generation logic (accepts params directly to avoid state timing issues)
+  const generateStrategy = async (context: ExtractedContextVariant, coverage: any) => {
+    if (!conversationId) return
 
     setShowExtractionConfirm(false)
     setIsGenerating(true)
@@ -290,8 +292,8 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          extractedContext,
-          dimensionalCoverage,
+          extractedContext: context,
+          dimensionalCoverage: coverage,
         }),
       })
 
@@ -349,6 +351,12 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         setGenerationError(undefined)
       }, 3000)
     }
+  }
+
+  // Step 2: Generate strategy from extracted context (wrapper using state)
+  const handleGenerate = async () => {
+    if (!conversationId || !extractedContext) return
+    await generateStrategy(extractedContext, dimensionalCoverage)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
