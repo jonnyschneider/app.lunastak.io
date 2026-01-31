@@ -97,6 +97,8 @@ import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateD
 import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
+import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { GenerationStatusIndicator } from '@/components/GenerationStatusIndicator'
 import { cn } from '@/lib/utils'
 
 interface Project {
@@ -171,6 +173,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
+  const { isGenerating } = useGenerationStatusContext()
 
   const {
     createProject,
@@ -208,6 +211,28 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         }
       })
       .catch(() => setStrategyHistory([]))
+  }, [selectedProjectId])
+
+  // Refresh strategy history when generation completes
+  useEffect(() => {
+    const handleGenerationComplete = (event: CustomEvent<{ projectId: string }>) => {
+      if (event.detail.projectId === selectedProjectId) {
+        // Refresh strategy history
+        fetch(`/api/project/${selectedProjectId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.strategyOutputs) {
+              setStrategyHistory(data.strategyOutputs)
+            }
+          })
+          .catch(() => {})
+      }
+    }
+
+    window.addEventListener('generationComplete', handleGenerationComplete as EventListener)
+    return () => {
+      window.removeEventListener('generationComplete', handleGenerationComplete as EventListener)
+    }
   }, [selectedProjectId])
 
   const fetchProjects = async () => {
@@ -456,11 +481,23 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <SidebarMenuSub>
+                        {/* Show generating indicator when active */}
+                        {isGenerating(selectedProject.id) && (
+                          <SidebarMenuSubItem>
+                            <div className="px-2 py-1.5">
+                              <GenerationStatusIndicator
+                                status="generating"
+                                size="sm"
+                                generatingLabel="generating..."
+                              />
+                            </div>
+                          </SidebarMenuSubItem>
+                        )}
                         {strategyHistory === null ? (
                           <SidebarMenuSubItem>
                             <span className="text-xs text-muted-foreground px-2 py-1">Loading...</span>
                           </SidebarMenuSubItem>
-                        ) : strategyHistory.length === 0 ? (
+                        ) : strategyHistory.length === 0 && !isGenerating(selectedProject.id) ? (
                           <SidebarMenuSubItem>
                             <span className="text-xs text-muted-foreground px-2 py-1">No strategies yet</span>
                           </SidebarMenuSubItem>
