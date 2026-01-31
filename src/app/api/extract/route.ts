@@ -9,6 +9,7 @@ import { updateAllSyntheses } from '@/lib/synthesis';
 import { logStatsigEvent } from '@/lib/statsig';
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
+import { runBackgroundTasks } from '@/lib/background-tasks';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -268,61 +269,11 @@ export async function POST(req: Request) {
           sendProgress({ step: 'analyzing_dimensions' });
           dimensionalCoverage = computeDimensionalCoverageFromInline(themes);
 
-          // Generate reflective summary (only 1 Claude call now)
-          sendProgress({ step: 'generating_summary' });
-
-          const summaryResponse = await createMessage({
-            model: CLAUDE_MODEL,
-            max_tokens: 2000,
-            messages: [{
-              role: 'user',
-              content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
-            }],
-            temperature: 0.5
-          }, 'reflective_summary_emergent');
-
-          const summaryContent = summaryResponse.content[0]?.type === 'text'
-            ? summaryResponse.content[0].text : '';
-
-          // Note: truncation is now automatically detected and logged by createMessage()
-          const wasTerminatedNormally = summaryResponse.stop_reason === 'end_turn';
-          if (!wasTerminatedNormally) {
-            console.warn('[Extract] Summary response may be truncated, stop_reason:', summaryResponse.stop_reason);
-          }
-
-          const summaryXML = extractXML(summaryContent, 'summary');
-
-          // Debug logging for reflective summary parsing
-          console.log('[Extract] Summary response length:', summaryContent.length);
-          console.log('[Extract] Summary stop_reason:', summaryResponse.stop_reason);
-          console.log('[Extract] Summary XML extracted:', summaryXML ? 'OK' : 'EMPTY');
-
-          const conversationTitle = extractXML(summaryXML, 'title') || undefined;
-          const reflective_summary = {
-            strengths: extractAllXML(summaryXML, 'strength'),
-            emerging: extractAllXML(summaryXML, 'area'),
-            opportunities_for_enrichment: extractAllXML(summaryXML, 'opportunity'),
-            thought_prompt: extractXML(summaryXML, 'thought_prompt') || undefined,
-          };
-
-          console.log('[Extract] Reflective summary parsed:', {
-            strengthsCount: reflective_summary.strengths.length,
-            emergingCount: reflective_summary.emerging.length,
-            opportunitiesCount: reflective_summary.opportunities_for_enrichment.length,
-            hasThoughtPrompt: !!reflective_summary.thought_prompt,
-          });
-
-          // Save title to conversation
-          if (conversationTitle) {
-            await prisma.conversation.update({
-              where: { id: conversationId },
-              data: { title: conversationTitle },
-            });
-          }
-
+          // Reflective summary moved to background - return themes immediately
+          // This removes ~5-10s from the critical path
           extractedContext = {
             themes,
-            reflective_summary,
+            // reflective_summary intentionally omitted - background task will populate
             extraction_approach: 'emergent',
           };
         } else {
@@ -439,7 +390,7 @@ export async function POST(req: Request) {
 
           // Create fragments from themes with inline dimension tags
           if (conversation.projectId) {
-            const projectId = conversation.projectId; // Capture for async callback
+            const projectId = conversation.projectId;
             try {
               // themes already have dimensions from parseEmergentThemes
               const fragments = await createFragmentsFromThemes(
@@ -448,22 +399,6 @@ export async function POST(req: Request) {
                 extractedContext.themes as ThemeWithDimensions[]
               );
               console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
-
-              // Only run heavy synthesis for first conversations (not lightweight mode)
-              // Follow-on conversations skip full synthesis to stay fast
-              if (!lightweight) {
-                // Trigger synthesis update, then knowledge summary
-                // IMPORTANT: Must await - Vercel terminates after stream closes
-                // Knowledge summary must run AFTER synthesis so fragmentCount is accurate
-                try {
-                  await updateAllSyntheses(projectId);
-                  await generateKnowledgeSummary(projectId);
-                } catch (error) {
-                  console.error('[Extract] Failed to update syntheses or generate knowledge summary:', error);
-                }
-              } else {
-                console.log('[Extract] Lightweight mode - skipping full synthesis');
-              }
             } catch (error) {
               // Log but don't fail extraction if fragment creation fails
               console.error('[Extract] Failed to create fragments:', error);
@@ -478,7 +413,7 @@ export async function POST(req: Request) {
         });
         console.log(`[Extract] Updated conversation status to 'extracted'`);
 
-        // Step 5: Complete
+        // Step 5: Complete - send immediately (background tasks run after)
         sendProgress({
           step: 'complete',
           data: {
@@ -488,6 +423,26 @@ export async function POST(req: Request) {
         });
 
         controller.close();
+
+        // Schedule background tasks (runs after response sent via waitUntil)
+        // Only for emergent extraction with a project, and not in lightweight mode
+        if (isEmergent && conversation.projectId && !lightweight) {
+          const projectId = conversation.projectId;
+
+          runBackgroundTasks({
+            projectId,
+            tasks: [
+              {
+                name: 'updateAllSyntheses',
+                fn: async () => { await updateAllSyntheses(projectId) }
+              },
+              {
+                name: 'generateKnowledgeSummary',
+                fn: async () => { await generateKnowledgeSummary(projectId) }
+              }
+            ]
+          });
+        }
       } catch (error) {
         console.error('Extract context error:', error);
         sendProgress({

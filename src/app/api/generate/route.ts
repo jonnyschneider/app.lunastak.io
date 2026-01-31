@@ -7,6 +7,7 @@ import { convertLegacyObjectives } from '@/lib/placeholders';
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
 import { logStatsigEvent } from '@/lib/statsig';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
+import { getCurrentPrompt } from '@/lib/prompts';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -68,39 +69,8 @@ Format your response as:
   </objectives>
 </statements>`;
 
-const EMERGENT_GENERATION_PROMPT = `Generate compelling strategy statements based on the emergent themes from our conversation.
-
-EMERGENT THEMES:
-{themes}
-
-INSIGHTS FROM CONVERSATION:
-Strengths identified:
-{strengths}
-
-Emerging patterns:
-{emerging}
-
-Areas to explore further:
-{unexplored}
-
-Guidelines:
-- Use the emergent themes as your foundation - these represent what actually matters to this business
-- Vision: Should be aspirational, future-focused, and memorable
-- Strategy: Should be clear, actionable, and focused on current purpose
-- Objectives: Should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
-- Use their language and themes - make it feel authentic to their business, not generic corporate speak
-
-Format your response as:
-<thoughts>Your reasoning about the strategy, referencing specific themes that emerged</thoughts>
-<statements>
-  <vision>The vision statement</vision>
-  <strategy>The strategy statement</strategy>
-  <objectives>
-  1. First objective
-  2. Second objective
-  3. Third objective
-  </objectives>
-</statements>`;
+// Note: Emergent generation now uses prompt registry (v2-themes-only)
+// Prescriptive generation (baseline-v1) still uses inline prompt above
 
 export async function POST(req: Request) {
   const requestStartTime = Date.now();
@@ -180,28 +150,14 @@ export async function POST(req: Request) {
         let prompt: string;
 
         if (isEmergentContext(context)) {
-          // Emergent generation
+          // Emergent generation - use themes-only prompt from registry
+          const generationPrompt = getCurrentPrompt('generation');
+
           const themesText = context.themes
             .map(theme => `${theme.theme_name}:\n${theme.content}`)
             .join('\n\n');
 
-          const strengthsText = (context.reflective_summary?.strengths || [])
-            .map(s => `- ${s}`)
-            .join('\n');
-
-          const emergingText = (context.reflective_summary?.emerging || [])
-            .map(e => `- ${e}`)
-            .join('\n');
-
-          const opportunitiesText = (context.reflective_summary?.opportunities_for_enrichment || [])
-            .map((opp: string) => `- ${opp}`)
-            .join('\n');
-
-          prompt = EMERGENT_GENERATION_PROMPT
-            .replace('{themes}', themesText)
-            .replace('{strengths}', strengthsText || 'None identified')
-            .replace('{emerging}', emergingText || 'None identified')
-            .replace('{unexplored}', opportunitiesText || 'None identified');
+          prompt = generationPrompt.template.replace('{themes}', themesText);
         } else {
           // Prescriptive generation (baseline-v1)
           const enrichmentText = Object.entries(context.enrichment || {})

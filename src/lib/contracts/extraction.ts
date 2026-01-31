@@ -25,9 +25,10 @@ export interface EmergentThemeContract {
 }
 
 // Emergent extraction output (E1a, E3)
+// reflective_summary is optional - populated by background task after initial extraction
 export interface EmergentExtractionContract {
   themes: EmergentThemeContract[];
-  reflective_summary: ReflectiveSummaryContract;
+  reflective_summary?: ReflectiveSummaryContract;
   extraction_approach: 'emergent';
 }
 
@@ -75,12 +76,15 @@ export function validateEmergentExtraction(data: unknown): data is EmergentExtra
   if (typeof theme.theme_name !== 'string' || !theme.theme_name) return false;
   if (typeof theme.content !== 'string' || !theme.content) return false;
 
-  // Check reflective_summary structure
-  const summary = obj.reflective_summary as Record<string, unknown>;
-  if (!summary || typeof summary !== 'object') return false;
-  if (!Array.isArray(summary.strengths)) return false;
-  if (!Array.isArray(summary.emerging)) return false;
-  if (!Array.isArray(summary.opportunities_for_enrichment)) return false;
+  // reflective_summary is optional (populated by background task)
+  // but if present, must be valid
+  if (obj.reflective_summary !== undefined) {
+    const summary = obj.reflective_summary as Record<string, unknown>;
+    if (typeof summary !== 'object' || summary === null) return false;
+    if (!Array.isArray(summary.strengths)) return false;
+    if (!Array.isArray(summary.emerging)) return false;
+    if (!Array.isArray(summary.opportunities_for_enrichment)) return false;
+  }
 
   return true;
 }

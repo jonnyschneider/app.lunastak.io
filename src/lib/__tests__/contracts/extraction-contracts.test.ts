@@ -63,8 +63,31 @@ describe('Extraction Contracts', () => {
       expect(validateEmergentExtraction(invalid)).toBe(false);
     });
 
-    it('should reject extraction with missing reflective_summary', () => {
-      const { reflective_summary, ...invalid } = validEmergent;
+    it('should validate extraction without reflective_summary (immediate output)', () => {
+      const { reflective_summary, ...immediateOutput } = validEmergent;
+      expect(validateEmergentExtraction(immediateOutput)).toBe(true);
+    });
+
+    it('should validate extraction with reflective_summary (full output)', () => {
+      expect(validateEmergentExtraction(validEmergent)).toBe(true);
+    });
+
+    it('should reject extraction with invalid reflective_summary structure', () => {
+      const invalid = {
+        ...validEmergent,
+        reflective_summary: { invalid: 'structure' },
+      };
+      expect(validateEmergentExtraction(invalid)).toBe(false);
+    });
+
+    it('should reject extraction with reflective_summary missing required arrays', () => {
+      const invalid = {
+        ...validEmergent,
+        reflective_summary: {
+          strengths: ['Valid'],
+          // missing emerging and opportunities_for_enrichment
+        },
+      };
       expect(validateEmergentExtraction(invalid)).toBe(false);
     });
   });
