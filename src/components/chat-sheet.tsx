@@ -390,8 +390,9 @@ export function ChatSheet({
                 // Subsequent conversation - show summary only
                 setFlowStep('summary')
               } else {
-                // First conversation - show extraction confirm with generate option
-                setFlowStep('extraction')
+                // First conversation - skip ExtractionConfirm, go straight to generation
+                // Pass context directly to avoid React state timing issues
+                handleGenerate(ctx, coverage)
               }
             } else if (update.step === 'error') {
               throw new Error(update.error || 'Extraction failed')
@@ -417,8 +418,12 @@ export function ChatSheet({
   }
 
   // Generate strategy from extracted context
-  const handleGenerate = async () => {
-    if (!conversationId || !extractedContext) return
+  // Accepts optional context/coverage params for immediate calls (bypasses React state timing)
+  const handleGenerate = async (ctx?: ExtractedContextVariant, coverage?: any) => {
+    const contextToUse = ctx || extractedContext
+    const coverageToUse = coverage !== undefined ? coverage : dimensionalCoverage
+
+    if (!conversationId || !contextToUse) return
 
     setFlowStep('generating')
     setIsLoading(true)
@@ -431,8 +436,8 @@ export function ChatSheet({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          extractedContext,
-          dimensionalCoverage,
+          extractedContext: contextToUse,
+          dimensionalCoverage: coverageToUse,
         }),
       })
 

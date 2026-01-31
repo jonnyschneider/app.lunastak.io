@@ -6,6 +6,9 @@
  *   npx tsx scripts/seed/hydrate.ts --fixture demo-dogfood --email demo@example.com
  *   npx tsx scripts/seed/hydrate.ts --fixture demo-dogfood --email demo@example.com --reset
  *   npx tsx scripts/seed/hydrate.ts --fixture demo-dogfood --email demo@example.com --dry-run
+ *
+ * For existing guest projects (use projectId from URL):
+ *   npx tsx scripts/seed/hydrate.ts --fixture demo-pre-generate --projectId cml1l8inw0002cz9evme0t2mr
  */
 
 import * as fs from 'fs';
@@ -47,23 +50,213 @@ function parseArgs(): HydrateOptions {
       case '--production':
         options.production = true;
         break;
+      case '--projectId':
+        options.projectId = args[++i];
+        break;
+      case '--userId':
+        options.userId = args[++i];
+        break;
     }
   }
 
-  if (!options.fixture || !options.email) {
+  // Validate: need either --email OR --projectId
+  if (!options.fixture || (!options.email && !options.projectId)) {
     console.error('\n[ERROR] Missing required arguments\n');
-    console.log('Usage: npx tsx scripts/seed/hydrate.ts --fixture <name> --email <email>\n');
+    console.log('Usage:');
+    console.log('  npx tsx scripts/seed/hydrate.ts --fixture <name> --email <email>');
+    console.log('  npx tsx scripts/seed/hydrate.ts --fixture <name> --projectId <id>\n');
     console.log('Options:');
     console.log('  --fixture <name>    Fixture name (without .json)');
-    console.log('  --email <email>     Email for the user account');
+    console.log('  --email <email>     Email for new user account');
+    console.log('  --projectId <id>    Hydrate into existing project (from URL)');
+    console.log('  --userId <id>       Use existing user (optional with --projectId)');
     console.log('  --variant <variant> Override experiment variant');
-    console.log('  --reset             Delete existing user data first');
+    console.log('  --reset             Delete existing data first');
     console.log('  --dry-run           Preview without writing');
     console.log('  --production        Allow running against production DB\n');
     process.exit(1);
   }
 
   return options as HydrateOptions;
+}
+
+// Helper to hydrate data into an existing project
+async function hydrateProjectData(
+  projectId: string,
+  userId: string | null,
+  projectFixture: Fixture['projects'][0],
+  resolveId: (id: string) => string,
+  options: HydrateOptions
+): Promise<void> {
+  // Create deep dives first (conversations may reference them)
+  for (const ddFixture of projectFixture.deepDives || []) {
+    const ddId = resolveId(ddFixture.id);
+    await prisma.deepDive.create({
+      data: {
+        id: ddId,
+        projectId,
+        topic: ddFixture.topic,
+        notes: ddFixture.notes,
+        status: ddFixture.status,
+        origin: ddFixture.origin,
+      },
+    });
+  }
+
+  // Create documents
+  for (const docFixture of projectFixture.documents || []) {
+    const docId = resolveId(docFixture.id);
+    await prisma.document.create({
+      data: {
+        id: docId,
+        projectId,
+        fileName: docFixture.fileName,
+        fileType: docFixture.fileType,
+        fileSizeBytes: docFixture.fileSizeBytes,
+        uploadContext: docFixture.uploadContext,
+        status: docFixture.status,
+        deepDiveId: docFixture.deepDiveId ? resolveId(docFixture.deepDiveId) : undefined,
+      },
+    });
+  }
+
+  // Create conversations
+  for (const convFixture of projectFixture.conversations) {
+    const convId = resolveId(convFixture.id);
+    const variant = options.variantOverride || convFixture.experimentVariant;
+
+    console.log(`  [INFO] Creating conversation: ${convFixture.title || 'Untitled'}`);
+
+    const conversation = await prisma.conversation.create({
+      data: {
+        id: convId,
+        userId,
+        projectId,
+        title: convFixture.title,
+        status: convFixture.status,
+        currentPhase: convFixture.currentPhase,
+        selectedLens: convFixture.selectedLens,
+        questionCount: convFixture.questionCount,
+        experimentVariant: variant,
+      },
+    });
+
+    // Create messages
+    for (const msgFixture of convFixture.messages) {
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: msgFixture.role,
+          content: msgFixture.content,
+          stepNumber: msgFixture.stepNumber,
+          confidenceScore: msgFixture.confidenceScore,
+          confidenceReasoning: msgFixture.confidenceReasoning,
+        },
+      });
+    }
+
+    // Create traces
+    for (const traceFixture of convFixture.traces) {
+      await prisma.trace.create({
+        data: {
+          conversationId: conversation.id,
+          userId,
+          extractedContext: traceFixture.extractedContext as Prisma.InputJsonValue,
+          dimensionalCoverage: traceFixture.dimensionalCoverage as Prisma.InputJsonValue | undefined,
+          output: traceFixture.output as Prisma.InputJsonValue,
+          claudeThoughts: traceFixture.claudeThoughts,
+          modelUsed: traceFixture.modelUsed,
+          totalTokens: traceFixture.totalTokens,
+          promptTokens: traceFixture.promptTokens,
+          completionTokens: traceFixture.completionTokens,
+          latencyMs: traceFixture.latencyMs,
+          starred: traceFixture.starred,
+          starredAt: traceFixture.starred ? new Date() : undefined,
+        },
+      });
+    }
+  }
+
+  // Create fragments
+  for (const fragFixture of projectFixture.fragments) {
+    const fragId = resolveId(fragFixture.id);
+    const convId = fragFixture.conversationId ? resolveId(fragFixture.conversationId) : undefined;
+    const docId = fragFixture.documentId ? resolveId(fragFixture.documentId) : undefined;
+
+    const fragment = await prisma.fragment.create({
+      data: {
+        id: fragId,
+        projectId,
+        conversationId: convId,
+        documentId: docId,
+        content: fragFixture.content,
+        contentType: fragFixture.contentType,
+        status: fragFixture.status,
+        confidence: fragFixture.confidence,
+      },
+    });
+
+    // Create dimension tags
+    for (const tagFixture of fragFixture.dimensionTags || []) {
+      await prisma.fragmentDimensionTag.create({
+        data: {
+          fragmentId: fragment.id,
+          dimension: tagFixture.dimension,
+          confidence: tagFixture.confidence,
+        },
+      });
+    }
+  }
+
+  // Create dimensional syntheses
+  for (const synthFixture of projectFixture.syntheses || []) {
+    await prisma.dimensionalSynthesis.create({
+      data: {
+        projectId,
+        dimension: synthFixture.dimension,
+        summary: synthFixture.summary,
+        keyThemes: synthFixture.keyThemes,
+        gaps: JSON.parse(JSON.stringify(synthFixture.gaps || [])),
+        confidence: synthFixture.confidence,
+        fragmentCount: synthFixture.fragmentCount,
+      },
+    });
+  }
+
+  // Create generated outputs
+  for (const outputFixture of projectFixture.generatedOutputs || []) {
+    await prisma.generatedOutput.create({
+      data: {
+        projectId,
+        userId,
+        outputType: outputFixture.outputType,
+        version: outputFixture.version,
+        content: outputFixture.content as Prisma.InputJsonValue,
+        generatedFrom: outputFixture.generatedFrom,
+        modelUsed: outputFixture.modelUsed,
+        changeSummary: outputFixture.changeSummary,
+      },
+    });
+  }
+
+  // Create user content (opportunities, principles)
+  for (const ucFixture of projectFixture.userContent || []) {
+    const ucId = resolveId(ucFixture.id);
+    await prisma.userContent.create({
+      data: {
+        id: ucId,
+        projectId,
+        type: ucFixture.type,
+        content: ucFixture.content,
+        status: ucFixture.status,
+        metadata: ucFixture.metadata ? JSON.parse(JSON.stringify(ucFixture.metadata)) : undefined,
+      },
+    });
+  }
+
+  const convCount = projectFixture.conversations.length;
+  const fragCount = projectFixture.fragments.length;
+  console.log(`  [OK] Hydrated: ${convCount} conversations, ${fragCount} fragments`);
 }
 
 async function checkEnvironment(options: HydrateOptions): Promise<void> {
@@ -97,10 +290,16 @@ async function hydrate(options: HydrateOptions): Promise<void> {
   // Generate ID mappings
   const idMap = new Map<string, string>();
 
-  // Map project IDs
-  fixture.projects.forEach((p) => {
-    idMap.set(p.id, generateCuid());
-  });
+  // If projectId provided, use it instead of generating
+  if (options.projectId) {
+    fixture.projects.forEach((p) => {
+      idMap.set(p.id, options.projectId!);
+    });
+  } else {
+    fixture.projects.forEach((p) => {
+      idMap.set(p.id, generateCuid());
+    });
+  }
 
   // Map conversation IDs
   fixture.projects.forEach(p => {
@@ -139,7 +338,48 @@ async function hydrate(options: HydrateOptions): Promise<void> {
 
   const resolveId = (id: string): string => idMap.get(id) || id;
 
-  // Check if user exists
+  // Mode 1: Hydrate into existing project (--projectId)
+  if (options.projectId) {
+    const existingProject = await prisma.project.findUnique({
+      where: { id: options.projectId },
+    });
+
+    if (!existingProject) {
+      console.error(`\n[ERROR] Project not found: ${options.projectId}\n`);
+      process.exit(1);
+    }
+
+    const userId = options.userId || existingProject.userId;
+    console.log(`[INFO] Hydrating into existing project: ${existingProject.name}`);
+    console.log(`[INFO] Project ID: ${options.projectId}`);
+    console.log(`[INFO] User ID: ${userId}`);
+
+    if (options.dryRun) {
+      console.log('\n[DRY RUN] No changes will be made\n');
+      fixture.projects.forEach(p => {
+        console.log(`Would add: ${p.conversations.length} conversations, ${p.fragments.length} fragments`);
+      });
+      console.log('\n[OK] Dry run complete\n');
+      return;
+    }
+
+    // Reset: delete existing conversations and fragments in project
+    if (options.reset) {
+      console.log(`[INFO] Deleting existing data in project...`);
+      await prisma.fragment.deleteMany({ where: { projectId: options.projectId } });
+      await prisma.conversation.deleteMany({ where: { projectId: options.projectId } });
+      console.log(`[INFO] Existing data deleted`);
+    }
+
+    // Hydrate the first project's data into the existing project
+    const projectFixture = fixture.projects[0];
+    await hydrateProjectData(options.projectId, userId, projectFixture, resolveId, options);
+
+    console.log(`\n[OK] Hydration complete for project ${options.projectId}\n`);
+    return;
+  }
+
+  // Mode 2: Create new user and project (--email)
   const existingUser = await prisma.user.findUnique({
     where: { email: options.email },
   });
@@ -171,7 +411,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
   console.log(`[INFO] Creating user: ${options.email}`);
   const user = await prisma.user.create({
     data: {
-      email: options.email,
+      email: options.email!,
       name: fixture.user.name,
       emailVerified: new Date(), // Required for NextAuth magic link login
     },

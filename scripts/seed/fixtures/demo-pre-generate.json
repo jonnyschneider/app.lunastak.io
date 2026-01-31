@@ -1,0 +1,246 @@
+{
+  "template": {
+    "name": "demo-pre-generate",
+    "description": "Lunastak demo stopped at extraction - ready for testing generate flow"
+  },
+  "user": {
+    "name": "Demo User",
+    "email": "{{EMAIL}}"
+  },
+  "projects": [
+    {
+      "id": "{{PROJECT_ID}}",
+      "name": "My Strategy",
+      "status": "active",
+      "knowledgeSummary": null,
+      "suggestedQuestions": [],
+      "conversations": [
+        {
+          "id": "{{CONV_ID}}",
+          "title": "Lunastak's Longitudinal Strategy Coach Positioning",
+          "status": "extracted",
+          "currentPhase": "EXTRACTION",
+          "questionCount": 3,
+          "experimentVariant": "emergent-extraction-e1a",
+          "messages": [
+            {
+              "role": "assistant",
+              "content": "Hey! I remember we've mapped out quite a bit of your strategic landscape together. I'm curious – as you've been thinking about this \"longitudinal strategy coach\" positioning versus the one-off deck generators, have you started to form any hypotheses about what the actual cadence or rhythm of engagement would look like for your users? Like, what does \"longitudinal\" really mean in practice for a growth-stage leader trying to execute their strategy?",
+              "stepNumber": 1,
+              "confidenceScore": null
+            },
+            {
+              "role": "user",
+              "content": "Yes! Strategy and planning comes around a few times a year and it's always a huge scramble. But it's a scramble because leaders often aren't managing strategy and operations in a proactive way. To be fair, it's not their fault, they don't have time. 100% in reactive mode. \n\nLunastak takes away some of this crazy. Leaders don't have to \"make time\" for strategy. Instead, just drop snippets, parts, memos, or just random and seemingly unconnected information into Luna, and... forget about it. Until your ready to do somethign with it. When you get back, Luna's made some sense of nuttiness. She won't have solved it, but she's there, ready to help you solve it—joining the dots on your behalf; asking the right questions; distilling and capturing the essence of yoru thinking. \n\nWhen Luna gets that right, there's immediate value, and so long as we keep the tap on, then leaders can engage as often and for as long as they like. \n\nThe other aspect of \"longitudinal\" is beyond just the planning cycles. Everyone know that getting the strategy done is just the beginning, and execution is everything. This is where Luna can really shine. Using OKRs to measure performance? Terrific, completely compatible—manage those in Luna. Operating model requires Monthly and Quarterly Business Review? Fabulous! A 75% draft of that document can be automated from Luna—your contribution is the polished narrative.",
+              "stepNumber": 2,
+              "confidenceScore": null
+            },
+            {
+              "role": "assistant",
+              "content": "I love how Luna becomes this continuous strategic companion rather than just another planning tool! The image of leaders dropping in \"snippets and seemingly unconnected information\" really resonates—that's exactly how strategic thinking actually happens in the wild.\n\nQuick question: when you picture the leader who's going to get the most value from this longitudinal approach—the one who's constantly in reactive mode, juggling strategy fragments—what does their world look like? Are we talking about founders at high-growth startups, VP-level executives at mid-market SaaS companies, or someone else entirely? I'm curious both about the company stage/size and what their day-to-day chaos actually consists of.",
+              "stepNumber": 3,
+              "confidenceScore": null
+            },
+            {
+              "role": "user",
+              "content": "It's all of those, and there's much precedence in our consulting work for helping those archetypes. Pragmatically though, it's for any leader who's needs a collaborative parter to wrangle strategy with them. This is the hard part of strategy... Anyone can turn up the the annual offsite and dial up the charisma to 11. Everyone's juiced. It feels good. You could say... anything! But what happens when the McKinsey partners are gone? 8 months later, when all you can remember is the sweet taste of aspiration—before reality punched you in the face? They'll be there for you, but by the time you schedule the meeting and get lunch together, your two-weeks out, and  it's too late. \n\nLuna is strategy partner that's always there, always thinking, and always ready to move you forward, exactly when you need it the most.",
+              "stepNumber": 4,
+              "confidenceScore": "MEDIUM",
+              "confidenceReasoning": "The conversation has strong coverage of the problem (reactive strategy management, execution gap) and value proposition (continuous strategic companion vs. one-off tools), with vivid use cases around planning cycles and execution support. However, customer definition remains broad (\"any leader who needs a collaborative partner\"), and competitive/market context is only implied through contrast with consultants and \"deck generators\" - there's enough specificity to generate meaningful strategy output while clearly identifying areas needing deeper exploration (target segment prioritization, competitive landscape, pricing/business model)."
+            },
+            {
+              "role": "assistant",
+              "content": "The \"8 months later when all you can remember is the sweet taste of aspiration\" moment is so visceral—I can practically feel that panic. But here's what I'm wondering: when a leader is in that moment of realizing their strategy has drifted or stalled, what's typically stopping them from course-correcting? Is it that they don't know *what* to do differently, they don't have the *data* to make informed pivots, they can't get their *team* aligned on changes, or is it something else entirely? I'm trying to understand what specific capability Luna needs to deliver in those critical \"reality punch\" moments to actually move them forward versus just being another source of guilt about what they should be doing.",
+              "stepNumber": 5,
+              "confidenceScore": null
+            },
+            {
+              "role": "user",
+              "content": "All of those. Clarity is huge. Every executive I work with—they NEVER need (or want) a new strategy—they just need help clarifying the one they have. And that's the thing, it's muddy, murky, and mixed up with all of the other chaos they're dealing with. \n\nSometimes is \"decision coaching\". They're stuck choosing between 10 great options. The instinct is to do it all... but that usually doesn't go well. Or it's making the strategy actionable. It'll work! If only they could describe the future in ways that motivate, and orchestrate teams toward coherent action. Sometimes it's forest for the trees, and it's the outside-in perspective that can unlock that. \n",
+              "stepNumber": 6,
+              "confidenceScore": "HIGH",
+              "confidenceReasoning": "The conversation has strong coverage across all key dimensions: clear customer archetype (growth-stage leaders in reactive mode), specific problem (strategy clarity and execution continuity between planning cycles), and differentiated value proposition (always-on strategic partner vs. episodic consultants/tools). There's sufficient concrete detail about the use case, user behavior patterns, and specific capabilities needed to generate meaningful strategy while also identifying areas for further exploration (exact ICP prioritization, competitive positioning against existing tools)."
+            },
+            {
+              "role": "assistant",
+              "content": "You've painted this really rich picture of the *types* of strategic bottlenecks Luna helps with—clarity, decision paralysis, making it actionable, outside perspective. But I'm curious: when you think about your consulting work with these leaders, what's the pattern in how they actually *use* you during those moments? Like, are they coming to you with a specific artifact they need help with (board deck, OKR refresh, team offsite prep), or is it more freeform \"I'm stuck and need to talk this through\" conversations? I'm trying to understand what the actual interaction model should feel like when someone opens Luna in one of those critical moments—what are they hoping to *do* versus just *discuss*?",
+              "stepNumber": 7,
+              "confidenceScore": null
+            },
+            {
+              "role": "user",
+              "content": "Different strokes for different folks. But here's the most common scenarios I see:\n- They think the strategy is fine (amazing even), but the team isn't up to the task. Actual truth: The team is good and capable, but the strategy is vague, direction changes with the wind, and nobody has a clue what matters—so how could they possibly deliver it? That's a leadership problem. \n- There's great strategy. It's aspirational, well researched, practical, logical, feasible! But the posters on the wall about company culture are decorations at best, meanwhile, teams are living in feature factory that dialled up to 11 on velocity, where everyone's completely lost sight of what actually matters (too busy tryna 'make the number'). P.s. It's usually an OKR. \n- Total bedlam. It's a founder led org who's grown into success. The founders are used to making every decision, and pride themselves on being capable of doing so. And they are. Except that they aren't—not at scale. They become the bottle neck. Can't make decisions fast enough. Can be across all the detail. They're exhausted. They're carrying ALL the responsibility. How they worked before (at small scale) isn't working at their current scale. People need more, and expect more, but they're tapped out and burned out. \n\nAll of those archetypes benefit from the same types of help.\nChaos reduction. Clarity. Help doing the lonely heavy lifting of strategic leadership. At moments when they know they're hard to be around and hard to tolerate. No wonder partners at big consulting cost so much! This is their job—but most people can't afford that luxury. ",
+              "stepNumber": 8,
+              "confidenceScore": "HIGH",
+              "confidenceReasoning": "The conversation has substantial coverage across all key dimensions: clear customer archetypes (growth-stage leaders in reactive mode), specific problem understanding (strategy drift, clarity gaps, decision paralysis), and strong differentiation (longitudinal vs. one-off, always-available vs. expensive consultants). There's enough concrete detail about use cases, user behaviors, and value delivery moments to generate meaningful strategy output while also identifying areas for further exploration (like specific interaction models and initial customer segment prioritization)."
+            },
+            {
+              "role": "assistant",
+              "content": "I have what I need to create your strategy.",
+              "stepNumber": 9,
+              "confidenceScore": null
+            },
+            {
+              "role": "user",
+              "content": "You nailed it. Those are common reasons. Feeling exposed about annual board meeting and nothing new to say since last year. A steady hand who's critical to the business just left, and things are barely holding together. Investors. Generally just missing more than hitting. Big important initiatives chewing resources but seemingly not going in the right direction. Overwhelm of tryna lead a division/company, while drowning in the detail of everyday decisions, and the expectations of employees. ",
+              "stepNumber": 10,
+              "confidenceScore": "HIGH",
+              "confidenceReasoning": "The conversation has strong coverage across all key dimensions: clear customer archetypes (growth-stage leaders in reactive mode), specific problem understanding (strategy clarity, execution gap, decision paralysis), and concrete value proposition (continuous strategic companion vs. one-off consulting). The user has provided rich, specific scenarios with enough detail to generate meaningful strategy while also revealing natural areas for development (exact ICP prioritization, pricing model for longitudinal engagement)."
+            },
+            {
+              "role": "assistant",
+              "content": "I have what I need to create your strategy.",
+              "stepNumber": 11,
+              "confidenceScore": null
+            }
+          ],
+          "traces": []
+        }
+      ],
+      "fragments": [
+        {
+          "id": "{{FRAG_9_ID}}",
+          "content": "**The Reactive Leader Archetype**\n\nThe target user is characterized by being \"100% in reactive mode\" - not because they're incompetent but because \"they don't have time\" to manage strategy proactively. Strategy and planning \"comes around a few times a year and it's always a huge scramble.\" These leaders are juggling chaos, drowning in everyday decisions, dealing with employee expectations, and often become bottlenecks as organizations scale. They include founders at high-growth startups, VP-level executives at mid-market companies, and division leaders - essentially \"any leader who needs a collaborative partner to wrangle strategy with them.\"",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "CUSTOMER_MARKET",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "PROBLEM_OPPORTUNITY",
+              "confidence": "HIGH"
+            }
+          ]
+        },
+        {
+          "id": "{{FRAG_10_ID}}",
+          "content": "**Strategy Execution Gap: Planning to Performance**\n\nThe conversation identified that \"getting the strategy done is just the beginning, and execution is everything.\" Luna bridges the gap between planning cycles and ongoing execution through integration with operational cadences. This includes compatibility with OKRs for performance measurement and automation of 75% of Monthly and Quarterly Business Reviews, leaving leaders to focus on \"the polished narrative.\" The value isn't just in creating strategy documents but in maintaining strategic coherence through the messy reality of execution over time.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "VALUE_PROPOSITION",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "PRODUCT_EXPERIENCE",
+              "confidence": "MEDIUM"
+            },
+            {
+              "dimension": "CAPABILITIES_ASSETS",
+              "confidence": "MEDIUM"
+            }
+          ]
+        },
+        {
+          "id": "{{FRAG_11_ID}}",
+          "content": "**Continuous Strategic Companion vs. Point-in-Time Tools**\n\nLuna is positioned as a \"longitudinal strategy coach\" rather than a one-off deck generator. The core insight is that strategy isn't a discrete event but an ongoing process. Leaders can drop \"snippets, parts, memos, or just random and seemingly unconnected information\" into Luna continuously, and she helps make sense of the chaos over time. This contrasts with traditional consulting (McKinsey partners who leave after the offsite) or static planning tools. Luna is \"always there, always thinking, and always ready to move you forward\" - available in the critical moments 8 months after the offsite when \"all you can remember is the sweet taste of aspiration before reality punched you in the face.\"",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "DIFFERENTIATION_ADVANTAGE",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "VALUE_PROPOSITION",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "PRODUCT_EXPERIENCE",
+              "confidence": "HIGH"
+            }
+          ]
+        },
+        {
+          "id": "{{FRAG_12_ID}}",
+          "content": "**Strategic Leadership Failure Patterns**\n\nThe conversation surfaced specific recurring scenarios: (1) Leaders blame team capability when actually the strategy is vague and priorities shift constantly - \"that's a leadership problem\"; (2) Great strategy exists but culture posters are \"decorations\" while teams are \"completely lost sight of what actually matters\"; (3) Founder-led orgs where founders become bottlenecks at scale, \"exhausted\" and \"carrying ALL the responsibility\" because \"how they worked before isn't working at their current scale.\" Additional triggers include feeling exposed at board meetings with nothing new to say, key people leaving, missing more than hitting, and big initiatives \"chewing resources but seemingly not going in the right direction.\"",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "PROBLEM_OPPORTUNITY",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "CUSTOMER_MARKET",
+              "confidence": "MEDIUM"
+            }
+          ]
+        },
+        {
+          "id": "{{FRAG_13_ID}}",
+          "content": "**Clarity as the Core Strategic Bottleneck**\n\nA critical insight emerged: executives \"NEVER need (or want) a new strategy—they just need help clarifying the one they have.\" The strategy is \"muddy, murky, and mixed up with all of the other chaos they're dealing with.\" Common manifestations include: teams thinking strategy is fine but execution is failing (actually the strategy is vague and direction changes constantly); having great strategy on paper but teams lost in \"feature factory\" velocity; and decision paralysis when choosing between \"10 great options\" with the instinct to \"do it all.\" Luna's role is \"chaos reduction\" and helping with \"the lonely heavy lifting of strategic leadership.\"",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "PROBLEM_OPPORTUNITY",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "VALUE_PROPOSITION",
+              "confidence": "HIGH"
+            }
+          ]
+        },
+        {
+          "id": "{{FRAG_14_ID}}",
+          "content": "**Democratizing Strategic Partnership**\n\nLuna addresses an accessibility gap in strategic support. The conversation highlighted that consulting partners at firms like McKinsey provide exactly this type of help - being there in critical moments, providing outside perspective, decision coaching, making strategy actionable - but \"most people can't afford that luxury.\" By the time you \"schedule the meeting and get lunch together, you're two weeks out, and it's too late.\" Luna makes this level of strategic partnership available continuously and affordably, serving as the \"steady hand\" that expensive consultants provide but at a fraction of the cost and with immediate availability.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "DIFFERENTIATION_ADVANTAGE",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "COMPETITIVE_LANDSCAPE",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "BUSINESS_MODEL_ECONOMICS",
+              "confidence": "MEDIUM"
+            }
+          ]
+        },
+        {
+          "id": "{{FRAG_15_ID}}",
+          "content": "**Flexible Engagement Model: Artifacts and Conversations**\n\nThe interaction model is deliberately flexible - \"different strokes for different folks.\" Leaders engage with Luna both through specific artifacts (board decks, OKR refreshes, team offsite prep, Monthly/Quarterly Business Reviews) and freeform strategic thinking. The key is that leaders can \"engage as often and for as long as they like\" with the \"tap on\" for continuous value. Luna provides multiple types of support: decision coaching when stuck between options, making strategy actionable and motivating, providing outside-in perspective for \"forest for the trees\" moments, and \"joining the dots\" on seemingly unconnected information.",
+          "contentType": "theme",
+          "status": "active",
+          "confidence": "MEDIUM",
+          "conversationId": "{{CONV_ID}}",
+          "dimensionTags": [
+            {
+              "dimension": "PRODUCT_EXPERIENCE",
+              "confidence": "HIGH"
+            },
+            {
+              "dimension": "VALUE_PROPOSITION",
+              "confidence": "MEDIUM"
+            }
+          ]
+        }
+      ],
+      "deepDives": [],
+      "documents": [],
+      "syntheses": [],
+      "generatedOutputs": []
+    }
+  ]
+}

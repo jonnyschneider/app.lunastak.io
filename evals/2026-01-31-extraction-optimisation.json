@@ -1,0 +1,54 @@
+{
+  "name": "Extraction API Optimisation A/B Comparison",
+  "date": "2026-01-31",
+  "description": "Comparison of OLD flow (v1-with-summary with reflective_summary) vs NEW flow (v2-themes-only without blocking summary)",
+  "fixture": "demo-pre-generate.json",
+  "fixtureSource": "Real dogfood conversation data",
+  "environment": "development (local)",
+  "results": {
+    "new_flow": {
+      "description": "v2-themes-only prompt, no blocking reflective_summary",
+      "promptVersion": "v2-themes-only",
+      "traceId": "cml1lvd1b000fcz9eyd6t7sh0",
+      "projectId": "cml1l8inw0002cz9evme0t2mr",
+      "timing": {
+        "totalMs": 29000,
+        "notes": "Measured via curl to /api/generate endpoint"
+      }
+    },
+    "old_flow": {
+      "description": "v1-with-summary prompt with blocking reflective_summary generation",
+      "promptVersion": "v1-with-summary",
+      "projectId": "cml1m0vx9000mcz9e0ebubb08",
+      "timing": {
+        "summaryMs": 18361,
+        "generationMs": 23221,
+        "totalMs": 41582
+      },
+      "reflective_summary": {
+        "strengths": [
+          "The \"continuous companion vs. one-off tool\" positioning is compelling and differentiated—Luna as the always-available strategy partner who ingests fragments, connects dots, and reduces chaos without requiring leaders to \"make time\" for strategy work.",
+          "Deep clarity on the core job-to-be-done: leaders don't need new strategies, they need help clarifying existing ones amidst chaos. The three archetypal failure modes (vague strategy blamed on teams, feature factory drowning out strategy, founder bottleneck at scale) are viscerally specific and credible.",
+          "The longitudinal value proposition spans both planning cycles (drop in fragments, Luna makes sense of them) and execution (automated QBR drafts, OKR integration)—creating multiple engagement rhythms and value moments."
+        ],
+        "emerging": [
+          "The specific interaction model when leaders are \"in the moment\" of strategic crisis—what they actually open Luna to *do* (create an artifact, get decision coaching, gain outside perspective) versus just discuss. The consulting scenarios suggest varied entry points, but the product experience for each isn't yet defined.",
+          "The target customer profile spans founders to VP-level executives across growth stages, which reflects consulting breadth but may need prioritization for product focus—who gets the *most* value from longitudinal engagement vs. who might be satisfied with episodic help?"
+        ],
+        "opportunities_for_enrichment": [
+          "The \"8 months after the offsite\" moment is gold—but what specific Luna capability turns that panic into forward motion? Is it surfacing forgotten commitments, showing drift from original strategy, generating options for course-correction, or something else? The emotional resonance is there; the product mechanism could be sharper.",
+          "The consulting scenarios reveal different failure modes, but they all benefit from \"the same types of help\" (chaos reduction, clarity, heavy lifting). What does that actually look like as product features? How does Luna deliver \"outside-in perspective\" or \"decision coaching\" in software form without just being a chatbot?"
+        ]
+      }
+    }
+  },
+  "comparison": {
+    "timeSavedMs": 12582,
+    "percentageImprovement": 30.3,
+    "notes": "NEW flow is ~30% faster by removing blocking reflective_summary generation. Summary now runs in background via waitUntil."
+  },
+  "traceViewUrls": {
+    "new_flow": "/strategy/cml1lvd1b000fcz9eyd6t7sh0",
+    "old_flow": "N/A - run via script, trace saved to /tmp/backtest-old-flow.json"
+  }
+}
