@@ -87,7 +87,6 @@ export default function EvalViewerPage() {
     field: 'notes' | 'tags',
     value: string | string[]
   ) => {
-    if (!data) return
     setData(prev => {
       if (!prev) return prev
       const updated = { ...prev }
@@ -101,29 +100,52 @@ export default function EvalViewerPage() {
       return updated
     })
     setHasChanges(true)
-  }, [data])
+  }, [])
 
   const addTag = useCallback((traceId: string, component: EvalComponent, tag: string) => {
-    if (!data) return
-    const currentTags = data.eval.evaluation[traceId][component].tags
-    if (!currentTags.includes(tag)) {
-      updateEvaluation(traceId, component, 'tags', [...currentTags, tag])
+    setData(prev => {
+      if (!prev) return prev
+      const currentTags = prev.eval.evaluation[traceId][component].tags
+      if (currentTags.includes(tag)) return prev // Already has tag
 
-      // Track if it's a new tag
-      if (!data.tags[component].includes(tag)) {
-        setNewTags(prev => ({
-          ...prev,
-          [component]: [...prev[component], tag],
+      const updated = { ...prev }
+      updated.eval = { ...updated.eval }
+      updated.eval.evaluation = { ...updated.eval.evaluation }
+      updated.eval.evaluation[traceId] = { ...updated.eval.evaluation[traceId] }
+      updated.eval.evaluation[traceId][component] = {
+        ...updated.eval.evaluation[traceId][component],
+        tags: [...currentTags, tag],
+      }
+
+      // Track if it's a new tag (check against known tags)
+      if (!prev.tags[component].includes(tag)) {
+        setNewTags(prevTags => ({
+          ...prevTags,
+          [component]: prevTags[component].includes(tag) ? prevTags[component] : [...prevTags[component], tag],
         }))
       }
-    }
-  }, [data, updateEvaluation])
+
+      return updated
+    })
+    setHasChanges(true)
+  }, [])
 
   const removeTag = useCallback((traceId: string, component: EvalComponent, tag: string) => {
-    if (!data) return
-    const currentTags = data.eval.evaluation[traceId][component].tags
-    updateEvaluation(traceId, component, 'tags', currentTags.filter(t => t !== tag))
-  }, [data, updateEvaluation])
+    setData(prev => {
+      if (!prev) return prev
+      const currentTags = prev.eval.evaluation[traceId][component].tags
+      const updated = { ...prev }
+      updated.eval = { ...updated.eval }
+      updated.eval.evaluation = { ...updated.eval.evaluation }
+      updated.eval.evaluation[traceId] = { ...updated.eval.evaluation[traceId] }
+      updated.eval.evaluation[traceId][component] = {
+        ...updated.eval.evaluation[traceId][component],
+        tags: currentTags.filter(t => t !== tag),
+      }
+      return updated
+    })
+    setHasChanges(true)
+  }, [])
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>
@@ -265,11 +287,10 @@ function TraceColumn({
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {trace.components.conversation.messages.map((msg, idx) => (
             <div key={idx} className={cn(
-              'text-xs p-2 rounded',
+              'text-xs p-2 rounded whitespace-pre-wrap',
               msg.role === 'assistant' ? 'bg-blue-50' : 'bg-gray-50'
             )}>
-              <span className="font-medium">{msg.role}:</span> {msg.content.slice(0, 200)}
-              {msg.content.length > 200 && '...'}
+              <span className="font-medium">{msg.role}:</span> {msg.content}
             </div>
           ))}
         </div>
@@ -289,7 +310,7 @@ function TraceColumn({
             {trace.components.extraction.themes.map((theme, idx) => (
               <div key={idx} className="text-xs">
                 <span className="font-medium">{theme.theme_name}:</span>{' '}
-                {theme.content.slice(0, 150)}...
+                {theme.content}
               </div>
             ))}
           </div>

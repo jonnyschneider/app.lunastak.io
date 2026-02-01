@@ -1,0 +1,42 @@
+{
+  "name": "Extraction Optimisation Jan31",
+  "date": "2026-02-01",
+  "purpose": "Compare OLD flow (v1-with-summary, 41.5s) vs NEW flow (v2-themes-only) using Lunastak product strategy fixture",
+  "traces": [
+    "old-flow-jan31",
+    "cml3mtg5r001y1296frbf49ec"
+  ],
+  "baseline": "old-flow-jan31",
+  "evaluation": {
+    "old-flow-jan31": {
+      "conversation": {
+        "notes": "",
+        "tags": []
+      },
+      "extraction": {
+        "notes": "",
+        "tags": []
+      },
+      "generation": {
+        "notes": "",
+        "tags": []
+      }
+    },
+    "cml3mtg5r001y1296frbf49ec": {
+      "conversation": {
+        "notes": "convesrtation notes",
+        "tags": []
+      },
+      "extraction": {
+        "notes": "extraction notes",
+        "tags": []
+      },
+      "generation": {
+        "notes": "generate notes",
+        "tags": []
+      }
+    }
+  },
+  "summary": "",
+  "outcome": ""
+}
