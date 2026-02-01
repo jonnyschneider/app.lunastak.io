@@ -1,29 +1,22 @@
 #!/usr/bin/env npx tsx
 /**
- * Run Pipeline Through Versioned APIs
+ * Run Archived Pipeline (v1)
  *
- * Runs extraction → generation using specified API version.
- * Useful for comparing outputs across API changes, not just prompt changes.
+ * Runs extraction → generation using archived v1 API implementation.
+ * Used for backtesting against historical versions.
  *
  * Usage:
- *   # Run v1 (archived) against a conversation
- *   npx tsx scripts/run-pipeline.ts --conversationId <id> --version v1
- *
- *   # Run current against a conversation
- *   npx tsx scripts/run-pipeline.ts --conversationId <id> --version current
- *
  *   # Run against fixture (hydrates temp conversation)
- *   npx tsx scripts/run-pipeline.ts --fixture demo-pre-generate --version v1
+ *   npm run pipeline -- --fixture demo-pre-generate --export
  *
- *   # Export trace to evals directory
- *   npx tsx scripts/run-pipeline.ts --conversationId <id> --version v1 --export
+ *   # Run against existing conversation
+ *   npm run pipeline -- --conversationId <id> --export
  *
  *   # Keep temp data after fixture run (for inspection)
- *   npx tsx scripts/run-pipeline.ts --fixture demo-pre-generate --version v1 --keep
+ *   npm run pipeline -- --fixture demo-pre-generate --keep
  *
- * Versions:
- *   v1      - Archived extraction/generation (2026-01-31)
- *   current - Current API implementation
+ * For current API version, use the app directly then export:
+ *   npx tsx scripts/export-trace.ts --traceId <id>
  */
 
 import { prisma } from '../src/lib/db'
@@ -187,16 +180,7 @@ async function hydrateFixture(
   }
 }
 
-// Types
-interface PipelineInput {
-  conversationId: string
-  version: 'v1' | 'current'
-  exportTrace?: boolean
-  dryRun?: boolean
-}
-
 interface PipelineOutput {
-  version: string
   conversationId: string
   extraction: {
     extractedContext: any
@@ -220,7 +204,7 @@ function createProgressLogger(prefix: string) {
   }
 }
 
-async function runPipelineV1(conversationId: string): Promise<{
+async function runPipeline(conversationId: string): Promise<{
   extraction: { extractedContext: any; dimensionalCoverage: any; durationMs: number }
   generation: { traceId: string; thoughts: string; statements: any; durationMs: number }
 }> {
@@ -262,118 +246,6 @@ async function runPipelineV1(conversationId: string): Promise<{
   }
 }
 
-async function runPipelineCurrent(conversationId: string): Promise<{
-  extraction: { extractedContext: any; dimensionalCoverage: any; durationMs: number }
-  generation: { traceId: string; thoughts: string; statements: any; durationMs: number }
-}> {
-  console.log('\n📦 Running current pipeline via API...')
-
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
-
-  // Extraction via API
-  console.log('\n🔍 Extraction (current)')
-  const extractStart = Date.now()
-
-  const extractRes = await fetch(`${baseUrl}/api/extract`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ conversationId }),
-  })
-
-  if (!extractRes.ok) {
-    throw new Error(`Extraction failed: ${extractRes.status} ${await extractRes.text()}`)
-  }
-
-  // Parse streaming response
-  const extractText = await extractRes.text()
-  const extractLines = extractText.trim().split('\n')
-  let extractionResult: any = null
-
-  for (const line of extractLines) {
-    try {
-      const parsed = JSON.parse(line)
-      if (parsed.step === 'complete' && parsed.data) {
-        extractionResult = parsed.data
-      }
-    } catch {
-      // Skip non-JSON lines
-    }
-  }
-
-  if (!extractionResult) {
-    throw new Error('Failed to parse extraction result')
-  }
-
-  const extractDuration = Date.now() - extractStart
-  console.log(`  ✓ Extraction complete (${extractDuration}ms)`)
-
-  // Generation via API
-  console.log('\n✨ Generation (current)')
-  const genStart = Date.now()
-
-  // Get project ID for generation
-  const conversation = await prisma.conversation.findUnique({
-    where: { id: conversationId },
-    select: { projectId: true },
-  })
-
-  if (!conversation?.projectId) {
-    throw new Error('Conversation has no project')
-  }
-
-  const genRes = await fetch(`${baseUrl}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      conversationId,
-      projectId: conversation.projectId,
-      extractedContext: extractionResult.extractedContext,
-      dimensionalCoverage: extractionResult.dimensionalCoverage,
-    }),
-  })
-
-  if (!genRes.ok) {
-    throw new Error(`Generation failed: ${genRes.status} ${await genRes.text()}`)
-  }
-
-  // Parse streaming response
-  const genText = await genRes.text()
-  const genLines = genText.trim().split('\n')
-  let generationResult: any = null
-
-  for (const line of genLines) {
-    try {
-      const parsed = JSON.parse(line)
-      if (parsed.step === 'complete' && parsed.data) {
-        generationResult = parsed.data
-      }
-    } catch {
-      // Skip non-JSON lines
-    }
-  }
-
-  if (!generationResult) {
-    throw new Error('Failed to parse generation result')
-  }
-
-  const genDuration = Date.now() - genStart
-  console.log(`  ✓ Generation complete (${genDuration}ms)`)
-
-  return {
-    extraction: {
-      extractedContext: extractionResult.extractedContext,
-      dimensionalCoverage: extractionResult.dimensionalCoverage,
-      durationMs: extractDuration,
-    },
-    generation: {
-      traceId: generationResult.traceId,
-      thoughts: generationResult.thoughts || '',
-      statements: generationResult.statements,
-      durationMs: genDuration,
-    },
-  }
-}
-
 async function exportTraceToEvals(
   output: PipelineOutput,
   conversationId: string
@@ -391,12 +263,12 @@ async function exportTraceToEvals(
   }
 
   const exportData = {
-    id: `${output.generation.traceId}-${output.version}`,
+    id: `${output.generation.traceId}-v1`,
     exportedAt: new Date().toISOString(),
-    pipelineVersion: output.version,
+    pipelineVersion: 'v1',
     promptVersions: {
-      extraction: output.version,
-      generation: output.version,
+      extraction: 'v1',
+      generation: 'v1',
     },
     components: {
       conversation: {
@@ -443,19 +315,12 @@ async function main() {
   // Parse arguments
   const conversationIdArg = args.find((a) => a.startsWith('--conversationId='))
   const fixtureArg = args.find((a) => a.startsWith('--fixture='))
-  const versionArg = args.find((a) => a.startsWith('--version='))
   const variantArg = args.find((a) => a.startsWith('--variant='))
   const exportFlag = args.includes('--export')
   const keepFlag = args.includes('--keep')
   const dryRun = args.includes('--dry-run')
 
-  const version = versionArg?.split('=')[1] || 'current'
   const variantOverride = variantArg?.split('=')[1]
-
-  if (version !== 'v1' && version !== 'current') {
-    console.error('Invalid version. Must be "v1" or "current"')
-    process.exit(1)
-  }
 
   let conversationId: string
   let cleanup: (() => Promise<void>) | null = null
@@ -473,15 +338,16 @@ async function main() {
     console.error('Must provide --conversationId=<id> or --fixture=<name>')
     console.error('')
     console.error('Usage:')
-    console.error('  npm run pipeline -- --conversationId <id> --version v1')
-    console.error('  npm run pipeline -- --fixture demo-pre-generate --version v1 --export')
+    console.error('  npm run pipeline -- --fixture demo-pre-generate --export')
+    console.error('  npm run pipeline -- --conversationId <id> --export')
     console.error('')
     console.error('Options:')
-    console.error('  --version <v1|current>  API version to use')
     console.error('  --variant <variant>     Override experiment variant')
     console.error('  --export                Export trace to evals/traces/')
     console.error('  --keep                  Keep temp data after fixture run')
     console.error('  --dry-run               Preview without running')
+    console.error('')
+    console.error('For current API, use the app then: npx tsx scripts/export-trace.ts --traceId <id>')
     process.exit(1)
   }
 
@@ -497,9 +363,8 @@ async function main() {
   }
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('🔬 Pipeline Runner')
+  console.log('🔬 Pipeline Runner (v1)')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log(`Version:      ${version}`)
   if (fixtureSource) {
     console.log(`Fixture:      ${fixtureSource}`)
   }
@@ -520,17 +385,10 @@ async function main() {
   const startTime = Date.now()
 
   try {
-    let result
-    if (version === 'v1') {
-      result = await runPipelineV1(conversationId)
-    } else {
-      result = await runPipelineCurrent(conversationId)
-    }
-
+    const result = await runPipeline(conversationId)
     const totalDuration = Date.now() - startTime
 
     const output: PipelineOutput = {
-      version,
       conversationId,
       extraction: result.extraction,
       generation: result.generation,
