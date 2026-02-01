@@ -1,5 +1,7 @@
 {
-  "conversation": [],
+  "conversation": [
+    "tag"
+  ],
   "extraction": [],
   "generation": []
 }

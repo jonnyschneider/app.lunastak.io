@@ -25,7 +25,9 @@
     "cml3mtg5r001y1296frbf49ec": {
       "conversation": {
         "notes": "convesrtation notes",
-        "tags": []
+        "tags": [
+          "tag"
+        ]
       },
       "extraction": {
         "notes": "extraction notes",
