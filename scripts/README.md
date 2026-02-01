@@ -272,3 +272,85 @@ Current extraction → generation pipeline (as of 2026-01-31):
 - Reflective summary generation removed from critical path (~5-10s saved)
 - Synthesis and knowledge summary updates deferred to background
 - Result: ~30% faster extraction-to-strategy pipeline
+
+---
+
+## Eval Infrastructure
+
+Scripts for exporting traces and creating evaluation files. Used for comparing extraction/generation approaches.
+
+### export-trace.ts
+
+Export trace data from database to JSON for evaluation.
+
+```bash
+# Export specific trace
+npx tsx scripts/export-trace.ts --traceId <id>
+
+# Export all traces for a project
+npx tsx scripts/export-trace.ts --projectId <id>
+
+# Force overwrite existing exports
+npx tsx scripts/export-trace.ts --traceId <id> --force
+```
+
+Outputs to `evals/traces/<traceId>.json`.
+
+### create-eval.ts
+
+Scaffold a new evaluation file referencing existing traces.
+
+```bash
+npx tsx scripts/create-eval.ts --name "comparison-name" --traces trace1,trace2 --baseline trace1
+```
+
+Creates `evals/<date>-<name>.eval.json` with empty evaluation structure.
+
+### Eval Workflow
+
+1. Export traces: `npx tsx scripts/export-trace.ts --traceId <id>`
+2. Create eval: `npx tsx scripts/create-eval.ts --name "test" --traces id1,id2 --baseline id1`
+3. View/edit at: `http://localhost:3000/admin/eval/<evalId>`
+
+---
+
+## Recovery Scripts
+
+### backfill-extraction.ts
+
+Re-run extraction on existing conversations to create/update fragments and synthesis.
+
+```bash
+npx tsx scripts/backfill-extraction.ts <conversationId>
+```
+
+**Use cases:**
+- Conversations that failed extraction
+- Recovery after schema changes
+- Re-extracting with updated prompts
+
+---
+
+## Utility Scripts
+
+### studio.sh
+
+Quick launcher for Prisma Studio.
+
+```bash
+./scripts/studio.sh
+```
+
+---
+
+## Archived Scripts
+
+Scripts moved to `scripts/_archive/` - preserved for reference but no longer actively used.
+
+| Archive | Contents | Reason |
+|---------|----------|--------|
+| `_archive/linear/` | Linear API integration scripts | Moving to standalone skill |
+| `_archive/python-prototypes/` | Early dimensional coverage analysis | Superseded by TypeScript implementations |
+| `_archive/migrations/` | One-time backfill scripts | Already executed |
+| `_archive/diagnostics/` | Database diagnostic scripts | Rarely needed |
+| `_archive/one-off-fixes/` | Bug fix scripts | Issues resolved |
