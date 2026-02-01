@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
@@ -72,6 +73,10 @@ interface KnowledgebaseHeaderProps {
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
   syntheses: DimensionalSynthesis[]
   onRefreshClick: () => void
+  /** Whether generation is in progress */
+  isGenerating?: boolean
+  /** Whether knowledgebase is syncing after generation */
+  isSyncing?: boolean
 }
 
 export function KnowledgebaseHeader({
@@ -83,7 +88,11 @@ export function KnowledgebaseHeader({
   dimensionalCoverage,
   syntheses,
   onRefreshClick,
+  isGenerating = false,
+  isSyncing = false,
 }: KnowledgebaseHeaderProps) {
+  // Either actively generating or syncing after generation
+  const isBusy = isGenerating || isSyncing
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
@@ -94,8 +103,16 @@ export function KnowledgebaseHeader({
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <Sparkles className="h-4 w-4 text-green-600" />
-          <span className="font-medium text-sm">Knowledgebase</span>
+          <Image
+            src="/animated-logo-glitch.svg"
+            alt=""
+            width={16}
+            height={16}
+            className={isBusy ? 'animate-pulse' : ''}
+          />
+          <span className="font-medium text-sm">
+            {isGenerating ? 'adding knowledge and drafting strategy...' : isSyncing ? 'updating...' : 'Knowledgebase'}
+          </span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -108,27 +125,29 @@ export function KnowledgebaseHeader({
             <span>{coveragePercentage}%</span>
           </div>
 
-          {/* Generate strategy - with new fragment count as leader */}
-          {newInsightsCount > 0 ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-orange-600">
-                {newInsightsCount} new fragment{newInsightsCount !== 1 ? 's' : ''}
+          {/* Generate strategy - hidden during generation/sync */}
+          {!isBusy && (
+            newInsightsCount > 0 ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-orange-600">
+                  {newInsightsCount} new fragment{newInsightsCount !== 1 ? 's' : ''}
+                </span>
+                <Button
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRefreshClick()
+                  }}
+                  className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  Generate new strategy
+                </Button>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Strategy up to date
               </span>
-              <Button
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onRefreshClick()
-                }}
-                className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                Generate new strategy
-              </Button>
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              Strategy up to date
-            </span>
+            )
           )}
 
           {/* Chevron */}

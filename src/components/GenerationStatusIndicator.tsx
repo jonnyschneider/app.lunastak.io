@@ -1,6 +1,7 @@
 'use client';
 
-import { Sparkles, Check, AlertCircle, RotateCcw } from 'lucide-react';
+import Image from 'next/image';
+import { Check, AlertCircle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GenerationStatus } from '@/lib/contracts/generation-status';
 
@@ -44,7 +45,7 @@ const SIZE_CLASSES = {
  * Visual indicator for generation status.
  *
  * States:
- * - generating: Animated sparkles icon + "generating your strategy..."
+ * - generating: Animated Luna logomark + "generating your strategy..."
  * - complete (unseen): Solid dot indicator
  * - complete (viewed): Just shows content, no indicator
  * - failed: Error icon + retry button
@@ -65,15 +66,17 @@ export function GenerationStatusIndicator({
     return null;
   }
 
-  // Generating or pending state
+  // Generating or pending state - animated Luna logomark
   if (status === 'generating' || status === 'pending') {
+    const iconSize = size === 'sm' ? 12 : size === 'md' ? 16 : 20;
     return (
       <div className={cn('flex items-center', sizeClasses.container, className)}>
-        <Sparkles
-          className={cn(
-            sizeClasses.icon,
-            'text-primary animate-pulse'
-          )}
+        <Image
+          src="/animated-logo-glitch.svg"
+          alt=""
+          width={iconSize}
+          height={iconSize}
+          className="animate-pulse"
         />
         {showLabel && (
           <span className={cn(sizeClasses.text, 'text-muted-foreground')}>

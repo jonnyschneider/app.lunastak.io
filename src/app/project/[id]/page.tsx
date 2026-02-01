@@ -36,6 +36,7 @@ import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
+import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import { StructuredProvocation } from '@/lib/types'
@@ -129,6 +130,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
+  const { isGenerating, hasActiveGeneration } = useGenerationStatusContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -156,6 +158,8 @@ export default function ProjectPage() {
   const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
   const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
+  // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
+  const [recentlyGenerated, setRecentlyGenerated] = useState(false)
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -207,6 +211,41 @@ export default function ProjectPage() {
     fetchProjectData()
     fetchDismissals()
   }, [status, projectId])
+
+  // Listen for strategySaved event (fired after extraction starts generation)
+  useEffect(() => {
+    const handleStrategySaved = () => {
+      fetchProjectData()
+    }
+    window.addEventListener('strategySaved', handleStrategySaved)
+    return () => window.removeEventListener('strategySaved', handleStrategySaved)
+  }, [])
+
+  // Listen for generationComplete event (fired when strategy generation finishes)
+  // Knowledgebase synthesis may still be running, so refetch multiple times to catch updates
+  useEffect(() => {
+    let timeouts: NodeJS.Timeout[] = []
+    const handleGenerationComplete = () => {
+      // Hide "Generate strategy" button while knowledgebase catches up
+      setRecentlyGenerated(true)
+
+      // Immediate refetch
+      fetchProjectData()
+
+      // Delayed refetches to catch knowledgebase synthesis completion
+      timeouts.push(setTimeout(() => fetchProjectData(), 5000))
+      timeouts.push(setTimeout(() => fetchProjectData(), 15000))
+      timeouts.push(setTimeout(() => {
+        fetchProjectData()
+        setRecentlyGenerated(false) // Allow button to show after final refetch
+      }, 30000))
+    }
+    window.addEventListener('generationComplete', handleGenerationComplete)
+    return () => {
+      window.removeEventListener('generationComplete', handleGenerationComplete)
+      timeouts.forEach(t => clearTimeout(t))
+    }
+  }, [])
 
   const fetchProjectData = async () => {
     setIsLoading(true)
@@ -409,6 +448,8 @@ export default function ProjectPage() {
           dimensionalCoverage={stats.dimensionalCoverage}
           syntheses={projectData?.syntheses || []}
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
+          isGenerating={hasActiveGeneration(projectId)}
+          isSyncing={recentlyGenerated && !hasActiveGeneration(projectId)}
         />
 
         {/* Documents | Chats */}
