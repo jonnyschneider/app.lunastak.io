@@ -275,6 +275,39 @@ Current extraction → generation pipeline (as of 2026-01-31):
 
 ---
 
+## Versioned Pipeline Runner
+
+Run extraction → generation through versioned API implementations. Essential for backtesting.
+
+### Usage
+
+```bash
+# Run v1 (archived 2026-01-31) against a conversation
+npm run pipeline -- --conversationId <id> --version v1
+
+# Run current implementation
+npm run pipeline -- --conversationId <id> --version current
+
+# Export trace to evals directory for comparison
+npm run pipeline -- --conversationId <id> --version v1 --export
+```
+
+### Versions
+
+| Version | Description |
+|---------|-------------|
+| `v1` | Archived 2026-01-31. Includes reflective_summary for prescriptive, inline dimensions for emergent. |
+| `current` | Whatever's deployed. Calls API routes directly. |
+
+### Backtesting Workflow
+
+1. Run v1 against conversation: `npm run pipeline -- --conversationId <id> --version v1 --export`
+2. Run current against same: `npm run pipeline -- --conversationId <id> --version current --export`
+3. Create eval: `npx tsx scripts/create-eval.ts --name "v1-vs-current" --traces <v1-trace>,<current-trace> --baseline <v1-trace>`
+4. Compare at: `http://localhost:3000/admin/eval/<evalId>`
+
+---
+
 ## Eval Infrastructure
 
 Scripts for exporting traces and creating evaluation files. Used for comparing extraction/generation approaches.
