@@ -275,34 +275,38 @@ Current extraction → generation pipeline (as of 2026-01-31):
 
 ---
 
-## Versioned Pipeline Runner
+## Archived Pipeline Runner (v1)
 
-Run extraction → generation through versioned API implementations. Essential for backtesting.
+Run extraction → generation through archived v1 API implementation. Essential for backtesting against historical versions.
 
 ### Usage
 
 ```bash
-# Run v1 (archived 2026-01-31) against a conversation
-npm run pipeline -- --conversationId <id> --version v1
+# Run v1 against a fixture (hydrates temp conversation)
+npm run pipeline -- --fixture demo-pre-generate --export
 
-# Run current implementation
-npm run pipeline -- --conversationId <id> --version current
+# Run v1 against existing conversation
+npm run pipeline -- --conversationId <id> --export
 
-# Export trace to evals directory for comparison
-npm run pipeline -- --conversationId <id> --version v1 --export
+# Keep temp data for inspection
+npm run pipeline -- --fixture demo-pre-generate --keep
 ```
 
-### Versions
+### Options
 
-| Version | Description |
-|---------|-------------|
-| `v1` | Archived 2026-01-31. Includes reflective_summary for prescriptive, inline dimensions for emergent. |
-| `current` | Whatever's deployed. Calls API routes directly. |
+| Flag | Description |
+|------|-------------|
+| `--fixture <name>` | Hydrate temp conversation from fixture |
+| `--conversationId <id>` | Use existing conversation |
+| `--variant <variant>` | Override experiment variant |
+| `--export` | Export trace to evals/traces/ |
+| `--keep` | Keep temp data after fixture run |
+| `--dry-run` | Preview without running |
 
 ### Backtesting Workflow
 
-1. Run v1 against conversation: `npm run pipeline -- --conversationId <id> --version v1 --export`
-2. Run current against same: `npm run pipeline -- --conversationId <id> --version current --export`
+1. Run v1 against fixture: `npm run pipeline -- --fixture demo-pre-generate --export`
+2. Run current via app, then export: `npx tsx scripts/export-trace.ts --traceId <id>`
 3. Create eval: `npx tsx scripts/create-eval.ts --name "v1-vs-current" --traces <v1-trace>,<current-trace> --baseline <v1-trace>`
 4. Compare at: `http://localhost:3000/admin/eval/<evalId>`
 
