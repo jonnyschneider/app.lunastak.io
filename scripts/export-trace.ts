@@ -138,7 +138,7 @@ async function main() {
   }
 
   // Dedupe
-  idsToExport = [...new Set(idsToExport)];
+  idsToExport = Array.from(new Set(idsToExport));
 
   console.log(`Exporting ${idsToExport.length} trace(s)...\n`);
 
