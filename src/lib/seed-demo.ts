@@ -2,7 +2,7 @@
 /**
  * Demo Project Seeding
  *
- * Loads demo-extended fixture and hydrates it for a specific user.
+ * Loads complete-buildflow fixture and hydrates it for a specific user.
  */
 
 import * as fs from 'fs';
@@ -12,7 +12,7 @@ import { Prisma } from '@prisma/client';
 import type { Fixture, FixtureProvocation } from '../../scripts/seed/types';
 
 const FIXTURES_DIR = path.join(process.cwd(), 'scripts/seed/fixtures');
-const DEMO_FIXTURE = 'demo-extended.json';
+const DEMO_FIXTURE = 'complete-buildflow-2026-01-26.json';
 
 function generateCuid(): string {
   const timestamp = Date.now().toString(36);

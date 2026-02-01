@@ -257,24 +257,15 @@ npx tsx scripts/pre-generate.ts --dry-run
 
 Trigger extraction and generation from terminal or browser console.
 
-### Extraction (curl)
+### Full Pipeline (browser console)
 
-```bash
-# Trigger extraction for a conversation
-curl -X POST http://localhost:3000/api/extract \
-  -H "Content-Type: application/json" \
-  -d '{"conversationId": "<CONVERSATION_ID>"}'
-```
-
-### Generation (browser console)
-
-After extraction completes, trigger generation from browser console:
+Extract then generate in one go. Paste this in browser console:
 
 ```javascript
-// Get conversationId from URL: /project/<projectId>/conversation/<conversationId>
+// Set your conversation ID (from URL: /project/<projectId>/conversation/<conversationId>)
 const conversationId = '<CONVERSATION_ID>';
 
-// Fetch extraction data first
+// Extract
 const extractRes = await fetch('/api/extract', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -286,7 +277,9 @@ const extractData = extractText.trim().split('\n')
   .filter(Boolean)
   .find(d => d.step === 'complete')?.data;
 
-// Trigger generation
+console.log('Extraction complete:', extractData);
+
+// Generate
 const genRes = await fetch('/api/generate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -296,7 +289,15 @@ const genRes = await fetch('/api/generate', {
     dimensionalCoverage: extractData.dimensionalCoverage
   })
 });
-console.log(await genRes.text());
+console.log('Generation result:', await genRes.text());
+```
+
+### Extraction only (curl)
+
+```bash
+curl -X POST http://localhost:3000/api/extract \
+  -H "Content-Type: application/json" \
+  -d '{"conversationId": "<CONVERSATION_ID>"}'
 ```
 
 ---
