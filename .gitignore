@@ -31,6 +31,39 @@ coverage/
 *.swo
 *~
 
+# AI Agent/IDE skill directories (created by skill installs)
+skills/
+.agent/
+.agents/
+.claude/
+.cline/
+.codebuddy/
+.codex/
+.commandcode/
+.continue/
+.crush/
+.cursor/
+.factory/
+.gemini/
+.goose/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.opencode/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+.zencoder/
+
 # OS
 .DS_Store
 .DS_Store?
@@ -74,9 +107,7 @@ logs
 *.sqlite
 *.sqlite3
 
-# Local documentation (plans, designs, session notes)
-# Not version controlled - kept locally for R&D tax claim records
-docs/
+
 
 
 
