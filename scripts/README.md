@@ -253,6 +253,54 @@ npx tsx scripts/pre-generate.ts --dry-run
 
 ---
 
+## Manual API Testing
+
+Trigger extraction and generation from terminal or browser console.
+
+### Extraction (curl)
+
+```bash
+# Trigger extraction for a conversation
+curl -X POST http://localhost:3000/api/extract \
+  -H "Content-Type: application/json" \
+  -d '{"conversationId": "<CONVERSATION_ID>"}'
+```
+
+### Generation (browser console)
+
+After extraction completes, trigger generation from browser console:
+
+```javascript
+// Get conversationId from URL: /project/<projectId>/conversation/<conversationId>
+const conversationId = '<CONVERSATION_ID>';
+
+// Fetch extraction data first
+const extractRes = await fetch('/api/extract', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ conversationId })
+});
+const extractText = await extractRes.text();
+const extractData = extractText.trim().split('\n')
+  .map(line => { try { return JSON.parse(line); } catch { return null; } })
+  .filter(Boolean)
+  .find(d => d.step === 'complete')?.data;
+
+// Trigger generation
+const genRes = await fetch('/api/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    conversationId,
+    extractedContext: extractData.extractedContext,
+    dimensionalCoverage: extractData.dimensionalCoverage
+  })
+});
+console.log(await genRes.text());
+```
+
+---
+
 ## API Flow Reference
 
 Current extraction → generation pipeline (as of 2026-01-31):
