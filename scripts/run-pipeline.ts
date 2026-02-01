@@ -18,6 +18,9 @@
  *   # Export trace to evals directory
  *   npx tsx scripts/run-pipeline.ts --conversationId <id> --version v1 --export
  *
+ *   # Keep temp data after fixture run (for inspection)
+ *   npx tsx scripts/run-pipeline.ts --fixture demo-pre-generate --version v1 --keep
+ *
  * Versions:
  *   v1      - Archived extraction/generation (2026-01-31)
  *   current - Current API implementation
@@ -26,6 +29,8 @@
 import { prisma } from '../src/lib/db'
 import * as fs from 'fs'
 import * as path from 'path'
+
+const FIXTURES_DIR = path.join(__dirname, 'seed', 'fixtures')
 
 // V1 imports
 import {
@@ -36,6 +41,151 @@ import {
   performGeneration as performGenerationV1,
   GenerationProgressUpdate,
 } from '../src/lib/generation/v1'
+
+// Fixture types (simplified from seed/types.ts)
+interface FixtureMessage {
+  role: 'user' | 'assistant'
+  content: string
+  stepNumber: number
+  confidenceScore?: string | null
+  confidenceReasoning?: string | null
+}
+
+interface FixtureConversation {
+  id: string
+  title?: string
+  status: string
+  currentPhase?: string
+  selectedLens?: string
+  questionCount?: number
+  experimentVariant?: string
+  messages: FixtureMessage[]
+  traces: any[]
+}
+
+interface FixtureProject {
+  id: string
+  name: string
+  conversations: FixtureConversation[]
+  fragments: any[]
+  syntheses?: any[]
+  deepDives?: any[]
+  documents?: any[]
+  generatedOutputs?: any[]
+  userContent?: any[]
+}
+
+interface Fixture {
+  version: string
+  description: string
+  user: { id: string; email: string; name?: string }
+  projects: FixtureProject[]
+}
+
+// Hydrate fixture to temp conversation
+async function hydrateFixture(
+  fixtureName: string,
+  variantOverride?: string
+): Promise<{ conversationId: string; userId: string; projectId: string; cleanup: () => Promise<void> }> {
+  const fixturePath = path.join(FIXTURES_DIR, `${fixtureName}.json`)
+
+  if (!fs.existsSync(fixturePath)) {
+    throw new Error(`Fixture not found: ${fixturePath}`)
+  }
+
+  const fixture: Fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf-8'))
+
+  // Generate unique IDs for this run
+  const runId = Date.now().toString(36)
+  const userId = `pipeline_${runId}`
+  const projectId = `proj_${runId}`
+
+  console.log(`\n📂 Hydrating fixture: ${fixtureName}`)
+
+  // Create temp user
+  const user = await prisma.user.create({
+    data: {
+      id: userId,
+      email: `pipeline-${runId}@backtest.local`,
+      name: 'Pipeline Backtest',
+    },
+  })
+
+  // Create temp project
+  const project = await prisma.project.create({
+    data: {
+      id: projectId,
+      userId: user.id,
+      name: fixture.projects[0]?.name || 'Backtest Project',
+    },
+  })
+
+  // Find the first conversation with messages
+  const convFixture = fixture.projects[0]?.conversations?.find(c => c.messages?.length > 0)
+
+  if (!convFixture) {
+    throw new Error('Fixture has no conversations with messages')
+  }
+
+  const convId = `conv_${runId}`
+  const variant = variantOverride || convFixture.experimentVariant
+
+  // Create conversation
+  const conversation = await prisma.conversation.create({
+    data: {
+      id: convId,
+      userId: user.id,
+      projectId: project.id,
+      title: convFixture.title,
+      status: 'active', // Reset to active for extraction
+      currentPhase: convFixture.currentPhase,
+      selectedLens: convFixture.selectedLens,
+      questionCount: convFixture.questionCount,
+      experimentVariant: variant,
+    },
+  })
+
+  // Create messages
+  for (const msg of convFixture.messages) {
+    await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        role: msg.role,
+        content: msg.content,
+        stepNumber: msg.stepNumber,
+        confidenceScore: msg.confidenceScore,
+        confidenceReasoning: msg.confidenceReasoning,
+      },
+    })
+  }
+
+  console.log(`  ✓ Created conversation with ${convFixture.messages.length} messages`)
+  console.log(`  ✓ Variant: ${variant}`)
+
+  // Cleanup function
+  const cleanup = async () => {
+    console.log('\n🧹 Cleaning up temp data...')
+    await prisma.message.deleteMany({ where: { conversationId: conversation.id } })
+    await prisma.trace.deleteMany({ where: { conversationId: conversation.id } })
+    await prisma.fragmentDimensionTag.deleteMany({
+      where: { fragment: { projectId: project.id } }
+    })
+    await prisma.fragment.deleteMany({ where: { projectId: project.id } })
+    await prisma.extractionRun.deleteMany({ where: { projectId: project.id } })
+    await prisma.generatedOutput.deleteMany({ where: { projectId: project.id } })
+    await prisma.conversation.deleteMany({ where: { projectId: project.id } })
+    await prisma.project.delete({ where: { id: project.id } })
+    await prisma.user.delete({ where: { id: user.id } })
+    console.log('  ✓ Temp data removed')
+  }
+
+  return {
+    conversationId: conversation.id,
+    userId: user.id,
+    projectId: project.id,
+    cleanup,
+  }
+}
 
 // Types
 interface PipelineInput {
@@ -294,10 +444,13 @@ async function main() {
   const conversationIdArg = args.find((a) => a.startsWith('--conversationId='))
   const fixtureArg = args.find((a) => a.startsWith('--fixture='))
   const versionArg = args.find((a) => a.startsWith('--version='))
+  const variantArg = args.find((a) => a.startsWith('--variant='))
   const exportFlag = args.includes('--export')
+  const keepFlag = args.includes('--keep')
   const dryRun = args.includes('--dry-run')
 
   const version = versionArg?.split('=')[1] || 'current'
+  const variantOverride = variantArg?.split('=')[1]
 
   if (version !== 'v1' && version !== 'current') {
     console.error('Invalid version. Must be "v1" or "current"')
@@ -305,19 +458,30 @@ async function main() {
   }
 
   let conversationId: string
+  let cleanup: (() => Promise<void>) | null = null
+  let fixtureSource: string | null = null
 
   if (conversationIdArg) {
     conversationId = conversationIdArg.split('=')[1]
   } else if (fixtureArg) {
-    // TODO: Hydrate fixture to temp conversation
-    console.error('Fixture hydration not yet implemented. Use --conversationId for now.')
-    process.exit(1)
+    const fixtureName = fixtureArg.split('=')[1]
+    fixtureSource = fixtureName
+    const hydrated = await hydrateFixture(fixtureName, variantOverride)
+    conversationId = hydrated.conversationId
+    cleanup = hydrated.cleanup
   } else {
     console.error('Must provide --conversationId=<id> or --fixture=<name>')
     console.error('')
     console.error('Usage:')
-    console.error('  npx tsx scripts/run-pipeline.ts --conversationId <id> --version v1')
-    console.error('  npx tsx scripts/run-pipeline.ts --conversationId <id> --version current --export')
+    console.error('  npm run pipeline -- --conversationId <id> --version v1')
+    console.error('  npm run pipeline -- --fixture demo-pre-generate --version v1 --export')
+    console.error('')
+    console.error('Options:')
+    console.error('  --version <v1|current>  API version to use')
+    console.error('  --variant <variant>     Override experiment variant')
+    console.error('  --export                Export trace to evals/traces/')
+    console.error('  --keep                  Keep temp data after fixture run')
+    console.error('  --dry-run               Preview without running')
     process.exit(1)
   }
 
@@ -336,12 +500,19 @@ async function main() {
   console.log('🔬 Pipeline Runner')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log(`Version:      ${version}`)
+  if (fixtureSource) {
+    console.log(`Fixture:      ${fixtureSource}`)
+  }
   console.log(`Conversation: ${conversationId}`)
   console.log(`Variant:      ${conversation.experimentVariant || 'unknown'}`)
   console.log(`Export:       ${exportFlag ? 'yes' : 'no'}`)
+  if (cleanup) {
+    console.log(`Cleanup:      ${keepFlag ? 'no (--keep)' : 'yes'}`)
+  }
 
   if (dryRun) {
     console.log('\n[DRY RUN] Would run pipeline - exiting')
+    if (cleanup && !keepFlag) await cleanup()
     await prisma.$disconnect()
     process.exit(0)
   }
@@ -395,10 +566,19 @@ async function main() {
       console.log(`   ${i + 1}. ${text}`)
     })
 
+    // Cleanup temp data unless --keep
+    if (cleanup && !keepFlag) {
+      await cleanup()
+    }
+
     await prisma.$disconnect()
     process.exit(0)
   } catch (error) {
     console.error('\n❌ Pipeline failed:', error)
+    // Still cleanup on error unless --keep
+    if (cleanup && !keepFlag) {
+      await cleanup()
+    }
     await prisma.$disconnect()
     process.exit(1)
   }
