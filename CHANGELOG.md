@@ -8,6 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.8.0] - 2026-02-01
+
+### Added
+
+- **Background Strategy Generation** - Fire-and-forget with polling
+  - `/api/generate` returns immediately with `generationId`
+  - Generation runs in background via Vercel `waitUntil()`
+  - Client polls `/api/generation-status/[id]` every 2 seconds
+  - Toast notification when strategy is ready with "View" action
+  - User can navigate freely during generation (~15-30s wait eliminated)
+
+- **Generation Status Indicators** - Visual feedback during processing
+  - Sidebar shows Luna logomark + "generating..." during strategy generation
+  - Knowledgebase status bar shows "adding knowledge and drafting strategy..."
+  - Post-generation "updating..." state while knowledgebase syncs
+  - Luna SVG replaces sparkles icons for brand consistency
+
+- **Generation Status Context** - Centralized state management
+  - `GenerationStatusProvider` tracks active generation across app
+  - `useGenerationStatusContext` hook for components
+  - `hasActiveGeneration()` for UI elements that should stay hidden until complete
+
+### Fixed
+
+- **Strategy Content Empty** - Increased `max_tokens` from 1000 to 4000
+  - Claude response was being truncated mid-XML
+  - `extractXML` returned empty strings for vision/strategy/objectives
+
+- **Navigation After Generate** - Project page now listens for events
+  - `strategySaved` event triggers data refetch
+  - `generationComplete` event triggers delayed refetches (5s, 15s, 30s)
+  - Ensures knowledgebase data catches up after strategy generation
+
+- **Generate Button Timing** - Hidden during entire generation lifecycle
+  - Button hidden while generating AND while knowledgebase syncs
+  - 30-second grace period after generation for synthesis to complete
+
+---
 ## [1.7.5] - 2026-01-31
 
 ### Changed

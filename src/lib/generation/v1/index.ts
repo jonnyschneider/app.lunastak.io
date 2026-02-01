@@ -169,7 +169,7 @@ export async function performGeneration(
   const startTime = Date.now();
   const response = await createMessage({
     model: CLAUDE_MODEL,
-    max_tokens: 1000,
+    max_tokens: 4000,
     messages: [{
       role: 'user',
       content: prompt

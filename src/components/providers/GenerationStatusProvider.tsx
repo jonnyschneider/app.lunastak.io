@@ -19,8 +19,10 @@ interface GenerationStatusContextValue {
   startGeneration: (generationId: string, projectId: string) => void;
   /** Stop tracking (called on completion or navigation away) */
   stopTracking: () => void;
-  /** Check if a specific project has an active generation */
+  /** Check if a specific project has an active generation (generating/pending only) */
   isGenerating: (projectId: string) => boolean;
+  /** Check if a specific project has any active generation (any status, until cleared) */
+  hasActiveGeneration: (projectId: string) => boolean;
 }
 
 const GenerationStatusContext = createContext<GenerationStatusContextValue | null>(null);
@@ -149,6 +151,12 @@ export function GenerationStatusProvider({ children }: { children: React.ReactNo
       (activeGeneration.status === 'generating' || activeGeneration.status === 'pending');
   }, [activeGeneration]);
 
+  // Returns true if there's any active generation for this project (any status)
+  // Use this for UI elements that should stay hidden until generation fully clears
+  const hasActiveGeneration = useCallback((projectId: string) => {
+    return activeGeneration?.projectId === projectId;
+  }, [activeGeneration]);
+
   return (
     <GenerationStatusContext.Provider
       value={{
@@ -156,6 +164,7 @@ export function GenerationStatusProvider({ children }: { children: React.ReactNo
         startGeneration,
         stopTracking,
         isGenerating,
+        hasActiveGeneration,
       }}
     >
       {children}
