@@ -11,25 +11,33 @@ Hydrate test data into any account using fixtures. Useful for demos, testing, an
 npm run seed:hydrate -- --fixture <name> --email <email>
 
 # With reset (deletes existing user first)
-npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --reset
+npm run seed:hydrate -- --fixture complete-lunastak-2026-01-15 --email demo@example.com --reset
 
 # Dry run (preview without changes)
-npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --dry-run
+npm run seed:hydrate -- --fixture complete-lunastak-2026-01-15 --email demo@example.com --dry-run
 
 # Override experiment variant
-npm run seed:hydrate -- --fixture demo-dogfood --email demo@example.com --variant baseline-v1
+npm run seed:hydrate -- --fixture complete-lunastak-2026-01-15 --email demo@example.com --variant baseline-v1
 ```
 
 ### Available Fixtures
 
+**Naming convention:** `{stage}-{topic}-{date}.json`
+- `conversation-*` = messages only (for testing extraction → generation)
+- `extracted-*` = messages + fragments (extraction done, no generation)
+- `complete-*` = full pipeline output (messages + fragments + traces)
+- `context-*` = pre-built extraction context (for testing generation only)
+
 | Fixture | Description |
 |---------|-------------|
-| `demo-dogfood` | Full demo with conversations, fragments, and deep dives |
-| `demo-extended` | BuildFlow demo with 4 conversations, traces, and synthesized dimensions |
-| `demo-pre-generate` | Lunastak positioning demo, stopped at extraction (for testing generate) |
-| `demo-4pl` | 4PL logistics retention strategy - full conversation ready for extraction |
-| `demo-simulated` | Simulated user journey data |
-| `empty-project` | Empty project for testing onboarding flows |
+| `conversation-lunastak-2026-02-02` | Lunastak dogfooding - messages only, for full pipeline testing |
+| `extracted-lunastak-2026-01-31` | Lunastak with extraction done, ready for generation |
+| `extracted-4pl-logistics-2026-01-31` | 4PL logistics retention - extraction done |
+| `complete-lunastak-2026-01-15` | Full Lunastak demo with fragments and traces |
+| `complete-buildflow-2026-01-26` | BuildFlow demo with multiple conversations |
+| `complete-simulated-saas-2026-01-15` | Simulated B2B SaaS journey |
+| `context-4pl-2026-01-31` | Pre-built extracted context (for generation testing) |
+| `empty-project` | Empty project for onboarding flows |
 | `test-minimal` | Minimal fixture for unit tests |
 
 ### Options
@@ -51,7 +59,7 @@ For UAT or testing with guest sessions, hydrate directly into an existing projec
 
 ```bash
 # Get project ID from URL: http://localhost:3000/project/<projectId>
-npx tsx scripts/seed/hydrate.ts --fixture demo-4pl --projectId cml1o94x0004jcz9el2i8bdnz --reset
+npx tsx scripts/seed/hydrate.ts --fixture extracted-4pl-logistics-2026-01-31 --projectId cml1o94x0004jcz9el2i8bdnz --reset
 ```
 
 ### Creating New Fixtures
@@ -233,7 +241,7 @@ npx tsx scripts/pre-generate.ts --dry-run
 
 ### What it does
 
-1. Loads pre-built `extractedContext` from `fixtures/pre-generate-4pl.json`
+1. Loads pre-built `extractedContext` from `fixtures/context-4pl-2026-01-31.json`
 2. POSTs to `/api/generate` with the themes and dimensional coverage
 3. Streams the generation progress and outputs the strategy
 
@@ -283,13 +291,13 @@ Run extraction → generation through archived v1 API implementation. Essential 
 
 ```bash
 # Run v1 against a fixture (hydrates temp conversation)
-npm run pipeline -- --fixture demo-pre-generate --export
+npm run pipeline -- --fixture conversation-lunastak-2026-02-02 --export
 
 # Run v1 against existing conversation
 npm run pipeline -- --conversationId <id> --export
 
 # Keep temp data for inspection
-npm run pipeline -- --fixture demo-pre-generate --keep
+npm run pipeline -- --fixture conversation-lunastak-2026-02-02 --keep
 ```
 
 ### Options
@@ -305,7 +313,7 @@ npm run pipeline -- --fixture demo-pre-generate --keep
 
 ### Backtesting Workflow
 
-1. Run v1 against fixture: `npm run pipeline -- --fixture demo-pre-generate --export`
+1. Run v1 against fixture: `npm run pipeline -- --fixture conversation-lunastak-2026-02-02 --export`
 2. Run current via app, then export: `npx tsx scripts/export-trace.ts --traceId <id>`
 3. Create eval: `npx tsx scripts/create-eval.ts --name "v1-vs-current" --traces <v1-trace>,<current-trace> --baseline <v1-trace>`
 4. Compare at: `http://localhost:3000/admin/eval/<evalId>`
