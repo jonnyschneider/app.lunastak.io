@@ -18,7 +18,7 @@
     "prisma:studio": "prisma studio",
     "regen": "tsx scripts/regenerate.ts",
     "regen:remote": "tsx scripts/regenerate-remote.ts",
-    "linear:issue": "tsx scripts/linear-create-issue.ts",
+    "pipeline": "tsx scripts/run-pipeline.ts",
     "backfill:extraction": "tsx scripts/backfill-extraction.ts",
     "seed:hydrate": "tsx scripts/seed/hydrate.ts",
     "seed:export": "tsx scripts/seed/export.ts",
