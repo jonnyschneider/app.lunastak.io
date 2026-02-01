@@ -4,17 +4,91 @@ Append-only record of technical decisions and open questions. Supports R&D tax d
 
 **Format:** Decisions newest-first. Questions can be opened/closed as understanding evolves.
 
+**Related journals:** Detailed synthesis and observations in `docs/journal/`:
+- `2025-12-12-extraction-generation-learnings.md` - Foundational learnings on extraction/generation
+- `UX_OBSERVATIONS.md` - Early testing observations and tradeoffs
+- `2026-01-04-v1.4.0-dogfooding.md` - Real usage learnings
+
+---
+
+## Foundational Learnings & Trade-offs
+
+*Distilled from early exploration (Dec 2025). These insights drove the experimental direction.*
+
+### The "Wooden Output" Problem
+
+**Observation (2025-12-07):** 3-question conversations produced technically accurate but lifeless strategies. "It's reasonable given the inputs, but it's not going to 'wow' anyone."
+
+**Root cause identified (2025-12-12):** The problem wasn't question count - it was the prescriptive extraction schema. Fixed categories (industry, target_market, unique_value) forced diverse strategic thinking into a one-size-fits-all mold.
+
+**Insight:** "By prescribing fixed categories, we're treating this like a data extraction problem rather than a strategic thinking problem."
+
+**Resolution:** Led to E1a (emergent extraction) - let themes emerge from conversation rather than prescribing fields.
+
+### Quality vs Efficiency Tension
+
+**The tradeoff:**
+- Shorter conversations = lower barrier to completion (good for data collection)
+- Longer conversations = better quality outputs (good for user value)
+- 3-question approach optimized for completion, not value
+
+**Decision:** Accept lower completion rates for better quality. Adaptive conversation (3-10 questions based on confidence) balances both.
+
+**Ongoing tension:** Still navigating this - skip confirmation screen (2026-01-31) leans toward efficiency; dimensional coverage (E2/E3) leans toward quality.
+
+### Framework Rigor vs Flexibility
+
+**The puzzle:** Need flexibility in extraction/questioning to avoid wooden outputs, but must maintain rigor in output structure (Vision/Strategy/Objectives have specific requirements).
+
+**Resolution:** "Output structure: maintain specific formats. Input/questioning: be flexible."
+
+**Implication:** The formulaic extraction caused wooden results, but the Decision Stack framework itself is valuable and should be protected.
+
+### Realistic vs Aspirational Altitude
+
+**Observation (2026-01-04 dogfooding):** Outputs were technically correct and realistic for stage, but didn't feel aspirational enough. "Too much ops doc, not enough inspiration."
+
+**The tension:**
+- Realistic enough to be credible and actionable
+- Stretch/aspirational enough to energize and inspire
+- "If it reads like a task list, we've failed"
+
+**Status:** Unresolved. Design challenge: how to help users calibrate altitude?
+
+### Technical Debt Philosophy
+
+**Explicit tradeoffs made:**
+- Document upload as "cold-start workaround" not genuine document management (known limitation)
+- Single-session completion vs true iterative development (future: multi-session, multi-contributor)
+- Simulated inputs for testing vs real user data (bootstrap problem)
+
+**Accepted for MVP:** These limitations are documented and accepted. Addressing them requires real user feedback first.
+
 ---
 
 ## Open Questions
 
 Active uncertainties we're exploring through the product.
 
+### Extraction & Generation
 - Does dimensional tagging improve strategy quality, or just feel structured? (opened 2026-01-03)
 - What's the right extraction granularity - themes vs structured fields vs something else? (opened 2025-12-17)
 - How much conversation context does generation actually need? Is reflective_summary necessary? (opened 2026-01-31)
+- What's the optimal question count before diminishing returns? (opened 2025-12-12)
+- Does quality scale linearly with conversation depth? (opened 2025-12-12)
+
+### Output Quality
+- How do we help users calibrate altitude (realistic vs aspirational)? (opened 2026-01-04)
+- What makes a strategy feel like a "manifesto" vs a "planning document"? (opened 2026-01-04)
+- Can we produce outputs that feel energetic without sacrificing accuracy? (opened 2025-12-12)
+
+### Evaluation & Learning
 - Can we do meaningful A/B comparison without production traffic scale? (opened 2026-01-31)
+- How do we measure "wooden" vs "energetic" output quality systematically? (opened 2025-12-12)
+
+### Product Direction
 - Is "longitudinal strategy companion" the right positioning vs one-off strategy generator? (opened 2026-01-15)
+- Should document upload become first-class entity vs cold-start workaround? (opened 2026-01-04)
 
 ---
 
