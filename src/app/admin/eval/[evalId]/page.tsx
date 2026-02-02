@@ -351,11 +351,34 @@ function TraceColumn({
           </div>
           <div>
             <span className="font-medium">Objectives ({trace.components.generation.objectives.length}):</span>
-            <ul className="list-disc list-inside mt-1">
-              {trace.components.generation.objectives.map(obj => (
-                <li key={obj.id}>{obj.pithy}</li>
-              ))}
-            </ul>
+            <table className="mt-2 w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-1 pr-2">Objective</th>
+                  <th className="py-1 pr-2">Metric</th>
+                  <th className="py-1 pr-2">Target</th>
+                  <th className="py-1">Timeframe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trace.components.generation.objectives.map(obj => (
+                  <tr key={obj.id} className="border-b border-gray-100">
+                    <td className="py-1 pr-2 align-top">{obj.pithy}</td>
+                    <td className="py-1 pr-2 align-top text-muted-foreground">
+                      {obj.metric?.metricName || obj.metric?.summary || '-'}
+                    </td>
+                    <td className="py-1 pr-2 align-top text-muted-foreground">
+                      {obj.metric?.direction && obj.metric?.metricValue
+                        ? `${obj.metric.direction} ${obj.metric.metricValue}`
+                        : obj.metric?.metricValue || '-'}
+                    </td>
+                    <td className="py-1 align-top text-muted-foreground">
+                      {obj.metric?.timeframe || '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </ComponentSection>
