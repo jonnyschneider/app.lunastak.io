@@ -351,34 +351,24 @@ function TraceColumn({
           </div>
           <div>
             <span className="font-medium">Objectives ({trace.components.generation.objectives.length}):</span>
-            <table className="mt-2 w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-1 pr-2">Objective</th>
-                  <th className="py-1 pr-2">Metric</th>
-                  <th className="py-1 pr-2">Target</th>
-                  <th className="py-1">Timeframe</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trace.components.generation.objectives.map(obj => (
-                  <tr key={obj.id} className="border-b border-gray-100">
-                    <td className="py-1 pr-2 align-top">{obj.pithy}</td>
-                    <td className="py-1 pr-2 align-top text-muted-foreground">
-                      {obj.metric?.metricName || obj.metric?.summary || '-'}
-                    </td>
-                    <td className="py-1 pr-2 align-top text-muted-foreground">
-                      {obj.metric?.direction && obj.metric?.metricValue
-                        ? `${obj.metric.direction} ${obj.metric.metricValue}`
-                        : obj.metric?.metricValue || '-'}
-                    </td>
-                    <td className="py-1 align-top text-muted-foreground">
-                      {obj.metric?.timeframe || '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="mt-2 space-y-3">
+              {trace.components.generation.objectives.map((obj, idx) => (
+                <div key={obj.id} className="border rounded p-2 bg-white">
+                  <div className="font-medium">{idx + 1}. {obj.pithy}</div>
+                  <div className="mt-1 grid grid-cols-3 gap-2 text-muted-foreground">
+                    <div><span className="font-medium text-foreground">Metric:</span> {obj.metric?.metricName || obj.metric?.summary || '-'}</div>
+                    <div><span className="font-medium text-foreground">Target:</span> {obj.metric?.direction && obj.metric?.metricValue ? `${obj.metric.direction} ${obj.metric.metricValue}` : obj.metric?.metricValue || '-'}</div>
+                    <div><span className="font-medium text-foreground">Timeframe:</span> {obj.metric?.timeframe || '-'}</div>
+                  </div>
+                  {obj.explanation && (
+                    <div className="mt-1 text-muted-foreground"><span className="font-medium text-foreground">Why:</span> {obj.explanation}</div>
+                  )}
+                  {obj.successCriteria && (
+                    <div className="mt-1 text-muted-foreground"><span className="font-medium text-foreground">Success:</span> {obj.successCriteria}</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </ComponentSection>
