@@ -154,11 +154,14 @@ export interface Fixture {
 // Hydration options
 export interface HydrateOptions {
   fixture: string;
-  email: string;
+  email?: string;
   variantOverride?: string;
   reset?: boolean;
   dryRun?: boolean;
   production?: boolean;
+  // For hydrating into existing guest projects
+  projectId?: string;
+  userId?: string;
 }
 
 // Export options

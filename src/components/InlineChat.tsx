@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { ConversationPhase, ExtractedContextVariant } from '@/lib/types'
-import { ExtractionStep, GenerationStep, ExtractionProgress } from '@/components/ExtractionProgress'
+import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import ExtractionConfirm from '@/components/ExtractionConfirm'
+import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
 
 interface InlineMessage {
   id: string
@@ -25,6 +26,7 @@ interface InlineChatProps {
 
 export function InlineChat({ projectId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
   const router = useRouter()
+  const { startGeneration } = useGenerationStatusContext()
   const [input, setInput] = useState(initialMessage || '')
   const [messages, setMessages] = useState<InlineMessage[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -37,11 +39,8 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
   const [readyToGenerate, setReadyToGenerate] = useState(false)
   const [suggestedQuestion, setSuggestedQuestion] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting')
   const [extractionError, setExtractionError] = useState<string | undefined>()
-  const [generationStep, setGenerationStep] = useState<GenerationStep>('preparing')
-  const [generationError, setGenerationError] = useState<string | undefined>()
 
   // Extraction confirmation flow
   const [showExtractionConfirm, setShowExtractionConfirm] = useState(false)
@@ -257,11 +256,13 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         throw new Error('No context extracted')
       }
 
-      // Show extraction confirmation
+      // Skip confirmation, go straight to generation
       setExtractedContext(context)
       setDimensionalCoverage(coverage)
       setIsExtracting(false)
-      setShowExtractionConfirm(true)
+
+      // Immediately trigger generation (don't wait for state update)
+      await generateStrategy(context, coverage)
     } catch (err) {
       console.error('Failed to extract:', err)
       setExtractionStep('error')
@@ -274,14 +275,11 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
     }
   }
 
-  // Step 2: Generate strategy from extracted context
-  const handleGenerate = async () => {
-    if (!conversationId || !extractedContext) return
+  // Core generation logic - fire-and-forget with background processing
+  const generateStrategy = async (context: ExtractedContextVariant, coverage: any) => {
+    if (!conversationId) return
 
     setShowExtractionConfirm(false)
-    setIsGenerating(true)
-    setGenerationStep('preparing')
-    setGenerationError(undefined)
     setError(null)
 
     try {
@@ -290,8 +288,8 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          extractedContext,
-          dimensionalCoverage,
+          extractedContext: context,
+          dimensionalCoverage: coverage,
         }),
       })
 
@@ -300,55 +298,28 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         throw new Error(errorData.error || `Generation failed: ${generateResponse.status}`)
       }
 
-      const reader = generateResponse.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
-      }
+      const data = await generateResponse.json()
 
-      const decoder = new TextDecoder()
-      let buffer = ''
+      if (data.status === 'started' && data.generationId) {
+        // Start tracking generation in context (handles polling and toast)
+        startGeneration(data.generationId, projectId)
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.trim()) continue
-
-          try {
-            const update = JSON.parse(line)
-
-            if (update.step === 'complete') {
-              const { traceId } = update.data
-              // Notify listeners and redirect to strategy page
-              window.dispatchEvent(new Event('strategySaved'))
-              router.push(`/strategy/${traceId}`)
-            } else if (update.step === 'error') {
-              throw new Error(update.error || 'Generation failed')
-            } else {
-              setGenerationStep(update.step)
-            }
-          } catch (parseError) {
-            console.error('Failed to parse progress update:', line, parseError)
-          }
-        }
+        // Notify listeners and redirect to project page immediately
+        window.dispatchEvent(new Event('strategySaved'))
+        router.push(`/project/${projectId}`)
+      } else {
+        throw new Error('Invalid response from generation API')
       }
     } catch (err) {
-      console.error('Failed to generate strategy:', err)
-      setGenerationStep('error')
-      setGenerationError(err instanceof Error ? err.message : 'Failed to generate strategy')
-      // Reset after showing error
-      setTimeout(() => {
-        setIsGenerating(false)
-        setGenerationStep('preparing')
-        setGenerationError(undefined)
-      }, 3000)
+      console.error('Failed to start strategy generation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to generate strategy')
     }
+  }
+
+  // Step 2: Generate strategy from extracted context (wrapper using state)
+  const handleGenerate = async () => {
+    if (!conversationId || !extractedContext) return
+    await generateStrategy(extractedContext, dimensionalCoverage)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -409,17 +380,8 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
           extractedContext={extractedContext}
           onGenerate={handleGenerate}
           onContinue={handleContinueFromExtraction}
-          isGenerating={isGenerating}
+          isGenerating={false}
         />
-      </div>
-    )
-  }
-
-  // Show generation in progress UI
-  if (isGenerating) {
-    return (
-      <div className="py-8">
-        <ExtractionProgress currentStep={generationStep} error={generationError} mode="generation" />
       </div>
     )
   }

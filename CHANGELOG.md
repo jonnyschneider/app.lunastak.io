@@ -8,6 +8,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.7] - 2026-02-02
+
+### Added
+
+- **Eval UI Enhancements** - Richer trace comparison for backtesting
+  - Pipeline metadata in trace headers (pipelineVersion, promptVersions, experimentVariant)
+  - Full objective details: metrics, targets, timeframes, explanations, success criteria
+  - Tag persistence and notes editing for evaluation workflow
+
+- **Fixture Naming Convention** - Clearer fixture organization
+  - `conversation-*` = messages only (for testing extraction → generation)
+  - `extracted-*` = messages + fragments (extraction done, no generation)
+  - `complete-*` = full pipeline output (messages + fragments + traces)
+  - `context-*` = pre-built extraction context (for testing generation only)
+
+- **Conversation-Only Fixture** - `conversation-lunastak-2026-02-02.json`
+  - Messages-only fixture with `status: in_progress`
+  - Enables full extract→generate flow testing via UI
+
+### Changed
+
+- **Pipeline Runner Simplified** - Removed `--version=current` support
+  - V1 archived pipeline only (current API tested via app directly)
+  - Cleaner backtesting workflow
+
+### Fixed
+
+- **Fixture Status for Testing** - Conversations hydrated with `in_progress` status
+  - UI now shows "Create my strategy" button when expected
+  - Enables full pipeline testing via browser
+
+---
+## [1.7.6] - 2026-02-01
+
+### Added
+
+- **Background Strategy Generation** - Fire-and-forget with polling
+  - `/api/generate` returns immediately with `generationId`
+  - Generation runs in background via Vercel `waitUntil()`
+  - Client polls `/api/generation-status/[id]` every 2 seconds
+  - Toast notification when strategy is ready with "View" action
+  - User can navigate freely during generation (~15-30s wait eliminated)
+
+- **Generation Status Indicators** - Visual feedback during processing
+  - Sidebar shows Luna logomark + "generating..." during strategy generation
+  - Knowledgebase status bar shows "adding knowledge and drafting strategy..."
+  - Post-generation "updating..." state while knowledgebase syncs
+  - Luna SVG replaces sparkles icons for brand consistency
+
+- **Generation Status Context** - Centralized state management
+  - `GenerationStatusProvider` tracks active generation across app
+  - `useGenerationStatusContext` hook for components
+  - `hasActiveGeneration()` for UI elements that should stay hidden until complete
+
+### Fixed
+
+- **Strategy Content Empty** - Increased `max_tokens` from 1000 to 4000
+  - Claude response was being truncated mid-XML
+  - `extractXML` returned empty strings for vision/strategy/objectives
+
+- **Navigation After Generate** - Project page now listens for events
+  - `strategySaved` event triggers data refetch
+  - `generationComplete` event triggers delayed refetches (5s, 15s, 30s)
+  - Ensures knowledgebase data catches up after strategy generation
+
+- **Generate Button Timing** - Hidden during entire generation lifecycle
+  - Button hidden while generating AND while knowledgebase syncs
+  - 30-second grace period after generation for synthesis to complete
+
+---
+## [1.7.5] - 2026-01-31
+
+### Changed
+
+- **Skip Extraction Confirmation** - Go straight from extraction to generation
+  - Removes interstitial "Here's what I understood" screen
+  - Extraction completes → immediately triggers strategy generation
+  - Reduces clicks but total wait time still needs background generation (see docs/in-progress)
+
+### Fixed
+
+- **Null Safety in ExtractionConfirm** - Handle missing reflective_summary
+  - Emergent extraction no longer includes reflective_summary in response
+  - Component now guards against undefined fields
+
+### Added
+
+- **New Seed Fixtures** - For UAT and testing
+  - `demo-4pl.json` - 4PL logistics retention strategy conversation
+  - `pre-generate-4pl.json` - Pre-extracted context for testing generate API
+  - `pre-generate.ts` - Script to test generation with pre-extracted context
+
+- **Updated Scripts Documentation** - Expanded scripts/README.md
+  - Hydrating into existing projects (`--projectId`)
+  - Pre-generate testing workflow
+  - API flow reference section
+
+---
 ## [1.7.4] - 2026-01-28
 
 ### Added

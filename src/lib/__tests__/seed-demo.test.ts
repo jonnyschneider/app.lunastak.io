@@ -2,10 +2,10 @@ import { loadDemoFixture, transformFixtureForUser } from '@/lib/seed-demo';
 
 describe('seedDemoProject', () => {
   describe('loadDemoFixture', () => {
-    it('should load the demo-extended fixture', async () => {
+    it('should load the complete-buildflow fixture', async () => {
       const fixture = await loadDemoFixture();
       expect(fixture).toBeDefined();
-      expect(fixture.template.name).toBe('demo-extended');
+      expect(fixture.template.name).toBe('complete-buildflow-2026-01-26');
       expect(fixture.projects.length).toBeGreaterThan(0);
     });
   });

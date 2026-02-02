@@ -1,6 +1,6 @@
 {
   "name": "decision-stack-v4",
-  "version": "1.7.4",
+  "version": "1.7.7",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -18,7 +18,7 @@
     "prisma:studio": "prisma studio",
     "regen": "tsx scripts/regenerate.ts",
     "regen:remote": "tsx scripts/regenerate-remote.ts",
-    "linear:issue": "tsx scripts/linear-create-issue.ts",
+    "pipeline": "tsx scripts/run-pipeline.ts",
     "backfill:extraction": "tsx scripts/backfill-extraction.ts",
     "seed:hydrate": "tsx scripts/seed/hydrate.ts",
     "seed:export": "tsx scripts/seed/export.ts",
@@ -52,6 +52,7 @@
     "@statsig/session-replay": "^3.31.0",
     "@statsig/web-analytics": "^3.31.0",
     "@vercel/analytics": "^1.1.1",
+    "@vercel/functions": "^3.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -59,6 +60,7 @@
     "lucide-react": "^0.556.0",
     "next": "14.1.0",
     "next-auth": "^4.24.13",
+    "next-themes": "^0.4.6",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.3.8",

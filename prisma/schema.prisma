@@ -360,12 +360,18 @@ model GeneratedOutput {
   outputType String // vision | strategy | objectives | initiatives | principles | full_decision_stack
   version    Int    @default(1)
 
+  // Background generation status (v1.8.0+)
+  status    String    @default("pending") // pending | generating | complete | failed
+  startedAt DateTime?                     // When generation started
+  viewedAt  DateTime?                     // When user first viewed (null = unseen)
+  error     String?   @db.Text            // Error message if status=failed
+
   // Content
   content Json
 
   // Generation metadata
   generatedFrom    String? @db.Text
-  modelUsed        String
+  modelUsed        String?                // Made nullable for fire-and-forget (set after generation)
   promptTokens     Int?
   completionTokens Int?
   latencyMs        Int?
@@ -392,6 +398,7 @@ model GeneratedOutput {
 
   @@index([projectId])
   @@index([outputType])
+  @@index([status])
   @@index([createdAt])
 }
 

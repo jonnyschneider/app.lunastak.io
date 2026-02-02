@@ -15,7 +15,8 @@ import {
 } from '@/components/ui/select'
 import { MessageCircle, X, Plus } from 'lucide-react'
 import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
-import { ExtractionStep, GenerationStep, ExtractionProgress } from '@/components/ExtractionProgress'
+import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
+import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'
@@ -51,7 +52,7 @@ function ChatSkeleton() {
   )
 }
 
-type FlowStep = 'chat' | 'extracting' | 'extraction' | 'summary' | 'generating' | 'strategy'
+type FlowStep = 'chat' | 'extracting' | 'extraction' | 'summary' | 'strategy'
 
 export interface GapExploration {
   dimension: string
@@ -81,6 +82,9 @@ export function ChatSheet({
   hasExistingStrategy = false,
   viewOnly = false,
 }: ChatSheetProps) {
+  // Background generation context
+  const { startGeneration } = useGenerationStatusContext()
+
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
 
@@ -101,11 +105,7 @@ export function ChatSheet({
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting')
   const [extractionError, setExtractionError] = useState<string | undefined>()
 
-  // Generation state
-  const [generationStep, setGenerationStep] = useState<GenerationStep>('preparing')
-  const [generationError, setGenerationError] = useState<string | undefined>()
-
-  // Strategy state
+  // Strategy state (for viewing existing strategy)
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
   const [thoughts, setThoughts] = useState<string>('')
   const [traceId, setTraceId] = useState<string>('')
@@ -168,8 +168,6 @@ export function ChatSheet({
       setEarlyExitOffered(false)
       setSuggestedQuestion(null)
       setIsExplicitEnd(false)
-      setGenerationStep('preparing')
-      setGenerationError(undefined)
       setCurrentDeepDive(null)
     }
   }, [open])
@@ -362,6 +360,36 @@ export function ChatSheet({
       const decoder = new TextDecoder()
       let buffer = ''
 
+      const processLine = (line: string) => {
+        if (!line.trim()) return
+
+        try {
+          const update = JSON.parse(line)
+
+          if (update.step === 'complete') {
+            const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
+            setExtractedContext(ctx)
+            setDimensionalCoverage(coverage)
+
+            if (isExplicitEnd) {
+              // User clicked End - close sheet with toast
+              toast.success('Added to your knowledge base')
+              onOpenChange(false)
+            } else {
+              // Skip ExtractionConfirm, go straight to generation
+              // Pass context directly to avoid React state timing issues
+              handleGenerate(ctx, coverage)
+            }
+          } else if (update.step === 'error') {
+            throw new Error(update.error || 'Extraction failed')
+          } else {
+            setExtractionStep(update.step)
+          }
+        } catch (parseError) {
+          console.error('Failed to parse progress update:', line, parseError)
+        }
+      }
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -372,36 +400,13 @@ export function ChatSheet({
         buffer = lines.pop() || ''
 
         for (const line of lines) {
-          if (!line.trim()) continue
-
-          try {
-            const update = JSON.parse(line)
-
-            if (update.step === 'complete') {
-              const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
-              setExtractedContext(ctx)
-              setDimensionalCoverage(coverage)
-
-              if (isExplicitEnd) {
-                // User clicked End - close sheet with toast
-                toast.success('Added to your knowledge base')
-                onOpenChange(false)
-              } else if (hasExistingStrategy) {
-                // Subsequent conversation - show summary only
-                setFlowStep('summary')
-              } else {
-                // First conversation - show extraction confirm with generate option
-                setFlowStep('extraction')
-              }
-            } else if (update.step === 'error') {
-              throw new Error(update.error || 'Extraction failed')
-            } else {
-              setExtractionStep(update.step)
-            }
-          } catch (parseError) {
-            console.error('Failed to parse progress update:', line, parseError)
-          }
+          processLine(line)
         }
+      }
+
+      // Process any remaining data in buffer after stream ends
+      if (buffer.trim()) {
+        processLine(buffer)
       }
     } catch (error) {
       console.error('Failed to extract context:', error)
@@ -416,14 +421,15 @@ export function ChatSheet({
     }
   }
 
-  // Generate strategy from extracted context
-  const handleGenerate = async () => {
-    if (!conversationId || !extractedContext) return
+  // Generate strategy from extracted context - fire-and-forget with background processing
+  // Accepts optional context/coverage params for immediate calls (bypasses React state timing)
+  const handleGenerate = async (ctx?: ExtractedContextVariant, coverage?: any) => {
+    const contextToUse = ctx || extractedContext
+    const coverageToUse = coverage !== undefined ? coverage : dimensionalCoverage
 
-    setFlowStep('generating')
+    if (!conversationId || !contextToUse) return
+
     setIsLoading(true)
-    setGenerationStep('preparing')
-    setGenerationError(undefined)
 
     try {
       const response = await fetch('/api/generate', {
@@ -431,8 +437,8 @@ export function ChatSheet({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          extractedContext,
-          dimensionalCoverage,
+          extractedContext: contextToUse,
+          dimensionalCoverage: coverageToUse,
         }),
       })
 
@@ -441,55 +447,29 @@ export function ChatSheet({
         throw new Error(`Generation failed: ${response.status} - ${errorData.error || response.statusText}`)
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
-      }
+      const data = await response.json()
 
-      const decoder = new TextDecoder()
-      let buffer = ''
+      if (data.status === 'started' && data.generationId) {
+        // Start tracking generation in context (handles polling and toast)
+        startGeneration(data.generationId, projectId)
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+        // Notify listeners
+        window.dispatchEvent(new Event('strategySaved'))
 
-        buffer += decoder.decode(value, { stream: true })
-
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.trim()) continue
-
-          try {
-            const update = JSON.parse(line)
-
-            if (update.step === 'complete') {
-              const { traceId: newTraceId, thoughts: newThoughts, statements } = update.data
-              setStrategy(statements)
-              setThoughts(newThoughts || '')
-              setTraceId(newTraceId)
-              setFlowStep('strategy')
-
-              // Notify listeners
-              window.dispatchEvent(new Event('strategySaved'))
-            } else if (update.step === 'error') {
-              throw new Error(update.error || 'Generation failed')
-            } else {
-              setGenerationStep(update.step)
-            }
-          } catch (parseError) {
-            console.error('Failed to parse progress update:', line, parseError)
-          }
-        }
+        // Close the sheet - generation continues in background
+        toast.success('Generating your strategy', {
+          description: 'This will take a few moments. We\'ll notify you when it\'s ready.',
+        })
+        onOpenChange(false)
+      } else {
+        throw new Error('Invalid response from generation API')
       }
     } catch (error) {
-      console.error('Failed to generate strategy:', error)
-      setGenerationStep('error')
-      setGenerationError(error instanceof Error ? error.message : 'Something went wrong')
-      setTimeout(() => {
-        setFlowStep('extraction')
-      }, 2000)
+      console.error('Failed to start strategy generation:', error)
+      toast.error('Failed to generate strategy', {
+        description: error instanceof Error ? error.message : 'Something went wrong',
+      })
+      setFlowStep('extraction')
     } finally {
       setIsLoading(false)
     }
@@ -534,8 +514,8 @@ export function ChatSheet({
 
   return (
     <Sheet open={open} onOpenChange={(newOpen) => {
-      // Prevent closing during extraction or generation
-      if (!newOpen && (flowStep === 'extracting' || flowStep === 'generating')) {
+      // Prevent closing during extraction (generation now runs in background)
+      if (!newOpen && flowStep === 'extracting') {
         return
       }
       onOpenChange(newOpen)
@@ -556,7 +536,6 @@ export function ChatSheet({
               {flowStep === 'extracting' && 'Analyzing...'}
               {flowStep === 'extraction' && 'Review Insights'}
               {flowStep === 'summary' && 'Insights Captured'}
-              {flowStep === 'generating' && 'Generating Strategy...'}
               {flowStep === 'strategy' && 'Your Strategy'}
             </h2>
           </div>
@@ -634,14 +613,6 @@ export function ChatSheet({
               currentStep={extractionStep}
               error={extractionError}
               mode="extraction"
-            />
-          )}
-
-          {flowStep === 'generating' && (
-            <ExtractionProgress
-              currentStep={generationStep}
-              error={generationError}
-              mode="generation"
             />
           )}
 

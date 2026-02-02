@@ -103,21 +103,22 @@ export default function ExtractionConfirm({
         )}
 
         {/* Reflective Summary Section - Same for both */}
+        {extractedContext.reflective_summary && (
         <div className="border-t border-primary/20 pt-6">
           <h3 className="text-lg font-medium text-foreground mb-4">Reflection</h3>
 
           {/* Show message if no reflection data */}
-          {extractedContext.reflective_summary.strengths.length === 0 &&
-           extractedContext.reflective_summary.emerging.length === 0 &&
-           extractedContext.reflective_summary.opportunities_for_enrichment.length === 0 && (
+          {(extractedContext.reflective_summary.strengths?.length ?? 0) === 0 &&
+           (extractedContext.reflective_summary.emerging?.length ?? 0) === 0 &&
+           (extractedContext.reflective_summary.opportunities_for_enrichment?.length ?? 0) === 0 && (
             <p className="text-sm text-muted-foreground italic">No reflection data available.</p>
           )}
 
-          {extractedContext.reflective_summary.strengths.length > 0 && (
+          {(extractedContext.reflective_summary.strengths?.length ?? 0) > 0 && (
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">What&apos;s Clear</h4>
               <ul className="space-y-2 ml-1">
-                {extractedContext.reflective_summary.strengths.map((strength, idx) => (
+                {extractedContext.reflective_summary.strengths!.map((strength, idx) => (
                   <li key={idx} className="text-sm text-foreground flex gap-2">
                     <span className="text-primary mt-1">•</span>
                     <span>{strength}</span>
@@ -127,11 +128,11 @@ export default function ExtractionConfirm({
             </div>
           )}
 
-          {extractedContext.reflective_summary.emerging.length > 0 && (
+          {(extractedContext.reflective_summary.emerging?.length ?? 0) > 0 && (
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">What&apos;s Emerging</h4>
               <ul className="space-y-2 ml-1">
-                {extractedContext.reflective_summary.emerging.map((area, idx) => (
+                {extractedContext.reflective_summary.emerging!.map((area, idx) => (
                   <li key={idx} className="text-sm text-foreground flex gap-2">
                     <span className="text-primary mt-1">•</span>
                     <span>{area}</span>
@@ -141,11 +142,11 @@ export default function ExtractionConfirm({
             </div>
           )}
 
-          {extractedContext.reflective_summary.opportunities_for_enrichment.length > 0 && (
+          {(extractedContext.reflective_summary.opportunities_for_enrichment?.length ?? 0) > 0 && (
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">Opportunities for Enrichment</h4>
               <ul className="space-y-2 ml-1">
-                {extractedContext.reflective_summary.opportunities_for_enrichment.map((opportunity, idx) => (
+                {extractedContext.reflective_summary.opportunities_for_enrichment!.map((opportunity, idx) => (
                   <li key={idx} className="text-sm text-foreground flex gap-2">
                     <span className="text-primary mt-1">•</span>
                     <span>{opportunity}</span>
@@ -155,6 +156,7 @@ export default function ExtractionConfirm({
             </div>
           )}
         </div>
+        )}
 
         {/* Primary Action */}
         <div>
@@ -169,7 +171,7 @@ export default function ExtractionConfirm({
       </div>
 
       {/* OR Divider */}
-      {extractedContext.reflective_summary.thought_prompt && (
+      {extractedContext.reflective_summary?.thought_prompt && (
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 h-px bg-border" />
           <span className="text-sm font-medium text-muted-foreground">OR</span>
@@ -178,7 +180,7 @@ export default function ExtractionConfirm({
       )}
 
       {/* Secondary Option - Refine Card */}
-      {extractedContext.reflective_summary.thought_prompt && (
+      {extractedContext.reflective_summary?.thought_prompt && (
         <div className="bg-card border border-foreground/20 rounded-lg p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground mb-3">Provide more info to refine the strategy</h3>
           <div className="border-l-4 border-primary/40 pl-4 mb-4">
