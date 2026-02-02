@@ -1,14 +1,14 @@
 {
-  "name": "V1 Vs Current Lunastak",
+  "name": "V1 vs Current Pipeline",
   "date": "2026-02-02",
-  "purpose": "",
+  "purpose": "Compare archived v1 pipeline (with reflective_summary extraction) against current API. Same Lunastak dogfooding conversation input.",
   "traces": [
-    "cml4b63cd001kaumjbj0mnvvn-v1",
-    "cml4f3hbd002vjqfzdw7jwi6i"
+    "2026-02-02-v1-vs-current.baseline",
+    "2026-02-02-v1-vs-current.variant"
   ],
-  "baseline": "cml4b63cd001kaumjbj0mnvvn-v1",
+  "baseline": "2026-02-02-v1-vs-current.baseline",
   "evaluation": {
-    "cml4b63cd001kaumjbj0mnvvn-v1": {
+    "2026-02-02-v1-vs-current.baseline": {
       "conversation": {
         "notes": "",
         "tags": []
@@ -22,7 +22,7 @@
         "tags": []
       }
     },
-    "cml4f3hbd002vjqfzdw7jwi6i": {
+    "2026-02-02-v1-vs-current.variant": {
       "conversation": {
         "notes": "",
         "tags": []

@@ -8,7 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
-## [1.8.0] - 2026-02-01
+## [1.7.7] - 2026-02-02
+
+### Added
+
+- **Eval UI Enhancements** - Richer trace comparison for backtesting
+  - Pipeline metadata in trace headers (pipelineVersion, promptVersions, experimentVariant)
+  - Full objective details: metrics, targets, timeframes, explanations, success criteria
+  - Tag persistence and notes editing for evaluation workflow
+
+- **Fixture Naming Convention** - Clearer fixture organization
+  - `conversation-*` = messages only (for testing extraction → generation)
+  - `extracted-*` = messages + fragments (extraction done, no generation)
+  - `complete-*` = full pipeline output (messages + fragments + traces)
+  - `context-*` = pre-built extraction context (for testing generation only)
+
+- **Conversation-Only Fixture** - `conversation-lunastak-2026-02-02.json`
+  - Messages-only fixture with `status: in_progress`
+  - Enables full extract→generate flow testing via UI
+
+### Changed
+
+- **Pipeline Runner Simplified** - Removed `--version=current` support
+  - V1 archived pipeline only (current API tested via app directly)
+  - Cleaner backtesting workflow
+
+### Fixed
+
+- **Fixture Status for Testing** - Conversations hydrated with `in_progress` status
+  - UI now shows "Create my strategy" button when expected
+  - Enables full pipeline testing via browser
+
+---
+## [1.7.6] - 2026-02-01
 
 ### Added
 
