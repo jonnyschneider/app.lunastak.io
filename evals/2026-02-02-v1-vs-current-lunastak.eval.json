@@ -1,0 +1,42 @@
+{
+  "name": "V1 Vs Current Lunastak",
+  "date": "2026-02-02",
+  "purpose": "",
+  "traces": [
+    "cml4b63cd001kaumjbj0mnvvn-v1",
+    "cml4f3hbd002vjqfzdw7jwi6i"
+  ],
+  "baseline": "cml4b63cd001kaumjbj0mnvvn-v1",
+  "evaluation": {
+    "cml4b63cd001kaumjbj0mnvvn-v1": {
+      "conversation": {
+        "notes": "",
+        "tags": []
+      },
+      "extraction": {
+        "notes": "",
+        "tags": []
+      },
+      "generation": {
+        "notes": "",
+        "tags": []
+      }
+    },
+    "cml4f3hbd002vjqfzdw7jwi6i": {
+      "conversation": {
+        "notes": "",
+        "tags": []
+      },
+      "extraction": {
+        "notes": "",
+        "tags": []
+      },
+      "generation": {
+        "notes": "",
+        "tags": []
+      }
+    }
+  },
+  "summary": "",
+  "outcome": ""
+}

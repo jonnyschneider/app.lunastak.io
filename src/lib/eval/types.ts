@@ -17,6 +17,7 @@ export interface ComponentEvaluation {
 export interface ExportedTrace {
   id: string;
   exportedAt: string;
+  pipelineVersion?: string;
   promptVersions: {
     extraction?: string;
     generation?: string;
@@ -29,6 +30,7 @@ export interface ExportedTrace {
         stepNumber: number;
       }>;
       questionCount: number;
+      experimentVariant?: string;
     };
     extraction: {
       themes?: Array<{

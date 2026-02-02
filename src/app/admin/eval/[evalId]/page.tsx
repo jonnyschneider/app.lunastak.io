@@ -268,10 +268,24 @@ function TraceColumn({
     <div className="border rounded-lg overflow-hidden">
       {/* Header */}
       <div className={cn(
-        'px-4 py-2 font-medium',
+        'px-4 py-3',
         isBaseline ? 'bg-blue-50 text-blue-900' : 'bg-gray-50'
       )}>
-        {isBaseline ? 'BASELINE' : 'VARIANT'} ({traceId.slice(0, 8)}...)
+        <div className="font-medium">
+          {isBaseline ? 'BASELINE' : 'VARIANT'}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+          <div>ID: {traceId.slice(0, 12)}...</div>
+          {trace.pipelineVersion && (
+            <div>Pipeline: <span className="font-medium">{trace.pipelineVersion}</span></div>
+          )}
+          {trace.promptVersions && (
+            <div>Prompts: extract={trace.promptVersions.extraction}, gen={trace.promptVersions.generation}</div>
+          )}
+          {trace.components.conversation.experimentVariant && (
+            <div>Variant: <span className="font-medium">{trace.components.conversation.experimentVariant}</span></div>
+          )}
+        </div>
       </div>
 
       {/* Components */}
