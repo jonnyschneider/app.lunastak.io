@@ -253,52 +253,21 @@ npx tsx scripts/pre-generate.ts --dry-run
 
 ---
 
-## Manual API Testing
+## Testing Extract → Generate via UI
 
-Trigger extraction and generation from terminal or browser console.
-
-### Full Pipeline (browser console)
-
-Extract then generate in one go. Paste this in browser console:
-
-```javascript
-// Set your conversation ID (from URL: /project/<projectId>/conversation/<conversationId>)
-const conversationId = '<CONVERSATION_ID>';
-
-// Extract
-const extractRes = await fetch('/api/extract', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ conversationId })
-});
-const extractText = await extractRes.text();
-const extractData = extractText.trim().split('\n')
-  .map(line => { try { return JSON.parse(line); } catch { return null; } })
-  .filter(Boolean)
-  .find(d => d.step === 'complete')?.data;
-
-console.log('Extraction complete:', extractData);
-
-// Generate
-const genRes = await fetch('/api/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    conversationId,
-    extractedContext: extractData.extractedContext,
-    dimensionalCoverage: extractData.dimensionalCoverage
-  })
-});
-console.log('Generation result:', await genRes.text());
-```
-
-### Extraction only (curl)
+The simplest way to test the current extraction/generation flow:
 
 ```bash
-curl -X POST http://localhost:3000/api/extract \
-  -H "Content-Type: application/json" \
-  -d '{"conversationId": "<CONVERSATION_ID>"}'
+# 1. Hydrate conversation-only fixture into a project
+npx tsx scripts/seed/hydrate.ts --fixture conversation-lunastak-2026-02-02 --projectId <id> --reset
+
+# 2. Open the conversation in browser - click "Create my strategy" button
+
+# 3. Export the resulting trace
+npx tsx scripts/export-trace.ts --traceId <id>
 ```
+
+The `conversation-*` fixtures have `status: in_progress` so the UI shows the extract button.
 
 ---
 

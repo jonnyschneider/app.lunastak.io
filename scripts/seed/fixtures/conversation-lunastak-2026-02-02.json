@@ -18,8 +18,8 @@
         {
           "id": "{{CONV_ID}}",
           "title": "Lunastak's Longitudinal Strategy Coach Positioning",
-          "status": "extracted",
-          "currentPhase": "EXTRACTION",
+          "status": "in_progress",
+          "currentPhase": "QUESTIONING",
           "questionCount": 3,
           "experimentVariant": "emergent-extraction-e1a",
           "messages": [
