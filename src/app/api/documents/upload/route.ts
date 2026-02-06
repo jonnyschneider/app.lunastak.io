@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
+import { waitUntil } from '@vercel/functions'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { processDocument } from '@/lib/document-processing'
-
-export const maxDuration = 300 // 5 minutes for Pro plan
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = [
@@ -84,25 +83,26 @@ export async function POST(request: Request) {
     // Get file content as buffer for processing
     const fileBuffer = Buffer.from(await file.arrayBuffer())
 
-    // Process document synchronously - Vercel serverless terminates after response
-    // so we must await or use waitUntil (which isn't available in all contexts)
-    try {
-      await processDocument(document.id, fileBuffer, fileType, uploadContext || undefined)
-    } catch (error) {
-      console.error('[Upload] Document processing failed:', error)
-      // Don't throw - document status is already set to 'failed' by processDocument
-    }
-
-    // Re-fetch document to get updated status
-    const updatedDoc = await prisma.document.findUnique({
+    // Update status to processing before starting background task
+    await prisma.document.update({
       where: { id: document.id },
-      select: { id: true, fileName: true, status: true }
+      data: { status: 'processing' },
     })
 
-    return NextResponse.json(updatedDoc || {
-      id: document.id,
+    // Process document in background - continues after response sent
+    waitUntil(
+      processDocument(document.id, fileBuffer, fileType, uploadContext || undefined)
+        .catch((error) => {
+          console.error('[Upload] Background processing failed:', error)
+          // Status already set to 'failed' by processDocument
+        })
+    )
+
+    // Return immediately
+    return NextResponse.json({
+      status: 'started',
+      documentId: document.id,
       fileName: document.fileName,
-      status: 'failed',
     })
   } catch (error) {
     console.error('Upload error:', error)
