@@ -2,6 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { useDocumentStatus } from '@/hooks/use-document-status'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,16 @@ export function DocumentUploadDialog({
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { startPolling } = useDocumentStatus({
+    onComplete: () => {
+      toast.success('Document processed successfully')
+      onUploadComplete(selectedFile?.name)
+    },
+    onError: (err) => {
+      toast.error(`Document processing failed: ${err}`)
+    },
+  })
 
   // Guest users need to sign in to upload documents
   if (!session?.user) {
@@ -108,21 +120,15 @@ export function DocumentUploadDialog({
         throw new Error(data.error || 'Upload failed')
       }
 
-      setState('processing')
-      setProgress(80)
-
-      // The backend will process asynchronously, so we just acknowledge the upload
       const data = await response.json()
 
-      setProgress(100)
-      setState('complete')
+      // Start polling for processing status
+      startPolling(data.documentId)
 
-      // Close dialog and refresh after a brief delay
-      setTimeout(() => {
-        onUploadComplete(selectedFile.name)
-        onOpenChange(false)
-        resetState()
-      }, 1000)
+      // Close dialog immediately - polling continues in background
+      toast('Processing document...', { duration: 3000 })
+      onOpenChange(false)
+      resetState()
     } catch (err) {
       console.error('Upload error:', err)
       setError(err instanceof Error ? err.message : 'Upload failed')
