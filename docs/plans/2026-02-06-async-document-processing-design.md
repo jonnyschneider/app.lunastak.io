@@ -125,3 +125,13 @@ Document model already has required fields:
 - Reuse `waitUntil` from `@vercel/functions` (already used in generate/extract)
 - Document processing function (`processDocument`) unchanged
 - Poll interval: 2 seconds (matches generation)
+
+---
+
+## R&D Context
+
+**Activity:** A5 - Performance & Reliability
+
+**Uncertainty being addressed:** Can the background processing + polling pattern established for strategy generation be generalized to other long-running operations (document processing) without introducing new failure modes?
+
+**How this enables learning:** Validates that the waitUntil + polling pattern is a reliable architectural primitive for any operation exceeding serverless timeout limits. Success confirms this as a reusable pattern; failure surfaces edge cases specific to document processing (external API dependencies, larger payloads).
