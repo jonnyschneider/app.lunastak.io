@@ -12,7 +12,7 @@
 
 **Prerequisites:** Phase 1 complete (inline editing infrastructure)
 
-**Branch:** Continue on `feat/decision-stack-completion`
+**Branch:** Continue on `feature/decision-stack-completion`
 
 ---
 

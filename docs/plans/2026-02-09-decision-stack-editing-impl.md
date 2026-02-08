@@ -10,7 +10,7 @@
 
 **Design doc:** `docs/plans/2026-02-09-decision-stack-editing-design.md`
 
-**Branch:** `feat/decision-stack-completion` (create from `development`)
+**Branch:** `feature/decision-stack-completion` (already created from `development`)
 
 ---
 
@@ -21,13 +21,13 @@
 ```bash
 git checkout development
 git pull origin development
-git checkout -b feat/decision-stack-completion
+git checkout feature/decision-stack-completion
 ```
 
 **Step 2: Verify branch**
 
 Run: `git branch --show-current`
-Expected: `feat/decision-stack-completion`
+Expected: `feature/decision-stack-completion`
 
 ---
 

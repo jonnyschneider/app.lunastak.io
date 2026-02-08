@@ -12,7 +12,7 @@
 
 **Prerequisites:** Phase 1 (editing) and Phase 2 (principles) complete
 
-**Branch:** Continue on `feat/decision-stack-completion`
+**Branch:** Continue on `feature/decision-stack-completion`
 
 ---
 
