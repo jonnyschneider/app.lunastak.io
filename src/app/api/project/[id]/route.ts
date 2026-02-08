@@ -169,6 +169,7 @@ export async function GET(
         starred: hasStarredTrace,
         starredAt: hasStarredTrace ? conv.traces[0].starredAt?.toISOString() || null : null,
         deepDiveId: conv.deepDiveId || null,
+        isInitialConversation: conv.isInitialConversation,
       }
     })
 
