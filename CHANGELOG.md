@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [1.7.8] - 2026-02-08
+
+### Added
+
+- **First-Time Experience Resume** - Users who leave mid-conversation can resume
+  - `isInitialConversation` flag tracks conversations leading to first strategy
+  - Incomplete initial conversations detected and routed to InlineChat
+  - Full message history restored on resume
+
+- **Start Over Action** - Escape hatch for first-time flow
+  - "Start over" button with confirmation dialog
+  - Abandons conversation and resets to fresh start
+  - Prevents users from getting stuck in loop
+
+- **Finish Confirmation** - Turn-aware prompts before extraction
+  - Early finish (≤2 turns): "Finish so soon?" - encourages more input
+  - Later finish (>2 turns): "Ready to generate?" - confirms extraction
+  - Goes straight to extraction, no redundant prompts
+
+- **ChatSheet Blocking** - Prevents confusion during first-time flow
+  - ChatSheet detects active initial conversation
+  - Shows amber warning directing user to complete first-time flow
+  - Race condition fix with `hasCheckedForInitial` gate
+
+- **Dogfood Fixture** - Preserved real conversation for testing
+  - `dogfood-first-time-conversation.json` extracted from PROD
+  - `extract-conversation-fixture.ts` script for future extractions
+
+### Fixed
+
+- **Redirect After Generation** - Dashboard now shows after first strategy
+  - Removed `router.push()` that was interfering with state updates
+  - Event listener properly triggers refetch and re-render
+
+---
 ## [1.7.7] - 2026-02-02
 
 ### Added
