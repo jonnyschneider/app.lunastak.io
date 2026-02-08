@@ -150,6 +150,15 @@ export async function POST(req: Request) {
       });
     }
 
+    // Check if project has any existing strategy (completed trace with output)
+    const hasExistingStrategy = await prisma.trace.findFirst({
+      where: {
+        conversation: { projectId: targetProjectId },
+        output: { not: {} },  // Has generated output
+      },
+      select: { id: true },
+    });
+
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
@@ -158,6 +167,7 @@ export async function POST(req: Request) {
         deepDiveId: deepDive?.id || null,
         status: 'in_progress',
         experimentVariant,
+        isInitialConversation: !hasExistingStrategy,  // True if no strategy exists yet
       },
     });
     console.log(`[Start API] Created conversation in ${Date.now() - startTime}ms`);
