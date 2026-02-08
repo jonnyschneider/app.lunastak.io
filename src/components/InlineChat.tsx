@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, RotateCcw } from 'lucide-react'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import {
@@ -36,7 +35,6 @@ interface InlineChatProps {
 }
 
 export function InlineChat({ projectId, resumeConversationId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
-  const router = useRouter()
   const { startGeneration } = useGenerationStatusContext()
   const [input, setInput] = useState(initialMessage || '')
   const [messages, setMessages] = useState<InlineMessage[]>([])
@@ -371,9 +369,10 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
         // Start tracking generation in context (handles polling and toast)
         startGeneration(data.generationId, projectId)
 
-        // Notify listeners and redirect to project page immediately
+        // Notify listeners that strategy generation started
+        // The project page's event listener will refetch data and re-render,
+        // replacing FirstTimeEmptyState with the dashboard
         window.dispatchEvent(new Event('strategySaved'))
-        router.push(`/project/${projectId}`)
       } else {
         throw new Error('Invalid response from generation API')
       }
