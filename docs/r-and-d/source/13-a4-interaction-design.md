@@ -50,6 +50,16 @@ Collapsed \"Luna\'s Memory\" header with expand, limited provocations (3 items +
 
 **Evidence:** docs/plans/2026-02-08-first-time-experience-design.md
 
+### 5. Decision Stack Editing & Completion (2026-02-09)
+
+**Challenge:** Generated Decision Stacks are read-only outputs. Users cannot refine, correct, or complete them without starting new conversations.
+
+**Uncertainty:** What editing modalities (inline, modal, conversational coaching) work best for different Decision Stack components? Can "template-first" entry (user fills in strategy, AI learns from it) overcome cold start friction?
+
+**Approach:** Three-tier editing model: inline deterministic for Vision/Strategy, unique trade-off UX for Principles, side sheet coaching conversations for deeper refinement. Silent versioning captures history without UI complexity. Template-first cold start inverts the conversation→strategy flow.
+
+**Evidence:** docs/plans/2026-02-09-decision-stack-editing-design.md
+
 ## New Knowledge Generated
 
 1.  **Multiple entry points matter:** Different users prefer different starting modalities. Document upload captures users who won\'t type; conversation captures those who think out loud.
