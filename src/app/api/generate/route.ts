@@ -297,6 +297,56 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
     });
     console.log('[Generate Background] GeneratedOutput updated to complete');
 
+    // Seed initial StrategyVersion records
+    const { vision, strategy: strategyText, objectives } = statements;
+    await prisma.$transaction([
+      // Vision version
+      prisma.strategyVersion.create({
+        data: {
+          projectId,
+          componentType: 'vision',
+          content: { text: vision },
+          version: 1,
+          createdBy: 'ai',
+          sourceType: 'generation',
+          sourceId: trace.id,
+        },
+      }),
+      // Strategy version
+      prisma.strategyVersion.create({
+        data: {
+          projectId,
+          componentType: 'strategy',
+          content: { text: strategyText },
+          version: 1,
+          createdBy: 'ai',
+          sourceType: 'generation',
+          sourceId: trace.id,
+        },
+      }),
+      // Objective versions
+      ...objectives.map((obj) =>
+        prisma.strategyVersion.create({
+          data: {
+            projectId,
+            componentType: 'objective',
+            componentId: obj.id,
+            content: {
+              pithy: obj.pithy,
+              metric: obj.metric,
+              explanation: obj.explanation,
+              successCriteria: obj.successCriteria,
+            } as object,
+            version: 1,
+            createdBy: 'ai',
+            sourceType: 'generation',
+            sourceId: trace.id,
+          },
+        })
+      ),
+    ]);
+    console.log('[Generate Background] StrategyVersion records seeded');
+
     // Get fragment IDs and create ExtractionRun
     const fragments = await prisma.fragment.findMany({
       where: { conversationId },
