@@ -20,6 +20,9 @@ model Conversation {
   selectedLens  String? // A | B | C | D | E
   questionCount Int      @default(0)
 
+  // First-time experience: marks the conversation leading to first strategy
+  isInitialConversation Boolean @default(false)
+
   // Experiment tracking
   experimentVariant String? // baseline-v1, emergent-extraction, etc.
 
