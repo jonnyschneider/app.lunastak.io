@@ -33,8 +33,12 @@ export interface Opportunity {
 
 export interface Principle {
   id: string;
-  title: string;
-  description: string;
+  priority: string;        // What we prioritize: "Strategic clients"
+  deprioritized: string;   // What we deprioritize: "any paying client"
+  context?: string;        // Optional: why this matters
+  // Legacy support
+  title?: string;          // Maps to priority for backward compat
+  description?: string;    // Maps to context for backward compat
 }
 
 // Strategy Version types (for edit history)
