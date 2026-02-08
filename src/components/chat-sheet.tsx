@@ -122,6 +122,9 @@ export function ChatSheet({
   const [availableDeepDives, setAvailableDeepDives] = useState<DeepDiveOption[]>([])
   const [isUpdatingTopic, setIsUpdatingTopic] = useState(false)
 
+  // Blocking state for incomplete initial conversation
+  const [incompleteInitialConvoId, setIncompleteInitialConvoId] = useState<string | null>(null)
+
   // Fetch available deep dives when sheet opens
   useEffect(() => {
     if (open && projectId) {
@@ -138,6 +141,13 @@ export function ChatSheet({
           id: dd.id,
           topic: dd.topic,
         })) || [])
+
+        // Check for incomplete initial conversation (blocks starting new chat)
+        const incompleteInitial = data.conversations?.find(
+          (c: { isInitialConversation?: boolean; status: string }) =>
+            c.isInitialConversation && c.status === 'in_progress'
+        )
+        setIncompleteInitialConvoId(incompleteInitial?.id || null)
       }
     } catch (error) {
       console.error('Failed to fetch deep dives:', error)
@@ -149,11 +159,13 @@ export function ChatSheet({
     if (open && !conversationId) {
       if (resumeConversationId) {
         resumeConversation(resumeConversationId)
-      } else {
+      } else if (!incompleteInitialConvoId || deepDiveId || gapExploration) {
+        // Only start new conversation if there's no incomplete initial conversation
+        // (or if we're in a special mode like deepDive or gapExploration)
         startConversationWithQuestion(initialQuestion)
       }
     }
-  }, [open])
+  }, [open, incompleteInitialConvoId])
 
   // Reset state when sheet closes
   useEffect(() => {
@@ -169,6 +181,7 @@ export function ChatSheet({
       setSuggestedQuestion(null)
       setIsExplicitEnd(false)
       setCurrentDeepDive(null)
+      setIncompleteInitialConvoId(null)
     }
   }, [open])
 
@@ -589,6 +602,26 @@ export function ChatSheet({
         <div className="px-6 py-4 flex flex-col h-[calc(100vh-10rem)]">
           {flowStep === 'chat' && messages.length === 0 && isLoading && (
             <ChatSkeleton />
+          )}
+
+          {/* Block new conversation if there's an incomplete initial conversation */}
+          {flowStep === 'chat' && messages.length === 0 && !isLoading && incompleteInitialConvoId && !deepDiveId && !gapExploration && !resumeConversationId && (
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 max-w-md">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                  Complete your first conversation
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
+                  You have an initial conversation in progress. Complete it to generate your first strategy, or start over from the project page.
+                </p>
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           )}
 
           {flowStep === 'chat' && messages.length > 0 && (
