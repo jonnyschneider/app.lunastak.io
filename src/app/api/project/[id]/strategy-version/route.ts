@@ -130,5 +130,39 @@ export async function POST(
     },
   });
 
+  // Also update Trace.output to persist the change for display
+  // Find the latest trace for this project
+  const latestTrace = await prisma.trace.findFirst({
+    where: {
+      conversation: {
+        projectId,
+      },
+    },
+    orderBy: { timestamp: 'desc' },
+  });
+
+  if (latestTrace) {
+    const currentOutput = latestTrace.output as Record<string, unknown>;
+    let updatedOutput = { ...currentOutput };
+
+    if (componentType === 'vision') {
+      updatedOutput.vision = (content as { text: string }).text;
+    } else if (componentType === 'strategy') {
+      updatedOutput.strategy = (content as { text: string }).text;
+    } else if (componentType === 'objective' && componentId) {
+      const objectives = (currentOutput.objectives || []) as Array<{ id: string; [key: string]: unknown }>;
+      updatedOutput.objectives = objectives.map((obj) =>
+        obj.id === componentId
+          ? { ...obj, ...(content as object) }
+          : obj
+      );
+    }
+
+    await prisma.trace.update({
+      where: { id: latestTrace.id },
+      data: { output: updatedOutput as unknown as Parameters<typeof prisma.trace.update>[0]['data']['output'] },
+    });
+  }
+
   return NextResponse.json({ version });
 }
