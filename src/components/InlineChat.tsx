@@ -411,6 +411,33 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
     inputRef.current?.focus()
   }
 
+  // Abandon conversation and start fresh
+  const handleStartOver = async () => {
+    if (!conversationId) return
+
+    try {
+      await fetch(`/api/conversation/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'abandoned' }),
+      })
+    } catch (err) {
+      console.error('Failed to abandon conversation:', err)
+      // Continue with reset anyway - worst case is an orphaned conversation
+    }
+
+    // Reset all state
+    setConversationId(null)
+    setMessages([])
+    setIsExpanded(false)
+    setCurrentPhase('INITIAL')
+    setReadyToGenerate(false)
+    setSuggestedQuestion(null)
+    setError(null)
+    setInput('')
+    hasAutoStartedRef.current = false
+  }
+
   // Check if user has started chatting (for showing End button)
   const hasUserResponded = messages.some(m => m.role === 'user')
 
@@ -537,12 +564,23 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
           <div className="flex items-center justify-between mt-3">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
-              <span className="mx-1">or</span>
-              <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
-              <span className="ml-1">to send</span>
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
+                <span className="mx-1">or</span>
+                <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
+                <span className="ml-1">to send</span>
+              </p>
+              {conversationId && (
+                <button
+                  type="button"
+                  onClick={handleStartOver}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Start over
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               {hasUserResponded && (
                 <Button
