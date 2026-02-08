@@ -34,6 +34,7 @@ export async function GET(
     messages: conversation.messages,
     deepDiveId: conversation.deepDiveId,
     deepDive: conversation.deepDive,
+    isInitialConversation: conversation.isInitialConversation,
   });
 }
 
@@ -42,7 +43,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { deepDiveId } = await req.json();
+  const { deepDiveId, status } = await req.json();
 
   const conversation = await prisma.conversation.findUnique({
     where: { id },
@@ -56,9 +57,26 @@ export async function PATCH(
     );
   }
 
+  // Build update data - only include fields that were provided
+  const updateData: { deepDiveId?: string | null; status?: string } = {};
+  if (deepDiveId !== undefined) {
+    updateData.deepDiveId = deepDiveId || null;
+  }
+  if (status !== undefined) {
+    // Validate status value
+    const validStatuses = ['in_progress', 'completed', 'abandoned'];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status value' },
+        { status: 400 }
+      );
+    }
+    updateData.status = status;
+  }
+
   const updated = await prisma.conversation.update({
     where: { id },
-    data: { deepDiveId: deepDiveId || null },
+    data: updateData,
     include: {
       deepDive: {
         select: { id: true, topic: true },
@@ -69,5 +87,6 @@ export async function PATCH(
   return NextResponse.json({
     deepDiveId: updated.deepDiveId,
     deepDive: updated.deepDive,
+    status: updated.status,
   });
 }

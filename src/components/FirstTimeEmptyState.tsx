@@ -1,25 +1,45 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, Info, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { InlineChat } from '@/components/InlineChat'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 
 interface FirstTimeEmptyStateProps {
   projectId: string
+  resumeConversationId?: string
   onUploadComplete?: () => void
 }
 
-export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEmptyStateProps) {
+export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadComplete }: FirstTimeEmptyStateProps) {
   const router = useRouter()
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [demoDialogOpen, setDemoDialogOpen] = useState(false)
   const [isLoadingDemo, setIsLoadingDemo] = useState(false)
   const [chatStarted, setChatStarted] = useState(false)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
 
-  const handleSeeExample = async () => {
+  // Auto-expand chat if resuming a conversation
+  useEffect(() => {
+    if (resumeConversationId) {
+      setChatStarted(true)
+    }
+  }, [resumeConversationId])
+
+  const handleCreateDemo = async () => {
+    setDemoDialogOpen(false)
     setIsLoadingDemo(true)
     try {
       const response = await fetch('/api/demo/create', {
@@ -68,10 +88,11 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
         </div>
 
         {/* Inline Chat */}
-        <div className={chatStarted ? 'flex-1 min-h-0' : ''}>
+        <div className={chatStarted || resumeConversationId ? 'flex-1 min-h-0' : ''}>
           <InlineChat
-            key={uploadedFileName || 'default'}
+            key={resumeConversationId || uploadedFileName || 'default'}
             projectId={projectId}
+            resumeConversationId={resumeConversationId}
             initialMessage={uploadedFileName ? `I've uploaded ${uploadedFileName}. Let's discuss it.` : undefined}
             autoStart={!!uploadedFileName}
             onConversationStart={() => setChatStarted(true)}
@@ -87,11 +108,11 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
               className="flex items-center gap-2"
             >
               <Upload className="h-4 w-4" />
-              Upload existing doc
+              Upload a document
             </Button>
             <Button
               variant="outline"
-              onClick={handleSeeExample}
+              onClick={() => setDemoDialogOpen(true)}
               disabled={isLoadingDemo}
               className="flex items-center gap-2"
             >
@@ -100,7 +121,7 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
               ) : (
                 <Info className="h-4 w-4" />
               )}
-              {isLoadingDemo ? 'Setting up example...' : 'See an example'}
+              {isLoadingDemo ? 'Setting up demo...' : 'See demo project'}
             </Button>
           </div>
         )}
@@ -113,6 +134,29 @@ export function FirstTimeEmptyState({ projectId, onUploadComplete }: FirstTimeEm
         onOpenChange={setUploadDialogOpen}
         onUploadComplete={handleUploadComplete}
       />
+
+      {/* Demo Project Dialog */}
+      <AlertDialog open={demoDialogOpen} onOpenChange={setDemoDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create a demo project?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                This will create a new demo project in your account so you can see how Luna works when there's existing content.
+              </p>
+              <p>
+                You can interact with it (add more chats, upload documents, etc.) or delete it at any time. Your own project will be maintained separately and is safe.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreateDemo}>
+              Create demo project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

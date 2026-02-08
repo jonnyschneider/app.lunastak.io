@@ -107,12 +107,6 @@ export async function processDocument(
   console.log(`[DocumentProcessing] Starting processing for document ${documentId}`)
 
   try {
-    // Update status to processing
-    await prisma.document.update({
-      where: { id: documentId },
-      data: { status: 'processing' },
-    })
-
     // Get document with project info
     const document = await prisma.document.findUnique({
       where: { id: documentId },

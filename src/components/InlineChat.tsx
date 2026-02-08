@@ -1,11 +1,20 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, RotateCcw } from 'lucide-react'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { ConversationPhase, ExtractedContextVariant } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import ExtractionConfirm from '@/components/ExtractionConfirm'
@@ -19,13 +28,13 @@ interface InlineMessage {
 
 interface InlineChatProps {
   projectId: string
+  resumeConversationId?: string
   initialMessage?: string
   autoStart?: boolean
   onConversationStart?: (conversationId: string) => void
 }
 
-export function InlineChat({ projectId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
-  const router = useRouter()
+export function InlineChat({ projectId, resumeConversationId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
   const { startGeneration } = useGenerationStatusContext()
   const [input, setInput] = useState(initialMessage || '')
   const [messages, setMessages] = useState<InlineMessage[]>([])
@@ -46,6 +55,12 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
   const [showExtractionConfirm, setShowExtractionConfirm] = useState(false)
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
   const [dimensionalCoverage, setDimensionalCoverage] = useState<unknown>(null)
+
+  // Start over confirmation
+  const [showStartOverConfirm, setShowStartOverConfirm] = useState(false)
+
+  // Finish confirmation
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false)
 
   // Use ref to prevent React Strict Mode double-firing of autoStart
   const hasAutoStartedRef = useRef(false)
@@ -117,6 +132,56 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
       setIsLoading(false)
     }
   }
+
+  // Resume an existing conversation
+  const resumeConversation = async (convId: string) => {
+    setIsLoading(true)
+    setIsExpanded(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/conversation/${convId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load conversation')
+      }
+
+      const data = await response.json()
+
+      setConversationId(convId)
+      setMessages(data.messages.map((m: { id: string; role: string; content: string }) => ({
+        id: m.id,
+        role: m.role as 'assistant' | 'user',
+        content: m.content,
+      })))
+      setCurrentPhase(data.currentPhase || 'QUESTIONING')
+
+      // Check if conversation was at early exit point
+      // Look for assistant messages that indicate readiness to generate
+      const lastAssistantMessage = data.messages
+        .filter((m: { role: string }) => m.role === 'assistant')
+        .pop()
+
+      if (data.currentPhase === 'EXTRACTION' ||
+          lastAssistantMessage?.content?.includes('have enough') ||
+          lastAssistantMessage?.content?.includes('ready to')) {
+        setReadyToGenerate(true)
+      }
+
+      onConversationStart?.(convId)
+    } catch (err) {
+      console.error('Failed to resume conversation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load conversation')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Resume conversation if resumeConversationId provided
+  useEffect(() => {
+    if (resumeConversationId && !conversationId) {
+      resumeConversation(resumeConversationId)
+    }
+  }, [resumeConversationId])
 
   const sendMessage = async (convId: string, content: string, overridePhase?: ConversationPhase) => {
     // Add user message optimistically
@@ -304,9 +369,10 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
         // Start tracking generation in context (handles polling and toast)
         startGeneration(data.generationId, projectId)
 
-        // Notify listeners and redirect to project page immediately
+        // Notify listeners that strategy generation started
+        // The project page's event listener will refetch data and re-render,
+        // replacing FirstTimeEmptyState with the dashboard
         window.dispatchEvent(new Event('strategySaved'))
-        router.push(`/project/${projectId}`)
       } else {
         throw new Error('Invalid response from generation API')
       }
@@ -358,6 +424,35 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
       }])
     }
     inputRef.current?.focus()
+  }
+
+  // Abandon conversation and start fresh
+  const handleStartOver = async () => {
+    if (!conversationId) return
+
+    setShowStartOverConfirm(false)
+
+    try {
+      await fetch(`/api/conversation/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'abandoned' }),
+      })
+    } catch (err) {
+      console.error('Failed to abandon conversation:', err)
+      // Continue with reset anyway - worst case is an orphaned conversation
+    }
+
+    // Reset all state
+    setConversationId(null)
+    setMessages([])
+    setIsExpanded(false)
+    setCurrentPhase('INITIAL')
+    setReadyToGenerate(false)
+    setSuggestedQuestion(null)
+    setError(null)
+    setInput('')
+    hasAutoStartedRef.current = false
   }
 
   // Check if user has started chatting (for showing End button)
@@ -493,16 +588,25 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
               <span className="ml-1">to send</span>
             </p>
             <div className="flex items-center gap-2">
-              {hasUserResponded && (
-                <Button
+              {conversationId && (
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setReadyToGenerate(true)}
-                  disabled={isLoading}
+                  onClick={() => setShowStartOverConfirm(true)}
+                  className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  End
-                </Button>
+                  <RotateCcw className="h-4 w-4" />
+                  Start over
+                </button>
+              )}
+              {hasUserResponded && (
+                <button
+                  type="button"
+                  onClick={() => setShowFinishConfirm(true)}
+                  disabled={isLoading}
+                  className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  Finish
+                </button>
               )}
               <button
                 type="submit"
@@ -515,6 +619,52 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
           </div>
         </form>
       )}
+
+      {/* Start over confirmation dialog */}
+      <AlertDialog open={showStartOverConfirm} onOpenChange={setShowStartOverConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start over?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will abandon your current conversation and start fresh. Your messages will not be saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleStartOver}>
+              Start over
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Finish confirmation dialog */}
+      <AlertDialog open={showFinishConfirm} onOpenChange={setShowFinishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {messages.filter(m => m.role === 'user').length <= 2
+                ? 'Finish so soon?'
+                : 'Ready to generate your strategy?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {messages.filter(m => m.role === 'user').length <= 2
+                ? "You've only shared a couple of thoughts. A few more turns usually leads to much better output. Want to keep going?"
+                : "I'll extract the key insights from our conversation and generate your first strategy. Future conversations will continue in the side panel."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep chatting</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowFinishConfirm(false)
+              // Go straight to extraction, don't show another prompt
+              handleExtract()
+            }}>
+              {messages.filter(m => m.role === 'user').length <= 2 ? 'Finish anyway' : 'Generate strategy'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
