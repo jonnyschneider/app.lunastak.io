@@ -113,16 +113,6 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
           </p>
         </div>
 
-        {/* Success Criteria */}
-        <div className="mb-4">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Success Looks Like
-          </h4>
-          <p className="text-sm text-muted-foreground">
-            {objective.successCriteria}
-          </p>
-        </div>
-
         {/* Back Indicator */}
         <div className="flex justify-end">
           <ArrowPathIcon className="w-4 h-4 text-muted-foreground transform rotate-180" />
