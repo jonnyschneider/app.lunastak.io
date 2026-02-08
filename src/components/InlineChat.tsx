@@ -658,7 +658,8 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             <AlertDialogCancel>Keep chatting</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               setShowFinishConfirm(false)
-              setReadyToGenerate(true)
+              // Go straight to extraction, don't show another prompt
+              handleExtract()
             }}>
               {messages.filter(m => m.role === 'user').length <= 2 ? 'Finish anyway' : 'Generate strategy'}
             </AlertDialogAction>
