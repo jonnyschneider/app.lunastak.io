@@ -1,0 +1,13 @@
+template: ../template/reference.docx
+output: "../GEN-FILE Humble Ventures R&D Tax Incentive Summary for Lunastak.docx"
+page_break_between_sections: true
+toc: true
+sections:
+  - 00-front-matter.md
+  - 01-executive-summary.md
+  - 10-a1-judgement-engine.md
+  - 11-a2-evaluation-observability.md
+  - 12-a3-data-architecture.md
+  - 13-a4-interaction-design.md
+  - 14-a5-performance-reliability.md
+  - 15-appendices.md

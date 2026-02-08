@@ -13,6 +13,7 @@ export type { ExtractionOutputContract };
 // Objective structure in generated output
 export interface ObjectiveContract {
   id: string;
+  title?: string;  // Short title (3-5 words) for lists/linking
   pithy: string;
   metric: {
     summary: string;

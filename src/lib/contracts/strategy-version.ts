@@ -22,6 +22,7 @@ export interface StrategyContentContract {
 }
 
 export interface ObjectiveContentContract {
+  title?: string;  // Short title (3-5 words) for lists/linking
   pithy: string;
   metric: ObjectiveContract['metric'];
   explanation: string;

@@ -5,6 +5,7 @@ import { CornerDownRight } from 'lucide-react';
 import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching';
 import { OpportunityCoaching } from './OpportunityCoaching';
 import { FakeDoorDialog } from './FakeDoorDialog';
+import { getObjectiveTitle } from '@/lib/utils';
 
 interface ObjectiveContribution {
   objectiveId: string;
@@ -13,6 +14,7 @@ interface ObjectiveContribution {
 
 interface ObjectiveForLinking {
   id: string;
+  title?: string;
   pithy: string;
 }
 
@@ -169,7 +171,7 @@ export function OpportunityEditor({
                     className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     disabled={saving}
                   />
-                  <span className="text-sm text-foreground">{obj.pithy}</span>
+                  <span className="text-sm text-foreground">{getObjectiveTitle(obj)}</span>
                 </label>
                 {isLinked && (
                   <div className="flex items-start gap-2 ml-9 mt-1 mb-2">

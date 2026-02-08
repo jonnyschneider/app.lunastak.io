@@ -7,7 +7,8 @@ import { FakeDoorDialog } from './FakeDoorDialog';
 import { InfoDialog } from './InfoDialog';
 import { OpportunitySection } from './OpportunitySection';
 import { InlineTextEditor } from './InlineTextEditor';
-import { ObjectiveEditor } from './ObjectiveEditor';
+import { ObjectiveInlineEditor } from './ObjectiveInlineEditor';
+import { getObjectiveTitle } from '@/lib/utils';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -175,6 +176,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           componentType: 'objective',
           componentId: updatedObjective.id,
           content: {
+            title: updatedObjective.title,
             pithy: updatedObjective.pithy,
             metric: updatedObjective.metric,
             explanation: updatedObjective.explanation,
@@ -312,7 +314,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             {objectives.map((objective) => (
               <div key={objective.id}>
                 {editingObjectiveId === objective.id ? (
-                  <ObjectiveEditor
+                  <ObjectiveInlineEditor
                     objective={objective}
                     onSave={handleSaveObjective}
                     onCancel={() => setEditingObjectiveId(null)}
@@ -337,8 +339,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                       </svg>
                     </button>
 
+                    {/* Objective title */}
+                    <p className="text-xs font-semibold text-[#0A2933]/60 uppercase tracking-wide mt-6 mb-1">
+                      {getObjectiveTitle(objective)}
+                    </p>
                     {/* Objective text */}
-                    <p className="text-sm font-medium text-[#0A2933] mb-3 mt-6">
+                    <p className="text-sm font-medium text-[#0A2933] mb-3">
                       {objective.pithy}
                     </p>
 
