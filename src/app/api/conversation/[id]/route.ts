@@ -34,6 +34,7 @@ export async function GET(
     messages: conversation.messages,
     deepDiveId: conversation.deepDiveId,
     deepDive: conversation.deepDive,
+    isInitialConversation: conversation.isInitialConversation,
   });
 }
 
