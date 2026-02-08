@@ -160,6 +160,7 @@ export default function StrategyViewPage() {
                     conversationId={conversationId}
                     traceId={traceId}
                     projectId={projectId}
+                    onUpdate={setStrategy}
                   />
                 )}
               </div>

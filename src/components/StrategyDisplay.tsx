@@ -6,16 +6,20 @@ import { convertLegacyObjectives } from '@/lib/placeholders';
 import { FakeDoorDialog } from './FakeDoorDialog';
 import { InfoDialog } from './InfoDialog';
 import { OpportunitySection } from './OpportunitySection';
+import { InlineTextEditor } from './InlineTextEditor';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
   conversationId: string;
   traceId: string;
   projectId: string;
+  onUpdate?: (strategy: StrategyStatements) => void;
 }
 
-export default function StrategyDisplay({ strategy, conversationId, traceId, projectId }: StrategyDisplayProps) {
+export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate }: StrategyDisplayProps) {
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
+  const [editingVision, setEditingVision] = useState(false);
+  const [editingStrategy, setEditingStrategy] = useState(false);
   const [fakeDoorConfig, setFakeDoorConfig] = useState<{
     name: string;
     description: string;
@@ -103,6 +107,63 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
     setInfoDialogOpen(true);
   };
 
+  const handleSaveVision = async (newText: string) => {
+    try {
+      const response = await fetch(`/api/project/${projectId}/strategy-version`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          componentType: 'vision',
+          content: { text: newText },
+          sourceType: 'user_edit',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      // Update local state
+      if (onUpdate) {
+        onUpdate({
+          ...strategy,
+          vision: newText,
+        });
+      }
+      setEditingVision(false);
+    } catch (error) {
+      console.error('Failed to save vision:', error);
+    }
+  };
+
+  const handleSaveStrategy = async (newText: string) => {
+    try {
+      const response = await fetch(`/api/project/${projectId}/strategy-version`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          componentType: 'strategy',
+          content: { text: newText },
+          sourceType: 'user_edit',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      if (onUpdate) {
+        onUpdate({
+          ...strategy,
+          strategy: newText,
+        });
+      }
+      setEditingStrategy(false);
+    } catch (error) {
+      console.error('Failed to save strategy:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Strategy Output */}
@@ -124,7 +185,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 </svg>
               </button>
               <button
-                onClick={() => handleFakeDoor('Edit Vision')}
+                onClick={() => setEditingVision(true)}
                 className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit Vision"
               >
@@ -134,9 +195,19 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               </button>
             </div>
           </div>
-          <p className="text-lg font-medium text-[#0A2933] leading-relaxed">
-            {strategy.vision}
-          </p>
+          {editingVision ? (
+            <InlineTextEditor
+              value={strategy.vision}
+              onSave={handleSaveVision}
+              onCancel={() => setEditingVision(false)}
+              placeholder="What is your aspirational future state?"
+              minRows={4}
+            />
+          ) : (
+            <p className="text-lg font-medium text-[#0A2933] leading-relaxed">
+              {strategy.vision}
+            </p>
+          )}
         </div>
 
         {/* Strategy Card */}
@@ -156,7 +227,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 </svg>
               </button>
               <button
-                onClick={() => handleFakeDoor('Edit Strategy')}
+                onClick={() => setEditingStrategy(true)}
                 className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit Strategy"
               >
@@ -166,9 +237,19 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               </button>
             </div>
           </div>
-          <p className="text-lg font-medium text-[#0A2933] leading-relaxed">
-            {strategy.strategy}
-          </p>
+          {editingStrategy ? (
+            <InlineTextEditor
+              value={strategy.strategy}
+              onSave={handleSaveStrategy}
+              onCancel={() => setEditingStrategy(false)}
+              placeholder="What are your coherent choices to achieve the vision?"
+              minRows={4}
+            />
+          ) : (
+            <p className="text-lg font-medium text-[#0A2933] leading-relaxed">
+              {strategy.strategy}
+            </p>
+          )}
         </div>
 
         {/* Objectives Grid */}
