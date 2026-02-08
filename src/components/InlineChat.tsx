@@ -19,12 +19,13 @@ interface InlineMessage {
 
 interface InlineChatProps {
   projectId: string
+  resumeConversationId?: string
   initialMessage?: string
   autoStart?: boolean
   onConversationStart?: (conversationId: string) => void
 }
 
-export function InlineChat({ projectId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
+export function InlineChat({ projectId, resumeConversationId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
   const router = useRouter()
   const { startGeneration } = useGenerationStatusContext()
   const [input, setInput] = useState(initialMessage || '')
@@ -117,6 +118,56 @@ export function InlineChat({ projectId, initialMessage, autoStart, onConversatio
       setIsLoading(false)
     }
   }
+
+  // Resume an existing conversation
+  const resumeConversation = async (convId: string) => {
+    setIsLoading(true)
+    setIsExpanded(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/conversation/${convId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load conversation')
+      }
+
+      const data = await response.json()
+
+      setConversationId(convId)
+      setMessages(data.messages.map((m: { id: string; role: string; content: string }) => ({
+        id: m.id,
+        role: m.role as 'assistant' | 'user',
+        content: m.content,
+      })))
+      setCurrentPhase(data.currentPhase || 'QUESTIONING')
+
+      // Check if conversation was at early exit point
+      // Look for assistant messages that indicate readiness to generate
+      const lastAssistantMessage = data.messages
+        .filter((m: { role: string }) => m.role === 'assistant')
+        .pop()
+
+      if (data.currentPhase === 'EXTRACTION' ||
+          lastAssistantMessage?.content?.includes('have enough') ||
+          lastAssistantMessage?.content?.includes('ready to')) {
+        setReadyToGenerate(true)
+      }
+
+      onConversationStart?.(convId)
+    } catch (err) {
+      console.error('Failed to resume conversation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load conversation')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Resume conversation if resumeConversationId provided
+  useEffect(() => {
+    if (resumeConversationId && !conversationId) {
+      resumeConversation(resumeConversationId)
+    }
+  }, [resumeConversationId])
 
   const sendMessage = async (convId: string, content: string, overridePhase?: ConversationPhase) => {
     // Add user message optimistically

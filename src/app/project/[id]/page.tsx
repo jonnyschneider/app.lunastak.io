@@ -401,11 +401,17 @@ export default function ProjectPage() {
     (projectData?.stats?.fragmentCount ?? 0) === 0 &&
     (projectData?.conversations?.length ?? 0) === 0
 
-  if (isEmpty && projectData) {
+  // Check for incomplete initial conversation (started first-time flow but didn't finish)
+  const incompleteInitialConvo = projectData?.conversations?.find(
+    (c: { isInitialConversation?: boolean; status: string }) => c.isInitialConversation && c.status === 'in_progress'
+  )
+
+  if ((isEmpty || incompleteInitialConvo) && projectData) {
     return (
       <AppLayout>
         <FirstTimeEmptyState
           projectId={projectId}
+          resumeConversationId={incompleteInitialConvo?.id}
           onUploadComplete={() => fetchProjectData()}
         />
       </AppLayout>
