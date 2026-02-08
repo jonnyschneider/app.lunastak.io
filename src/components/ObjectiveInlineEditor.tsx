@@ -16,7 +16,7 @@ import {
 import type { Objective } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
 
-type EditingSection = 'title' | 'pithy' | 'metric' | 'explanation' | 'success' | null;
+type EditingSection = 'title' | 'pithy' | 'metric' | 'explanation' | null;
 
 interface ObjectiveInlineEditorProps {
   objective: Objective;
@@ -34,7 +34,6 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
   const [direction, setDirection] = useState<'increase' | 'decrease' | undefined>(objective.metric.direction);
   const [timeframe, setTimeframe] = useState<'3M' | '6M' | '9M' | '12M' | '18M' | undefined>(objective.metric.timeframe);
   const [explanation, setExplanation] = useState(objective.explanation);
-  const [successCriteria, setSuccessCriteria] = useState(objective.successCriteria);
   const [saving, setSaving] = useState(false);
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
 
@@ -55,7 +54,7 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
           timeframe,
         },
         explanation: explanation.trim(),
-        successCriteria: successCriteria.trim(),
+        successCriteria: objective.successCriteria, // Preserve for AI coaching context
       };
       await onSave(updated);
     } finally {
@@ -240,79 +239,40 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
 
         <hr className="border-muted" />
 
-        {/* Back of Card Content */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Explanation */}
-          <div className="group/section">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Why It Matters
-            </h4>
-            {editingSection === 'explanation' ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={explanation}
-                  onChange={(e) => setExplanation(e.target.value)}
-                  placeholder="Explain why this objective is important"
-                  rows={3}
-                  className="text-sm"
-                  autoFocus
-                />
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
-                    Done
-                  </Button>
-                </div>
+        {/* Why It Matters */}
+        <div className="group/section">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Why It Matters
+          </h4>
+          {editingSection === 'explanation' ? (
+            <div className="space-y-2">
+              <Textarea
+                value={explanation}
+                onChange={(e) => setExplanation(e.target.value)}
+                placeholder="Explain why this objective is important"
+                rows={3}
+                className="text-sm"
+                autoFocus
+              />
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
+                  Done
+                </Button>
               </div>
-            ) : (
-              <div
-                onClick={() => setEditingSection('explanation')}
-                className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
-              >
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {explanation || 'Click to explain why this objective matters...'}
-                </p>
-                <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
-                  (click to edit)
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Success Criteria */}
-          <div className="group/section">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Success Looks Like
-            </h4>
-            {editingSection === 'success' ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={successCriteria}
-                  onChange={(e) => setSuccessCriteria(e.target.value)}
-                  placeholder="What does success look like?"
-                  rows={3}
-                  className="text-sm"
-                  autoFocus
-                />
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
-                    Done
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div
-                onClick={() => setEditingSection('success')}
-                className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
-              >
-                <p className="text-sm text-muted-foreground">
-                  {successCriteria || 'Click to describe what success looks like...'}
-                </p>
-                <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
-                  (click to edit)
-                </span>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div
+              onClick={() => setEditingSection('explanation')}
+              className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
+            >
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {explanation || 'Click to explain why this objective matters...'}
+              </p>
+              <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
+                (click to edit)
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
