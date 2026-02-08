@@ -41,8 +41,12 @@ export interface StrategyStatementsContract {
   }>;
   principles: Array<{
     id: string;
-    title: string;
-    description: string;
+    priority: string;
+    deprioritized: string;
+    context?: string;
+    // Legacy
+    title?: string;
+    description?: string;
   }>;
 }
 
