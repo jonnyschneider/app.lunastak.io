@@ -206,6 +206,14 @@ Display renders as: **"{priority}** even over {deprioritized}"
 - Coaching fragments captured (tagged, excluded by default)
 - Version linking from coaching to component
 
+## Future Polish (deferred)
+
+**Objective editor improvements:**
+- Full-width edit mode: when editing an objective, expand to full container width (siblings wrap below)
+- More breathing room for guidance and visual separation
+- Clearer distinction between interactive and display-only elements
+- Consider inline hints/coaching tips in edit mode
+
 ---
 
 ## R&D Context
