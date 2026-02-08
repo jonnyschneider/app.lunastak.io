@@ -61,6 +61,9 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
   // Start over confirmation
   const [showStartOverConfirm, setShowStartOverConfirm] = useState(false)
 
+  // Finish confirmation
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false)
+
   // Use ref to prevent React Strict Mode double-firing of autoStart
   const hasAutoStartedRef = useRef(false)
 
@@ -586,17 +589,6 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
               <span className="ml-1">to send</span>
             </p>
             <div className="flex items-center gap-2">
-              {hasUserResponded && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setReadyToGenerate(true)}
-                  disabled={isLoading}
-                >
-                  End
-                </Button>
-              )}
               {conversationId && (
                 <button
                   type="button"
@@ -605,6 +597,16 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
                 >
                   <RotateCcw className="h-4 w-4" />
                   Start over
+                </button>
+              )}
+              {hasUserResponded && (
+                <button
+                  type="button"
+                  onClick={() => setShowFinishConfirm(true)}
+                  disabled={isLoading}
+                  className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  Finish
                 </button>
               )}
               <button
@@ -632,6 +634,33 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleStartOver}>
               Start over
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Finish confirmation dialog */}
+      <AlertDialog open={showFinishConfirm} onOpenChange={setShowFinishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {messages.filter(m => m.role === 'user').length <= 2
+                ? 'Finish so soon?'
+                : 'Ready to generate your strategy?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {messages.filter(m => m.role === 'user').length <= 2
+                ? "You've only shared a couple of thoughts. A few more turns usually leads to much better output. Want to keep going?"
+                : "I'll extract the key insights from our conversation and generate your first strategy. Future conversations will continue in the side panel."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep chatting</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowFinishConfirm(false)
+              setReadyToGenerate(true)
+            }}>
+              {messages.filter(m => m.role === 'user').length <= 2 ? 'Finish anyway' : 'Generate strategy'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
