@@ -1,9 +1,21 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { BusinessContext } from './types';
+import { BusinessContext, Objective } from './types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Get display title for an objective.
+ * Uses title if present, otherwise truncates pithy to ~5 words.
+ */
+export function getObjectiveTitle(objective: Pick<Objective, 'title' | 'pithy'>): string {
+  if (objective.title) return objective.title;
+  // Fallback: first 5 words of pithy
+  const words = objective.pithy.split(/\s+/);
+  if (words.length <= 5) return objective.pithy;
+  return words.slice(0, 5).join(' ') + '...';
 }
 
 export function extractXML(text: string, tag: string): string {

@@ -17,6 +17,7 @@ export interface ObjectiveMetric {
 
 export interface Objective {
   id: string;            // For filtering relationships
+  title?: string;        // Short title (3-5 words) for lists/linking
   pithy: string;         // Short 1-2 sentence objective
   metric: ObjectiveMetric;
   explanation: string;   // Full detail for back of card
