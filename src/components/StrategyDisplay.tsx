@@ -7,6 +7,7 @@ import { FakeDoorDialog } from './FakeDoorDialog';
 import { InfoDialog } from './InfoDialog';
 import { OpportunitySection } from './OpportunitySection';
 import { InlineTextEditor } from './InlineTextEditor';
+import { ObjectiveEditor } from './ObjectiveEditor';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -20,6 +21,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const [editingVision, setEditingVision] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState(false);
+  const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null);
   const [fakeDoorConfig, setFakeDoorConfig] = useState<{
     name: string;
     description: string;
@@ -164,6 +166,42 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
     }
   };
 
+  const handleSaveObjective = async (updatedObjective: Objective) => {
+    try {
+      const response = await fetch(`/api/project/${projectId}/strategy-version`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          componentType: 'objective',
+          componentId: updatedObjective.id,
+          content: {
+            pithy: updatedObjective.pithy,
+            metric: updatedObjective.metric,
+            explanation: updatedObjective.explanation,
+            successCriteria: updatedObjective.successCriteria,
+          },
+          sourceType: 'user_edit',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      if (onUpdate) {
+        onUpdate({
+          ...strategy,
+          objectives: strategy.objectives.map((obj) =>
+            obj.id === updatedObjective.id ? updatedObjective : obj
+          ),
+        });
+      }
+      setEditingObjectiveId(null);
+    } catch (error) {
+      console.error('Failed to save objective:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Strategy Output */}
@@ -272,49 +310,56 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {objectives.map((objective) => (
-              <div
-                key={objective.id}
-                className="bg-white border border-[#0A2933] rounded-lg p-4 hover:shadow-md transition-shadow relative group"
-              >
-                {/* Timeframe badge - top left */}
-                {objective.metric.timeframe && (
-                  <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
-                    {objective.metric.timeframe}
-                  </span>
-                )}
+              <div key={objective.id}>
+                {editingObjectiveId === objective.id ? (
+                  <ObjectiveEditor
+                    objective={objective}
+                    onSave={handleSaveObjective}
+                    onCancel={() => setEditingObjectiveId(null)}
+                  />
+                ) : (
+                  <div className="bg-white border border-[#0A2933] rounded-lg p-4 hover:shadow-md transition-shadow relative group">
+                    {/* Timeframe badge - top left */}
+                    {objective.metric.timeframe && (
+                      <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
+                        {objective.metric.timeframe}
+                      </span>
+                    )}
 
-                {/* Edit button - top right */}
-                <button
-                  onClick={() => handleFakeDoor('Edit Objective')}
-                  className="absolute top-3 right-3 text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
-                  title="Edit Objective"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
+                    {/* Edit button - top right */}
+                    <button
+                      onClick={() => setEditingObjectiveId(objective.id)}
+                      className="absolute top-3 right-3 text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Edit Objective"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
 
-                {/* Objective text */}
-                <p className="text-sm font-medium text-[#0A2933] mb-3 mt-6">
-                  {objective.pithy}
-                </p>
+                    {/* Objective text */}
+                    <p className="text-sm font-medium text-[#0A2933] mb-3 mt-6">
+                      {objective.pithy}
+                    </p>
 
-                {/* Metric information */}
-                {objective.metric.direction && objective.metric.metricName && (
-                  <div className="flex items-center gap-2 text-xs text-[#7F556D]">
-                    <span>
-                      {objective.metric.direction === 'increase' ? '↑' : '↓'}
-                    </span>
-                    <span className="font-medium">
-                      {objective.metric.metricName}
-                    </span>
-                    {objective.metric.metricValue && (
-                      <>
-                        <span>|</span>
+                    {/* Metric information */}
+                    {objective.metric.direction && objective.metric.metricName && (
+                      <div className="flex items-center gap-2 text-xs text-[#7F556D]">
                         <span>
-                          {objective.metric.metricValue}
+                          {objective.metric.direction === 'increase' ? '↑' : '↓'}
                         </span>
-                      </>
+                        <span className="font-medium">
+                          {objective.metric.metricName}
+                        </span>
+                        {objective.metric.metricValue && (
+                          <>
+                            <span>|</span>
+                            <span>
+                              {objective.metric.metricValue}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
