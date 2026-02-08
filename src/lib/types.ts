@@ -36,6 +36,40 @@ export interface Principle {
   description: string;
 }
 
+// Strategy Version types (for edit history)
+export type StrategyComponentType = 'vision' | 'strategy' | 'objective';
+export type StrategyVersionSource = 'generation' | 'user_edit' | 'coaching';
+export type StrategyVersionCreator = 'user' | 'ai' | 'system';
+
+export interface StrategyVersion {
+  id: string;
+  projectId: string;
+  componentType: StrategyComponentType;
+  componentId: string | null;
+  content: VisionContent | StrategyContent | ObjectiveContent;
+  version: number;
+  createdAt: Date;
+  createdBy: StrategyVersionCreator;
+  sourceType: StrategyVersionSource;
+  sourceId: string | null;
+}
+
+// Content types for each component
+export interface VisionContent {
+  text: string;
+}
+
+export interface StrategyContent {
+  text: string;
+}
+
+export interface ObjectiveContent {
+  pithy: string;
+  metric: ObjectiveMetric;
+  explanation: string;
+  successCriteria: string;
+}
+
 export interface StrategyStatements {
   vision: string;
   strategy: string;
