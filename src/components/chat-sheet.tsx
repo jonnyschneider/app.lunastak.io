@@ -167,11 +167,12 @@ export function ChatSheet({
       } else if (deepDiveId || gapExploration) {
         // Special modes don't need to wait for check
         startConversationWithQuestion(initialQuestion)
-      } else if (hasCheckedForInitial && !incompleteInitialConvoId) {
-        // Only start new conversation after check confirms no incomplete initial
+      } else if (hasCheckedForInitial && hasExistingStrategy) {
+        // Only start new conversation if project already has a strategy
+        // (first-time users should complete InlineChat flow first)
         startConversationWithQuestion(initialQuestion)
       }
-      // If hasCheckedForInitial && incompleteInitialConvoId, don't start - show blocking UI
+      // If no existing strategy, don't start - show blocking UI directing to InlineChat
     }
   }, [open, hasCheckedForInitial, incompleteInitialConvoId])
 
@@ -614,15 +615,17 @@ export function ChatSheet({
             <ChatSkeleton />
           )}
 
-          {/* Block new conversation if there's an incomplete initial conversation */}
-          {flowStep === 'chat' && messages.length === 0 && !isLoading && hasCheckedForInitial && incompleteInitialConvoId && !deepDiveId && !gapExploration && !resumeConversationId && (
+          {/* Block new conversation if no strategy exists yet (first-time flow) */}
+          {flowStep === 'chat' && messages.length === 0 && !isLoading && hasCheckedForInitial && !hasExistingStrategy && !deepDiveId && !gapExploration && !resumeConversationId && (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 max-w-md">
                 <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
                   Complete your first conversation
                 </h3>
                 <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
-                  You have an initial conversation in progress. Complete it to generate your first strategy, or start over from the project page.
+                  {incompleteInitialConvoId
+                    ? "You have an initial conversation in progress. Complete it to generate your first strategy, or start over from the project page."
+                    : "Start your first conversation from the main area to generate your first strategy."}
                 </p>
                 <button
                   onClick={() => onOpenChange(false)}
