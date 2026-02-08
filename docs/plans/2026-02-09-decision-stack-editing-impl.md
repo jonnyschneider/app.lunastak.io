@@ -119,12 +119,314 @@ git commit -m "feat(types): add StrategyVersion types"
 
 ---
 
-## Task 3: Create Strategy Version API
+## Task 3: Create Strategy Version Contracts
+
+**Files:**
+- Create: `src/lib/contracts/strategy-version.ts`
+- Modify: `src/lib/contracts/index.ts`
+
+**Reference:** See `src/lib/contracts/README.md` for contract patterns. Follow existing patterns in `src/lib/contracts/generation.ts`.
+
+**Step 1: Create the contract file**
+
+Create `src/lib/contracts/strategy-version.ts`:
+
+```typescript
+// src/lib/contracts/strategy-version.ts
+/**
+ * Strategy Version Contracts
+ *
+ * Defines what /api/project/[id]/strategy-version expects and produces.
+ */
+
+import { ObjectiveContract } from './generation';
+
+// Component types
+export type StrategyComponentType = 'vision' | 'strategy' | 'objective';
+export type StrategyVersionSource = 'generation' | 'user_edit' | 'coaching';
+export type StrategyVersionCreator = 'user' | 'ai' | 'system';
+
+// Content contracts for each component type
+export interface VisionContentContract {
+  text: string;
+}
+
+export interface StrategyContentContract {
+  text: string;
+}
+
+export interface ObjectiveContentContract {
+  pithy: string;
+  metric: ObjectiveContract['metric'];
+  explanation: string;
+  successCriteria: string;
+}
+
+// API Input contract for POST /api/project/[id]/strategy-version
+export interface StrategyVersionInputContract {
+  componentType: StrategyComponentType;
+  componentId?: string; // Required for objectives
+  content: VisionContentContract | StrategyContentContract | ObjectiveContentContract;
+  sourceType: StrategyVersionSource;
+  sourceId?: string;
+}
+
+// API Output contract
+export interface StrategyVersionOutputContract {
+  id: string;
+  projectId: string;
+  componentType: StrategyComponentType;
+  componentId: string | null;
+  content: VisionContentContract | StrategyContentContract | ObjectiveContentContract;
+  version: number;
+  createdAt: string;
+  createdBy: StrategyVersionCreator;
+  sourceType: StrategyVersionSource;
+  sourceId: string | null;
+}
+
+// Validation functions
+export function validateStrategyVersionInput(data: unknown): data is StrategyVersionInputContract {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+
+  // Validate componentType
+  if (!['vision', 'strategy', 'objective'].includes(obj.componentType as string)) {
+    return false;
+  }
+
+  // Validate sourceType
+  if (!['generation', 'user_edit', 'coaching'].includes(obj.sourceType as string)) {
+    return false;
+  }
+
+  // Validate content exists
+  if (!obj.content || typeof obj.content !== 'object') {
+    return false;
+  }
+
+  // Validate componentId required for objectives
+  if (obj.componentType === 'objective' && !obj.componentId) {
+    return false;
+  }
+
+  // Validate content shape based on componentType
+  const content = obj.content as Record<string, unknown>;
+  if (obj.componentType === 'vision' || obj.componentType === 'strategy') {
+    if (typeof content.text !== 'string' || !content.text.trim()) {
+      return false;
+    }
+  } else if (obj.componentType === 'objective') {
+    if (typeof content.pithy !== 'string' || !content.pithy.trim()) {
+      return false;
+    }
+    if (!content.metric || typeof content.metric !== 'object') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function validateStrategyVersionOutput(data: unknown): data is StrategyVersionOutputContract {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.id !== 'string' || !obj.id) return false;
+  if (typeof obj.projectId !== 'string' || !obj.projectId) return false;
+  if (!['vision', 'strategy', 'objective'].includes(obj.componentType as string)) return false;
+  if (typeof obj.version !== 'number') return false;
+  if (!['user', 'ai', 'system'].includes(obj.createdBy as string)) return false;
+  if (!['generation', 'user_edit', 'coaching'].includes(obj.sourceType as string)) return false;
+
+  return true;
+}
+```
+
+**Step 2: Export from contracts index**
+
+Add to `src/lib/contracts/index.ts`:
+
+```typescript
+export * from './strategy-version';
+```
+
+**Step 3: Verify types compile**
+
+Run: `npm run type-check`
+Expected: No type errors
+
+**Step 4: Commit**
+
+```bash
+git add src/lib/contracts/strategy-version.ts src/lib/contracts/index.ts
+git commit -m "feat(contracts): add StrategyVersion contracts"
+```
+
+---
+
+## Task 4: Add Strategy Version Contract Tests
+
+**Files:**
+- Create: `src/lib/__tests__/contracts/strategy-version-contracts.test.ts`
+
+**Reference:** Follow pattern in `src/lib/__tests__/contracts/generation-contracts.test.ts`
+
+**Step 1: Create the test file**
+
+```typescript
+// src/lib/__tests__/contracts/strategy-version-contracts.test.ts
+/**
+ * Strategy Version Contract Tests
+ *
+ * Verifies strategy version input/output contracts.
+ */
+
+import {
+  validateStrategyVersionInput,
+  validateStrategyVersionOutput,
+  StrategyVersionInputContract,
+  StrategyVersionOutputContract,
+} from '@/lib/contracts/strategy-version';
+
+describe('Strategy Version Contracts', () => {
+  describe('StrategyVersionInputContract', () => {
+    const validVisionInput: StrategyVersionInputContract = {
+      componentType: 'vision',
+      content: { text: 'To be the leading provider of...' },
+      sourceType: 'user_edit',
+    };
+
+    const validObjectiveInput: StrategyVersionInputContract = {
+      componentType: 'objective',
+      componentId: 'obj-123',
+      content: {
+        pithy: 'Achieve product-market fit',
+        metric: {
+          summary: '100 customers',
+          full: 'Acquire 100 paying customers',
+          category: 'Growth',
+          direction: 'increase',
+          timeframe: '12M',
+        },
+        explanation: 'Critical for sustainability',
+        successCriteria: 'Consistent month-over-month growth',
+      },
+      sourceType: 'user_edit',
+    };
+
+    it('should validate correct vision input', () => {
+      expect(validateStrategyVersionInput(validVisionInput)).toBe(true);
+    });
+
+    it('should validate correct strategy input', () => {
+      const strategyInput = { ...validVisionInput, componentType: 'strategy' };
+      expect(validateStrategyVersionInput(strategyInput)).toBe(true);
+    });
+
+    it('should validate correct objective input', () => {
+      expect(validateStrategyVersionInput(validObjectiveInput)).toBe(true);
+    });
+
+    it('should reject objective without componentId', () => {
+      const invalid = { ...validObjectiveInput, componentId: undefined };
+      expect(validateStrategyVersionInput(invalid)).toBe(false);
+    });
+
+    it('should reject invalid componentType', () => {
+      const invalid = { ...validVisionInput, componentType: 'invalid' };
+      expect(validateStrategyVersionInput(invalid)).toBe(false);
+    });
+
+    it('should reject invalid sourceType', () => {
+      const invalid = { ...validVisionInput, sourceType: 'invalid' };
+      expect(validateStrategyVersionInput(invalid)).toBe(false);
+    });
+
+    it('should reject vision with empty text', () => {
+      const invalid = {
+        ...validVisionInput,
+        content: { text: '  ' },
+      };
+      expect(validateStrategyVersionInput(invalid)).toBe(false);
+    });
+
+    it('should reject objective with empty pithy', () => {
+      const invalid = {
+        ...validObjectiveInput,
+        content: { ...validObjectiveInput.content, pithy: '' },
+      };
+      expect(validateStrategyVersionInput(invalid)).toBe(false);
+    });
+
+    it('should accept input with optional sourceId', () => {
+      const withSourceId = { ...validVisionInput, sourceId: 'trace-123' };
+      expect(validateStrategyVersionInput(withSourceId)).toBe(true);
+    });
+  });
+
+  describe('StrategyVersionOutputContract', () => {
+    const validOutput: StrategyVersionOutputContract = {
+      id: 'sv-123',
+      projectId: 'proj-456',
+      componentType: 'vision',
+      componentId: null,
+      content: { text: 'To be the leading provider of...' },
+      version: 1,
+      createdAt: '2026-02-09T10:00:00Z',
+      createdBy: 'user',
+      sourceType: 'user_edit',
+      sourceId: null,
+    };
+
+    it('should validate correct output', () => {
+      expect(validateStrategyVersionOutput(validOutput)).toBe(true);
+    });
+
+    it('should reject output with missing id', () => {
+      const invalid = { ...validOutput, id: '' };
+      expect(validateStrategyVersionOutput(invalid)).toBe(false);
+    });
+
+    it('should reject output with invalid createdBy', () => {
+      const invalid = { ...validOutput, createdBy: 'robot' };
+      expect(validateStrategyVersionOutput(invalid)).toBe(false);
+    });
+
+    it('should validate output with componentId for objectives', () => {
+      const objectiveOutput = {
+        ...validOutput,
+        componentType: 'objective' as const,
+        componentId: 'obj-123',
+      };
+      expect(validateStrategyVersionOutput(objectiveOutput)).toBe(true);
+    });
+  });
+});
+```
+
+**Step 2: Run the tests**
+
+Run: `npm test -- --testPathPattern=strategy-version-contracts`
+Expected: All tests pass
+
+**Step 3: Commit**
+
+```bash
+git add src/lib/__tests__/contracts/strategy-version-contracts.test.ts
+git commit -m "test(contracts): add StrategyVersion contract tests"
+```
+
+---
+
+## Task 5: Create Strategy Version API
 
 **Files:**
 - Create: `src/app/api/project/[id]/strategy-version/route.ts`
 
 **Step 1: Create the API route**
+
+Uses contract validation from Task 3.
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
@@ -132,15 +434,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
-import type { StrategyComponentType, StrategyVersionSource, StrategyVersionCreator } from '@/lib/types';
-
-interface CreateVersionBody {
-  componentType: StrategyComponentType;
-  componentId?: string;
-  content: unknown;
-  sourceType: StrategyVersionSource;
-  sourceId?: string;
-}
+import {
+  validateStrategyVersionInput,
+  StrategyVersionInputContract,
+} from '@/lib/contracts/strategy-version';
 
 // GET: Fetch latest versions for all components
 export async function GET(
@@ -212,13 +509,14 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  const body: CreateVersionBody = await request.json();
-  const { componentType, componentId, content, sourceType, sourceId } = body;
+  const body = await request.json();
 
-  // Validate componentType
-  if (!['vision', 'strategy', 'objective'].includes(componentType)) {
-    return NextResponse.json({ error: 'Invalid componentType' }, { status: 400 });
+  // Validate using contract
+  if (!validateStrategyVersionInput(body)) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
+
+  const { componentType, componentId, content, sourceType, sourceId } = body as StrategyVersionInputContract;
 
   // Get current max version for this component
   const latestVersion = await prisma.strategyVersion.findFirst({
@@ -264,7 +562,7 @@ git commit -m "feat(api): add strategy-version endpoint for edit history"
 
 ---
 
-## Task 4: Create InlineTextEditor Component
+## Task 6: Create InlineTextEditor Component
 
 **Files:**
 - Create: `src/components/InlineTextEditor.tsx`
@@ -378,7 +676,7 @@ git commit -m "feat(ui): add InlineTextEditor component"
 
 ---
 
-## Task 5: Make Vision Editable
+## Task 7: Make Vision Editable
 
 **Files:**
 - Modify: `src/components/StrategyDisplay.tsx`
@@ -512,7 +810,7 @@ git commit -m "feat(ui): make Vision editable with inline editor"
 
 ---
 
-## Task 6: Make Strategy Editable
+## Task 8: Make Strategy Editable
 
 **Files:**
 - Modify: `src/components/StrategyDisplay.tsx`
@@ -603,7 +901,7 @@ git commit -m "feat(ui): make Strategy editable with inline editor"
 
 ---
 
-## Task 7: Make Objectives Editable
+## Task 9: Make Objectives Editable
 
 **Files:**
 - Modify: `src/components/StrategyDisplay.tsx`
@@ -917,7 +1215,7 @@ git commit -m "feat(ui): make Objectives editable with structured editor"
 
 ---
 
-## Task 8: Seed Initial Versions from Generation
+## Task 10: Seed Initial Versions from Generation
 
 **Files:**
 - Modify: `src/app/api/generate/route.ts`
@@ -993,7 +1291,7 @@ git commit -m "feat(api): seed StrategyVersion records on generation"
 
 ---
 
-## Task 9: Add Type Checking and Verification
+## Task 11: Add Type Checking and Verification
 
 **Files:**
 - Run verification suite
