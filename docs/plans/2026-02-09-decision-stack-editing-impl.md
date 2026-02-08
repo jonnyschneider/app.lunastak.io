@@ -10,6 +10,25 @@
 
 **Design doc:** `docs/plans/2026-02-09-decision-stack-editing-design.md`
 
+**Branch:** `feat/decision-stack-completion` (create from `development`)
+
+---
+
+## Task 0: Create Feature Branch
+
+**Step 1: Create and checkout the feature branch**
+
+```bash
+git checkout development
+git pull origin development
+git checkout -b feat/decision-stack-completion
+```
+
+**Step 2: Verify branch**
+
+Run: `git branch --show-current`
+Expected: `feat/decision-stack-completion`
+
 ---
 
 ## Task 1: Add StrategyVersion Schema
