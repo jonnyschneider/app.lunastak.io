@@ -1,11 +1,21 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, RotateCcw } from 'lucide-react'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { ConversationPhase, ExtractedContextVariant } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import ExtractionConfirm from '@/components/ExtractionConfirm'
@@ -47,6 +57,9 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
   const [showExtractionConfirm, setShowExtractionConfirm] = useState(false)
   const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
   const [dimensionalCoverage, setDimensionalCoverage] = useState<unknown>(null)
+
+  // Start over confirmation
+  const [showStartOverConfirm, setShowStartOverConfirm] = useState(false)
 
   // Use ref to prevent React Strict Mode double-firing of autoStart
   const hasAutoStartedRef = useRef(false)
@@ -415,6 +428,8 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
   const handleStartOver = async () => {
     if (!conversationId) return
 
+    setShowStartOverConfirm(false)
+
     try {
       await fetch(`/api/conversation/${conversationId}`, {
         method: 'PATCH',
@@ -564,23 +579,12 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
           <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-3">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
-                <span className="mx-1">or</span>
-                <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
-                <span className="ml-1">to send</span>
-              </p>
-              {conversationId && (
-                <button
-                  type="button"
-                  onClick={handleStartOver}
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                >
-                  Start over
-                </button>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
+              <span className="mx-1">or</span>
+              <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
+              <span className="ml-1">to send</span>
+            </p>
             <div className="flex items-center gap-2">
               {hasUserResponded && (
                 <Button
@@ -593,6 +597,16 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
                   End
                 </Button>
               )}
+              {conversationId && (
+                <button
+                  type="button"
+                  onClick={() => setShowStartOverConfirm(true)}
+                  className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Start over
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
@@ -604,6 +618,24 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           </div>
         </form>
       )}
+
+      {/* Start over confirmation dialog */}
+      <AlertDialog open={showStartOverConfirm} onOpenChange={setShowStartOverConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start over?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will abandon your current conversation and start fresh. Your messages will not be saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleStartOver}>
+              Start over
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
