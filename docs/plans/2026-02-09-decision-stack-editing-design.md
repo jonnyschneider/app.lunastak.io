@@ -214,6 +214,11 @@ Display renders as: **"{priority}** even over {deprioritized}"
 - Clearer distinction between interactive and display-only elements
 - Consider inline hints/coaching tips in edit mode
 
+**Principles trade-offs:**
+- Review curated trade-offs for false dichotomies (some current options aren't true either/or choices)
+- Config in `src/lib/curated-tradeoffs.ts`
+- Consider adding more nuanced options or rephrasing existing ones
+
 ---
 
 ## R&D Context

@@ -107,6 +107,9 @@ logs
 *.sqlite
 *.sqlite3
 
+# Project-specific exclusions
+TECH_DILIGENCE_BRIEFING.md
+
 
 
 
