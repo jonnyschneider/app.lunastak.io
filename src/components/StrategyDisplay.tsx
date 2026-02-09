@@ -8,6 +8,7 @@ import { InfoDialog } from './InfoDialog';
 import { OpportunitySection } from './OpportunitySection';
 import { InlineTextEditor } from './InlineTextEditor';
 import { ObjectiveInlineEditor } from './ObjectiveInlineEditor';
+import { PrinciplesSection } from './PrinciplesSection';
 import { getObjectiveTitle } from '@/lib/utils';
 
 interface StrategyDisplayProps {
@@ -377,35 +378,32 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
         {/* Opportunities Section */}
         <OpportunitySection projectId={projectId} objectives={objectives} />
 
-        {/* Principles Section - Blank with CTA */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Principles
-              </h3>
-              <button
-                onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\n**Like this...**\nUser experience even over short-term revenue\n\n**Not this...**\nWe value quality and excellence')}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                title="Learn about Principles"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div className="bg-white border border-dashed border-[#0A2933] rounded-lg p-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              Define principles that guide your decision-making
-            </p>
+        {/* Principles Section */}
+        <div className="bg-white border border-[#0A2933] rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-xs font-semibold text-[#0A2933]/70 uppercase tracking-wide">
+              Principles
+            </h3>
+            <span className="text-xs text-gray-400">("even over" statements)</span>
             <button
-              onClick={() => handleFakeDoor('Define Principles')}
-              className="px-6 py-2 bg-[#E0FF4F] text-[#0A2933] font-medium rounded-lg hover:bg-[#E0FF4F]/80 transition-colors"
+              onClick={() => showInfoModal('Principles', 'Principles are "even/over" statements that clarify trade-offs and guide decisions. Keep them simple and memorable (4-6 maximum).\n\n**Like this...**\nUser experience even over short-term revenue\n\n**Not this...**\nWe value quality and excellence')}
+              className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors ml-auto"
+              title="Learn about Principles"
             >
-              Define Principles
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
             </button>
           </div>
+          <PrinciplesSection
+            projectId={projectId}
+            initialPrinciples={strategy.principles}
+            onUpdate={(updated) => {
+              if (onUpdate) {
+                onUpdate({ ...strategy, principles: updated });
+              }
+            }}
+          />
         </div>
       </div>
 
