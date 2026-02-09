@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { isGuestUser } from '@/lib/projects';
+import { waitUntil } from '@vercel/functions';
 import type { StrategyStatements } from '@/lib/types';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
@@ -158,6 +159,16 @@ export async function POST(
     }
 
     console.log('[Template Entry] Created conversation, trace, and versions for project:', projectId);
+
+    // Trigger post-hoc extraction in background (don't wait)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    waitUntil(
+      fetch(`${baseUrl}/api/project/${projectId}/extract-from-template`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statements, traceId: trace.id }),
+      }).catch((err) => console.error('[Template Entry] Post-hoc extraction failed:', err))
+    );
 
     return NextResponse.json({ traceId: trace.id });
   } catch (error) {
