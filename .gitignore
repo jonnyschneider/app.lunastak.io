@@ -18,6 +18,8 @@ dist/
 .env.test.local
 .env.production.local
 .env*.local
+.env.preview
+.env.production
 
 # Testing
 coverage/
