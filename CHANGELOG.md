@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Click-to-Edit Pattern** - Consistent editing UX across Decision Stack
+  - Vision, Strategy, Objectives all clickable to enter edit mode
+  - Removed hover edit icons and info icons
+  - Embedded coaching callouts appear during editing (subtle amber left-border style)
+  - Coaching tips guide users on best practices without being intrusive
+
+- **OKR-Style Objectives Generation** - Hypothesis-driven Key Results
+  - New v3 prompt (`v3-okr-objectives`) generates structured objectives
+  - Each objective includes: title, statement, explanation, keyResults[]
+  - Key Results follow belief/signal/baseline/target/timeframe format
+  - Backwards compatible: auto-detects OKR vs legacy format in responses
+  - `parseOKRObjectives()` utility for XML parsing
+
+- **Socratic Principles UX** - LLM-powered trade-off suggestions
+  - Replaced curated trade-off selection with open question flow
+  - User types what matters most, LLM suggests the opposite
+  - `/api/suggest-opposite` endpoint for quick LLM responses
+  - Editable suggestions before confirmation
+  - Vertical stacked chip layout with flip/remove actions
+
+### Changed
+
+- **Coaching Callout Styling** - Refined visual treatment
+  - Warm amber/beige background (`bg-amber-50/50`)
+  - Left border accent (`border-l-2 border-l-amber-200/80`)
+  - Italic text for "aside" quality
+  - Applied consistently across InlineTextEditor and ObjectiveInlineEditor
+
+- **Prompt Versioning** - v2-themes-only demoted, v3-okr-objectives now current
+  - Old prompt preserved for back-testing
+  - Registry updated in `src/lib/prompts/index.ts`
+
 ---
 ## [1.7.8] - 2026-02-08
 

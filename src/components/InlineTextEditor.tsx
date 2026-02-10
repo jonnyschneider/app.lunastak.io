@@ -10,6 +10,7 @@ interface InlineTextEditorProps {
   onCancel: () => void;
   placeholder?: string;
   minRows?: number;
+  coachingTip?: string;
 }
 
 export function InlineTextEditor({
@@ -18,6 +19,7 @@ export function InlineTextEditor({
   onCancel,
   placeholder = 'Enter text...',
   minRows = 3,
+  coachingTip,
 }: InlineTextEditorProps) {
   const [text, setText] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,15 @@ export function InlineTextEditor({
 
   return (
     <div className="space-y-3">
+      {/* Coaching callout */}
+      {coachingTip && (
+        <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md">
+          <p className="text-sm text-stone-500 italic">
+            {coachingTip}
+          </p>
+        </div>
+      )}
+
       <Textarea
         ref={textareaRef}
         value={text}
@@ -66,26 +77,29 @@ export function InlineTextEditor({
         className="w-full resize-none text-base leading-relaxed"
         disabled={saving}
       />
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onCancel}
-          disabled={saving}
-        >
-          Cancel
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={saving || !text.trim()}
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </Button>
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Esc to cancel · ⌘+Enter to save
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || !text.trim()}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Press Esc to cancel, ⌘+Enter to save
-      </p>
     </div>
   );
 }

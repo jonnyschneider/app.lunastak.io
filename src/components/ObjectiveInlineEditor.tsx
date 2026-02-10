@@ -102,6 +102,11 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
           </h4>
           {editingSection === 'title' ? (
             <div className="space-y-2">
+              <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md">
+                <p className="text-sm text-stone-500 italic">
+                  Used in objective lists and when linking initiatives.
+                </p>
+              </div>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -109,9 +114,6 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
                 className="text-sm"
                 autoFocus
               />
-              <p className="text-xs text-muted-foreground">
-                Used in objective lists and initiative linking
-              </p>
               <div className="flex justify-end">
                 <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
                   Done
@@ -140,6 +142,11 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
           </h4>
           {editingSection === 'objective' ? (
             <div className="space-y-2">
+              <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md">
+                <p className="text-sm text-stone-500 italic">
+                  Start with a verb. What measurable outcome are you trying to achieve?
+                </p>
+              </div>
               <Textarea
                 value={objectiveText}
                 onChange={(e) => setObjectiveText(e.target.value)}
@@ -189,6 +196,11 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
               </Button>
             )}
           </div>
+          <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md mb-3">
+            <p className="text-sm text-stone-500 italic">
+              Define 1-3 measurable Key Results. Each is a hypothesis: we believe X will result in Y.
+            </p>
+          </div>
           <div className="space-y-3">
             {keyResults.map((kr, index) => (
               <KeyResultEditor
@@ -200,9 +212,6 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
               />
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Define 1-3 measurable Key Results to track progress
-          </p>
         </div>
 
         <hr className="border-muted" />
@@ -214,6 +223,11 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
           </h4>
           {editingSection === 'explanation' ? (
             <div className="space-y-2">
+              <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md">
+                <p className="text-sm text-stone-500 italic">
+                  Connect to your strategy. Why is this objective important now?
+                </p>
+              </div>
               <Textarea
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
