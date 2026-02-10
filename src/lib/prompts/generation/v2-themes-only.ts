@@ -4,7 +4,7 @@ import { PromptVersion } from '../types'
 export const GENERATION_THEMES_ONLY_V2: PromptVersion = {
   id: 'v2-themes-only',
   description: 'Strategy generation from themes only - no reflective summary dependency',
-  current: true,
+  current: false,
   createdAt: '2026-01-31',
   requiredInputs: ['themes'],
   minTraceSchemaVersion: '2025-06',

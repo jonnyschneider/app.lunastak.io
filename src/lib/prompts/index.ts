@@ -10,6 +10,7 @@ import { PromptVersion, PromptType } from './types'
 import { EMERGENT_EXTRACTION_V1 } from './extraction/v1-emergent'
 import { GENERATION_WITH_SUMMARY_V1 } from './generation/v1-with-summary'
 import { GENERATION_THEMES_ONLY_V2 } from './generation/v2-themes-only'
+import { GENERATION_OKR_OBJECTIVES_V3 } from './generation/v3-okr-objectives'
 import { REFLECTIVE_SUMMARY_V1 } from './reflective-summary/v1'
 
 export const PROMPT_REGISTRY: Record<PromptType, Record<string, PromptVersion>> = {
@@ -19,6 +20,7 @@ export const PROMPT_REGISTRY: Record<PromptType, Record<string, PromptVersion>> 
   generation: {
     'v1-with-summary': GENERATION_WITH_SUMMARY_V1,
     'v2-themes-only': GENERATION_THEMES_ONLY_V2,
+    'v3-okr-objectives': GENERATION_OKR_OBJECTIVES_V3,
   },
   'reflective-summary': {
     'v1': REFLECTIVE_SUMMARY_V1,

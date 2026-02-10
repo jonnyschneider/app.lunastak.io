@@ -60,6 +60,26 @@ Collapsed \"Luna\'s Memory\" header with expand, limited provocations (3 items +
 
 **Evidence:** docs/plans/2026-02-09-decision-stack-editing-design.md
 
+### 6. Embedded Coaching Patterns (2026-02-10)
+
+**Challenge:** Strategy coaching guidance was hidden behind info icons that users rarely clicked. Critical best-practice tips were invisible during the editing experience.
+
+**Uncertainty:** How do we surface coaching without being intrusive? Can guidance be present but not demanding?
+
+**Approach:** Click-to-edit pattern with coaching callouts that appear only during editing. Subtle warm styling (amber/beige left-border, italic text) creates "aside" quality. No dismissal needed - coaching naturally disappears when editing ends.
+
+**Evidence:** Implemented in InlineTextEditor, ObjectiveInlineEditor components.
+
+### 7. Socratic Principles Input (2026-02-10)
+
+**Challenge:** Curated trade-off selections felt "spoon-feedy" and didn't capture authentic user priorities. Pre-defined options limited expression.
+
+**Uncertainty:** Can LLM-powered suggestion create a more natural "even/over" principle capture? Will users engage with open-ended input?
+
+**Approach:** Socratic flow: ask "what matters most?", user types freely, LLM suggests opposite, user edits and confirms. Vertical stacked chip display with flip/remove actions.
+
+**Evidence:** PrinciplesSection.tsx, /api/suggest-opposite endpoint.
+
 ## New Knowledge Generated
 
 1.  **Multiple entry points matter:** Different users prefer different starting modalities. Document upload captures users who won\'t type; conversation captures those who think out loud.

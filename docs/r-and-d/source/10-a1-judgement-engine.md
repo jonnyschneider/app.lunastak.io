@@ -49,6 +49,18 @@ Specific unknowns:**
   **E3: Dimension-Guided**       Guiding questions toward dimensions achieves higher coverage                             Parallel A/B with E2; compare guided vs emergent questioning              🟡 In progress
   ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+## Prompt Engineering Iterations
+
+### OKR-Style Objectives (v3 prompt, 2026-02-10)
+
+**Challenge:** Generated objectives were SMART but lacked hypothesis-driven structure. Users couldn't see the underlying assumptions or how to validate success.
+
+**Approach:** Redesigned prompt to generate OKR-style objectives with explicit Key Results. Each KR follows: "We believe [action] will result in [outcome], and we'll know it's working when [signal] moves from [baseline] to [target] within [timeframe]."
+
+**Status:** Deployed. Pending validation on whether structured KRs improve actionability.
+
+**Evidence:** `src/lib/prompts/generation/v3-okr-objectives.ts`
+
 ## New Knowledge Generated
 
 ### Validated Findings
