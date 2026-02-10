@@ -4,7 +4,7 @@ import { PromptVersion } from '../types'
 export const GENERATION_OKR_OBJECTIVES_V3: PromptVersion = {
   id: 'v3-okr-objectives',
   description: 'Strategy generation with OKR-style objectives and hypothesis-driven Key Results',
-  current: true,
+  current: false,
   createdAt: '2026-02-10',
   requiredInputs: ['themes'],
   minTraceSchemaVersion: '2025-06',

@@ -270,9 +270,35 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
       console.log('[Generate Background] Parsed legacy objectives:', objectives.length);
     }
 
+    // Parse vision - detect v4 pithy format (has <headline>) vs v3/legacy (plain text)
+    const visionXML = extractXML(statementsXML, 'vision');
+    const isPithyFormat = visionXML.includes('<headline>');
+
+    let vision: string;
+    let visionElaboration: string | undefined;
+    if (isPithyFormat) {
+      vision = extractXML(visionXML, 'headline');
+      visionElaboration = extractXML(visionXML, 'elaboration') || undefined;
+      console.log('[Generate Background] Parsed pithy vision:', vision.split(' ').length, 'words');
+    } else {
+      vision = visionXML;
+    }
+
+    // Parse strategy - same detection
+    const strategyXML = extractXML(statementsXML, 'strategy');
+    let strategy: string;
+    let strategyElaboration: string | undefined;
+    if (strategyXML.includes('<headline>')) {
+      strategy = extractXML(strategyXML, 'headline');
+      strategyElaboration = extractXML(strategyXML, 'elaboration') || undefined;
+      console.log('[Generate Background] Parsed pithy strategy:', strategy.split(' ').length, 'words');
+    } else {
+      strategy = strategyXML;
+    }
+
     const statements: StrategyStatements = {
-      vision: extractXML(statementsXML, 'vision'),
-      strategy: extractXML(statementsXML, 'strategy'),
+      vision,
+      strategy,
       objectives,
       opportunities: [],
       principles: []
@@ -311,14 +337,13 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
     console.log('[Generate Background] GeneratedOutput updated to complete');
 
     // Seed initial StrategyVersion records
-    const { vision, strategy: strategyText } = statements;
     await prisma.$transaction([
       // Vision version
       prisma.strategyVersion.create({
         data: {
           projectId,
           componentType: 'vision',
-          content: { text: vision },
+          content: { text: vision, elaboration: visionElaboration },
           version: 1,
           createdBy: 'ai',
           sourceType: 'generation',
@@ -330,7 +355,7 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
         data: {
           projectId,
           componentType: 'strategy',
-          content: { text: strategyText },
+          content: { text: strategy, elaboration: strategyElaboration },
           version: 1,
           createdBy: 'ai',
           sourceType: 'generation',

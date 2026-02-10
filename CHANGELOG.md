@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Pithy Vision/Strategy Generation** - Radical brevity for memorability
+  - New v4 prompt (`v4-pithy-statements`) with Decision Stack guidance
+  - Vision: 4-15 words (headline) + elaboration
+  - Strategy: 15-25 words (headline) + elaboration
+  - Real examples (IKEA, Nike, Oxfam, Google) in prompt
+  - Good/bad criteria: customer-centric, aspirational, NOT "to be the leading..."
+  - Tone guidance: "Write like a manifesto, not a business plan"
+  - Auto-detects headline/elaboration format in responses
+
+- **Eval Index Page** - Browse all evaluations at `/admin/eval`
+  - Shows date, purpose, summary preview, outcome badge
+  - Links directly to individual eval pages
+  - No more typing timestamped URLs
+
+- **Backtesting Infrastructure** - Frozen v1 generation prompt
+  - v1 module now uses frozen v2 prompt for emergent extraction
+  - Enables proper comparison across prompt versions
+  - 4PL fixture traces: baseline-v2, v3-okr, v4-pithy
+
 - **Click-to-Edit Pattern** - Consistent editing UX across Decision Stack
   - Vision, Strategy, Objectives all clickable to enter edit mode
   - Removed hover edit icons and info icons
@@ -31,14 +50,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **VisionContent/StrategyContent Types** - Support for elaboration
+  - Added optional `elaboration` field for unpacking pithy headlines
+  - StrategyVersion records now store elaboration from generation
+
+- **Eval API** - Enhanced metadata
+  - Returns purpose, summary, outcome, baseline fields
+  - Supports richer eval index display
+
 - **Coaching Callout Styling** - Refined visual treatment
   - Warm amber/beige background (`bg-amber-50/50`)
   - Left border accent (`border-l-2 border-l-amber-200/80`)
   - Italic text for "aside" quality
   - Applied consistently across InlineTextEditor and ObjectiveInlineEditor
 
-- **Prompt Versioning** - v2-themes-only demoted, v3-okr-objectives now current
-  - Old prompt preserved for back-testing
+- **Prompt Versioning** - v4-pithy-statements now current
+  - v2, v3 preserved for back-testing
   - Registry updated in `src/lib/prompts/index.ts`
 
 ---

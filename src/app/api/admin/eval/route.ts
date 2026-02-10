@@ -18,7 +18,11 @@ export async function GET() {
           id: f.replace('.eval.json', ''),
           name: content.name,
           date: content.date,
+          purpose: content.purpose || '',
+          summary: content.summary || '',
+          outcome: content.outcome || '',
           traceCount: content.traces?.length || 0,
+          baseline: content.baseline,
         };
       })
       .sort((a, b) => b.date.localeCompare(a.date));

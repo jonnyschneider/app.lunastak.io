@@ -77,11 +77,13 @@ export interface StrategyVersion {
 
 // Content types for each component
 export interface VisionContent {
-  text: string;
+  text: string;           // The pithy headline (4-15 words)
+  elaboration?: string;   // Why this matters, what it means (optional)
 }
 
 export interface StrategyContent {
-  text: string;
+  text: string;           // The coherent choices (15-25 words)
+  elaboration?: string;   // How this plays out (optional)
 }
 
 export interface ObjectiveContent {
