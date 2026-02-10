@@ -20,7 +20,6 @@ import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
 import { logStatsigEvent } from '@/lib/statsig';
-import { getCurrentPrompt } from '@/lib/prompts';
 
 // Progress step type for streaming updates
 export type GenerationProgressStep =
@@ -39,6 +38,35 @@ export interface GenerationProgressUpdate {
   };
   error?: string;
 }
+
+// Frozen emergent generation prompt (v2-themes-only, archived for backtesting)
+export const EMERGENT_GENERATION_PROMPT_V2 = `Generate compelling strategy statements based on the emergent themes from our conversation.
+
+EMERGENT THEMES:
+{themes}
+
+Your task:
+1. Analyze these themes to identify what's strong, what's emerging, and what needs exploration
+2. Generate a cohesive strategy that builds on these themes
+
+Guidelines:
+- Use the emergent themes as your foundation - these represent what actually matters to this business
+- Vision: Should be aspirational, future-focused, and memorable
+- Strategy: Should be clear, actionable, and focused on current purpose
+- Objectives: Should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+- Use their language and themes - make it feel authentic to their business, not generic corporate speak
+
+Format your response as:
+<thoughts>Your analysis of the themes - what's strong, what's emerging, what needs exploration. Reference specific themes.</thoughts>
+<statements>
+  <vision>The vision statement</vision>
+  <strategy>The strategy statement</strategy>
+  <objectives>
+  1. First objective
+  2. Second objective
+  3. Third objective
+  </objectives>
+</statements>`;
 
 // Prescriptive generation prompt (baseline-v1)
 export const GENERATION_PROMPT = `Generate compelling strategy statements based on the comprehensive business context provided.
@@ -121,14 +149,12 @@ export async function performGeneration(
   let prompt: string;
 
   if (isEmergentContext(context)) {
-    // Emergent generation - use themes-only prompt from registry
-    const generationPrompt = getCurrentPrompt('generation');
-
+    // Emergent generation - use frozen v2 prompt for backtesting
     const themesText = context.themes
       .map(theme => `${theme.theme_name}:\n${theme.content}`)
       .join('\n\n');
 
-    prompt = generationPrompt.template.replace('{themes}', themesText);
+    prompt = EMERGENT_GENERATION_PROMPT_V2.replace('{themes}', themesText);
   } else {
     // Prescriptive generation (baseline-v1)
     const enrichmentText = Object.entries(context.enrichment || {})
