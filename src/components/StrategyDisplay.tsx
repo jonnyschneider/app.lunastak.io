@@ -178,7 +178,9 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           componentId: updatedObjective.id,
           content: {
             title: updatedObjective.title,
-            pithy: updatedObjective.pithy,
+            objective: updatedObjective.objective,
+            pithy: updatedObjective.pithy || updatedObjective.objective,
+            keyResults: updatedObjective.keyResults,
             metric: updatedObjective.metric,
             explanation: updatedObjective.explanation,
             successCriteria: updatedObjective.successCriteria,
@@ -313,7 +315,10 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {objectives.map((objective) => (
-              <div key={objective.id}>
+              <div
+                key={objective.id}
+                className={editingObjectiveId === objective.id ? 'col-span-full' : ''}
+              >
                 {editingObjectiveId === objective.id ? (
                   <ObjectiveInlineEditor
                     objective={objective}
