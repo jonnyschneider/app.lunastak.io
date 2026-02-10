@@ -101,14 +101,15 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
           {objective.keyResults?.length ? (
             <ul className="text-sm text-foreground space-y-3">
               {objective.keyResults.map((kr, i) => (
-                <li key={kr.id || i} className="space-y-1">
-                  {(kr.belief?.action || kr.belief?.outcome) && (
-                    <p className="text-xs text-muted-foreground italic">
-                      We believe {kr.belief.action || '...'} will {kr.belief.outcome || '...'}
-                    </p>
-                  )}
-                  <p className="font-medium">
-                    {kr.signal}: {kr.baseline || '?'} → {kr.target} ({kr.timeframe})
+                <li key={kr.id || i}>
+                  <p className="text-muted-foreground leading-relaxed">
+                    We believe <span className="text-foreground font-medium">{kr.belief?.action || '...'}</span> will{' '}
+                    <span className="text-foreground font-medium">{kr.belief?.outcome || '...'}</span> and we'll know
+                    it's working when we observe{' '}
+                    <span className="text-foreground font-medium">{kr.signal || '...'}</span> move from{' '}
+                    <span className="text-foreground font-medium">{kr.baseline || '?'}</span> to{' '}
+                    <span className="text-foreground font-medium">{kr.target}</span> by{' '}
+                    <span className="text-foreground font-medium">{kr.timeframe}</span>
                   </p>
                 </li>
               ))}
