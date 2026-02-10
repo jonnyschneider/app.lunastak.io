@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { TradeoffCard } from './TradeoffCard';
 import { PrincipleChip } from './PrincipleChip';
-import { CURATED_TRADEOFFS, CATEGORY_LABELS, type TradeoffOption } from '@/lib/curated-tradeoffs';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { Principle } from '@/lib/types';
 
 interface PrinciplesSectionProps {
@@ -12,9 +13,52 @@ interface PrinciplesSectionProps {
   onUpdate?: (principles: Principle[]) => void;
 }
 
+type InputStep = 'priority' | 'confirm';
+
 function generateId(): string {
   return `prin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
+
+// Simple opposite suggestions based on common patterns
+function suggestOpposite(priority: string): string {
+  const lower = priority.toLowerCase().trim();
+
+  // Common opposites
+  const opposites: Record<string, string> = {
+    'speed': 'thoroughness',
+    'fast': 'careful',
+    'quick': 'thorough',
+    'quality': 'speed',
+    'growth': 'profitability',
+    'revenue': 'profit margins',
+    'new customers': 'existing customers',
+    'acquisition': 'retention',
+    'innovation': 'stability',
+    'features': 'simplicity',
+    'flexibility': 'consistency',
+    'autonomy': 'alignment',
+    'scale': 'sustainability',
+    'broad market': 'niche focus',
+    'customization': 'standardization',
+    'short-term': 'long-term',
+    'cost': 'quality',
+  };
+
+  for (const [key, opposite] of Object.entries(opposites)) {
+    if (lower.includes(key)) return opposite;
+  }
+
+  // Default: prompt them to think about it
+  return '';
+}
+
+const HINT_EXAMPLES = [
+  'Speed vs. thoroughness',
+  'New customers vs. retention',
+  'Revenue vs. profitability',
+  'Innovation vs. stability',
+  'Autonomy vs. alignment',
+];
 
 export function PrinciplesSection({
   projectId,
@@ -22,30 +66,29 @@ export function PrinciplesSection({
   onUpdate,
 }: PrinciplesSectionProps) {
   const [principles, setPrinciples] = useState<Principle[]>(initialPrinciples);
-  const [selectedCategory, setSelectedCategory] = useState<TradeoffOption['category']>('growth');
   const [saving, setSaving] = useState(false);
 
-  // Filter out already-selected trade-offs
-  const usedTradeoffIds = new Set(
-    principles.map((p) => {
-      const match = CURATED_TRADEOFFS.find(
-        (t) =>
-          (t.optionA === p.priority && t.optionB === p.deprioritized) ||
-          (t.optionB === p.priority && t.optionA === p.deprioritized)
-      );
-      return match?.id;
-    }).filter(Boolean)
-  );
+  // Socratic input state
+  const [step, setStep] = useState<InputStep>('priority');
+  const [priorityInput, setPriorityInput] = useState('');
+  const [deprioritizedInput, setDeprioritizedInput] = useState('');
+  const [showHints, setShowHints] = useState(false);
 
-  const availableTradeoffs = CURATED_TRADEOFFS.filter(
-    (t) => t.category === selectedCategory && !usedTradeoffIds.has(t.id)
-  );
+  const handlePrioritySubmit = () => {
+    if (!priorityInput.trim()) return;
 
-  const handleAddPrinciple = async (priority: string, deprioritized: string) => {
+    const suggested = suggestOpposite(priorityInput);
+    setDeprioritizedInput(suggested);
+    setStep('confirm');
+  };
+
+  const handleConfirm = async () => {
+    if (!priorityInput.trim() || !deprioritizedInput.trim()) return;
+
     const newPrinciple: Principle = {
       id: generateId(),
-      priority,
-      deprioritized,
+      priority: priorityInput.trim(),
+      deprioritized: deprioritizedInput.trim(),
     };
 
     setSaving(true);
@@ -65,11 +108,20 @@ export function PrinciplesSection({
       const updated = [...principles, newPrinciple];
       setPrinciples(updated);
       onUpdate?.(updated);
+
+      // Reset for next principle
+      setPriorityInput('');
+      setDeprioritizedInput('');
+      setStep('priority');
     } catch (error) {
       console.error('Failed to add principle:', error);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBack = () => {
+    setStep('priority');
   };
 
   const handleRemove = async (id: string) => {
@@ -146,46 +198,83 @@ export function PrinciplesSection({
         </div>
       )}
 
-      {/* Add more */}
+      {/* Socratic input */}
       {!atMaxPrinciples && (
         <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-700">
-            {principles.length === 0 ? 'Define your principles' : 'Add another principle'}
-          </h4>
+          {step === 'priority' && (
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">
+                What matters most for success and is least negotiable right now?
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={priorityInput}
+                  onChange={(e) => setPriorityInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePrioritySubmit()}
+                  placeholder="Type what matters most..."
+                  className="flex-1"
+                  disabled={saving}
+                />
+                <Button
+                  onClick={handlePrioritySubmit}
+                  disabled={!priorityInput.trim() || saving}
+                >
+                  Next
+                </Button>
+              </div>
 
-          {/* Category tabs */}
-          <div className="flex gap-2">
-            {(Object.keys(CATEGORY_LABELS) as TradeoffOption['category'][]).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                  selectedCategory === cat
-                    ? 'bg-[#0A2933] text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {CATEGORY_LABELS[cat]}
-              </button>
-            ))}
-          </div>
+              {/* Collapsible hints */}
+              <div>
+                <button
+                  onClick={() => setShowHints(!showHints)}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                >
+                  {showHints ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  {showHints ? 'Hide examples' : 'Need inspiration?'}
+                </button>
+                {showHints && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Common trade-offs: {HINT_EXAMPLES.join(' · ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* Trade-off cards */}
-          <div className="grid gap-2">
-            {availableTradeoffs.map((tradeoff) => (
-              <TradeoffCard
-                key={tradeoff.id}
-                tradeoff={tradeoff}
-                onSelect={handleAddPrinciple}
-                disabled={saving}
-              />
-            ))}
-            {availableTradeoffs.length === 0 && (
-              <p className="text-sm text-gray-400 italic">
-                All {CATEGORY_LABELS[selectedCategory].toLowerCase()} trade-offs selected
-              </p>
-            )}
-          </div>
+          {step === 'confirm' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-[#0A2933]">{priorityInput}</p>
+                  <p className="text-xs text-gray-400">even over</p>
+                  <Input
+                    value={deprioritizedInput}
+                    onChange={(e) => setDeprioritizedInput(e.target.value)}
+                    placeholder="What's the trade-off? What gets deprioritized?"
+                    className="text-center text-sm"
+                    disabled={saving}
+                  />
+                </div>
+                {!deprioritizedInput && (
+                  <p className="text-xs text-gray-400 text-center">
+                    What's the mutually exclusive opposite? What might you sacrifice?
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={handleBack} disabled={saving}>
+                  Back
+                </Button>
+                <Button
+                  onClick={handleConfirm}
+                  disabled={!deprioritizedInput.trim() || saving}
+                >
+                  {saving ? 'Saving...' : 'Add Principle'}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
