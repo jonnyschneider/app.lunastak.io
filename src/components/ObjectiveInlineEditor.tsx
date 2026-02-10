@@ -1,22 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { Objective } from '@/lib/types';
+import { Plus } from 'lucide-react';
+import type { Objective, KeyResult } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
+import { isLegacyObjective, migrateObjectiveToOKR } from '@/lib/objective-migration';
+import { KeyResultEditor } from './KeyResultEditor';
 
-type EditingSection = 'title' | 'pithy' | 'metric' | 'explanation' | null;
+type EditingSection = 'title' | 'objective' | 'keyResults' | 'explanation' | null;
 
 interface ObjectiveInlineEditorProps {
   objective: Objective;
@@ -24,15 +19,39 @@ interface ObjectiveInlineEditorProps {
   onCancel: () => void;
 }
 
-export function ObjectiveInlineEditor({ objective, onSave, onCancel }: ObjectiveInlineEditorProps) {
+function generateKrId(): string {
+  return `kr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function createEmptyKeyResult(): KeyResult {
+  return {
+    id: generateKrId(),
+    belief: { action: '', outcome: '' },
+    signal: '',
+    baseline: '',
+    target: '',
+    timeframe: '6M',
+  };
+}
+
+export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onCancel }: ObjectiveInlineEditorProps) {
+  // Migrate legacy objective if needed
+  const [objective] = useState<Objective>(() => {
+    if (isLegacyObjective(initialObjective)) {
+      return migrateObjectiveToOKR(initialObjective);
+    }
+    // Ensure keyResults exists
+    return {
+      ...initialObjective,
+      objective: initialObjective.objective || initialObjective.pithy || '',
+      keyResults: initialObjective.keyResults?.length ? initialObjective.keyResults : [createEmptyKeyResult()],
+    };
+  });
+
   // State for all fields
   const [title, setTitle] = useState(objective.title || '');
-  const [pithy, setPithy] = useState(objective.objective || objective.pithy || '');
-  const [metricSummary, setMetricSummary] = useState(objective.metric?.summary || '');
-  const [metricFull, setMetricFull] = useState(objective.metric?.full || '');
-  const [category, setCategory] = useState(objective.metric?.category || '');
-  const [direction, setDirection] = useState<'increase' | 'decrease' | undefined>(objective.metric?.direction);
-  const [timeframe, setTimeframe] = useState<'3M' | '6M' | '9M' | '12M' | '18M' | undefined>(objective.metric?.timeframe);
+  const [objectiveText, setObjectiveText] = useState(objective.objective || '');
+  const [keyResults, setKeyResults] = useState<KeyResult[]>(objective.keyResults || [createEmptyKeyResult()]);
   const [explanation, setExplanation] = useState(objective.explanation);
   const [saving, setSaving] = useState(false);
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
@@ -43,19 +62,11 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
       const updated: Objective = {
         ...objective,
         title: title.trim() || undefined,
-        objective: pithy.trim(),
-        pithy: pithy.trim(),
-        metric: {
-          summary: metricSummary.trim(),
-          full: metricFull.trim(),
-          category: category.trim(),
-          direction,
-          metricName: objective.metric?.metricName,
-          metricValue: objective.metric?.metricValue,
-          timeframe,
-        },
+        objective: objectiveText.trim(),
+        pithy: objectiveText.trim(), // Keep for backwards compatibility
+        keyResults: keyResults.filter(kr => kr.signal.trim() || kr.target.trim()),
         explanation: explanation.trim(),
-        successCriteria: objective.successCriteria, // Preserve for AI coaching context
+        successCriteria: objective.successCriteria,
       };
       await onSave(updated);
     } finally {
@@ -63,156 +74,76 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
     }
   };
 
+  const handleKeyResultChange = (index: number, updated: KeyResult) => {
+    const newKRs = [...keyResults];
+    newKRs[index] = updated;
+    setKeyResults(newKRs);
+  };
+
+  const handleAddKeyResult = () => {
+    if (keyResults.length < 3) {
+      setKeyResults([...keyResults, createEmptyKeyResult()]);
+    }
+  };
+
+  const handleRemoveKeyResult = (index: number) => {
+    if (keyResults.length > 1) {
+      setKeyResults(keyResults.filter((_, i) => i !== index));
+    }
+  };
+
   return (
     <Card className="border-2 border-primary">
       <CardContent className="p-6 space-y-6">
-        {/* Header: Title + Metric */}
-        <div className="flex items-start justify-between gap-4">
-          {/* Title Section */}
-          <div className="flex-1">
-            <div className="group/section">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                Title (for lists)
-              </h4>
-              {editingSection === 'title' ? (
-                <div className="space-y-2">
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Short title (3-5 words)"
-                    className="text-sm"
-                    autoFocus
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Used in objective lists and initiative linking
-                  </p>
-                  <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
-                      Done
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  onClick={() => setEditingSection('title')}
-                  className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
-                >
-                  <span className="text-sm font-semibold">
-                    {title || getObjectiveTitle({ title, pithy })}
-                  </span>
-                  <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
-                    (click to edit)
-                  </span>
-                </div>
-              )}
+        {/* Header: Title */}
+        <div className="group/section">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Title (for lists)
+          </h4>
+          {editingSection === 'title' ? (
+            <div className="space-y-2">
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Short title (3-5 words)"
+                className="text-sm"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Used in objective lists and initiative linking
+              </p>
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
+                  Done
+                </Button>
+              </div>
             </div>
-          </div>
-
-          {/* Metric Section */}
-          <div className="text-right">
-            <div className="group/section">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                Metric
-              </h4>
-              {editingSection === 'metric' ? (
-                <div className="space-y-3 text-left">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Summary</label>
-                      <Input
-                        value={metricSummary}
-                        onChange={(e) => setMetricSummary(e.target.value)}
-                        placeholder="e.g., 25%"
-                        className="text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Direction</label>
-                      <Select value={direction} onValueChange={(v) => setDirection(v as typeof direction)}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="increase">↑ Increase</SelectItem>
-                          <SelectItem value="decrease">↓ Decrease</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Category</label>
-                      <Input
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        placeholder="e.g., Revenue"
-                        className="text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Timeframe</label>
-                      <Select value={timeframe} onValueChange={(v) => setTimeframe(v as typeof timeframe)}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="3M">3 months</SelectItem>
-                          <SelectItem value="6M">6 months</SelectItem>
-                          <SelectItem value="9M">9 months</SelectItem>
-                          <SelectItem value="12M">12 months</SelectItem>
-                          <SelectItem value="18M">18 months</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">Full description</label>
-                    <Input
-                      value={metricFull}
-                      onChange={(e) => setMetricFull(e.target.value)}
-                      placeholder="e.g., Increase revenue by 25% in Q1"
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingSection(null)}>
-                      Done
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  onClick={() => setEditingSection('metric')}
-                  className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge variant="secondary" className="text-lg font-bold">
-                      {direction === 'increase' ? '↑' : direction === 'decrease' ? '↓' : ''} {metricSummary || '—'}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {category || 'Category'} · {timeframe || '—'}
-                    </Badge>
-                  </div>
-                  <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
-                    (click to edit)
-                  </span>
-                </div>
-              )}
+          ) : (
+            <div
+              onClick={() => setEditingSection('title')}
+              className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
+            >
+              <span className="text-sm font-semibold">
+                {title || getObjectiveTitle({ title, objective: objectiveText, pithy: objectiveText })}
+              </span>
+              <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
+                (click to edit)
+              </span>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Pithy Objective */}
+        {/* Objective Statement */}
         <div className="group/section">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Objective
           </h4>
-          {editingSection === 'pithy' ? (
+          {editingSection === 'objective' ? (
             <div className="space-y-2">
               <Textarea
-                value={pithy}
-                onChange={(e) => setPithy(e.target.value)}
-                placeholder="Short 1-2 sentence objective"
+                value={objectiveText}
+                onChange={(e) => setObjectiveText(e.target.value)}
+                placeholder="What are we trying to achieve?"
                 rows={2}
                 className="text-base"
                 autoFocus
@@ -225,17 +156,53 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
             </div>
           ) : (
             <div
-              onClick={() => setEditingSection('pithy')}
+              onClick={() => setEditingSection('objective')}
               className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
             >
               <p className="text-base font-medium text-foreground leading-relaxed">
-                {pithy || 'Click to add objective description...'}
+                {objectiveText || 'Click to add objective description...'}
               </p>
               <span className="text-xs text-muted-foreground opacity-0 group-hover/section:opacity-100 ml-2">
                 (click to edit)
               </span>
             </div>
           )}
+        </div>
+
+        <hr className="border-muted" />
+
+        {/* Key Results */}
+        <div className="group/section">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Key Results
+            </h4>
+            {keyResults.length < 3 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAddKeyResult}
+                className="h-7 text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add KR
+              </Button>
+            )}
+          </div>
+          <div className="space-y-3">
+            {keyResults.map((kr, index) => (
+              <KeyResultEditor
+                key={kr.id}
+                keyResult={kr}
+                onChange={(updated) => handleKeyResultChange(index, updated)}
+                onRemove={() => handleRemoveKeyResult(index)}
+                canRemove={keyResults.length > 1}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Define 1-3 measurable Key Results to track progress
+          </p>
         </div>
 
         <hr className="border-muted" />
@@ -281,7 +248,7 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
           <Button variant="ghost" onClick={onCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving || !pithy.trim()}>
+          <Button onClick={handleSave} disabled={saving || !objectiveText.trim()}>
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
