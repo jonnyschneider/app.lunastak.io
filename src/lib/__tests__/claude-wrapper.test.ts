@@ -71,7 +71,7 @@ describe('Claude API Wrapper Enforcement', () => {
         .map(v => `  - ${v.file}: ${v.matches} direct call(s)`)
         .join('\n');
 
-      fail(
+      throw new Error(
         `Found direct anthropic.messages.create usage outside the wrapper!\n\n` +
         `Violations:\n${message}\n\n` +
         `All Claude API calls must use createMessage() from '@/lib/claude'.\n` +

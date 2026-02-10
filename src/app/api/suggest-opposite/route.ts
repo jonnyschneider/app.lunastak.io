@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-
-const anthropic = new Anthropic();
+import { createMessage } from '@/lib/claude';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Priority is required' }, { status: 400 });
     }
 
-    const message = await anthropic.messages.create({
+    const message = await createMessage({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 50,
       messages: [
@@ -20,7 +18,7 @@ export async function POST(request: NextRequest) {
           content: `In a business strategy context, someone has said "${priority}" is their top priority. What's the mutually exclusive opposite they're implicitly deprioritizing? Reply with ONLY the opposite (2-4 words, no explanation).`,
         },
       ],
-    });
+    }, 'suggest_opposite');
 
     const textBlock = message.content.find((block) => block.type === 'text');
     const opposite = textBlock?.type === 'text' ? textBlock.text.trim() : '';
