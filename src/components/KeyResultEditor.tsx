@@ -45,43 +45,43 @@ export function KeyResultEditor({
         <Input
           value={keyResult.belief.action}
           onChange={(e) => update('belief.action', e.target.value)}
-          placeholder="improving onboarding"
+          placeholder="[verb]"
           className="w-48 h-8 text-sm"
         />
         <span className="text-muted-foreground">will</span>
         <Input
           value={keyResult.belief.outcome}
           onChange={(e) => update('belief.outcome', e.target.value)}
-          placeholder="increase retention"
+          placeholder="[outcome]"
           className="w-48 h-8 text-sm"
         />
       </div>
 
       {/* Signal line */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">and we'll know when</span>
+        <span className="text-muted-foreground">and we'll know it's working when we observe</span>
         <Input
           value={keyResult.signal}
           onChange={(e) => update('signal', e.target.value)}
-          placeholder="7-day active user rate"
+          placeholder="[measurable metric]"
           className="w-48 h-8 text-sm"
         />
       </div>
 
       {/* Target line */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">moves from</span>
+        <span className="text-muted-foreground">move from</span>
         <Input
           value={keyResult.baseline}
           onChange={(e) => update('baseline', e.target.value)}
-          placeholder="40%"
+          placeholder="[from]"
           className="w-20 h-8 text-sm"
         />
-        <span className="text-muted-foreground">→</span>
+        <span className="text-muted-foreground">to</span>
         <Input
           value={keyResult.target}
           onChange={(e) => update('target', e.target.value)}
-          placeholder="55%"
+          placeholder="[to]"
           className="w-20 h-8 text-sm"
         />
         <span className="text-muted-foreground">by</span>
