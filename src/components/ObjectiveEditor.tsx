@@ -21,14 +21,14 @@ interface ObjectiveEditorProps {
 }
 
 export function ObjectiveEditor({ objective, onSave, onCancel }: ObjectiveEditorProps) {
-  const [pithy, setPithy] = useState(objective.pithy);
-  const [metricSummary, setMetricSummary] = useState(objective.metric.summary);
-  const [metricFull, setMetricFull] = useState(objective.metric.full);
-  const [metricCategory, setMetricCategory] = useState(objective.metric.category);
-  const [direction, setDirection] = useState<'increase' | 'decrease' | undefined>(objective.metric.direction);
-  const [timeframe, setTimeframe] = useState<'3M' | '6M' | '9M' | '12M' | '18M' | undefined>(objective.metric.timeframe);
+  const [pithy, setPithy] = useState(objective.objective || objective.pithy || '');
+  const [metricSummary, setMetricSummary] = useState(objective.metric?.summary || '');
+  const [metricFull, setMetricFull] = useState(objective.metric?.full || '');
+  const [metricCategory, setMetricCategory] = useState(objective.metric?.category || '');
+  const [direction, setDirection] = useState<'increase' | 'decrease' | undefined>(objective.metric?.direction);
+  const [timeframe, setTimeframe] = useState<'3M' | '6M' | '9M' | '12M' | '18M' | undefined>(objective.metric?.timeframe);
   const [explanation, setExplanation] = useState(objective.explanation);
-  const [successCriteria, setSuccessCriteria] = useState(objective.successCriteria);
+  const [successCriteria, setSuccessCriteria] = useState(objective.successCriteria || '');
   const [saving, setSaving] = useState(false);
 
   const pithyRef = useRef<HTMLTextAreaElement>(null);
@@ -42,14 +42,15 @@ export function ObjectiveEditor({ objective, onSave, onCancel }: ObjectiveEditor
     try {
       const updatedObjective: Objective = {
         ...objective,
+        objective: pithy.trim(),
         pithy: pithy.trim(),
         metric: {
           summary: metricSummary.trim(),
           full: metricFull.trim(),
           category: metricCategory.trim(),
           direction,
-          metricName: objective.metric.metricName,
-          metricValue: objective.metric.metricValue,
+          metricName: objective.metric?.metricName,
+          metricValue: objective.metric?.metricValue,
           timeframe,
         },
         explanation: explanation.trim(),

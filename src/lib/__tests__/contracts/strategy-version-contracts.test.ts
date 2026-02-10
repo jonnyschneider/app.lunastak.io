@@ -24,6 +24,27 @@ describe('Strategy Version Contracts', () => {
       componentType: 'objective',
       componentId: 'obj-123',
       content: {
+        objective: 'Achieve product-market fit',
+        explanation: 'Critical for sustainability',
+        keyResults: [
+          {
+            id: 'kr-1',
+            belief: { action: 'improving onboarding', outcome: 'increase retention' },
+            signal: '7-day active users',
+            baseline: '40%',
+            target: '55%',
+            timeframe: '6M',
+          },
+        ],
+      },
+      sourceType: 'user_edit',
+    };
+
+    const legacyObjectiveInput: StrategyVersionInputContract = {
+      componentType: 'objective',
+      componentId: 'obj-456',
+      content: {
+        objective: '',  // Empty in legacy
         pithy: 'Achieve product-market fit',
         metric: {
           summary: '100 customers',
@@ -33,6 +54,7 @@ describe('Strategy Version Contracts', () => {
           timeframe: '12M',
         },
         explanation: 'Critical for sustainability',
+        keyResults: [],  // Empty in legacy
         successCriteria: 'Consistent month-over-month growth',
       },
       sourceType: 'user_edit',
@@ -47,8 +69,12 @@ describe('Strategy Version Contracts', () => {
       expect(validateStrategyVersionInput(strategyInput)).toBe(true);
     });
 
-    it('should validate correct objective input', () => {
+    it('should validate correct objective input with keyResults', () => {
       expect(validateStrategyVersionInput(validObjectiveInput)).toBe(true);
+    });
+
+    it('should validate legacy objective input with pithy and metric', () => {
+      expect(validateStrategyVersionInput(legacyObjectiveInput)).toBe(true);
     });
 
     it('should reject objective without componentId', () => {
@@ -74,12 +100,50 @@ describe('Strategy Version Contracts', () => {
       expect(validateStrategyVersionInput(invalid)).toBe(false);
     });
 
-    it('should reject objective with empty pithy', () => {
+    it('should reject objective with no valid format', () => {
       const invalid = {
-        ...validObjectiveInput,
-        content: { ...validObjectiveInput.content, pithy: '' },
+        componentType: 'objective' as const,
+        componentId: 'obj-123',
+        content: {
+          objective: '',
+          pithy: '',
+          explanation: 'test',
+          keyResults: [],
+        },
+        sourceType: 'user_edit' as const,
       };
       expect(validateStrategyVersionInput(invalid)).toBe(false);
+    });
+
+    it('should validate keyResults structure', () => {
+      const withValidKR: StrategyVersionInputContract = {
+        componentType: 'objective',
+        componentId: 'obj-789',
+        content: {
+          objective: 'Grow revenue',
+          explanation: 'Important for sustainability',
+          keyResults: [
+            {
+              id: 'kr-1',
+              belief: { action: 'expanding to enterprise', outcome: 'increase deal size' },
+              signal: 'average contract value',
+              baseline: '$5k',
+              target: '$25k',
+              timeframe: '12M',
+            },
+            {
+              id: 'kr-2',
+              belief: { action: 'improving sales process', outcome: 'shorten sales cycle' },
+              signal: 'days to close',
+              baseline: '90',
+              target: '45',
+              timeframe: '6M',
+            },
+          ],
+        },
+        sourceType: 'user_edit',
+      };
+      expect(validateStrategyVersionInput(withValidKR)).toBe(true);
     });
 
     it('should accept input with optional sourceId', () => {

@@ -15,13 +15,29 @@ export interface ObjectiveMetric {
   timeframe?: '3M' | '6M' | '9M' | '12M' | '18M';  // Planning horizon
 }
 
+export interface KeyResult {
+  id: string;
+  belief: {
+    action: string;   // "improving onboarding"
+    outcome: string;  // "increase retention"
+  };
+  signal: string;     // "7-day active user rate"
+  baseline: string;   // "40%"
+  target: string;     // "55%"
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+}
+
 export interface Objective {
-  id: string;            // For filtering relationships
-  title?: string;        // Short title (3-5 words) for lists/linking
-  pithy: string;         // Short 1-2 sentence objective
-  metric: ObjectiveMetric;
-  explanation: string;   // Full detail for back of card
-  successCriteria: string; // What success looks like
+  id: string;              // For filtering relationships
+  title?: string;          // Short title (3-5 words) for lists/linking
+  explanation: string;     // Full detail for back of card
+  // New OKR format
+  objective?: string;      // Short 1-2 sentence objective (replaces pithy)
+  keyResults?: KeyResult[]; // 1-3 Key Results (replaces metric)
+  // Legacy format - still supported
+  pithy?: string;          // Original field, maps to objective
+  metric?: ObjectiveMetric;
+  successCriteria?: string; // Kept for AI context
 }
 
 export interface Opportunity {
@@ -69,10 +85,14 @@ export interface StrategyContent {
 }
 
 export interface ObjectiveContent {
-  pithy: string;
-  metric: ObjectiveMetric;
   explanation: string;
-  successCriteria: string;
+  // New OKR format
+  objective?: string;
+  keyResults?: KeyResult[];
+  // Legacy format - still supported
+  pithy?: string;
+  metric?: ObjectiveMetric;
+  successCriteria?: string;
 }
 
 export interface StrategyStatements {

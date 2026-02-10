@@ -15,7 +15,8 @@ interface ObjectiveContribution {
 interface ObjectiveForLinking {
   id: string;
   title?: string;
-  pithy: string;
+  pithy?: string;
+  objective?: string;
 }
 
 interface OpportunityEditorProps {

@@ -27,12 +27,12 @@ interface ObjectiveInlineEditorProps {
 export function ObjectiveInlineEditor({ objective, onSave, onCancel }: ObjectiveInlineEditorProps) {
   // State for all fields
   const [title, setTitle] = useState(objective.title || '');
-  const [pithy, setPithy] = useState(objective.pithy);
-  const [metricSummary, setMetricSummary] = useState(objective.metric.summary);
-  const [metricFull, setMetricFull] = useState(objective.metric.full);
-  const [category, setCategory] = useState(objective.metric.category);
-  const [direction, setDirection] = useState<'increase' | 'decrease' | undefined>(objective.metric.direction);
-  const [timeframe, setTimeframe] = useState<'3M' | '6M' | '9M' | '12M' | '18M' | undefined>(objective.metric.timeframe);
+  const [pithy, setPithy] = useState(objective.objective || objective.pithy || '');
+  const [metricSummary, setMetricSummary] = useState(objective.metric?.summary || '');
+  const [metricFull, setMetricFull] = useState(objective.metric?.full || '');
+  const [category, setCategory] = useState(objective.metric?.category || '');
+  const [direction, setDirection] = useState<'increase' | 'decrease' | undefined>(objective.metric?.direction);
+  const [timeframe, setTimeframe] = useState<'3M' | '6M' | '9M' | '12M' | '18M' | undefined>(objective.metric?.timeframe);
   const [explanation, setExplanation] = useState(objective.explanation);
   const [saving, setSaving] = useState(false);
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
@@ -43,14 +43,15 @@ export function ObjectiveInlineEditor({ objective, onSave, onCancel }: Objective
       const updated: Objective = {
         ...objective,
         title: title.trim() || undefined,
+        objective: pithy.trim(),
         pithy: pithy.trim(),
         metric: {
           summary: metricSummary.trim(),
           full: metricFull.trim(),
           category: category.trim(),
           direction,
-          metricName: objective.metric.metricName,
-          metricValue: objective.metric.metricValue,
+          metricName: objective.metric?.metricName,
+          metricValue: objective.metric?.metricValue,
           timeframe,
         },
         explanation: explanation.trim(),

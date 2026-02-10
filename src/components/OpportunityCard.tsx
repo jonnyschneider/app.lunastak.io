@@ -9,7 +9,8 @@ interface ObjectiveContribution {
 
 interface ObjectiveForLinking {
   id: string;
-  pithy: string;
+  pithy?: string;
+  objective?: string;
 }
 
 interface OpportunityCardProps {
