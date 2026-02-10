@@ -67,19 +67,19 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
             <div className="flex flex-col items-end gap-1">
               {/* Metric Badge */}
               <Badge variant="secondary" className="text-lg font-bold">
-                {objective.metric.summary}
+                {objective.keyResults?.[0]?.target || objective.metric?.summary || '—'}
               </Badge>
               {/* Category Badge */}
               <Badge variant="outline" className="text-xs">
-                {objective.metric.category}
+                {objective.keyResults?.[0]?.signal || objective.metric?.category || 'Metric'}
               </Badge>
             </div>
           </div>
         </div>
 
-        {/* Pithy Objective */}
+        {/* Objective Statement */}
         <p className="text-base font-medium text-foreground leading-relaxed flex-1">
-          {objective.pithy}
+          {objective.objective || objective.pithy}
         </p>
 
         {/* Flip Indicator */}
@@ -93,14 +93,24 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
   const backContent = (
     <Card className="h-full bg-muted border-border">
       <CardContent className="p-6 h-full flex flex-col">
-        {/* SMART Metric */}
+        {/* Key Results or Metric */}
         <div className="mb-4">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Target
+            {objective.keyResults?.length ? 'Key Results' : 'Target'}
           </h4>
-          <p className="text-sm font-medium text-foreground">
-            {objective.metric.full}
-          </p>
+          {objective.keyResults?.length ? (
+            <ul className="text-sm text-foreground space-y-1">
+              {objective.keyResults.map((kr, i) => (
+                <li key={kr.id || i}>
+                  {kr.signal}: {kr.baseline} → {kr.target}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm font-medium text-foreground">
+              {objective.metric?.full || '—'}
+            </p>
+          )}
         </div>
 
         {/* Explanation */}

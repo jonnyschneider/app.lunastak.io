@@ -8,13 +8,14 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Get display title for an objective.
- * Uses title if present, otherwise truncates pithy to ~5 words.
+ * Uses title if present, otherwise truncates objective/pithy to ~5 words.
  */
-export function getObjectiveTitle(objective: Pick<Objective, 'title' | 'pithy'>): string {
+export function getObjectiveTitle(objective: Pick<Objective, 'title' | 'objective' | 'pithy'>): string {
   if (objective.title) return objective.title;
-  // Fallback: first 5 words of pithy
-  const words = objective.pithy.split(/\s+/);
-  if (words.length <= 5) return objective.pithy;
+  // Fallback: first 5 words of objective or pithy
+  const text = objective.objective || objective.pithy || '';
+  const words = text.split(/\s+/);
+  if (words.length <= 5) return text;
   return words.slice(0, 5).join(' ') + '...';
 }
 

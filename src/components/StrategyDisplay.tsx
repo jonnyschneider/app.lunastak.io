@@ -323,9 +323,9 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 ) : (
                   <div className="bg-white border border-[#0A2933] rounded-lg p-4 hover:shadow-md transition-shadow relative group">
                     {/* Timeframe badge - top left */}
-                    {objective.metric.timeframe && (
+                    {(objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe) && (
                       <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
-                        {objective.metric.timeframe}
+                        {objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe}
                       </span>
                     )}
 
@@ -346,11 +346,15 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     </p>
                     {/* Objective text */}
                     <p className="text-sm font-medium text-[#0A2933] mb-3">
-                      {objective.pithy}
+                      {objective.objective || objective.pithy}
                     </p>
 
-                    {/* Metric information */}
-                    {objective.metric.direction && objective.metric.metricName && (
+                    {/* Key Results or Metric information */}
+                    {objective.keyResults?.length ? (
+                      <div className="text-xs text-[#7F556D]">
+                        {objective.keyResults[0].signal}: {objective.keyResults[0].baseline} → {objective.keyResults[0].target}
+                      </div>
+                    ) : objective.metric?.direction && objective.metric?.metricName && (
                       <div className="flex items-center gap-2 text-xs text-[#7F556D]">
                         <span>
                           {objective.metric.direction === 'increase' ? '↑' : '↓'}

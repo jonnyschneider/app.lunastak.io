@@ -199,7 +199,7 @@ export async function POST(
           .join('\n\n')
 
         const currentObjectives = previousStatements.objectives
-          .map((o, i) => `${i + 1}. ${o.pithy}: ${o.metric.summary}`)
+          .map((o, i) => `${i + 1}. ${o.objective || o.pithy}: ${o.keyResults?.[0]?.target || o.metric?.summary || ''}`)
           .join('\n')
 
         const newFragmentsContent = newFragments.length > 0

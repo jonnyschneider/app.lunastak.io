@@ -5,7 +5,7 @@
  * Defines what /api/project/[id]/strategy-version expects and produces.
  */
 
-import { ObjectiveContract } from './generation';
+import { ObjectiveContract, KeyResultContract } from './generation';
 
 // Component types
 export type StrategyComponentType = 'vision' | 'strategy' | 'objective';
@@ -23,10 +23,14 @@ export interface StrategyContentContract {
 
 export interface ObjectiveContentContract {
   title?: string;  // Short title (3-5 words) for lists/linking
-  pithy: string;
-  metric: ObjectiveContract['metric'];
   explanation: string;
-  successCriteria: string;
+  // New OKR format
+  objective?: string;
+  keyResults?: KeyResultContract[];
+  // Legacy format - still supported
+  pithy?: string;
+  metric?: ObjectiveContract['metric'];
+  successCriteria?: string;
 }
 
 // API Input contract for POST /api/project/[id]/strategy-version
@@ -84,10 +88,10 @@ export function validateStrategyVersionInput(data: unknown): data is StrategyVer
       return false;
     }
   } else if (obj.componentType === 'objective') {
-    if (typeof content.pithy !== 'string' || !content.pithy.trim()) {
-      return false;
-    }
-    if (!content.metric || typeof content.metric !== 'object') {
+    // Accept new format (objective + keyResults) OR legacy format (pithy + metric)
+    const hasNewFormat = typeof content.objective === 'string' && content.objective.trim() && Array.isArray(content.keyResults);
+    const hasLegacyFormat = typeof content.pithy === 'string' && content.pithy.trim() && content.metric && typeof content.metric === 'object';
+    if (!hasNewFormat && !hasLegacyFormat) {
       return false;
     }
   }

@@ -10,12 +10,30 @@ import { ExtractionOutputContract } from './extraction';
 // Re-export extraction for convenience
 export type { ExtractionOutputContract };
 
+// KeyResult structure for OKR-style objectives
+export interface KeyResultContract {
+  id: string;
+  belief: {
+    action: string;
+    outcome: string;
+  };
+  signal: string;
+  baseline: string;
+  target: string;
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+}
+
 // Objective structure in generated output
 export interface ObjectiveContract {
   id: string;
   title?: string;  // Short title (3-5 words) for lists/linking
-  pithy: string;
-  metric: {
+  explanation: string;
+  // New OKR format
+  objective?: string;
+  keyResults?: KeyResultContract[];
+  // Legacy format - still supported
+  pithy?: string;
+  metric?: {
     summary: string;
     full: string;
     category: string;
@@ -24,8 +42,7 @@ export interface ObjectiveContract {
     metricValue?: string;
     timeframe?: '3M' | '6M' | '9M' | '12M' | '18M';
   };
-  explanation: string;
-  successCriteria: string;
+  successCriteria?: string;
 }
 
 // Strategy statements - the core output
