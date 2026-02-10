@@ -13,43 +13,28 @@ interface PrinciplesSectionProps {
   onUpdate?: (principles: Principle[]) => void;
 }
 
-type InputStep = 'priority' | 'confirm';
+type InputStep = 'priority' | 'loading' | 'confirm';
 
 function generateId(): string {
   return `prin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Simple opposite suggestions based on common patterns
-function suggestOpposite(priority: string): string {
-  const lower = priority.toLowerCase().trim();
+async function fetchSuggestedOpposite(priority: string): Promise<string> {
+  try {
+    const response = await fetch('/api/suggest-opposite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority }),
+    });
 
-  // Common opposites
-  const opposites: Record<string, string> = {
-    'speed': 'thoroughness',
-    'fast': 'careful',
-    'quick': 'thorough',
-    'quality': 'speed',
-    'growth': 'profitability',
-    'revenue': 'profit margins',
-    'new customers': 'existing customers',
-    'acquisition': 'retention',
-    'innovation': 'stability',
-    'features': 'simplicity',
-    'flexibility': 'consistency',
-    'autonomy': 'alignment',
-    'scale': 'sustainability',
-    'broad market': 'niche focus',
-    'customization': 'standardization',
-    'short-term': 'long-term',
-    'cost': 'quality',
-  };
+    if (!response.ok) throw new Error('Failed to fetch');
 
-  for (const [key, opposite] of Object.entries(opposites)) {
-    if (lower.includes(key)) return opposite;
+    const data = await response.json();
+    return data.opposite || '';
+  } catch (error) {
+    console.error('Failed to get suggestion:', error);
+    return '';
   }
-
-  // Default: prompt them to think about it
-  return '';
 }
 
 const HINT_EXAMPLES = [
@@ -74,10 +59,11 @@ export function PrinciplesSection({
   const [deprioritizedInput, setDeprioritizedInput] = useState('');
   const [showHints, setShowHints] = useState(false);
 
-  const handlePrioritySubmit = () => {
+  const handlePrioritySubmit = async () => {
     if (!priorityInput.trim()) return;
 
-    const suggested = suggestOpposite(priorityInput);
+    setStep('loading');
+    const suggested = await fetchSuggestedOpposite(priorityInput);
     setDeprioritizedInput(suggested);
     setStep('confirm');
   };
@@ -237,6 +223,16 @@ export function PrinciplesSection({
                     Common trade-offs: {HINT_EXAMPLES.join(' · ')}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {step === 'loading' && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-semibold text-[#0A2933]">{priorityInput}</p>
+                <p className="text-xs text-gray-400">even over</p>
+                <p className="text-sm text-gray-400 animate-pulse">Thinking of the opposite...</p>
               </div>
             </div>
           )}
