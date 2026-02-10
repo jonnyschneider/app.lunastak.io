@@ -48,7 +48,7 @@ export function KeyResultEditor({
           placeholder="[verb]"
           className="w-48 h-8 text-sm"
         />
-        <span className="text-muted-foreground">will</span>
+        <span className="text-muted-foreground">will result in</span>
         <Input
           value={keyResult.belief.outcome}
           onChange={(e) => update('belief.outcome', e.target.value)}
@@ -70,14 +70,13 @@ export function KeyResultEditor({
 
       {/* Target line */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">move from</span>
+        <span className="text-muted-foreground">move</span>
         <Input
           value={keyResult.baseline}
           onChange={(e) => update('baseline', e.target.value)}
           placeholder="[from]"
           className="w-20 h-8 text-sm"
         />
-        <span className="text-muted-foreground">to</span>
         <Input
           value={keyResult.target}
           onChange={(e) => update('target', e.target.value)}
