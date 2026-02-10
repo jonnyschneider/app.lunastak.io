@@ -124,11 +124,16 @@ export function PrinciplesSection({
 
   return (
     <div className="space-y-6">
-      {/* Selected principles */}
+      {/* Selected principles - grid layout */}
       {principles.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">Your principles</h4>
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700">Your principles</h4>
+            <p className="text-xs text-gray-400">
+              {principles.length}/6
+            </p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {principles.map((principle) => (
               <PrincipleChip
                 key={principle.id}
@@ -138,9 +143,6 @@ export function PrinciplesSection({
               />
             ))}
           </div>
-          <p className="text-xs text-gray-400">
-            {principles.length}/6 principles defined
-          </p>
         </div>
       )}
 
