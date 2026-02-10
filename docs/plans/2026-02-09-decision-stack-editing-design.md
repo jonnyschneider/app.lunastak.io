@@ -206,13 +206,129 @@ Display renders as: **"{priority}** even over {deprioritized}"
 - Coaching fragments captured (tagged, excluded by default)
 - Version linking from coaching to component
 
-## Future Polish (deferred)
+**Phase 5: OKR-Style Objectives**
+- Migrate Objective type to support multiple Key Results (1-3)
+- Update contracts and API
+- Full-width expanded editor with sentence builder for KRs
+- Migrate existing single-metric objectives to single KR
+- Update /generate to output hypothesis-driven KRs
 
-**Objective editor improvements:**
-- Full-width edit mode: when editing an objective, expand to full container width (siblings wrap below)
-- More breathing room for guidance and visual separation
-- Clearer distinction between interactive and display-only elements
-- Consider inline hints/coaching tips in edit mode
+## OKR-Style Objectives with Hypothesis-Driven Key Results
+
+**Design date:** 2026-02-10
+
+### Rationale
+
+The Decision Stack's power is the rationale chain: Vision → Strategy → Objectives → Key Results → Opportunities. Each layer carries *intent* down, so teams understand not just "what to hit" but "why this matters."
+
+Traditional OKR Key Results are outcome-only ("Increase X from A to B by Q2"). They don't capture the *belief* behind the target, leading to:
+- Disconnection from daily work
+- End-of-quarter fiction writing
+- Metrics gamed without understanding intent
+
+Our approach: **hypothesis-driven Key Results** that connect the bet to the measure.
+
+### Objective Structure
+
+```typescript
+interface Objective {
+  id: string;
+  title: string;              // Short name for lists/linking
+  objective: string;          // The qualitative "O" - inspirational, memorable
+  explanation: string;        // Why it matters - connects to Strategy
+  keyResults: KeyResult[];    // 1-3 KRs (prefer 1-2)
+}
+
+interface KeyResult {
+  id: string;
+  belief: {
+    action: string;           // "improving onboarding"
+    outcome: string;          // "increase retention"
+  };
+  signal: string;             // "7-day active user rate"
+  baseline: string;           // "40%"
+  target: string;             // "55%"
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+}
+```
+
+### Key Result Display
+
+Renders as natural sentence:
+```
+We believe improving onboarding will increase retention,
+and we'll know when 7-day active rate moves from 40% → 55% by Q1.
+```
+
+### Editing UX
+
+**Full-width expanded editor:**
+- Click objective card → expands to full container width, siblings wrap below
+- Clear visual hierarchy: O section at top, KRs below
+
+**Layout:**
+```
+┌─────────────────────────────────────────────────────┐
+│ [Title field - short name]                          │
+├─────────────────────────────────────────────────────┤
+│ OBJECTIVE                                           │
+│ [Textarea - the qualitative O]                      │
+│                                                     │
+│ WHY IT MATTERS                                      │
+│ [Textarea - explanation]                            │
+├─────────────────────────────────────────────────────┤
+│ KEY RESULTS                                         │
+│ ┌─────────────────────────────────────────────────┐ │
+│ │ We believe [action______] will [outcome______] │ │
+│ │ and we'll know when [signal____]               │ │
+│ │ moves from [baseline] → [target] by [time ▾]   │ │
+│ │                                          [🗑️]  │ │
+│ └─────────────────────────────────────────────────┘ │
+│ [+ Add Key Result] (if <3)                          │
+├─────────────────────────────────────────────────────┤
+│                              [Cancel]  [Save]       │
+└─────────────────────────────────────────────────────┘
+```
+
+**Sentence builder for KRs:**
+- Inline fields with placeholders
+- Dropdowns for timeframe
+- Renders back to sentence on blur/save
+- Maps to structured data underneath
+
+**Constraints:**
+- Maximum 3 Key Results per Objective
+- AI coaching should push toward 1-2 crisp KRs, not "completing the set"
+- Empty KRs not allowed (must have belief + signal + target)
+
+### Migration from Current Structure
+
+Current `metric` field maps to a single KR:
+- `metric.full` → belief (may need parsing)
+- `metric.summary` → target
+- `metric.category` → signal (loosely)
+- `metric.direction` → inferred from baseline/target
+- `metric.timeframe` → timeframe
+
+For existing objectives, migrate to single KR. New objectives can have 1-3.
+
+### Future: /generate API Update
+
+Update generation to output new structure:
+- Generate 1-2 KRs per objective
+- Each KR includes belief + signal + baseline + target + timeframe
+- Coach toward hypothesis language in prompts
+
+### Future: AI Refinement (Phase 4)
+
+Socratic questioning for KR refinement:
+- "What will you actually do to achieve this?"
+- "How will you know it's working before the deadline?"
+- "Is that target ambitious enough? Too ambitious?"
+
+Fits naturally with sentence-based format.
+
+## Future Polish (deferred)
 
 **Principles trade-offs:**
 - Review curated trade-offs for false dichotomies (some current options aren't true either/or choices)
@@ -230,9 +346,12 @@ Display renders as: **"{priority}** even over {deprioritized}"
 - Will the "even over" trade-off UX make principle definition feel meaningful rather than like form-filling?
 - Does template-first cold start reduce friction compared to conversation-first?
 - Can component-scoped coaching conversations be effective in 3-5 turns?
+- Does hypothesis-driven KR format ("We believe X will Y") improve goal recall and reduce end-of-period fiction?
+- Can sentence-builder UX feel natural while capturing structured data?
 
 **How this enables learning:**
 - Phase 1 validates inline editing UX before adding complexity
 - Phase 2 tests whether playful principles UX increases completion rates
 - Phase 3 enables A/B testing of cold start approaches
 - Phase 4 explores whether focused coaching outperforms open-ended conversation for refinement
+- Phase 5 tests whether connecting belief to measure improves objective quality and team alignment
