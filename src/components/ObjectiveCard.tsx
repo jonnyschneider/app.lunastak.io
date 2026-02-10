@@ -99,10 +99,17 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
             {objective.keyResults?.length ? 'Key Results' : 'Target'}
           </h4>
           {objective.keyResults?.length ? (
-            <ul className="text-sm text-foreground space-y-1">
+            <ul className="text-sm text-foreground space-y-3">
               {objective.keyResults.map((kr, i) => (
-                <li key={kr.id || i}>
-                  {kr.signal}: {kr.baseline} → {kr.target}
+                <li key={kr.id || i} className="space-y-1">
+                  {(kr.belief?.action || kr.belief?.outcome) && (
+                    <p className="text-xs text-muted-foreground italic">
+                      We believe {kr.belief.action || '...'} will {kr.belief.outcome || '...'}
+                    </p>
+                  )}
+                  <p className="font-medium">
+                    {kr.signal}: {kr.baseline || '?'} → {kr.target} ({kr.timeframe})
+                  </p>
                 </li>
               ))}
             </ul>
