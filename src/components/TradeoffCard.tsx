@@ -29,7 +29,7 @@ export function TradeoffCard({ tradeoff, onSelect, disabled }: TradeoffCardProps
         className={cn(
           'w-full px-4 py-3 rounded-lg border border-dashed border-gray-300',
           'text-left text-sm text-gray-600',
-          'hover:border-[#0A2933] hover:bg-gray-50 transition-colors',
+          'hover:border-muted-foreground/50 hover:bg-gray-50 transition-colors',
           'flex items-center gap-2',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
@@ -43,7 +43,7 @@ export function TradeoffCard({ tradeoff, onSelect, disabled }: TradeoffCardProps
   }
 
   return (
-    <div className="rounded-lg border-2 border-[#0A2933] overflow-hidden">
+    <div className="rounded-lg border border-muted-foreground/30 overflow-hidden shadow-sm">
       <div className="text-xs text-center py-2 bg-gray-50 text-gray-500 font-medium">
         Which do you prioritize?
       </div>
@@ -54,7 +54,7 @@ export function TradeoffCard({ tradeoff, onSelect, disabled }: TradeoffCardProps
           onMouseLeave={() => setHoveredSide(null)}
           className={cn(
             'p-4 text-center font-medium transition-colors',
-            hoveredSide === 'A' ? 'bg-[#E0FF4F] text-[#0A2933]' : 'hover:bg-gray-50'
+            hoveredSide === 'A' ? 'bg-luna text-luna-foreground' : 'hover:bg-gray-50'
           )}
         >
           {tradeoff.optionA}
@@ -68,7 +68,7 @@ export function TradeoffCard({ tradeoff, onSelect, disabled }: TradeoffCardProps
           onMouseLeave={() => setHoveredSide(null)}
           className={cn(
             'p-4 text-center font-medium transition-colors',
-            hoveredSide === 'B' ? 'bg-[#E0FF4F] text-[#0A2933]' : 'hover:bg-gray-50'
+            hoveredSide === 'B' ? 'bg-luna text-luna-foreground' : 'hover:bg-gray-50'
           )}
         >
           {tradeoff.optionB}

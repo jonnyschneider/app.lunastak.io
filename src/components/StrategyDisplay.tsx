@@ -190,13 +190,13 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
       {/* Strategy Output */}
       <div className="space-y-4">
         {/* Vision Card */}
-        <div className="bg-white border border-[#0A2933] rounded-lg p-6">
+        <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-[#0A2933]/70 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
               Vision
             </h3>
             {editingVision && (
-              <span className="text-xs text-muted-foreground">Editing</span>
+              <span className="text-xs text-white/50">Editing</span>
             )}
           </div>
           {editingVision ? (
@@ -207,11 +207,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               placeholder="What is your aspirational future state?"
               minRows={4}
               coachingTip="Describe the world you're creating, not the product. Make it aspirational and future-focused (3+ years)."
+              darkMode
             />
           ) : (
             <p
               onClick={() => setEditingVision(true)}
-              className="text-lg font-medium text-[#0A2933] leading-relaxed cursor-pointer hover:bg-muted/30 rounded-md p-2 -m-2 transition-colors"
+              className="text-lg font-medium text-white leading-relaxed cursor-pointer rounded-md p-2 -m-2"
             >
               {strategy.vision}
             </p>
@@ -219,13 +220,13 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
         </div>
 
         {/* Strategy Card */}
-        <div className="bg-white border border-[#0A2933] rounded-lg p-6">
+        <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-[#0A2933]/70 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
               Strategy
             </h3>
             {editingStrategy && (
-              <span className="text-xs text-muted-foreground">Editing</span>
+              <span className="text-xs text-white/50">Editing</span>
             )}
           </div>
           {editingStrategy ? (
@@ -236,11 +237,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               placeholder="What are your coherent choices to achieve the vision?"
               minRows={4}
               coachingTip="Describe your coherent choices for achieving the vision. Focus on direction, not tactics (12-18 months)."
+              darkMode
             />
           ) : (
             <p
               onClick={() => setEditingStrategy(true)}
-              className="text-lg font-medium text-[#0A2933] leading-relaxed cursor-pointer hover:bg-muted/30 rounded-md p-2 -m-2 transition-colors"
+              className="text-lg font-medium text-white leading-relaxed cursor-pointer rounded-md p-2 -m-2"
             >
               {strategy.strategy}
             </p>
@@ -250,7 +252,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
         {/* Objectives Grid */}
         <div>
           <div className="mb-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
               Objectives
             </h3>
           </div>
@@ -258,7 +260,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             {objectives.map((objective) => (
               <div
                 key={objective.id}
-                className={editingObjectiveId === objective.id ? 'col-span-full' : ''}
+                className={editingObjectiveId === objective.id ? 'col-span-full px-8 lg:px-16' : ''}
               >
                 {editingObjectiveId === objective.id ? (
                   <ObjectiveInlineEditor
@@ -269,67 +271,68 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 ) : (
                   <div
                     onClick={() => setEditingObjectiveId(objective.id)}
-                    className="bg-white border border-[#0A2933] rounded-lg p-4 hover:shadow-md transition-shadow relative cursor-pointer hover:bg-muted/30"
+                    className="bg-ds-teal rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative cursor-pointer"
                   >
                     {/* Timeframe badge - top left */}
                     {(objective.primaryMetric?.timeframe || objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe) && (
-                      <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
+                      <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-ds-neon text-ds-teal rounded">
                         {objective.primaryMetric?.timeframe || objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe}
                       </span>
                     )}
 
                     {/* Objective title */}
-                    <p className="text-xs font-semibold text-[#0A2933]/60 uppercase tracking-wide mt-6 mb-1">
+                    <p className="text-xs font-semibold text-ds-neon uppercase tracking-wide mt-6 mb-1">
                       {getObjectiveTitle(objective)}
                     </p>
                     {/* Objective text */}
-                    <p className="text-sm font-medium text-[#0A2933] mb-3">
+                    <p className="text-sm text-white mb-3">
                       {objective.objective || objective.pithy}
                     </p>
 
                     {/* OMTM - simplified format (preferred) */}
                     {objective.omtm ? (
-                      <div className="flex items-center gap-2 text-xs text-[#7F556D]">
-                        <span className="font-medium">{objective.omtm}</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-medium text-white">{objective.omtm}</span>
                         {objective.aspiration && (
                           <>
-                            <span className="text-[#7F556D]/60">·</span>
-                            <span className="text-[#7F556D]/80">{objective.aspiration}</span>
+                            <span className="text-white/50">·</span>
+                            <span className="text-ds-neon">{objective.aspiration}</span>
                           </>
                         )}
                       </div>
                     ) : objective.primaryMetric ? (
                       /* Legacy: primaryMetric format */
-                      <div className="flex items-center gap-2 text-xs text-[#7F556D]">
-                        <span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-ds-neon">
                           {objective.primaryMetric.direction === 'increase' ? '↑' : '↓'}
                         </span>
-                        <span className="font-medium">
+                        <span className="font-medium text-white">
                           {objective.primaryMetric.name}
                         </span>
-                        <span>|</span>
-                        <span>
+                        <span className="text-white/50">|</span>
+                        <span className="text-ds-neon">
                           {objective.primaryMetric.baseline || '?'} → {objective.primaryMetric.target}
                         </span>
                       </div>
                     ) : objective.keyResults?.length ? (
                       /* Legacy: keyResults format */
-                      <div className="text-xs text-[#7F556D]">
-                        {objective.keyResults[0].signal}: {objective.keyResults[0].baseline} → {objective.keyResults[0].target}
+                      <div className="text-xs">
+                        <span className="text-white">{objective.keyResults[0].signal}:</span>{' '}
+                        <span className="text-ds-neon">{objective.keyResults[0].baseline} → {objective.keyResults[0].target}</span>
                       </div>
                     ) : objective.metric?.direction && objective.metric?.metricName && (
                       /* Legacy: metric format */
-                      <div className="flex items-center gap-2 text-xs text-[#7F556D]">
-                        <span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-ds-neon">
                           {objective.metric.direction === 'increase' ? '↑' : '↓'}
                         </span>
-                        <span className="font-medium">
+                        <span className="font-medium text-white">
                           {objective.metric.metricName}
                         </span>
                         {objective.metric.metricValue && (
                           <>
-                            <span>|</span>
-                            <span>
+                            <span className="text-white/50">|</span>
+                            <span className="text-ds-neon">
                               {objective.metric.metricValue}
                             </span>
                           </>
@@ -347,12 +350,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
         <OpportunitySection projectId={projectId} objectives={objectives} />
 
         {/* Principles Section */}
-        <div className="bg-white border border-[#0A2933] rounded-lg p-6">
+        <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xs font-semibold text-[#0A2933]/70 uppercase tracking-wide">
+            <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
               Principles
             </h3>
-            <span className="text-xs text-gray-400">("even over" statements)</span>
+            <span className="text-xs text-white/50">("even over" statements)</span>
           </div>
           <PrinciplesSection
             projectId={projectId}

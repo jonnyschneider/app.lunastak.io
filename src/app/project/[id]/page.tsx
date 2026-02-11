@@ -595,7 +595,7 @@ export default function ProjectPage() {
                         {index > 0 && <ItemSeparator />}
                         <Item
                           size="sm"
-                          className="cursor-pointer hover:bg-accent/50"
+                          className="cursor-pointer hover:bg-muted/50"
                           onClick={handleClick}
                         >
                           <button
@@ -626,7 +626,7 @@ export default function ProjectPage() {
                                     e.stopPropagation()
                                     openDeepDiveSheet(deepDive.id)
                                   }}
-                                  className="border border-border rounded-full px-1.5 py-0.5 hover:bg-accent transition-colors"
+                                  className="bg-muted border border-border rounded-full px-1.5 py-0.5 transition-colors group-hover/item:bg-primary group-hover/item:text-white group-hover/item:border-primary"
                                 >
                                   {deepDive.topic.length > 20 ? `${deepDive.topic.slice(0, 20)}…` : deepDive.topic}
                                 </button>
@@ -648,22 +648,22 @@ export default function ProjectPage() {
                         <TabsList className="h-10 bg-transparent p-0 gap-4">
                           <TabsTrigger
                             value="analysed"
-                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
                           >
                             Analysed
                             {analysedConversations.length > 0 && (
-                              <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                              <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-primary/15 text-primary flex items-center justify-center">
                                 {analysedConversations.length}
                               </span>
                             )}
                           </TabsTrigger>
                           <TabsTrigger
                             value="in-progress"
-                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-green-600 data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
                           >
                             In Progress
                             {inProgressConversations.length > 0 && (
-                              <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-muted flex items-center justify-center">
+                              <span className="ml-1.5 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums text-xs bg-primary/15 text-primary flex items-center justify-center">
                                 {inProgressConversations.length}
                               </span>
                             )}

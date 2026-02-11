@@ -239,7 +239,7 @@ export function DeepDiveSheet({
                           {index > 0 && <ItemSeparator />}
                           <Item
                             size="sm"
-                            className="cursor-pointer hover:bg-accent/50"
+                            className="cursor-pointer hover:bg-muted/50"
                             onClick={() => onViewConversation(conv.id)}
                           >
                             <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />

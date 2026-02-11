@@ -59,6 +59,26 @@ const config: Config = {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
+  			},
+  			// Design System Tokens
+  			luna: {
+  				DEFAULT: 'hsl(var(--luna))',
+  				light: 'hsl(var(--luna-light))',
+  				dark: 'hsl(var(--luna-dark))',
+  				foreground: 'hsl(var(--luna-foreground))'
+  			},
+  			lunastak: {
+  				DEFAULT: 'hsl(var(--lunastak))',
+  				mid: 'hsl(var(--lunastak-mid))',
+  				muted: 'hsl(var(--lunastak-muted))',
+  				bg: 'hsl(var(--lunastak-bg))',
+  				border: 'hsl(var(--lunastak-border))'
+  			},
+  			ds: {
+  				teal: 'hsl(var(--ds-teal))',
+  				neon: 'hsl(var(--ds-neon))',
+  				'teal-light': 'hsl(var(--ds-teal-light))',
+  				'teal-200': 'hsl(var(--ds-teal-200))'
   			}
   		},
   		borderRadius: {

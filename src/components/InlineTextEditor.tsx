@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { BadgeInfo } from 'lucide-react';
 
 interface InlineTextEditorProps {
   value: string;
@@ -11,6 +12,7 @@ interface InlineTextEditorProps {
   placeholder?: string;
   minRows?: number;
   coachingTip?: string;
+  darkMode?: boolean;
 }
 
 export function InlineTextEditor({
@@ -20,6 +22,7 @@ export function InlineTextEditor({
   placeholder = 'Enter text...',
   minRows = 3,
   coachingTip,
+  darkMode = false,
 }: InlineTextEditorProps) {
   const [text, setText] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -60,8 +63,9 @@ export function InlineTextEditor({
     <div className="space-y-3">
       {/* Coaching callout */}
       {coachingTip && (
-        <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md">
-          <p className="text-sm text-stone-500 italic">
+        <div className="bg-luna-light border-l-2 border-l-luna pl-3 pr-4 py-2 rounded-[4px] flex items-start gap-2 w-fit">
+          <BadgeInfo className="w-4 h-4 text-luna-dark mt-0.5 shrink-0" />
+          <p className="text-sm text-luna-dark italic">
             {coachingTip}
           </p>
         </div>
@@ -74,12 +78,12 @@ export function InlineTextEditor({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         rows={minRows}
-        className="w-full resize-none text-base leading-relaxed"
+        className="w-full resize-none text-base leading-relaxed bg-white border-border focus-visible:ring-luna-dark focus-visible:border-luna-dark"
         disabled={saving}
       />
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
+        <p className={`text-xs ${darkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
           Esc to cancel · ⌘+Enter to save
         </p>
         <div className="flex gap-2">
@@ -88,6 +92,7 @@ export function InlineTextEditor({
             size="sm"
             onClick={onCancel}
             disabled={saving}
+            className={darkMode ? 'text-white hover:bg-white/10 hover:text-white' : ''}
           >
             Cancel
           </Button>
@@ -95,6 +100,7 @@ export function InlineTextEditor({
             size="sm"
             onClick={handleSave}
             disabled={saving || !text.trim()}
+            className={darkMode ? 'bg-ds-neon text-ds-teal hover:bg-ds-neon/90' : ''}
           >
             {saving ? 'Saving...' : 'Save'}
           </Button>

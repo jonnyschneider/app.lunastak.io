@@ -138,7 +138,7 @@ export function AppLayout({
     <SidebarProvider defaultOpen={true}>
       <AppSidebar experimentVariant={experimentVariant} showVariantBadge={showVariantBadge} />
       <SidebarInset className="flex flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b px-4 bg-sidebar">
           <SidebarTrigger className="-ml-1" />
           <Link href={projectId ? `/project/${projectId}` : '/'}>
             <img

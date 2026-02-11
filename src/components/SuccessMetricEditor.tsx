@@ -19,6 +19,7 @@ interface SuccessMetricEditorProps {
   onRemove: () => void;
   canRemove: boolean;
   linkedObjectives?: LinkedObjective[];
+  darkMode?: boolean;
 }
 
 export function SuccessMetricEditor({
@@ -27,6 +28,7 @@ export function SuccessMetricEditor({
   onRemove,
   canRemove,
   linkedObjectives = [],
+  darkMode = false,
 }: SuccessMetricEditorProps) {
   const update = (field: string, value: string | undefined) => {
     if (field.startsWith('belief.')) {
@@ -41,47 +43,47 @@ export function SuccessMetricEditor({
   };
 
   return (
-    <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+    <div className={`rounded-lg p-4 space-y-3 ${darkMode ? 'bg-white/10' : 'border bg-muted/30'}`}>
       {/* Belief line */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">We believe</span>
+        <span className={darkMode ? 'text-white/70' : 'text-muted-foreground'}>We believe</span>
         <Input
           value={metric.belief.action}
           onChange={(e) => update('belief.action', e.target.value)}
           placeholder="showing insights in first 3 min"
-          className="w-56 h-8 text-sm"
+          className={`w-56 h-8 text-sm ${darkMode ? 'bg-white border-border' : ''}`}
         />
-        <span className="text-muted-foreground">will</span>
+        <span className={darkMode ? 'text-white/70' : 'text-muted-foreground'}>will</span>
         <Input
           value={metric.belief.outcome}
           onChange={(e) => update('belief.outcome', e.target.value)}
           placeholder="increase session 2 return rate"
-          className="w-56 h-8 text-sm"
+          className={`w-56 h-8 text-sm ${darkMode ? 'bg-white border-border' : ''}`}
         />
       </div>
 
       {/* Signal line */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">and we'll know when</span>
+        <span className={darkMode ? 'text-white/70' : 'text-muted-foreground'}>and we'll know when</span>
         <Input
           value={metric.signal}
           onChange={(e) => update('signal', e.target.value)}
           placeholder="S1→S2 conversion"
-          className="w-40 h-8 text-sm"
+          className={`w-40 h-8 text-sm ${darkMode ? 'bg-white border-border' : ''}`}
         />
-        <span className="text-muted-foreground">moves from</span>
+        <span className={darkMode ? 'text-white/70' : 'text-muted-foreground'}>moves from</span>
         <Input
           value={metric.baseline}
           onChange={(e) => update('baseline', e.target.value)}
           placeholder="25%"
-          className="w-20 h-8 text-sm"
+          className={`w-20 h-8 text-sm ${darkMode ? 'bg-white border-border' : ''}`}
         />
-        <span className="text-muted-foreground">→</span>
+        <span className={darkMode ? 'text-white/70' : 'text-muted-foreground'}>→</span>
         <Input
           value={metric.target}
           onChange={(e) => update('target', e.target.value)}
           placeholder="50%"
-          className="w-20 h-8 text-sm"
+          className={`w-20 h-8 text-sm ${darkMode ? 'bg-white border-border' : ''}`}
         />
 
         {canRemove && (
@@ -89,21 +91,21 @@ export function SuccessMetricEditor({
             variant="ghost"
             size="icon"
             onClick={onRemove}
-            className="ml-auto h-8 w-8"
+            className={`ml-auto h-8 w-8 ${darkMode ? 'text-white/70 hover:text-white hover:bg-white/10' : ''}`}
           >
-            <Trash2 className="w-4 h-4 text-muted-foreground" />
+            <Trash2 className={`w-4 h-4 ${darkMode ? '' : 'text-muted-foreground'}`} />
           </Button>
         )}
       </div>
 
       {/* Optional objective link - only show if multiple objectives are linked */}
       {linkedObjectives.length > 1 && (
-        <div className="flex items-center gap-2 text-sm pt-1 border-t border-border/50">
-          <span className="text-muted-foreground text-xs">Measures:</span>
+        <div className={`flex items-center gap-2 text-sm pt-1 border-t ${darkMode ? 'border-white/20' : 'border-border/50'}`}>
+          <span className={`text-xs ${darkMode ? 'text-white/70' : 'text-muted-foreground'}`}>Measures:</span>
           <select
             value={metric.objectiveId || ''}
             onChange={(e) => update('objectiveId', e.target.value || undefined)}
-            className="h-7 px-2 text-xs border border-input rounded bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className={`h-7 px-2 text-xs border rounded focus:outline-none focus:ring-2 ${darkMode ? 'bg-white border-border focus:ring-luna-dark' : 'border-input bg-background focus:ring-ring'}`}
           >
             <option value="">All linked objectives</option>
             {linkedObjectives.map(obj => (

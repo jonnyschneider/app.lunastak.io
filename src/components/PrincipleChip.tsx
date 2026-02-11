@@ -13,7 +13,7 @@ export function PrincipleChip({ principle, onRemove, onFlip }: PrincipleChipProp
   return (
     <div className="group relative flex flex-col items-center justify-center p-4 bg-white border rounded-lg shadow-sm hover:shadow transition-shadow text-center min-h-[120px]">
       {/* Stacked content */}
-      <p className="text-sm font-semibold text-[#0A2933] leading-tight">
+      <p className="text-sm font-semibold text-ds-teal leading-tight">
         {principle.priority}
       </p>
       <p className="text-xs text-gray-400 my-1">even over</p>

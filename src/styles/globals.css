@@ -14,103 +14,144 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 10%;
 
-    /* Primary - Lunastak Green */
-    --primary: 132 50% 40%;
-    --primary-foreground: 130 60% 97%;
+    /* Primary - Lunastak Aubergine */
+    --primary: 307 17% 20%;
+    --primary-foreground: 330 14% 98%;
 
     /* Secondary */
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 15%;
+    --secondary: 330 14% 98%;
+    --secondary-foreground: 307 17% 20%;
 
     /* Muted */
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 5% 46%;
+    --muted: 330 10% 96%;
+    --muted-foreground: 320 12% 38%;
 
-    /* Accent */
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 6% 15%;
+    /* Accent - Luna Gold */
+    --accent: 41 60% 58%;
+    --accent-foreground: 307 17% 20%;
 
     /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     /* Borders & Inputs */
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 132 50% 40%;
+    --border: 330 10% 88%;
+    --input: 330 10% 88%;
+    --ring: 41 60% 58%;
 
-    /* Chart colors - Green gradient */
-    --chart-1: 127 55% 72%;
-    --chart-2: 129 58% 62%;
-    --chart-3: 131 55% 52%;
-    --chart-4: 132 50% 40%;
-    --chart-5: 132 45% 32%;
+    /* Chart colors - Aubergine gradient */
+    --chart-1: 320 14% 68%;
+    --chart-2: 315 15% 58%;
+    --chart-3: 310 16% 48%;
+    --chart-4: 307 17% 38%;
+    --chart-5: 307 17% 28%;
 
-    --radius: 0.45rem;
+    --radius: 0.325rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 10% 10%;
-    --sidebar-primary: 132 50% 40%;
-    --sidebar-primary-foreground: 130 60% 97%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 6% 15%;
-    --sidebar-border: 240 6% 90%;
-    --sidebar-ring: 132 50% 40%;
+    /* Sidebar - Lunastak chrome */
+    --sidebar-background: 330 14% 98%;
+    --sidebar-foreground: 307 17% 20%;
+    --sidebar-primary: 307 17% 20%;
+    --sidebar-primary-foreground: 330 14% 98%;
+    --sidebar-accent: 41 60% 58%;
+    --sidebar-accent-foreground: 307 17% 20%;
+    --sidebar-border: 330 10% 88%;
+    --sidebar-ring: 41 60% 58%;
+
+    /* === DESIGN SYSTEM TOKENS === */
+
+    /* Luna - AI Coach accent (warm gold) */
+    --luna: 41 60% 58%;
+    --luna-light: 44 87% 94%;
+    --luna-dark: 40 65% 42%;
+    --luna-foreground: 307 17% 20%;
+
+    /* Lunastak - App chrome (aubergine) */
+    --lunastak: 307 17% 20%;
+    --lunastak-mid: 307 17% 31%;
+    --lunastak-muted: 320 12% 38%;
+    --lunastak-bg: 330 14% 98%;
+    --lunastak-border: 330 10% 82%;
+
+    /* Decision Stack - Output content (teal + neon) */
+    --ds-teal: 195 68% 12%;
+    --ds-neon: 71 100% 65%;
+    --ds-teal-light: 195 40% 95%;
+    --ds-teal-200: 195 35% 90%;
   }
 
   .dark {
     /* Background & Foreground */
-    --background: 240 10% 10%;
-    --foreground: 0 0% 98%;
+    --background: 307 17% 12%;
+    --foreground: 330 14% 98%;
 
     /* Cards & Popovers */
-    --card: 240 10% 15%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 15%;
-    --popover-foreground: 0 0% 98%;
+    --card: 307 17% 16%;
+    --card-foreground: 330 14% 98%;
+    --popover: 307 17% 16%;
+    --popover-foreground: 330 14% 98%;
 
-    /* Primary - Brighter green for dark mode */
-    --primary: 131 55% 52%;
-    --primary-foreground: 132 60% 18%;
+    /* Primary - Lighter aubergine for dark mode */
+    --primary: 320 14% 68%;
+    --primary-foreground: 307 17% 12%;
 
     /* Secondary */
-    --secondary: 240 5% 20%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 307 17% 22%;
+    --secondary-foreground: 330 14% 98%;
 
     /* Muted */
-    --muted: 240 5% 22%;
-    --muted-foreground: 240 5% 60%;
+    --muted: 307 15% 20%;
+    --muted-foreground: 320 12% 65%;
 
-    /* Accent */
-    --accent: 240 5% 22%;
-    --accent-foreground: 0 0% 98%;
+    /* Accent - Luna Gold (same for dark) */
+    --accent: 41 60% 58%;
+    --accent-foreground: 307 17% 12%;
 
     /* Destructive */
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 98%;
 
     /* Borders & Inputs */
-    --border: 240 5% 20%;
-    --input: 240 5% 22%;
-    --ring: 131 55% 52%;
+    --border: 307 15% 24%;
+    --input: 307 15% 22%;
+    --ring: 41 60% 58%;
 
-    /* Chart colors - Green gradient (same for dark) */
-    --chart-1: 127 55% 72%;
-    --chart-2: 129 58% 62%;
-    --chart-3: 131 55% 52%;
-    --chart-4: 132 50% 40%;
-    --chart-5: 132 45% 32%;
+    /* Chart colors - Aubergine gradient (lighter for dark) */
+    --chart-1: 320 14% 72%;
+    --chart-2: 315 15% 62%;
+    --chart-3: 310 16% 52%;
+    --chart-4: 307 17% 42%;
+    --chart-5: 307 17% 32%;
 
     /* Sidebar */
-    --sidebar-background: 240 10% 15%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 129 58% 62%;
-    --sidebar-primary-foreground: 132 60% 18%;
-    --sidebar-accent: 240 5% 22%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 5% 20%;
-    --sidebar-ring: 131 55% 52%;
+    --sidebar-background: 307 17% 16%;
+    --sidebar-foreground: 330 14% 98%;
+    --sidebar-primary: 320 14% 68%;
+    --sidebar-primary-foreground: 307 17% 12%;
+    --sidebar-accent: 41 60% 58%;
+    --sidebar-accent-foreground: 307 17% 12%;
+    --sidebar-border: 307 15% 24%;
+    --sidebar-ring: 41 60% 58%;
+
+    /* === DESIGN SYSTEM TOKENS (Dark) === */
+
+    /* Luna - AI Coach accent (warm gold - unchanged) */
+    --luna: 41 60% 58%;
+    --luna-light: 41 40% 25%;
+    --luna-dark: 40 65% 42%;
+    --luna-foreground: 307 17% 12%;
+
+    /* Lunastak - App chrome (lighter for dark mode) */
+    --lunastak: 320 14% 68%;
+    --lunastak-mid: 315 15% 52%;
+    --lunastak-muted: 320 12% 65%;
+    --lunastak-bg: 307 17% 12%;
+    --lunastak-border: 307 15% 28%;
+
+    /* Decision Stack - Output content (adjusted for dark) */
+    --ds-teal: 195 50% 70%;
+    --ds-neon: 71 100% 65%;
+    --ds-teal-light: 195 40% 20%;
   }
 }
 

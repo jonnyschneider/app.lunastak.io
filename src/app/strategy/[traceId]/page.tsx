@@ -107,63 +107,60 @@ export default function StrategyViewPage() {
 
         {/* Tabbed Content */}
         <Tabs defaultValue="strategy" className="w-full">
-          {/* Line-style tabs */}
-          <TabsList className="h-10 w-full justify-center bg-transparent p-0 gap-8 border-b">
-            <TabsTrigger
-              value="strategy"
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-            >
-              Your Strategy
-            </TabsTrigger>
-            <TabsTrigger
-              value="thinking"
-              className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-            >
-              Luna&apos;s Thinking
-            </TabsTrigger>
-          </TabsList>
+          {/* Header row: Tabs left, Logo right - constrained to match content */}
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center border-b">
+              {/* Left: Tabs */}
+              <TabsList className="h-10 bg-transparent p-0 gap-6">
+                <TabsTrigger
+                  value="strategy"
+                  className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                >
+                  Your Strategy
+                </TabsTrigger>
+                <TabsTrigger
+                  value="thinking"
+                  className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                >
+                  Luna&apos;s Thinking
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="strategy" className="mt-8">
+              {/* Spacer */}
+              <div className="flex-1" />
 
-            {/* Decision Stack Card */}
-            <div className="max-w-6xl mx-auto rounded-lg overflow-hidden border border-border shadow-sm">
-              {/* Branded Header */}
-              <div className="bg-[#0A2933] p-8">
-                <div className="flex items-center justify-between">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/Decision Stack Logo.svg"
-                    alt="Decision Stack"
-                    className="h-16"
-                  />
-                  <a
-                    href="https://www.thedecisionstack.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#E0FF4F] text-sm hover:text-white transition-colors"
-                  >
-                    Learn more about The Decision Stack →
-                  </a>
-                </div>
+              {/* Right: Decision Stack logo + learn more */}
+              <div className="flex items-center gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/Decision Stack Logo.svg"
+                  alt="Decision Stack"
+                  className="h-8"
+                />
+                <a
+                  href="https://www.thedecisionstack.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground text-xs hover:text-foreground transition-colors"
+                >
+                  Learn more →
+                </a>
               </div>
+            </div>
+          </div>
 
+          <TabsContent value="strategy" className="mt-6">
+            <div className="max-w-6xl mx-auto">
               {/* Strategy Content */}
-              <div className="bg-[#EEF8FC] p-6">
-                {timestamp && (
-                  <p className="text-center text-xs text-gray-400 mb-6">
-                    Generated {new Date(timestamp).toLocaleDateString()}
-                  </p>
-                )}
-                {strategy && conversationId && projectId && (
-                  <StrategyDisplay
-                    strategy={strategy}
-                    conversationId={conversationId}
-                    traceId={traceId}
-                    projectId={projectId}
-                    onUpdate={setStrategy}
-                  />
-                )}
-              </div>
+              {strategy && conversationId && projectId && (
+                <StrategyDisplay
+                  strategy={strategy}
+                  conversationId={conversationId}
+                  traceId={traceId}
+                  projectId={projectId}
+                  onUpdate={setStrategy}
+                />
+              )}
             </div>
           </TabsContent>
 

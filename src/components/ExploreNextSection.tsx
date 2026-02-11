@@ -132,7 +132,7 @@ export function ExploreNextSection({
   const getIcon = (type: ExploreItemType) => {
     switch (type) {
       case 'deep-dive':
-        return <Crosshair className="h-4 w-4 text-green-600" />
+        return <Crosshair className="h-4 w-4 text-muted-foreground" />
       case 'provocation':
         return <Zap className="h-4 w-4 text-muted-foreground" />
       case 'gap':
@@ -158,7 +158,7 @@ export function ExploreNextSection({
         {showSeparator && index > 0 && <ItemSeparator />}
         <Item
           size="sm"
-          className="cursor-pointer hover:bg-accent/50"
+          className="cursor-pointer hover:bg-muted/50"
           onClick={() => onItemClick(item)}
         >
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -169,7 +169,7 @@ export function ExploreNextSection({
               <ItemTitle>{item.title}</ItemTitle>
               <ItemDescription className="text-xs">{item.description}</ItemDescription>
               {item.dimension && (
-                <span className="text-[10px] text-muted-foreground border border-border rounded-full px-2 py-0.5 mt-1 w-fit inline-block">
+                <span className="text-[10px] text-muted-foreground bg-muted border border-border rounded-full px-2 py-0.5 mt-1 w-fit inline-block transition-colors group-hover/item:bg-primary group-hover/item:text-white group-hover/item:border-primary">
                   {DIMENSION_LABELS[item.dimension as Tier1Dimension] || item.dimension}
                 </span>
               )}
@@ -208,7 +208,7 @@ export function ExploreNextSection({
           <Button
             size="sm"
             variant="ghost"
-            className="h-6 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+            className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50"
             onClick={onAddDeepDive}
           >
             <Plus className="h-3 w-3 mr-1" />

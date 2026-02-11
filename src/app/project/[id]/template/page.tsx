@@ -121,7 +121,7 @@ export default function TemplateEntryPage() {
             {steps.map((s, i) => (
               <span
                 key={s}
-                className={i <= currentStepIndex ? 'text-[#0A2933] font-medium' : ''}
+                className={i <= currentStepIndex ? 'text-ds-teal font-medium' : ''}
               >
                 {s.charAt(0).toUpperCase() + s.slice(1)}
               </span>
@@ -129,7 +129,7 @@ export default function TemplateEntryPage() {
           </div>
           <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#0A2933] transition-all"
+              className="h-full bg-ds-teal transition-all"
               style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
             />
           </div>
@@ -139,7 +139,7 @@ export default function TemplateEntryPage() {
         {step === 'vision' && (
           <div className="space-y-4">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A2933]">What's your vision?</h1>
+              <h1 className="text-2xl font-bold text-ds-teal">What's your vision?</h1>
               <p className="text-gray-500 mt-1">
                 Your aspirational future state. Where are you heading in 3+ years?
               </p>
@@ -161,7 +161,7 @@ export default function TemplateEntryPage() {
         {step === 'strategy' && (
           <div className="space-y-4">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A2933]">What's your strategy?</h1>
+              <h1 className="text-2xl font-bold text-ds-teal">What's your strategy?</h1>
               <p className="text-gray-500 mt-1">
                 Your coherent set of choices. How will you achieve the vision in 12-18 months?
               </p>
@@ -183,7 +183,7 @@ export default function TemplateEntryPage() {
         {step === 'objectives' && (
           <div className="space-y-4">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A2933]">What are your objectives?</h1>
+              <h1 className="text-2xl font-bold text-ds-teal">What are your objectives?</h1>
               <p className="text-gray-500 mt-1">
                 Measurable outcomes for the next 12-18 months. What does success look like?
               </p>
@@ -237,7 +237,7 @@ export default function TemplateEntryPage() {
         {step === 'principles' && (
           <div className="space-y-4">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A2933]">What are your principles?</h1>
+              <h1 className="text-2xl font-bold text-ds-teal">What are your principles?</h1>
               <p className="text-gray-500 mt-1">
                 Trade-offs that guide decisions. What do you prioritize "even over" alternatives?
               </p>
@@ -257,7 +257,7 @@ export default function TemplateEntryPage() {
         {step === 'review' && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A2933]">Review your Decision Stack</h1>
+              <h1 className="text-2xl font-bold text-ds-teal">Review your Decision Stack</h1>
               <p className="text-gray-500 mt-1">
                 Here's what you've defined. You can always edit these later.
               </p>

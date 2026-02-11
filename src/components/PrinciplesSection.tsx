@@ -166,8 +166,8 @@ export function PrinciplesSection({
       {principles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700">Your principles</h4>
-            <p className="text-xs text-gray-400">
+            <h4 className="text-sm font-medium text-white">Your principles</h4>
+            <p className="text-xs text-white/50">
               {principles.length}/6
             </p>
           </div>
@@ -189,7 +189,7 @@ export function PrinciplesSection({
         <div className="space-y-4">
           {step === 'priority' && (
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-white">
                 What matters most for success and is least negotiable right now?
               </label>
               <div className="flex gap-2">
@@ -198,12 +198,13 @@ export function PrinciplesSection({
                   onChange={(e) => setPriorityInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handlePrioritySubmit()}
                   placeholder="Type what matters most..."
-                  className="flex-1"
+                  className="flex-1 bg-white"
                   disabled={saving}
                 />
                 <Button
                   onClick={handlePrioritySubmit}
                   disabled={!priorityInput.trim() || saving}
+                  className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
                 >
                   Next
                 </Button>
@@ -213,13 +214,13 @@ export function PrinciplesSection({
               <div>
                 <button
                   onClick={() => setShowHints(!showHints)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                  className="flex items-center gap-1 text-xs text-white/50 hover:text-white/70"
                 >
                   {showHints ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   {showHints ? 'Hide examples' : 'Need inspiration?'}
                 </button>
                 {showHints && (
-                  <p className="mt-2 text-xs text-gray-400">
+                  <p className="mt-2 text-xs text-white/50">
                     Common trade-offs: {HINT_EXAMPLES.join(' · ')}
                   </p>
                 )}
@@ -228,21 +229,21 @@ export function PrinciplesSection({
           )}
 
           {step === 'loading' && (
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-white rounded-lg">
               <div className="text-center space-y-2">
-                <p className="text-sm font-semibold text-[#0A2933]">{priorityInput}</p>
-                <p className="text-xs text-gray-400">even over</p>
-                <p className="text-sm text-gray-400 animate-pulse">Thinking of the opposite...</p>
+                <p className="text-sm font-semibold text-ds-teal">{priorityInput}</p>
+                <p className="text-xs text-ds-teal/50">even over</p>
+                <p className="text-sm text-ds-teal/50 animate-pulse">Thinking of the opposite...</p>
               </div>
             </div>
           )}
 
           {step === 'confirm' && (
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+              <div className="p-4 bg-white rounded-lg space-y-3">
                 <div className="text-center space-y-1">
-                  <p className="text-sm font-semibold text-[#0A2933]">{priorityInput}</p>
-                  <p className="text-xs text-gray-400">even over</p>
+                  <p className="text-sm font-semibold text-ds-teal">{priorityInput}</p>
+                  <p className="text-xs text-ds-teal/50">even over</p>
                   <Input
                     value={deprioritizedInput}
                     onChange={(e) => setDeprioritizedInput(e.target.value)}
@@ -252,19 +253,20 @@ export function PrinciplesSection({
                   />
                 </div>
                 {!deprioritizedInput && (
-                  <p className="text-xs text-gray-400 text-center">
+                  <p className="text-xs text-ds-teal/50 text-center">
                     What's the mutually exclusive opposite? What might you sacrifice?
                   </p>
                 )}
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" onClick={handleBack} disabled={saving}>
+                <Button variant="ghost" onClick={handleBack} disabled={saving} className="text-white hover:bg-white/10 hover:text-white">
                   Back
                 </Button>
                 <Button
                   onClick={handleConfirm}
                   disabled={!deprioritizedInput.trim() || saving}
+                  className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
                 >
                   {saving ? 'Saving...' : 'Add Principle'}
                 </Button>

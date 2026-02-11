@@ -40,14 +40,14 @@ function HarveyBall({ confidence }: { confidence: string }) {
 
   if (fillPercent === 100) {
     return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-green-600">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
         <circle cx={cx} cy={cy} r={radius} fill="currentColor" />
       </svg>
     )
   }
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-green-600">
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
       <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
       <path
         d={`M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`}

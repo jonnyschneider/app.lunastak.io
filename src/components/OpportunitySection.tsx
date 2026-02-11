@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { OpportunityEditor } from './OpportunityEditor';
 import { OpportunityCard } from './OpportunityCard';
-import { InfoDialog } from './InfoDialog';
 import { SuccessMetric } from '@/lib/types';
 
 interface Opportunity {
@@ -46,7 +45,6 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
   // Fetch opportunities on mount
   const fetchOpportunities = useCallback(async () => {
@@ -182,8 +180,8 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
 
   if (loading) {
     return (
-      <div className="bg-white border border-dashed border-[#0A2933] rounded-lg p-12 text-center">
-        <p className="text-muted-foreground">Loading opportunities...</p>
+      <div className="bg-ds-teal rounded-lg shadow-sm p-12 text-center">
+        <p className="text-white/70">Loading opportunities...</p>
       </div>
     );
   }
@@ -195,31 +193,20 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Opportunities
-          </h3>
-          <button
-            onClick={() => setInfoDialogOpen(true)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Learn about Opportunities"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
+        <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+          Opportunities
+        </h3>
       </div>
 
       {/* Placeholder state */}
       {showPlaceholder && (
-        <div className="bg-white border border-dashed border-[#0A2933] rounded-lg p-12 text-center">
-          <p className="text-muted-foreground mb-4">
+        <div className="bg-ds-teal rounded-lg shadow-sm border border-dashed border-white/30 p-12 text-center">
+          <p className="text-white/70 mb-4">
             Define opportunities that support your objectives
           </p>
           <button
             onClick={handleStartAdding}
-            className="px-6 py-2 bg-[#E0FF4F] text-[#0A2933] font-medium rounded-lg hover:bg-[#E0FF4F]/80 transition-colors"
+            className="px-6 py-2 bg-ds-neon text-ds-teal font-medium rounded-lg hover:bg-ds-neon/90 transition-colors"
           >
             Create Opportunities
           </button>
@@ -308,23 +295,6 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
         </button>
       )}
 
-      <InfoDialog
-        open={infoDialogOpen}
-        onOpenChange={setInfoDialogOpen}
-        title="Opportunities"
-        content={`Opportunities are areas of focus that support your objectives. They should be directional, not prescriptive - leave room for teams to figure out the HOW.
-
-**Good opportunities have:**
-- Clear connection to objectives
-- Expected contribution articulated
-- Rationale (why this, why now)
-
-**Like this...**
-"Prove builders will pay for selection coordination"
-
-**Not this...**
-"Build feature X by Q3"`}
-      />
     </div>
   );
 }

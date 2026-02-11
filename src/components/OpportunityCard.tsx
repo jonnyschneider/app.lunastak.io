@@ -42,13 +42,13 @@ export function OpportunityCard({
 
   return (
     <div className={`
-      bg-white border rounded-lg p-4 relative group transition-shadow hover:shadow-md
-      ${status === 'draft' ? 'border-dashed border-muted-foreground/50' : 'border-[#0A2933]'}
+      bg-ds-teal rounded-lg p-4 relative group transition-shadow hover:shadow-md shadow-sm
+      ${status === 'draft' ? 'border border-dashed border-white/30' : ''}
     `}>
       {/* Status badges */}
       <div className="absolute top-3 right-3 flex items-center gap-2">
         {status === 'draft' && (
-          <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded">
+          <span className="text-xs px-2 py-0.5 bg-white/20 text-white rounded">
             Draft
           </span>
         )}
@@ -61,7 +61,7 @@ export function OpportunityCard({
         {/* Edit button */}
         <button
           onClick={() => onEdit(id)}
-          className="text-[#0A2933]/50 hover:text-[#0A2933]/80 transition-colors opacity-0 group-hover:opacity-100"
+          className="text-white/50 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
           title="Edit"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +72,7 @@ export function OpportunityCard({
         {/* Delete button */}
         <button
           onClick={() => onDelete(id)}
-          className="text-[#0A2933]/50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+          className="text-white/50 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
           title="Delete"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,11 +83,11 @@ export function OpportunityCard({
 
       {/* Content */}
       <div className="pr-20">
-        <p className="text-sm font-medium text-[#0A2933]">
+        <p className="text-sm font-medium text-ds-neon">
           {title}
         </p>
         {description && (
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-white">
             {description}
           </p>
         )}
@@ -95,20 +95,20 @@ export function OpportunityCard({
 
       {/* Success Metrics */}
       {successMetrics.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+        <div className="mt-3 pt-3 border-t border-white/20">
+          <h4 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">
             Success Metrics
           </h4>
           <div className="space-y-2">
             {successMetrics.map((metric) => (
               <div key={metric.id} className="text-xs space-y-0.5">
                 {(metric.belief.action || metric.belief.outcome) && (
-                  <p className="text-muted-foreground italic">
+                  <p className="text-white/70 italic">
                     We believe {metric.belief.action} will {metric.belief.outcome}
                   </p>
                 )}
-                <p className="font-medium">
-                  {metric.signal}: {metric.baseline || '?'} → {metric.target}
+                <p className="font-medium text-white">
+                  <span className="text-white">{metric.signal}:</span> <span className="text-ds-neon">{metric.baseline || '?'} → {metric.target}</span>
                 </p>
               </div>
             ))}
@@ -118,15 +118,15 @@ export function OpportunityCard({
 
       {/* Linked objectives */}
       {linkedObjectives.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+        <div className="mt-3 pt-3 border-t border-white/20">
+          <h4 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">
             Supports
           </h4>
           <div className="flex flex-wrap gap-1.5">
             {linkedObjectives.map(obj => (
               <span
                 key={obj.id}
-                className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded"
+                className="text-xs px-2 py-0.5 bg-white/20 text-white rounded"
               >
                 {getObjectiveTitle(obj)}
               </span>
@@ -137,8 +137,8 @@ export function OpportunityCard({
 
       {/* No links indicator */}
       {linkedObjectives.length === 0 && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <p className="text-xs text-muted-foreground italic">
+        <div className="mt-3 pt-3 border-t border-white/20">
+          <p className="text-xs text-white/50 italic">
             No objectives linked
           </p>
         </div>
