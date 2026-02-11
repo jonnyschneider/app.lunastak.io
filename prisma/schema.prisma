@@ -36,7 +36,7 @@ model Conversation {
   events         Event[]
   fragments      Fragment[]
   extractionRuns ExtractionRun[]
-  Project        Project?        @relation(fields: [projectId], references: [id])
+  project        Project?        @relation(fields: [projectId], references: [id])
   projectId      String?
 
   @@index([userId])
@@ -52,12 +52,6 @@ model Message {
   content             String   @db.Text
   stepNumber          Int
   timestamp           DateTime @default(now())
-  confidenceScore     String? // HIGH | MEDIUM | LOW
-  confidenceReasoning String?  @db.Text
-
-  // Phase 2: Message-level annotations
-  annotations String? @db.Text
-
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   fragments    Fragment[]
 
@@ -68,6 +62,7 @@ model Message {
 model Trace {
   id             String   @id @default(cuid())
   conversationId String
+  projectId      String?  // Denormalized from Conversation for direct access
   userId         String? // Nullable for guests
   timestamp      DateTime @default(now())
 
@@ -109,10 +104,12 @@ model Trace {
 
   user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   events       Event[]
   feedbacks    Feedback[]
 
   @@index([userId])
+  @@index([projectId])
   @@index([timestamp])
   @@index([userFeedback])
   @@index([qualityRating])
@@ -179,6 +176,7 @@ model Project {
   // Relations (will add as we create other models)
   user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversations        Conversation[]
+  traces               Trace[]
   fragments            Fragment[]
   documents            Document[]
   deepDives            DeepDive[]
@@ -215,7 +213,6 @@ model Fragment {
 
   // Metadata
   capturedAt  DateTime @default(now())
-  extractedBy String?
   confidence  String? // HIGH | MEDIUM | LOW
 
   createdAt DateTime @default(now())
@@ -243,7 +240,6 @@ model FragmentDimensionTag {
   // Tag metadata
   confidence String?
   reasoning  String?  @db.Text
-  taggedBy   String?
   taggedAt   DateTime @default(now())
 
   // Future: Tier 2 subdimensions
@@ -299,8 +295,6 @@ model DeepDive {
 
   // Origin tracking
   origin           String  @default("manual") // manual | message | document
-  sourceMessageId  String?                    // If created from message deferral
-  sourceDocumentId String?                    // If created from document extraction
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -333,7 +327,6 @@ model DimensionalSynthesis {
 
   // Quality metrics
   confidence    String  @default("LOW") // HIGH | MEDIUM | LOW
-  coverage      String?
   fragmentCount Int     @default(0)
 
   // Versioning
@@ -341,7 +334,6 @@ model DimensionalSynthesis {
 
   // Temporal
   lastSynthesizedAt DateTime @default(now())
-  synthesizedBy     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

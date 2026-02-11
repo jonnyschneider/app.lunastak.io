@@ -231,6 +231,7 @@ export async function performGeneration(
   const trace = await prisma.trace.create({
     data: {
       conversationId,
+      projectId: conversation.projectId,
       userId: conversation.userId,
       extractedContext: extractedContext as any,
       dimensionalCoverage: dimensionalCoverage as any,

@@ -84,6 +84,7 @@ export async function POST(
     const trace = await prisma.trace.create({
       data: {
         conversationId: conversation.id,
+        projectId,
         userId,
         extractedContext: templateContext,
         output: statements as object,

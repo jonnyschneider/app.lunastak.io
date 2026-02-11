@@ -72,7 +72,7 @@ async function main() {
   const orphanedConversations = await prisma.conversation.count({
     where: {
       userId: { not: null },
-      Project: null
+      project: null
     }
   })
   if (orphanedConversations > 0) {

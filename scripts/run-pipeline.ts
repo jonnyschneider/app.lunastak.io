@@ -40,8 +40,6 @@ interface FixtureMessage {
   role: 'user' | 'assistant'
   content: string
   stepNumber: number
-  confidenceScore?: string | null
-  confidenceReasoning?: string | null
 }
 
 interface FixtureConversation {
@@ -146,8 +144,6 @@ async function hydrateFixture(
         role: msg.role,
         content: msg.content,
         stepNumber: msg.stepNumber,
-        confidenceScore: msg.confidenceScore,
-        confidenceReasoning: msg.confidenceReasoning,
       },
     })
   }

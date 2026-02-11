@@ -49,8 +49,6 @@ export interface TransformedFixture {
         role: string;
         content: string;
         stepNumber: number;
-        confidenceScore?: string;
-        confidenceReasoning?: string;
       }>;
       traces: Array<{
         extractedContext: Record<string, unknown>;
@@ -189,7 +187,6 @@ async function createSynthesisRecords(
     confidence: s.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
     fragmentCount: s.fragmentCount,
     lastSynthesizedAt: new Date(),
-    synthesizedBy: 'demo-seed',
   }));
 
   await prisma.dimensionalSynthesis.createMany({
@@ -271,9 +268,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
             role: msg.role,
             content: msg.content,
             stepNumber: msg.stepNumber,
-            confidenceScore: msg.confidenceScore,
-            confidenceReasoning: msg.confidenceReasoning,
-          },
+              },
         });
       }
 
@@ -283,6 +278,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
         await prisma.trace.create({
           data: {
             conversationId: conversation.id,
+            projectId: project.id,
             userId,
             timestamp: traceTimestamp,
             extractedContext: trace.extractedContext as Prisma.InputJsonValue,

@@ -26,80 +26,67 @@
             {
               "role": "assistant",
               "content": "What's on your mind?",
-              "stepNumber": 1,
-              "confidenceScore": null
+              "stepNumber": 1
             },
             {
               "role": "user",
               "content": "Yeah, so one thing that's been bugging me lately is this whole retention piece. We've got a pretty decent book of clients now, right? But I'm seeing this pattern where after about 18-24 months, some of them start getting itchy feet. They'll either look at competitors or – and this is the bit that really stings – they'll start thinking about building their own tech stack. Like they've outgrown us or something.",
-              "stepNumber": 2,
-              "confidenceScore": "MEDIUM"
+              "stepNumber": 2
             },
             {
               "role": "assistant",
               "content": "That's a really interesting inflection point you're hitting. So when these clients start getting those itchy feet around the 18-24 month mark – what's usually the trigger? Is it that they've hit certain revenue milestones, brought on technical talent, or is it more about specific features or integrations they feel they've outgrown?",
-              "stepNumber": 3,
-              "confidenceScore": null
+              "stepNumber": 3
             },
             {
               "role": "user",
               "content": "Yeah, it's usually a combination really. The revenue thing is definitely part of it – once they're turning over maybe 15-20 million, they start thinking differently about tech spend and what's strategic for them. They'll hire their first proper tech lead or CTO-type person, and suddenly you've got someone in the room who has opinions about architecture and wants to build their own roadmap. And yeah, the integration thing comes up too – they'll say things like 'we need deeper carrier integrations' or 'we want to own our data layer' or whatever. But honestly I think a lot of it is just... they feel like they should be doing it themselves at that scale? Like it's almost a status thing.",
-              "stepNumber": 4,
-              "confidenceScore": "MEDIUM"
+              "stepNumber": 4
             },
             {
               "role": "assistant",
               "content": "So when you're competing with FHM and others in those later-stage conversations – what actually makes you different beyond just features? Like, if a client's CTO is doing a proper evaluation at that 18-month mark, what's the thing that makes them stay versus jump ship? Is it the data they'd lose, the integrations they'd have to rebuild, or is there something more fundamental about how you work with them?",
-              "stepNumber": 5,
-              "confidenceScore": null
+              "stepNumber": 5
             },
             {
               "role": "user",
               "content": "Hmm, that's a good question. Honestly, I think we sometimes rely too much on switching costs and data lock-in, which... I mean, it works to a point, but it's not exactly a compelling story is it?\nThe integrations thing is real though. By 18 months they've usually got us plugged into their carrier systems, their accounting package, maybe their CRM. Ripping that out is painful. But I don't want that to be the reason they stay, you know?\nWhat I think actually differentiates us – and we probably don't talk about this enough – is that we're genuinely good at the messy middle-market stuff. The big enterprise platforms like FHM are built for companies doing hundreds of millions in freight. They're overkill for a 4PL doing 15-20 million. And the cheap tools are too basic. We're actually pretty good at that sweet spot. But we don't... I don't think we own that positioning clearly enough.",
-              "stepNumber": 6,
-              "confidenceScore": "HIGH"
+              "stepNumber": 6
             },
             {
               "role": "assistant",
               "content": "Right, so you mentioned the smaller 4PLs who \"love you\" versus these growing ones who get restless – what does that smaller segment actually look like? Like, what's their profile in terms of size, what they're managing, and why does the platform work so well for them that they're not having these same conversations about leaving?",
-              "stepNumber": 7,
-              "confidenceScore": null
+              "stepNumber": 7
             },
             {
               "role": "user",
               "content": "Yeah, so the sweet spot – the ones who really love us – they're typically turning over somewhere between 2 and 10 million. Small teams, maybe 5-15 people total. They're managing anywhere from like 20 to 100 active clients, moving decent volume but not massive scale.\nWhat they love is that we basically give them superpowers. Like, they can look way more sophisticated than they actually are. They've got this professional client portal, automated tracking updates, rate shopping across carriers – stuff that would take them years to build or cost a fortune to buy from the enterprise vendors.\nThey're not price sensitive really, because the platform is genuinely mission-critical to how they operate. And they're not hiring CTOs who want to build their own stack. They just want to run their business and grow.\nThe problem is... do we focus on keeping these guys happy forever, or do we try to grow with the ones who are scaling past us? Because right now we're sort of trying to do both and maybe not doing either brilliantly.",
-              "stepNumber": 8,
-              "confidenceScore": "HIGH"
+              "stepNumber": 8
             },
             {
               "role": "assistant",
               "content": "That's a really clear picture of the sweet spot. So here's what I'm wondering: for those clients who ARE scaling past 10 million and starting to get restless – what would it actually take for them to feel like you're growing with them? Not just features, but what would make them feel like staying is the smart strategic choice rather than just the path of least resistance?",
-              "stepNumber": 9,
-              "confidenceScore": null
+              "stepNumber": 9
             },
             {
               "role": "user",
               "content": "Oof, that's the question isn't it?\nI think... they'd need to feel like we're actually invested in their growth, not just serving them the same product they had at 5 million. Like, there's this moment where they go from being a customer to thinking of themselves as a strategic account, and I'm not sure we make that transition with them.\nPart of it is probably product – giving them more customization, better analytics, maybe some white-labeling options so they can make it feel more like their own. But honestly I think more of it is the relationship and how we position ourselves. Right now we're a vendor they buy from. We'd need to be more like... a partner in their growth? Someone who actually understands their business and helps them figure out what to build versus buy.\nThe other thing – and this is maybe the bigger strategic question – is whether there's network effects we could build. Like, right now each client is kind of an island. But if we're the platform that all these growing 4PLs are on... there's probably something there around shared carrier relationships, benchmark data, maybe even helping them collaborate or refer business to each other. That could be genuinely hard to replicate.",
-              "stepNumber": 10,
-              "confidenceScore": "HIGH"
+              "stepNumber": 10
             },
             {
               "role": "assistant",
               "content": "The network effects angle is interesting. If you really leaned into that – making it valuable for carriers to be on your platform because of the aggregate 4PL volume, and valuable for 4PLs to be there because of the carrier access – that's a fundamentally different competitive position than just being good software. What would it actually take to make that real? Like, what's the version of this where staying on your platform isn't just convenient but actually gives them access to something they couldn't get any other way?",
-              "stepNumber": 11,
-              "confidenceScore": null
+              "stepNumber": 11
             },
             {
               "role": "user",
               "content": "Yeah, that's the uncomfortable version of the question, isn't it?\nI think... it comes back to that network effects thing I mentioned, but we'd need to actually lean into it properly. Like, right now it's a nice-to-have that some carriers are on our platform. But what if being on AFS meant they had preferential access to a pool of growing 4PLs? And what if our 4PLs got better rates or faster onboarding with carriers because they're part of our network?\nWe'd basically be positioning ourselves as the logistics network for the growth segment. Not just software, but the actual rails that this part of the industry runs on. If we're the rails that all these smaller 4PLs are running on, and we're aggregating real volume, real patterns... suddenly we're interesting to carriers in a different way. And suddenly our 4PLs have a reason to stay that isn't just switching costs – it's actual network value they can't get elsewhere.\nThat's scary though. It's a much bigger bet than just improving the product. And I'm not 100% sure how we'd even start building that.",
-              "stepNumber": 12,
-              "confidenceScore": "HIGH"
+              "stepNumber": 12
             },
             {
               "role": "assistant",
               "content": "I have what I need to create your strategy.",
-              "stepNumber": 13,
-              "confidenceScore": null
+              "stepNumber": 13
             }
           ],
           "traces": []

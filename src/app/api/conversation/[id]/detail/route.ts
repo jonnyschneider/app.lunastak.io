@@ -30,7 +30,7 @@ export async function GET(
           where: { stepNumber: { gt: 0 } }, // Exclude system messages
           orderBy: { stepNumber: 'asc' },
         },
-        Project: {
+        project: {
           select: {
             id: true,
             name: true,
@@ -58,7 +58,7 @@ export async function GET(
     return NextResponse.json({
       id: conversation.id,
       projectId: conversation.projectId,
-      projectName: conversation.Project?.name || 'Your Strategy',
+      projectName: conversation.project?.name || 'Your Strategy',
       status: conversation.status,
       createdAt: conversation.createdAt.toISOString(),
       messages: conversation.messages.map(m => ({

@@ -149,8 +149,6 @@ async function hydrateProjectData(
           role: msgFixture.role,
           content: msgFixture.content,
           stepNumber: msgFixture.stepNumber,
-          confidenceScore: msgFixture.confidenceScore,
-          confidenceReasoning: msgFixture.confidenceReasoning,
         },
       });
     }
@@ -160,6 +158,7 @@ async function hydrateProjectData(
       await prisma.trace.create({
         data: {
           conversationId: conversation.id,
+          projectId,
           userId,
           extractedContext: traceFixture.extractedContext as Prisma.InputJsonValue,
           dimensionalCoverage: traceFixture.dimensionalCoverage as Prisma.InputJsonValue | undefined,
@@ -495,8 +494,6 @@ async function hydrate(options: HydrateOptions): Promise<void> {
             role: msgFixture.role,
             content: msgFixture.content,
             stepNumber: msgFixture.stepNumber,
-            confidenceScore: msgFixture.confidenceScore,
-            confidenceReasoning: msgFixture.confidenceReasoning,
           },
         });
       }
@@ -506,6 +503,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
         await prisma.trace.create({
           data: {
             conversationId: conversation.id,
+            projectId: project.id,
             userId: user.id,
             extractedContext: traceFixture.extractedContext as Prisma.InputJsonValue,
             dimensionalCoverage: traceFixture.dimensionalCoverage as Prisma.InputJsonValue | undefined,

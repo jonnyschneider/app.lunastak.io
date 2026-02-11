@@ -89,7 +89,6 @@ async function initializeSynthesisRecords(projectId: string): Promise<void> {
     confidence: 'LOW' as const,
     fragmentCount: 0,
     lastSynthesizedAt: new Date(),
-    synthesizedBy: 'init',
   }))
 
   await prisma.dimensionalSynthesis.createMany({

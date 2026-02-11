@@ -23,8 +23,6 @@ export interface DeepDiveContract {
   notes?: string;
   status: DeepDiveStatus;
   origin: DeepDiveOrigin;
-  sourceMessageId?: string;
-  sourceDocumentId?: string;
   resolvedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -36,8 +34,6 @@ export interface DeepDiveCreateInput {
   topic: string;
   notes?: string;
   origin?: DeepDiveOrigin;
-  sourceMessageId?: string;
-  sourceDocumentId?: string;
 }
 
 // Deep dive with counts for list views
@@ -70,8 +66,6 @@ export function validateDeepDive(data: unknown): data is DeepDiveContract {
 
   // Optional fields
   if (obj.notes !== undefined && obj.notes !== null && typeof obj.notes !== 'string') return false;
-  if (obj.sourceMessageId !== undefined && obj.sourceMessageId !== null && typeof obj.sourceMessageId !== 'string') return false;
-  if (obj.sourceDocumentId !== undefined && obj.sourceDocumentId !== null && typeof obj.sourceDocumentId !== 'string') return false;
   if (obj.resolvedAt !== undefined && obj.resolvedAt !== null && typeof obj.resolvedAt !== 'string') return false;
 
   return true;
@@ -89,8 +83,6 @@ export function validateDeepDiveCreateInput(data: unknown): data is DeepDiveCrea
   if (obj.origin !== undefined && obj.origin !== null) {
     if (typeof obj.origin !== 'string' || !isValidDeepDiveOrigin(obj.origin)) return false;
   }
-  if (obj.sourceMessageId !== undefined && obj.sourceMessageId !== null && typeof obj.sourceMessageId !== 'string') return false;
-  if (obj.sourceDocumentId !== undefined && obj.sourceDocumentId !== null && typeof obj.sourceDocumentId !== 'string') return false;
 
   return true;
 }

@@ -172,8 +172,6 @@ export interface Message {
   content: string;
   stepNumber: number;
   timestamp: Date;
-  confidenceScore?: ConfidenceLevel;
-  confidenceReasoning?: string;
 }
 
 // Context extraction types

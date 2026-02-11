@@ -308,6 +308,7 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
     const trace = await prisma.trace.create({
       data: {
         conversationId,
+        projectId,
         userId,
         extractedContext: extractedContext as any,
         dimensionalCoverage: dimensionalCoverage as any,

@@ -14,7 +14,6 @@ export interface FragmentInput {
   content: string
   contentType: 'theme' | 'insight' | 'quote' | 'stat' | 'principle'
   confidence?: 'HIGH' | 'MEDIUM' | 'LOW'
-  extractedBy?: string
 }
 
 export interface DimensionTagInput {
@@ -39,14 +38,12 @@ export async function createFragment(
       content: input.content,
       contentType: input.contentType,
       confidence: input.confidence,
-      extractedBy: input.extractedBy || 'claude-extraction',
       status: 'active',
       dimensionTags: dimensionTags ? {
         create: dimensionTags.map(tag => ({
           dimension: tag.dimension,
           confidence: tag.confidence,
           reasoning: tag.reasoning,
-          taggedBy: 'claude-dimensional-analysis',
         }))
       } : undefined
     },
@@ -154,7 +151,6 @@ export async function createFragmentsFromDocument(
         content: `**${theme.theme_name}**\n\n${theme.content}`,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
-        extractedBy: 'claude-document-extraction',
       }, tags)
     })
   )

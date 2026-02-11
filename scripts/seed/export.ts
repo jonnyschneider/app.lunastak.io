@@ -157,8 +157,6 @@ async function exportByEmail(email: string): Promise<Fixture> {
           role: msg.role as 'assistant' | 'user',
           content: msg.content,
           stepNumber: msg.stepNumber,
-          confidenceScore: msg.confidenceScore as 'HIGH' | 'MEDIUM' | 'LOW' | undefined,
-          confidenceReasoning: msg.confidenceReasoning || undefined,
         })),
         traces: conv.traces.map(trace => ({
           extractedContext: trace.extractedContext as Record<string, unknown>,
@@ -217,7 +215,7 @@ async function exportByConversation(conversationId: string): Promise<Fixture> {
       user: true,
       messages: { orderBy: { stepNumber: 'asc' } },
       traces: { orderBy: { timestamp: 'asc' } },
-      Project: true,
+      project: true,
     },
   });
 
@@ -236,7 +234,7 @@ async function exportByConversation(conversationId: string): Promise<Fixture> {
     },
     projects: [{
       id: '{{PROJECT_ID}}',
-      name: conversation.Project?.name || 'Imported Project',
+      name: conversation.project?.name || 'Imported Project',
       status: 'active',
       suggestedQuestions: [],
       conversations: [{
@@ -251,8 +249,6 @@ async function exportByConversation(conversationId: string): Promise<Fixture> {
           role: msg.role as 'assistant' | 'user',
           content: msg.content,
           stepNumber: msg.stepNumber,
-          confidenceScore: msg.confidenceScore as 'HIGH' | 'MEDIUM' | 'LOW' | undefined,
-          confidenceReasoning: msg.confidenceReasoning || undefined,
         })),
         traces: conversation.traces.map(trace => ({
           extractedContext: trace.extractedContext as Record<string, unknown>,

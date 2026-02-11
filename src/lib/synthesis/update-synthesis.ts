@@ -91,7 +91,6 @@ export async function updateDimensionalSynthesis(
         confidence: 'LOW',
         fragmentCount: 0,
         lastSynthesizedAt: new Date(),
-        synthesizedBy: 'claude-synthesis'
       }
     })
     return
@@ -139,7 +138,6 @@ export async function updateDimensionalSynthesis(
       confidence: result.confidence,
       fragmentCount: allFragments.length,
       lastSynthesizedAt: new Date(),
-      synthesizedBy: 'claude-synthesis'
     }
   })
 

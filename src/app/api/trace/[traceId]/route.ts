@@ -11,19 +11,15 @@ export async function GET(
     const { traceId } = await params
     const session = await getServerSession(authOptions)
 
-    // Find the trace with project info
+    // Find the trace with project info (projectId denormalized directly on Trace)
     const trace = await prisma.trace.findUnique({
       where: { id: traceId },
       include: {
         conversation: {
-          include: {
-            Project: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
+          select: { userId: true },
+        },
+        project: {
+          select: { id: true, name: true },
         },
       },
     })
@@ -59,8 +55,8 @@ export async function GET(
       claudeThoughts: trace.claudeThoughts,
       conversationId: trace.conversationId,
       timestamp: trace.timestamp,
-      projectId: trace.conversation?.projectId || null,
-      projectName: trace.conversation?.Project?.name || null,
+      projectId: trace.projectId || null,
+      projectName: trace.project?.name || null,
     })
   } catch (error) {
     console.error('Failed to fetch trace:', error)

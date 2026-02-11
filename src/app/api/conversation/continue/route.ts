@@ -325,21 +325,6 @@ Return your assessment:
 
   console.log('[Continue API - QUESTIONING] Confidence assessment complete:', confidenceScore);
 
-  // Update last user message with confidence
-  const lastUserMessage = conversation.messages
-    .filter((m: { role: string }) => m.role === 'user')
-    .pop();
-
-  if (lastUserMessage) {
-    await prisma.message.update({
-      where: { id: lastUserMessage.id },
-      data: {
-        confidenceScore,
-        confidenceReasoning,
-      },
-    });
-  }
-
   // Decision logic
   console.log('[Continue API - QUESTIONING] Evaluating decision logic...');
   if (questionCount < 3) {

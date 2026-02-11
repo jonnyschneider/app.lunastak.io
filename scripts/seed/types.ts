@@ -21,8 +21,6 @@ export interface FixtureMessage {
   role: 'assistant' | 'user';
   content: string;
   stepNumber: number;
-  confidenceScore?: 'HIGH' | 'MEDIUM' | 'LOW';
-  confidenceReasoning?: string;
 }
 
 // Trace in fixture

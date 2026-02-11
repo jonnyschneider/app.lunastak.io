@@ -64,7 +64,6 @@ describe('Deep Dive Contracts', () => {
       const fullDeepDive: DeepDiveContract = {
         ...validDeepDive,
         notes: 'Need to explore pricing tiers and competitive positioning',
-        sourceMessageId: 'msg_def456',
         resolvedAt: '2026-01-10T15:30:00Z',
         status: 'resolved',
       };
@@ -75,7 +74,6 @@ describe('Deep Dive Contracts', () => {
       const messageDeepDive: DeepDiveContract = {
         ...validDeepDive,
         origin: 'message',
-        sourceMessageId: 'msg_def456',
       };
       expect(validateDeepDive(messageDeepDive)).toBe(true);
     });
@@ -85,7 +83,6 @@ describe('Deep Dive Contracts', () => {
         ...validDeepDive,
         status: 'pending',
         origin: 'document',
-        sourceDocumentId: 'doc_ghi789',
       };
       expect(validateDeepDive(documentDeepDive)).toBe(true);
     });
@@ -140,7 +137,6 @@ describe('Deep Dive Contracts', () => {
         ...validInput,
         notes: 'Focus on Series B competitors',
         origin: 'message',
-        sourceMessageId: 'msg_abc123',
       };
       expect(validateDeepDiveCreateInput(fullInput)).toBe(true);
     });

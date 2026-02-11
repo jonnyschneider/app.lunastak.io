@@ -297,6 +297,7 @@ export async function POST(
         const trace = await prisma.trace.create({
           data: {
             conversationId: syntheticConversation.id,
+            projectId,
             userId,
             extractedContext: { type: 'refresh', delta } as any,
             output: newStatements as any,

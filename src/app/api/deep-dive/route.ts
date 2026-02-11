@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { projectId, topic, notes, origin, sourceMessageId, sourceDocumentId } = body
+    const { projectId, topic, notes, origin } = body
 
     // Verify user owns the project
     const project = await prisma.project.findFirst({
@@ -71,8 +71,6 @@ export async function POST(request: Request) {
         notes: notes || null,
         status: 'active',
         origin: origin || 'manual',
-        sourceMessageId: sourceMessageId || null,
-        sourceDocumentId: sourceDocumentId || null,
       },
     })
 
@@ -83,8 +81,6 @@ export async function POST(request: Request) {
       notes: deepDive.notes,
       status: deepDive.status,
       origin: deepDive.origin,
-      sourceMessageId: deepDive.sourceMessageId,
-      sourceDocumentId: deepDive.sourceDocumentId,
       resolvedAt: deepDive.resolvedAt?.toISOString() || null,
       createdAt: deepDive.createdAt.toISOString(),
       updatedAt: deepDive.updatedAt.toISOString(),
@@ -163,8 +159,6 @@ export async function GET(request: Request) {
         notes: dd.notes,
         status: dd.status,
         origin: dd.origin,
-        sourceMessageId: dd.sourceMessageId,
-        sourceDocumentId: dd.sourceDocumentId,
         resolvedAt: dd.resolvedAt?.toISOString() || null,
         createdAt: dd.createdAt.toISOString(),
         updatedAt: dd.updatedAt.toISOString(),

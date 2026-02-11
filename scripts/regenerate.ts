@@ -201,6 +201,7 @@ async function regenerate(traceId: string) {
   const newTrace = await prisma.trace.create({
     data: {
       conversationId: originalTrace.conversationId,
+      projectId: originalTrace.conversation?.projectId,
       userId: originalTrace.userId,
       extractedContext: originalTrace.extractedContext as any,
       output: statements as any,
