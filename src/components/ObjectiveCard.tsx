@@ -9,7 +9,6 @@ import { ArrowPathIcon, PencilIcon } from '@heroicons/react/24/solid';
 import clsx from 'clsx';
 import { getObjectiveTitle } from '@/lib/utils';
 import { normalizeToOMTM } from '@/lib/objective-omtm-migration';
-import { MetricProgress } from './MetricProgress';
 
 interface ObjectiveCardProps {
   objective: Objective;
@@ -31,13 +30,22 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
     onEdit?.();
   };
 
+  // Get OMTM display - prefer new simplified format, fall back to legacy
+  const omtmName = normalizedObjective.omtm ||
+    normalizedObjective.primaryMetric?.name ||
+    objective.keyResults?.[0]?.signal ||
+    objective.metric?.category ||
+    '';
+
+  const omtmAspiration = normalizedObjective.aspiration || '';
+
   const frontContent = (
     <Card className={clsx(
       'h-full border-border hover:shadow-lg transition-shadow duration-200 group',
       isFilterActive && 'ring-2 ring-primary'
     )}>
       <CardContent className="p-6 h-full flex flex-col">
-        {/* Header Row - Filter Toggle, Title, Edit, Metric */}
+        {/* Header Row - Filter Toggle, Title, Edit */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-start gap-2">
             <button
@@ -57,40 +65,16 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
             </h3>
           </div>
 
-          <div className="flex items-start gap-2">
-            {/* Edit Button */}
-            {onEdit && (
-              <button
-                onClick={handleEditClick}
-                className="p-1 hover:bg-muted rounded transition-colors opacity-0 group-hover:opacity-100"
-                aria-label="Edit objective"
-              >
-                <PencilIcon className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
-            <div className="flex flex-col items-end gap-1">
-              {/* OMTM Target Badge */}
-              {normalizedObjective.primaryMetric ? (
-                <>
-                  <Badge variant="secondary" className="text-lg font-bold">
-                    {normalizedObjective.primaryMetric.direction === 'increase' ? '↑' : '↓'} {normalizedObjective.primaryMetric.target}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {normalizedObjective.primaryMetric.name}
-                  </Badge>
-                </>
-              ) : (
-                <>
-                  <Badge variant="secondary" className="text-lg font-bold">
-                    {objective.keyResults?.[0]?.target || objective.metric?.summary || '—'}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {objective.keyResults?.[0]?.signal || objective.metric?.category || 'Metric'}
-                  </Badge>
-                </>
-              )}
-            </div>
-          </div>
+          {/* Edit Button */}
+          {onEdit && (
+            <button
+              onClick={handleEditClick}
+              className="p-1 hover:bg-muted rounded transition-colors opacity-0 group-hover:opacity-100"
+              aria-label="Edit objective"
+            >
+              <PencilIcon className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
         </div>
 
         {/* Objective Statement */}
@@ -98,8 +82,29 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
           {objective.objective || objective.pithy}
         </p>
 
+        {/* OMTM Display - simplified */}
+        {omtmName && (
+          <div className="mt-4 pt-3 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs font-medium">
+                  OMTM
+                </Badge>
+                <span className="text-sm font-medium text-foreground">
+                  {omtmName}
+                </span>
+              </div>
+              {omtmAspiration && (
+                <span className="text-sm text-muted-foreground">
+                  {omtmAspiration}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Flip Indicator */}
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-3">
           <ArrowPathIcon className="w-4 h-4 text-muted-foreground" />
         </div>
       </CardContent>
@@ -109,13 +114,20 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
   const backContent = (
     <Card className="h-full bg-muted border-border">
       <CardContent className="p-6 h-full flex flex-col">
-        {/* One Metric That Matters */}
-        {normalizedObjective.primaryMetric && (
+        {/* One Metric That Matters - simplified */}
+        {omtmName && (
           <div className="mb-4">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               One Metric That Matters
             </h4>
-            <MetricProgress metric={normalizedObjective.primaryMetric} size="sm" />
+            <p className="text-base font-semibold text-foreground">
+              {omtmName}
+            </p>
+            {omtmAspiration && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {omtmAspiration}
+              </p>
+            )}
           </div>
         )}
 
@@ -130,36 +142,6 @@ export function ObjectiveCard({ objective, isFilterActive, onToggleFilter, onEdi
                 <li key={i}>• {metric}</li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {/* Legacy fallback for objectives without primaryMetric */}
-        {!normalizedObjective.primaryMetric && (
-          <div className="mb-4">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              {objective.keyResults?.length ? 'Key Results' : 'Target'}
-            </h4>
-            {objective.keyResults?.length ? (
-              <ul className="text-sm text-foreground space-y-3">
-                {objective.keyResults.map((kr, i) => (
-                  <li key={kr.id || i}>
-                    <p className="text-muted-foreground leading-relaxed">
-                      We believe <span className="text-foreground font-medium">{kr.belief?.action || '...'}</span> will
-                      result in <span className="text-foreground font-medium">{kr.belief?.outcome || '...'}</span> and
-                      we'll know it's working when we observe{' '}
-                      <span className="text-foreground font-medium">{kr.signal || '...'}</span> move{' '}
-                      <span className="text-foreground font-medium">{kr.baseline || '?'}</span>{' '}
-                      <span className="text-foreground font-medium">{kr.target}</span> by{' '}
-                      <span className="text-foreground font-medium">{kr.timeframe}</span>
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm font-medium text-foreground">
-                {objective.metric?.full || '—'}
-              </p>
-            )}
           </div>
         )}
 

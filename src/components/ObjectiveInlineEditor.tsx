@@ -5,18 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { Objective, PrimaryMetric } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
+import type { Objective } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
 import { normalizeToOMTM } from '@/lib/objective-omtm-migration';
 
-type EditingSection = 'title' | 'objective' | 'primaryMetric' | 'explanation' | null;
+type EditingSection = 'title' | 'objective' | 'omtm' | 'explanation' | null;
 
 interface ObjectiveInlineEditorProps {
   objective: Objective;
@@ -24,32 +19,32 @@ interface ObjectiveInlineEditorProps {
   onCancel: () => void;
 }
 
-function createEmptyPrimaryMetric(): PrimaryMetric {
-  return {
-    name: '',
-    baseline: '',
-    target: '',
-    timeframe: '6M',
-    direction: 'increase',
-  };
-}
-
 export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onCancel }: ObjectiveInlineEditorProps) {
-  // Normalize to OMTM format
+  // Normalize to simplified OMTM format
   const normalized = normalizeToOMTM(initialObjective);
 
   // State for all fields
   const [title, setTitle] = useState(normalized.title || '');
   const [objectiveText, setObjectiveText] = useState(normalized.objective || normalized.pithy || '');
-  const [primaryMetric, setPrimaryMetric] = useState<PrimaryMetric>(
-    normalized.primaryMetric || createEmptyPrimaryMetric()
-  );
-  const [supportingMetrics, setSupportingMetrics] = useState<string[]>(
-    normalized.supportingMetrics || []
-  );
+  const [omtm, setOmtm] = useState(normalized.omtm || normalized.primaryMetric?.name || '');
+  const [aspiration, setAspiration] = useState(normalized.aspiration || '');
+  const [supportingMetrics, setSupportingMetrics] = useState<string[]>(normalized.supportingMetrics || []);
+  const [newSupportingMetric, setNewSupportingMetric] = useState('');
   const [explanation, setExplanation] = useState(normalized.explanation);
   const [saving, setSaving] = useState(false);
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
+
+  const handleAddSupportingMetric = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newSupportingMetric.trim()) {
+      e.preventDefault();
+      setSupportingMetrics([...supportingMetrics, newSupportingMetric.trim()]);
+      setNewSupportingMetric('');
+    }
+  };
+
+  const handleRemoveSupportingMetric = (index: number) => {
+    setSupportingMetrics(supportingMetrics.filter((_, i) => i !== index));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -58,7 +53,9 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
         ...initialObjective,
         title: title.trim() || undefined,
         explanation: explanation.trim(),
-        primaryMetric: primaryMetric.name.trim() ? primaryMetric : undefined,
+        // New simplified OMTM fields
+        omtm: omtm.trim() || undefined,
+        aspiration: aspiration.trim() || undefined,
         supportingMetrics: supportingMetrics.filter(m => m.trim()),
         // Keep legacy fields for backwards compat
         objective: objectiveText.trim(),
@@ -156,73 +153,61 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
 
         <hr className="border-muted" />
 
-        {/* Primary Metric (OMTM) */}
+        {/* OMTM - simplified */}
         <div className="group/section">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             One Metric That Matters
           </h4>
           <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md mb-3">
             <p className="text-sm text-stone-500 italic">
-              What single metric best measures progress toward this objective?
+              What single metric best represents success for this objective?
             </p>
           </div>
-          <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-            {/* Metric Name */}
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-muted-foreground">We'll measure</span>
-              <Input
-                value={primaryMetric.name}
-                onChange={(e) => setPrimaryMetric(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Weekly Active Users"
-                className="w-48 h-8 text-sm"
-              />
-            </div>
-
-            {/* Target line */}
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-muted-foreground">moving from</span>
-              <Input
-                value={primaryMetric.baseline}
-                onChange={(e) => setPrimaryMetric(prev => ({ ...prev, baseline: e.target.value }))}
-                placeholder="12%"
-                className="w-20 h-8 text-sm"
-              />
-              <Select
-                value={primaryMetric.direction}
-                onValueChange={(v) => setPrimaryMetric(prev => ({ ...prev, direction: v as 'increase' | 'decrease' }))}
-              >
-                <SelectTrigger className="w-24 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="increase">↑ to</SelectItem>
-                  <SelectItem value="decrease">↓ to</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                value={primaryMetric.target}
-                onChange={(e) => setPrimaryMetric(prev => ({ ...prev, target: e.target.value }))}
-                placeholder="40%"
-                className="w-20 h-8 text-sm"
-              />
-              <span className="text-muted-foreground">by</span>
-              <Select
-                value={primaryMetric.timeframe}
-                onValueChange={(v) => setPrimaryMetric(prev => ({ ...prev, timeframe: v as PrimaryMetric['timeframe'] }))}
-              >
-                <SelectTrigger className="w-28 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3M">3 months</SelectItem>
-                  <SelectItem value="6M">6 months</SelectItem>
-                  <SelectItem value="9M">9 months</SelectItem>
-                  <SelectItem value="12M">12 months</SelectItem>
-                  <SelectItem value="18M">18 months</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-3">
+            <Input
+              value={omtm}
+              onChange={(e) => setOmtm(e.target.value)}
+              placeholder="e.g., Weekly Active Users, Net Promoter Score, Revenue"
+            />
+            <Input
+              value={aspiration}
+              onChange={(e) => setAspiration(e.target.value)}
+              placeholder="Optional: 40% increase, Significant growth, Industry-leading"
+              className="text-sm text-muted-foreground"
+            />
           </div>
+        </div>
+
+        {/* Supporting Metrics */}
+        <div className="group/section">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Supporting Metrics (optional)
+          </h4>
+          <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md mb-3">
+            <p className="text-sm text-stone-500 italic">
+              Other metrics you'll watch, but the OMTM is the main focus.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {supportingMetrics.map((metric, i) => (
+              <Badge key={i} variant="secondary" className="flex items-center gap-1 pr-1">
+                {metric}
+                <button
+                  onClick={() => handleRemoveSupportingMetric(i)}
+                  className="p-0.5 hover:bg-muted rounded"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+          <Input
+            value={newSupportingMetric}
+            onChange={(e) => setNewSupportingMetric(e.target.value)}
+            onKeyDown={handleAddSupportingMetric}
+            placeholder="Type a metric name and press Enter"
+            className="text-sm"
+          />
         </div>
 
         <hr className="border-muted" />

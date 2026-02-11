@@ -51,11 +51,13 @@ export interface Objective {
   title?: string;          // Short title (3-5 words) for lists/linking
   explanation: string;     // Full detail for back of card
 
-  // OMTM - One Metric That Matters
-  primaryMetric?: PrimaryMetric;
+  // OMTM - simplified format (preferred)
+  omtm?: string;           // Just the metric name: "Weekly Active Users"
+  aspiration?: string;     // Optional directional goal: "40% increase" or "Significant growth"
+  supportingMetrics?: string[];  // Optional additional metrics (just names)
 
-  // Optional supporting metrics (just names, no targets)
-  supportingMetrics?: string[];
+  // Legacy OMTM format - still supported for migration
+  primaryMetric?: PrimaryMetric;
 
   // Legacy OKR format - still supported
   objective?: string;      // Short 1-2 sentence objective (replaces pithy)
