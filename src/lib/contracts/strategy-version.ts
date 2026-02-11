@@ -21,12 +21,26 @@ export interface StrategyContentContract {
   text: string;
 }
 
+export interface PrimaryMetricContract {
+  name: string;
+  baseline: string;
+  target: string;
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+  direction: 'increase' | 'decrease';
+}
+
 export interface ObjectiveContentContract {
   title?: string;  // Short title (3-5 words) for lists/linking
   explanation: string;
-  // New OKR format
+
+  // OMTM format (preferred)
+  primaryMetric?: PrimaryMetricContract;
+  supportingMetrics?: string[];
+
+  // OKR format - still supported
   objective?: string;
   keyResults?: KeyResultContract[];
+
   // Legacy format - still supported
   pithy?: string;
   metric?: ObjectiveContract['metric'];
@@ -88,10 +102,11 @@ export function validateStrategyVersionInput(data: unknown): data is StrategyVer
       return false;
     }
   } else if (obj.componentType === 'objective') {
-    // Accept new format (objective + keyResults) OR legacy format (pithy + metric)
-    const hasNewFormat = typeof content.objective === 'string' && content.objective.trim() && Array.isArray(content.keyResults);
-    const hasLegacyFormat = typeof content.pithy === 'string' && content.pithy.trim() && content.metric && typeof content.metric === 'object';
-    if (!hasNewFormat && !hasLegacyFormat) {
+    // Accept OMTM format (title + primaryMetric) OR OKR format (objective + keyResults) OR legacy format (pithy + metric)
+    const hasOMTMFormat = typeof content.title === 'string' && content.title.trim();
+    const hasOKRFormat = typeof content.objective === 'string' && content.objective.trim();
+    const hasLegacyFormat = typeof content.pithy === 'string' && content.pithy.trim();
+    if (!hasOMTMFormat && !hasOKRFormat && !hasLegacyFormat) {
       return false;
     }
   }
