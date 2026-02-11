@@ -9,18 +9,8 @@ import {
   ChevronRight,
   Check,
   ChevronsUpDown,
-  Settings,
-  BookOpen,
-  Puzzle,
-  Cpu,
-  SlidersHorizontal,
-  Rocket,
-  HelpCircle,
-  LifeBuoy,
   Sparkles,
   User,
-  CreditCard,
-  Bell,
   LogOut,
   FolderKanban,
   FolderPlus,
@@ -31,7 +21,6 @@ import {
   Atom,
   Glasses,
   TrendingUp,
-  Lock,
   NotebookPen,
 } from 'lucide-react'
 import {
@@ -91,7 +80,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
-import { FakeDoorDialog } from '@/components/FakeDoorDialog'
+import {
+  ProFeatureInterstitial,
+  UpgradeSuccessDialog,
+  useProUpgradeFlow,
+} from '@/components/ProUpgradeFlow'
 import { PaywallModal } from '@/components/PaywallModal'
 import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateDialog'
 import { ChatSheet } from '@/components/chat-sheet'
@@ -166,7 +159,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null)
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
-  const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
@@ -174,6 +166,16 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
   const { isGenerating } = useGenerationStatusContext()
+  const {
+    interstitialOpen,
+    setInterstitialOpen,
+    successOpen,
+    setSuccessOpen,
+    currentFeature,
+    triggerUpgrade,
+    handleUpgrade,
+    handleContinue,
+  } = useProUpgradeFlow()
 
   const {
     createProject,
@@ -439,7 +441,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setFakeDoorOpen(true)}>
+                  <SidebarMenuButton onClick={() => triggerUpgrade('audio-memo')}>
                     <NotebookPen className="h-4 w-4" />
                     <span>Add Memo</span>
                   </SidebarMenuButton>
@@ -519,7 +521,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                     <Link href={`/project/${selectedProject.id}/outcomes`}>
                       <TrendingUp className="h-4 w-4" />
                       <span>Manage Outcomes</span>
-                      <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -528,93 +529,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           </SidebarGroup>
         )}
 
-        {/* Your Lunastak */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Your Lunastak</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {/* Settings with collapsible sub-menu */}
-              <Collapsible asChild className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton>
-                      <Settings className="h-4 w-4" />
-                      <span>Settings</span>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <Puzzle className="h-4 w-4" />
-                            <span>Integrations</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <Cpu className="h-4 w-4" />
-                            <span>Models</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <SlidersHorizontal className="h-4 w-4" />
-                            <span>Preferences</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-
-              {/* Documentation with collapsible sub-menu */}
-              <Collapsible asChild className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton>
-                      <BookOpen className="h-4 w-4" />
-                      <span>Documentation</span>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <Rocket className="h-4 w-4" />
-                            <span>Getting started</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <HelpCircle className="h-4 w-4" />
-                            <span>FAQ</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <LifeBuoy className="h-4 w-4" />
-                            <span>Help</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t py-2">
@@ -644,7 +558,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   align="end"
                   sideOffset={4}
                 >
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => triggerUpgrade('model-selection')}>
                     <Sparkles className="h-4 w-4" />
                     Upgrade to Pro
                   </DropdownMenuItem>
@@ -652,14 +566,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   <DropdownMenuItem>
                     <User className="h-4 w-4" />
                     Account
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <CreditCard className="h-4 w-4" />
-                    Billing
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Bell className="h-4 w-4" />
-                    Notifications
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/?signedOut=true' })}>
@@ -753,18 +659,17 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         description={SIGN_IN_GATE_PRESETS.addProject.description}
       />
 
-      {/* Memo Fake Door Dialog */}
-      <FakeDoorDialog
-        open={fakeDoorOpen}
-        onOpenChange={setFakeDoorOpen}
-        featureName="Memos"
-        description="Capture quick thoughts, voice notes, or observations directly in your project.
-
-Jot down ideas from meetings, record voice memos on the go, or capture spontaneous insights. Luna will extract strategic themes from your memos."
-        onInterest={() => {
-          // Log interest for now
-          console.log(`[FakeDoor] User interested in: Add Memo (sidebar)`)
-        }}
+      {/* Pro Upgrade Flow Dialogs */}
+      <ProFeatureInterstitial
+        feature={currentFeature}
+        open={interstitialOpen}
+        onOpenChange={setInterstitialOpen}
+        onUpgrade={handleUpgrade}
+      />
+      <UpgradeSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        onContinue={handleContinue}
       />
 
       {/* Paywall Modal */}

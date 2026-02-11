@@ -2,33 +2,70 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { AppLayout } from '@/components/layout/app-layout'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Loader2, Calendar, FileText, Plug, TrendingUp } from 'lucide-react'
 import {
-  TrendingUp,
-  Loader2,
-  Bell,
-  BarChart3,
-  CalendarCheck,
-  FileText,
-} from 'lucide-react'
+  ProFeatureInterstitial,
+  UpgradeSuccessDialog,
+  useProUpgradeFlow,
+  type ProFeatureKey,
+} from '@/components/ProUpgradeFlow'
+
+const OUTCOME_FEATURES = [
+  {
+    key: 'monthly-review' as ProFeatureKey,
+    icon: Calendar,
+    title: 'Monthly Review Draft',
+    description: 'Luna drafts your MBR based on your endorsed strategy. Easy prep, distribute ahead, effective meetings.',
+    cta: 'Generate Draft',
+  },
+  {
+    key: 'quarterly-review' as ProFeatureKey,
+    icon: Calendar,
+    title: 'Quarterly Review Draft',
+    description: 'Comprehensive QBR narrative with strategic context. Stop scrambling before board meetings.',
+    cta: 'Generate Draft',
+  },
+  {
+    key: 'strategic-narrative' as ProFeatureKey,
+    icon: FileText,
+    title: 'Strategic Narrative',
+    description: 'The story of how you\'re tracking against objectives. Share context without the jargon.',
+    cta: 'Create Narrative',
+  },
+  {
+    key: 'connect-data' as ProFeatureKey,
+    icon: Plug,
+    title: 'Connect Your Data',
+    description: 'Pull operational metrics back into Luna. Let reality inform your strategic updates.',
+    cta: 'View Integrations',
+  },
+]
 
 export default function OutcomesPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { status } = useSession()
   const params = useParams()
   const projectId = params.id as string
   const [projectName, setProjectName] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
-  const [notifyRequested, setNotifyRequested] = useState(false)
+
+  const {
+    interstitialOpen,
+    setInterstitialOpen,
+    successOpen,
+    setSuccessOpen,
+    currentFeature,
+    triggerUpgrade,
+    handleUpgrade,
+    handleContinue,
+  } = useProUpgradeFlow()
 
   useEffect(() => {
     if (status === 'loading') return
 
-    // Don't redirect to signin - guests can access projects via cookie
-    // The API will return 401 if unauthorized
     fetch(`/api/project/${projectId}`)
       .then(res => res.json())
       .then(data => {
@@ -37,11 +74,6 @@ export default function OutcomesPage() {
       })
       .catch(() => setIsLoading(false))
   }, [status, projectId])
-
-  const handleNotify = () => {
-    // In future, this would call an API to register interest
-    setNotifyRequested(true)
-  }
 
   if (status === 'loading' || isLoading) {
     return (
@@ -58,58 +90,61 @@ export default function OutcomesPage() {
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Header */}
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {projectName || 'Outcomes'}
-          </h1>
-          <p className="text-muted-foreground">
-            Track performance and make decisions based on results
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold tracking-tight">
+              Manage Outcomes
+            </h1>
+          </div>
+          <p className="text-muted-foreground max-w-2xl">
+            Bridge the gap between strategy and execution. Luna helps you stay on track
+            with auto-generated reviews and strategic narratives.
           </p>
         </div>
 
-        {/* Coming Soon Card */}
-        <Card className="border-dashed bg-muted/30">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <TrendingUp className="h-16 w-16 text-muted-foreground mb-6" />
-            <h2 className="text-2xl font-semibold mb-2">Coming Soon</h2>
-            <p className="text-muted-foreground text-center max-w-lg mb-8">
-              Outcomes connects your strategy to results. Generate MBRs, track OKRs,
-              and make better operational decisions—all informed by your strategic direction.
-            </p>
-
-            {/* Feature Preview */}
-            <div className="grid gap-4 md:grid-cols-3 w-full max-w-2xl mb-8">
-              <div className="flex flex-col items-center p-4 rounded-lg bg-background border">
-                <FileText className="h-8 w-8 text-green-600 mb-2" />
-                <span className="text-sm font-medium">Monthly Reviews</span>
-                <span className="text-xs text-muted-foreground">Auto-generated MBRs</span>
-              </div>
-              <div className="flex flex-col items-center p-4 rounded-lg bg-background border">
-                <BarChart3 className="h-8 w-8 text-green-600 mb-2" />
-                <span className="text-sm font-medium">OKR Tracking</span>
-                <span className="text-xs text-muted-foreground">Metrics tied to strategy</span>
-              </div>
-              <div className="flex flex-col items-center p-4 rounded-lg bg-background border">
-                <CalendarCheck className="h-8 w-8 text-green-600 mb-2" />
-                <span className="text-sm font-medium">Quarterly Planning</span>
-                <span className="text-xs text-muted-foreground">Strategy refresh cycles</span>
-              </div>
-            </div>
-
-            {/* Notify Button */}
-            {notifyRequested ? (
-              <div className="flex items-center gap-2 text-green-600">
-                <Bell className="h-4 w-4" />
-                <span className="text-sm">We&apos;ll notify you when it&apos;s ready!</span>
-              </div>
-            ) : (
-              <Button onClick={handleNotify} variant="outline">
-                <Bell className="h-4 w-4 mr-2" />
-                Notify me when available
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        {/* Feature Cards Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {OUTCOME_FEATURES.map((feature) => {
+            const Icon = feature.icon
+            return (
+              <Card key={feature.key} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CardDescription className="text-sm">
+                    {feature.description}
+                  </CardDescription>
+                  <Button
+                    onClick={() => triggerUpgrade(feature.key)}
+                    className="w-full"
+                  >
+                    {feature.cta}
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
       </div>
+
+      {/* Upgrade Flow Dialogs */}
+      <ProFeatureInterstitial
+        feature={currentFeature}
+        open={interstitialOpen}
+        onOpenChange={setInterstitialOpen}
+        onUpgrade={handleUpgrade}
+      />
+      <UpgradeSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        onContinue={handleContinue}
+      />
     </AppLayout>
   )
 }
