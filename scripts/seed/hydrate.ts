@@ -138,6 +138,7 @@ async function hydrateProjectData(
         selectedLens: convFixture.selectedLens,
         questionCount: convFixture.questionCount,
         experimentVariant: variant,
+        isInitialConversation: convFixture.isInitialConversation ?? false,
       },
     });
 

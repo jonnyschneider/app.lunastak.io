@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-11
+
+**Production Customer Beta.** First release to real customers.
+
+### Added
+
+- **Pro Upgrade Flow** - Admin-initiated upgrade with sidebar integration
+  - Pro users bypass paywall for multi-project creation
+  - "Coming Soon" dialog for unreleased Pro features (Outcomes)
+  - Sidebar hides "Upgrade to Pro" for already-Pro users
+  - `isUserPro()` helper centralizes Pro status checks
+
+- **Account Page** - User details and session management
+  - Displays name, email, account status
+  - Clean settings entry point from sidebar
+
+- **Early Access Waitlist** - Email capture for upcoming features
+  - Waitlist signup with pre-populated email from session
+  - Gold/accent CTA styling for visibility
+
+- **Project Auto-Numbering** - New projects get sequential names
+  - "My Strategy 2", "My Strategy 3", etc.
+  - Inline rename capability from project switcher
+
+### Changed
+
+- **Schema Rationalization** - Pre-beta cleanup of 9 dead fields
+  - Removed early eval infrastructure: `confidenceScore`, `confidenceReasoning`, `annotations` (Message), `extractedBy` (Fragment), `taggedBy` (FragmentDimensionTag), `synthesizedBy`, `coverage` (DimensionalSynthesis), `sourceMessageId`, `sourceDocumentId` (DeepDive)
+  - Added `Trace.projectId` denormalization for direct project access (eliminates 2-join through Conversation)
+  - Fixed `Conversation.Project` → `project` relation naming
+  - Deleted dead `/api/conversation/assess-confidence` route (LLM-as-judge eval infra, now handled off-app via backtesting APIs)
+
+- **Decision Stack Visual Identity** - Bold dark teal branding
+  - Compact sidebar header
+  - Removed gold hover states
+
+- **Template Entry Flow** - Hidden for beta launch (fast-follow)
+
+### Fixed
+
+- **Waitlist Email** - Pre-populates from session, shows change link
+- **Sidebar Dropdown** - Uses `onSelect` for dropdown items
+
+---
+
 ## [1.7.9] - 2026-02-11
 
 ### Added

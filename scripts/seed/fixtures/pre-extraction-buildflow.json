@@ -1,0 +1,76 @@
+{
+  "template": {
+    "name": "pre-extraction-buildflow",
+    "description": "BuildFlow pre-extraction conversation - ready for extraction and generation"
+  },
+  "user": {
+    "name": "Demo User",
+    "email": "{{EMAIL}}"
+  },
+  "projects": [
+    {
+      "id": "{{PROJECT_ID}}",
+      "name": "My Strategy",
+      "status": "active",
+      "knowledgeSummary": null,
+      "suggestedQuestions": [],
+      "conversations": [
+        {
+          "id": "{{CONV_ID}}",
+          "title": "BuildFlow Core Strategy Session",
+          "status": "in_progress",
+          "currentPhase": "QUESTIONING",
+          "questionCount": 4,
+          "experimentVariant": "emergent-extraction-e1a",
+          "isInitialConversation": true,
+          "messages": [
+            {
+              "role": "assistant",
+              "content": "Hey! Tell me about what you're building. What's the problem you're solving and who's it for?",
+              "stepNumber": 1
+            },
+            {
+              "role": "user",
+              "content": "We're building BuildFlow - project management software for custom home builders. Think small to mid-sized builders doing 5-50 homes a year. The problem is brutal: existing software like Procore is built for huge commercial contractors, and Buildertrend tries to do everything but ends up being overwhelming.\n\nThese builders are running $3M-$15M businesses with maybe 3-10 employees, and they're managing everything through spreadsheets, group texts, and whiteboards. Every custom home has hundreds of decisions - cabinets, flooring, fixtures, paint colors - and keeping track of what's been selected, ordered, and installed is a nightmare.\n\nThe breaking point usually comes when a builder has a costly mistake - wrong tile gets installed because the selection wasn't communicated, or a subcontractor shows up and the materials aren't there. That's when they start googling for solutions.",
+              "stepNumber": 2
+            },
+            {
+              "role": "assistant",
+              "content": "That selection coordination problem is super tangible - I can picture the chaos. You mentioned Buildertrend tries to do everything. What specifically makes it overwhelming for your target builders? Is it the learning curve, the feature bloat, or something about how it's designed?",
+              "stepNumber": 3
+            },
+            {
+              "role": "user",
+              "content": "It's all of those, honestly. Buildertrend was built for production builders doing the same floor plan over and over. They have templates and workflows that assume repetition. Custom home builders are the opposite - every project is unique.\n\nSo you've got this powerful system with 100 features, but 80 of them don't apply to how custom builders work. They spend hours trying to configure it, get frustrated, and eventually just use 10% of it while still doing the rest in spreadsheets.\n\nThe other issue is it's designed around the builder's workflow, not the homeowner's experience. Custom home clients are invested - they're making a $500K+ decision. They want visibility into their project, but Buildertrend's client portal feels like an afterthought.\n\nWe're taking the opposite approach. Start with the homeowner experience and work backward. Our Selection Tracker is the hero feature - it's where clients, builders, designers, and trades all see the same source of truth for every decision on the project.",
+              "stepNumber": 4
+            },
+            {
+              "role": "assistant",
+              "content": "That 'start with the homeowner experience' insight is interesting positioning. The Selection Tracker sounds like it could be a genuine differentiator. How do you think about the relationship between BuildFlow and the builder's existing subcontractors? Custom builders often have deep, long-term relationships with their trades - does BuildFlow enhance those or potentially feel like you're inserting yourself into them?",
+              "stepNumber": 5
+            },
+            {
+              "role": "user",
+              "content": "Great question. We're very intentional about not trying to replace those relationships. The subs don't need another app to log into - they're already juggling enough. BuildFlow integrates with how they already work: text messages and emails.\n\nWhen a selection is made that affects a sub's work, they get a simple notification with exactly what they need to know. They can reply by text if there's an issue. We're not asking them to adopt a new workflow - we're just making sure they have the right information at the right time.\n\nThe builder stays in control of the relationship. We're like the communication layer that keeps everyone synced without adding friction. Think of it like Slack for construction - the builder runs it, subs pop in when needed.",
+              "stepNumber": 6
+            },
+            {
+              "role": "assistant",
+              "content": "Smart approach - reducing friction for subs while keeping the builder as the hub. Let's talk about how you're going to reach these builders. What's your go-to-market thinking? Are you going direct, through partnerships, or something else?",
+              "stepNumber": 7
+            },
+            {
+              "role": "user",
+              "content": "We're still figuring that out honestly. Right now it's been mostly word of mouth through our beta users. Custom home builders are a tight community - they know each other, they refer subs to each other, they talk at lumber yards and permit offices.\n\nI think we need to be where they are. Local home builder associations, industry trade shows like IBS, maybe partnering with material suppliers. We've thought about working with designers and architects as a referral channel since they're often the ones who recommend software to their builder partners.\n\nPricing is still fuzzy too. We're thinking per-project pricing rather than per-seat, since builder team sizes vary so much. Maybe $200-500/month depending on project volume? We need to do more research here.\n\nThe challenge is these folks are busy actually building houses - they don't spend a lot of time online researching software. Traditional SaaS marketing playbooks might not work.",
+              "stepNumber": 8
+            }
+          ],
+          "traces": []
+        }
+      ],
+      "fragments": [],
+      "deepDives": [],
+      "documents": []
+    }
+  ]
+}

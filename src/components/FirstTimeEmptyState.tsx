@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Info, Loader2, FileEdit } from 'lucide-react'
+import { Upload, Info, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -109,14 +109,6 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
             >
               <Upload className="h-4 w-4" />
               Upload a document
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/project/${projectId}/template`)}
-              className="flex items-center gap-2"
-            >
-              <FileEdit className="h-4 w-4" />
-              I have a strategy
             </Button>
             <Button
               variant="outline"

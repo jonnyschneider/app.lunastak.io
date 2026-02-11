@@ -46,6 +46,7 @@ export interface FixtureConversation {
   selectedLens?: string;
   questionCount: number;
   experimentVariant?: string;
+  isInitialConversation?: boolean;
   messages: FixtureMessage[];
   traces: FixtureTrace[];
 }
