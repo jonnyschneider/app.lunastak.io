@@ -168,6 +168,8 @@ export default function ProjectPage() {
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
+  // Track if current upload is first content (set when upload starts, cleared on completion)
+  const [pendingFirstContentUpload, setPendingFirstContentUpload] = useState(false)
 
   // Pro upgrade flow for gated features
   const {
@@ -269,6 +271,27 @@ export default function ProjectPage() {
     }
   }, [])
 
+  // Listen for documentProcessed event - open chat if this was first content
+  useEffect(() => {
+    const handleDocumentProcessed = (event: CustomEvent<{ projectId: string }>) => {
+      if (event.detail.projectId !== projectId) return
+
+      fetchProjectData()
+
+      if (pendingFirstContentUpload) {
+        setPendingFirstContentUpload(false)
+        setChatInitialQuestion("I've got the gist from your document. What would you like to explore?")
+        setChatDeepDiveId(undefined)
+        setChatGapExploration(undefined)
+        setChatResumeConversationId(undefined)
+        setChatViewOnly(false)
+        setChatSheetOpen(true)
+      }
+    }
+    window.addEventListener('documentProcessed', handleDocumentProcessed as EventListener)
+    return () => window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
+  }, [projectId, pendingFirstContentUpload])
+
   const fetchProjectData = async () => {
     setIsLoading(true)
     setError(null)
@@ -316,28 +339,14 @@ export default function ProjectPage() {
   }
 
   const handleDocumentUploadComplete = async () => {
-    // Check if this is the first content (no prior fragments, chats, or strategy)
-    const isFirstContent =
-      (stats.fragmentCount ?? 0) === 0 &&
-      (stats.conversationCount ?? 0) === 0 &&
-      (projectData?.strategyOutputs?.length ?? 0) === 0
-
-    await fetchProjectData()
-
     // Re-open the deep dive sheet to show the newly processed document
     if (uploadDeepDiveId) {
       setSelectedDeepDiveId(uploadDeepDiveId)
       setDeepDiveSheetOpen(true)
       setUploadDeepDiveId(undefined)
-    } else if (isFirstContent) {
-      // First document uploaded - open chat to discuss it
-      setChatInitialQuestion("I've extracted some insights from your document. What would you like to explore or clarify?")
-      setChatDeepDiveId(undefined)
-      setChatGapExploration(undefined)
-      setChatResumeConversationId(undefined)
-      setChatViewOnly(false)
-      setChatSheetOpen(true)
     }
+    // Note: fetchProjectData and first-content chat opening are handled
+    // by the documentProcessed event listener above
   }
 
   // Fake door handlers
@@ -577,6 +586,14 @@ export default function ProjectPage() {
                     size="sm"
                     className="flex-1 rounded-r-none"
                     onClick={() => {
+                      // Track if this is first content upload
+                      const isFirstContent =
+                        (stats.fragmentCount ?? 0) === 0 &&
+                        (stats.conversationCount ?? 0) === 0 &&
+                        (projectData?.strategyOutputs?.length ?? 0) === 0
+                      if (isFirstContent) {
+                        setPendingFirstContentUpload(true)
+                      }
                       setUploadDeepDiveId(undefined)
                       setUploadDialogOpen(true)
                     }}

@@ -531,13 +531,16 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                       <Glasses className="h-4 w-4" />
                       <span>Your Thinking</span>
                       {isProcessingDocuments(selectedProject.id) && (
-                        <Image
-                          src="/animated-logo-glitch.svg"
-                          alt=""
-                          width={12}
-                          height={12}
-                          className="animate-pulse ml-auto"
-                        />
+                        <span className="flex items-center gap-1.5 ml-auto text-xs text-muted-foreground">
+                          <Image
+                            src="/animated-logo-glitch.svg"
+                            alt=""
+                            width={12}
+                            height={12}
+                            className="animate-pulse"
+                          />
+                          <span>processing</span>
+                        </span>
                       )}
                     </Link>
                   </SidebarMenuButton>

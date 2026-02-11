@@ -99,10 +99,7 @@ export function DocumentProcessingProvider({ children }: { children: React.React
               )
             );
 
-            toast.success(`"${doc.fileName}" processed`, {
-              description: 'New insights extracted. Generate a new strategy to incorporate them.',
-              duration: 8000,
-            });
+            toast.success(`"${doc.fileName}" processed`);
 
             // Dispatch event for UI refresh
             window.dispatchEvent(new CustomEvent('documentProcessed', {
