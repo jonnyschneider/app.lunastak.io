@@ -117,14 +117,14 @@ export async function POST(request: Request) {
     },
   })
 
-  // Check if user is paid
+  // Check if user is paid or Pro
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPaid: true },
+    select: { isPaid: true, upgradedAt: true },
   })
 
   // Free users limited to 1 non-demo project
-  if (!user?.isPaid && existingProjects >= 1) {
+  if (!user?.isPaid && !user?.upgradedAt && existingProjects >= 1) {
     return NextResponse.json({
       error: 'Project limit reached',
       paywall: {
