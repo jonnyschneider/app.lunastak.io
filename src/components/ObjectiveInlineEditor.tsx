@@ -1,17 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
-import type { Objective, KeyResult } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Objective, PrimaryMetric } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
-import { isLegacyObjective, migrateObjectiveToOKR } from '@/lib/objective-migration';
-import { KeyResultEditor } from './KeyResultEditor';
+import { normalizeToOMTM } from '@/lib/objective-omtm-migration';
 
-type EditingSection = 'title' | 'objective' | 'keyResults' | 'explanation' | null;
+type EditingSection = 'title' | 'objective' | 'primaryMetric' | 'explanation' | null;
 
 interface ObjectiveInlineEditorProps {
   objective: Objective;
@@ -19,40 +24,30 @@ interface ObjectiveInlineEditorProps {
   onCancel: () => void;
 }
 
-function generateKrId(): string {
-  return `kr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function createEmptyKeyResult(): KeyResult {
+function createEmptyPrimaryMetric(): PrimaryMetric {
   return {
-    id: generateKrId(),
-    belief: { action: '', outcome: '' },
-    signal: '',
+    name: '',
     baseline: '',
     target: '',
     timeframe: '6M',
+    direction: 'increase',
   };
 }
 
 export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onCancel }: ObjectiveInlineEditorProps) {
-  // Migrate legacy objective if needed
-  const [objective] = useState<Objective>(() => {
-    if (isLegacyObjective(initialObjective)) {
-      return migrateObjectiveToOKR(initialObjective);
-    }
-    // Ensure keyResults exists
-    return {
-      ...initialObjective,
-      objective: initialObjective.objective || initialObjective.pithy || '',
-      keyResults: initialObjective.keyResults?.length ? initialObjective.keyResults : [createEmptyKeyResult()],
-    };
-  });
+  // Normalize to OMTM format
+  const normalized = normalizeToOMTM(initialObjective);
 
   // State for all fields
-  const [title, setTitle] = useState(objective.title || '');
-  const [objectiveText, setObjectiveText] = useState(objective.objective || '');
-  const [keyResults, setKeyResults] = useState<KeyResult[]>(objective.keyResults || [createEmptyKeyResult()]);
-  const [explanation, setExplanation] = useState(objective.explanation);
+  const [title, setTitle] = useState(normalized.title || '');
+  const [objectiveText, setObjectiveText] = useState(normalized.objective || normalized.pithy || '');
+  const [primaryMetric, setPrimaryMetric] = useState<PrimaryMetric>(
+    normalized.primaryMetric || createEmptyPrimaryMetric()
+  );
+  const [supportingMetrics, setSupportingMetrics] = useState<string[]>(
+    normalized.supportingMetrics || []
+  );
+  const [explanation, setExplanation] = useState(normalized.explanation);
   const [saving, setSaving] = useState(false);
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
 
@@ -60,35 +55,18 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
     setSaving(true);
     try {
       const updated: Objective = {
-        ...objective,
+        ...initialObjective,
         title: title.trim() || undefined,
-        objective: objectiveText.trim(),
-        pithy: objectiveText.trim(), // Keep for backwards compatibility
-        keyResults: keyResults.filter(kr => kr.signal.trim() || kr.target.trim()),
         explanation: explanation.trim(),
-        successCriteria: objective.successCriteria,
+        primaryMetric: primaryMetric.name.trim() ? primaryMetric : undefined,
+        supportingMetrics: supportingMetrics.filter(m => m.trim()),
+        // Keep legacy fields for backwards compat
+        objective: objectiveText.trim(),
+        pithy: objectiveText.trim(),
       };
       await onSave(updated);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleKeyResultChange = (index: number, updated: KeyResult) => {
-    const newKRs = [...keyResults];
-    newKRs[index] = updated;
-    setKeyResults(newKRs);
-  };
-
-  const handleAddKeyResult = () => {
-    if (keyResults.length < 3) {
-      setKeyResults([...keyResults, createEmptyKeyResult()]);
-    }
-  };
-
-  const handleRemoveKeyResult = (index: number) => {
-    if (keyResults.length > 1) {
-      setKeyResults(keyResults.filter((_, i) => i !== index));
     }
   };
 
@@ -178,39 +156,72 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
 
         <hr className="border-muted" />
 
-        {/* Key Results */}
+        {/* Primary Metric (OMTM) */}
         <div className="group/section">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Key Results
-            </h4>
-            {keyResults.length < 3 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleAddKeyResult}
-                className="h-7 text-xs"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Add KR
-              </Button>
-            )}
-          </div>
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            One Metric That Matters
+          </h4>
           <div className="bg-amber-50/50 border-l-2 border-l-amber-200/80 pl-3 py-2 rounded-r-md mb-3">
             <p className="text-sm text-stone-500 italic">
-              Define 1-3 measurable Key Results. Each is a hypothesis: we believe X will result in Y.
+              What single metric best measures progress toward this objective?
             </p>
           </div>
-          <div className="space-y-3">
-            {keyResults.map((kr, index) => (
-              <KeyResultEditor
-                key={kr.id}
-                keyResult={kr}
-                onChange={(updated) => handleKeyResultChange(index, updated)}
-                onRemove={() => handleRemoveKeyResult(index)}
-                canRemove={keyResults.length > 1}
+          <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+            {/* Metric Name */}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">We'll measure</span>
+              <Input
+                value={primaryMetric.name}
+                onChange={(e) => setPrimaryMetric(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Weekly Active Users"
+                className="w-48 h-8 text-sm"
               />
-            ))}
+            </div>
+
+            {/* Target line */}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">moving from</span>
+              <Input
+                value={primaryMetric.baseline}
+                onChange={(e) => setPrimaryMetric(prev => ({ ...prev, baseline: e.target.value }))}
+                placeholder="12%"
+                className="w-20 h-8 text-sm"
+              />
+              <Select
+                value={primaryMetric.direction}
+                onValueChange={(v) => setPrimaryMetric(prev => ({ ...prev, direction: v as 'increase' | 'decrease' }))}
+              >
+                <SelectTrigger className="w-24 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="increase">↑ to</SelectItem>
+                  <SelectItem value="decrease">↓ to</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                value={primaryMetric.target}
+                onChange={(e) => setPrimaryMetric(prev => ({ ...prev, target: e.target.value }))}
+                placeholder="40%"
+                className="w-20 h-8 text-sm"
+              />
+              <span className="text-muted-foreground">by</span>
+              <Select
+                value={primaryMetric.timeframe}
+                onValueChange={(v) => setPrimaryMetric(prev => ({ ...prev, timeframe: v as PrimaryMetric['timeframe'] }))}
+              >
+                <SelectTrigger className="w-28 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3M">3 months</SelectItem>
+                  <SelectItem value="6M">6 months</SelectItem>
+                  <SelectItem value="9M">9 months</SelectItem>
+                  <SelectItem value="12M">12 months</SelectItem>
+                  <SelectItem value="18M">18 months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
