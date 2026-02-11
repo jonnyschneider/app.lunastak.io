@@ -6,6 +6,56 @@ import { useSearchParams } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { GoogleIcon } from '@/components/icons/google'
+
+const oauthProviders = [
+  { id: 'google', name: 'Google', icon: GoogleIcon },
+] as const
+
+function OAuthButtons({ callbackUrl }: { callbackUrl: string }) {
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
+
+  const handleOAuthSignIn = async (providerId: string) => {
+    setLoadingProvider(providerId)
+    await signIn(providerId, { callbackUrl })
+  }
+
+  return (
+    <div className="space-y-3">
+      {oauthProviders.map((provider) => (
+        <Button
+          key={provider.id}
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuthSignIn(provider.id)}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === provider.id ? (
+            'Redirecting...'
+          ) : (
+            <>
+              <provider.icon className="mr-2 h-5 w-5" />
+              Continue with {provider.name}
+            </>
+          )}
+        </Button>
+      ))}
+    </div>
+  )
+}
+
+function Divider() {
+  return (
+    <div className="relative my-6">
+      <div className="absolute inset-0 flex items-center">
+        <span className="w-full border-t" />
+      </div>
+      <div className="relative flex justify-center text-xs uppercase">
+        <span className="bg-background px-2 text-muted-foreground">or</span>
+      </div>
+    </div>
+  )
+}
 
 function SignInForm() {
   const searchParams = useSearchParams()
@@ -117,41 +167,46 @@ function SignInForm() {
         <CardHeader>
           <CardTitle>Sign in to Lunastak</CardTitle>
           <CardDescription>
-            Enter your email to receive a magic link
+            Your AI strategy coach
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="bg-muted border border-border rounded-lg p-3">
-                <p className="text-sm text-foreground">{error}</p>
-              </div>
-            )}
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="bg-muted border border-border rounded-lg p-3">
+              <p className="text-sm text-foreground">{error}</p>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Sending...' : 'Send magic link'}
-            </Button>
-          </CardFooter>
-        </form>
+          )}
+
+          <OAuthButtons callbackUrl={callbackUrl} />
+
+          <Divider />
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-3">
+              <label htmlFor="email" className="text-sm text-muted-foreground">
+                Sign in with email
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="flex-1"
+                />
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Sending...' : 'Send'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                We'll send you a magic link
+              </p>
+            </div>
+          </form>
+        </CardContent>
       </Card>
     </div>
   )
