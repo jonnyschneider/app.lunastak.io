@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { OpportunityEditor } from './OpportunityEditor';
 import { OpportunityCard } from './OpportunityCard';
 import { InfoDialog } from './InfoDialog';
+import { SuccessMetric } from '@/lib/types';
 
 interface ObjectiveContribution {
   objectiveId: string;
@@ -12,12 +13,23 @@ interface ObjectiveContribution {
 
 interface Opportunity {
   id: string;
-  content: string;
-  status: 'draft' | 'complete';
+  content: string;  // Legacy: "title\ndescription" format
+  title?: string;
+  description?: string;
+  status: 'draft' | 'active' | 'complete';
+  successMetrics?: SuccessMetric[];
   metadata?: {
     coachingDismissed?: boolean;
     objectiveContributions?: ObjectiveContribution[];
   };
+}
+
+// Parse legacy content format
+function parseOpportunityContent(content: string): { title: string; description: string } {
+  const lines = content.split('\n');
+  const title = lines[0] || '';
+  const description = lines.slice(1).join('\n').trim();
+  return { title, description };
 }
 
 interface ObjectiveForLinking {
@@ -63,19 +75,24 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
   const handleCreate = async (
     content: string,
     status: 'draft' | 'complete',
-    objectiveContributions: ObjectiveContribution[]
+    objectiveContributions: ObjectiveContribution[],
+    successMetrics: SuccessMetric[]
   ) => {
     setSaving(true);
     try {
+      const parsed = parseOpportunityContent(content);
       const res = await fetch(`/api/project/${projectId}/content`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'opportunity',
-          content,
+          content: JSON.stringify({
+            title: parsed.title,
+            description: parsed.description,
+            successMetrics,
+          }),
           status,
           metadata: {
-            coachingDismissed: status === 'draft',
             objectiveContributions,
           },
         }),
@@ -97,19 +114,24 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
     id: string,
     content: string,
     status: 'draft' | 'complete',
-    objectiveContributions: ObjectiveContribution[]
+    objectiveContributions: ObjectiveContribution[],
+    successMetrics: SuccessMetric[]
   ) => {
     setSaving(true);
     try {
+      const parsed = parseOpportunityContent(content);
       const res = await fetch(`/api/project/${projectId}/content`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
-          content,
+          content: JSON.stringify({
+            title: parsed.title,
+            description: parsed.description,
+            successMetrics,
+          }),
           status,
           metadata: {
-            coachingDismissed: status === 'draft',
             objectiveContributions,
           },
         }),
@@ -210,14 +232,36 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
       {/* Cards grid */}
       {hasOpportunities && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          {opportunities.map(opp => (
-            editingId === opp.id ? (
+          {opportunities.map(opp => {
+            // Parse content - could be JSON (new) or plain text (legacy)
+            let title = opp.title || '';
+            let description = opp.description || '';
+            let successMetrics = opp.successMetrics || [];
+
+            if (!title && opp.content) {
+              try {
+                const parsed = JSON.parse(opp.content);
+                title = parsed.title || '';
+                description = parsed.description || '';
+                successMetrics = parsed.successMetrics || [];
+              } catch {
+                // Legacy format: first line is title
+                const legacy = parseOpportunityContent(opp.content);
+                title = legacy.title;
+                description = legacy.description;
+              }
+            }
+
+            const legacyContent = description ? `${title}\n${description}` : title;
+
+            return editingId === opp.id ? (
               <div key={opp.id} className="col-span-full">
                 <OpportunityEditor
-                  initialContent={opp.content}
+                  initialContent={legacyContent}
                   initialContributions={opp.metadata?.objectiveContributions || []}
+                  initialSuccessMetrics={successMetrics}
                   objectives={objectives}
-                  onSave={(content, status, contributions) => handleUpdate(opp.id, content, status, contributions)}
+                  onSave={(content, status, contributions, metrics) => handleUpdate(opp.id, content, status, contributions, metrics)}
                   onCancel={handleCancelEdit}
                   saving={saving}
                 />
@@ -226,16 +270,17 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
               <OpportunityCard
                 key={opp.id}
                 id={opp.id}
-                content={opp.content}
-                status={opp.status as 'draft' | 'complete'}
-                coachingDismissed={opp.metadata?.coachingDismissed}
+                title={title}
+                description={description}
+                status={opp.status}
+                successMetrics={successMetrics}
                 objectiveContributions={opp.metadata?.objectiveContributions}
                 objectives={objectives}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
-            )
-          ))}
+            );
+          })}
         </div>
       )}
 
