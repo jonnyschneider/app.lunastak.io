@@ -10,6 +10,7 @@ import { Loader2, Calendar, FileText, Plug, TrendingUp } from 'lucide-react'
 import {
   ProFeatureInterstitial,
   UpgradeSuccessDialog,
+  ProComingSoonDialog,
   useProUpgradeFlow,
   type ProFeatureKey,
 } from '@/components/ProUpgradeFlow'
@@ -51,25 +52,32 @@ export default function OutcomesPage() {
   const projectId = params.id as string
   const [projectName, setProjectName] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isPro, setIsPro] = useState(false)
 
   const {
     interstitialOpen,
     setInterstitialOpen,
     successOpen,
     setSuccessOpen,
+    comingSoonOpen,
+    setComingSoonOpen,
     currentFeature,
     triggerUpgrade,
     handleUpgrade,
     handleContinue,
-  } = useProUpgradeFlow()
+  } = useProUpgradeFlow(isPro)
 
   useEffect(() => {
     if (status === 'loading') return
 
-    fetch(`/api/project/${projectId}`)
-      .then(res => res.json())
-      .then(data => {
-        setProjectName(data.name)
+    // Fetch project and user pro status in parallel
+    Promise.all([
+      fetch(`/api/project/${projectId}`).then(res => res.json()),
+      fetch('/api/user/account').then(res => res.ok ? res.json() : null),
+    ])
+      .then(([projectData, accountData]) => {
+        setProjectName(projectData.name)
+        if (accountData?.isPro) setIsPro(true)
         setIsLoading(false)
       })
       .catch(() => setIsLoading(false))
@@ -144,6 +152,11 @@ export default function OutcomesPage() {
         open={successOpen}
         onOpenChange={setSuccessOpen}
         onContinue={handleContinue}
+      />
+      <ProComingSoonDialog
+        feature={currentFeature}
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
       />
     </AppLayout>
   )
