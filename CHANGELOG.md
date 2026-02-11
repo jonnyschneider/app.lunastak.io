@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Google OAuth Sign-In** - One-click authentication with fallback
+  - Google OAuth provider integrated with NextAuth
+  - Magic link email fallback for users without Google
+  - Account linking for existing email users
+  - Signed-out redirect handling
+
+- **Simplified OMTM Model** - Cleaner objective metrics
+  - Objectives now use simple `omtm` (metric name) + `aspiration` format
+  - Example: "Session 2 return rate" with aspiration "↑ 50%"
+  - Removed verbose baseline/target/timeframe from display
+  - Backward compatible with legacy primaryMetric and keyResults formats
+  - Generation prompt updated for new format
+
+- **Improved Opportunity-Objective Linking** - Cleaner UX
+  - Simple checkbox linking (removed confusing contribution text)
+  - Reordered editor: Title → Objective links → Description → Success Metrics
+  - Success metrics can optionally tag specific objectives
+  - Linked objectives display as clean chips
+
 - **Pithy Vision/Strategy Generation** - Radical brevity for memorability
   - New v4 prompt (`v4-pithy-statements`) with Decision Stack guidance
   - Vision: 4-15 words (headline) + elaboration
