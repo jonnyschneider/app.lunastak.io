@@ -164,17 +164,26 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
             </p>
           </div>
           <div className="space-y-3">
-            <Input
-              value={omtm}
-              onChange={(e) => setOmtm(e.target.value)}
-              placeholder="e.g., Weekly Active Users, Net Promoter Score, Revenue"
-            />
-            <Input
-              value={aspiration}
-              onChange={(e) => setAspiration(e.target.value)}
-              placeholder="Optional: 40% increase, Significant growth, Industry-leading"
-              className="text-sm text-muted-foreground"
-            />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Metric Name
+              </label>
+              <Input
+                value={omtm}
+                onChange={(e) => setOmtm(e.target.value)}
+                placeholder="e.g., Weekly Active Users, Net Promoter Score, Revenue"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Aspiration (optional)
+              </label>
+              <Input
+                value={aspiration}
+                onChange={(e) => setAspiration(e.target.value)}
+                placeholder="e.g., 40% increase, Significant growth, Industry-leading"
+              />
+            </div>
           </div>
         </div>
 
@@ -188,26 +197,45 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
               Other metrics you'll watch, but the OMTM is the main focus.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {supportingMetrics.map((metric, i) => (
-              <Badge key={i} variant="secondary" className="flex items-center gap-1 pr-1">
-                {metric}
-                <button
-                  onClick={() => handleRemoveSupportingMetric(i)}
-                  className="p-0.5 hover:bg-muted rounded"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
+          {supportingMetrics.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {supportingMetrics.map((metric, i) => (
+                <Badge key={i} variant="secondary" className="flex items-center gap-1 pr-1">
+                  {metric}
+                  <button
+                    onClick={() => handleRemoveSupportingMetric(i)}
+                    className="p-0.5 hover:bg-muted rounded"
+                    aria-label={`Remove ${metric}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={newSupportingMetric}
+              onChange={(e) => setNewSupportingMetric(e.target.value)}
+              onKeyDown={handleAddSupportingMetric}
+              placeholder="Add a supporting metric"
+              className="text-sm flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (newSupportingMetric.trim()) {
+                  setSupportingMetrics([...supportingMetrics, newSupportingMetric.trim()]);
+                  setNewSupportingMetric('');
+                }
+              }}
+              disabled={!newSupportingMetric.trim()}
+            >
+              Add
+            </Button>
           </div>
-          <Input
-            value={newSupportingMetric}
-            onChange={(e) => setNewSupportingMetric(e.target.value)}
-            onKeyDown={handleAddSupportingMetric}
-            placeholder="Type a metric name and press Enter"
-            className="text-sm"
-          />
         </div>
 
         <hr className="border-muted" />

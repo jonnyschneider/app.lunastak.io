@@ -73,7 +73,17 @@ Objectives are what you're trying to achieve NOW. Start with a verb. Be specific
 **Objective format:**
 - Title: 3-8 words. Just the essence.
 - Objective: 1-2 sentences. The full statement.
-- Key Results: Hypothesis-driven. "We believe [action] will result in [outcome]"
+- OMTM (One Metric That Matters): Just the metric NAME, not a full measurement. Keep it simple.
+- Aspiration: Optional short directional goal (e.g., "40% increase", "Industry-leading", "Significant growth")
+
+**OMTM examples:**
+- Good: "Weekly Active Users" with aspiration "40% increase"
+- Good: "Net Promoter Score" with aspiration "Best in class"
+- Good: "Revenue" with aspiration "Sustainable growth"
+- Bad: "Context relevance score (user-rated) and connection rate (% of new inputs linked to prior context)" - TOO VERBOSE
+- Bad: "TBD - need to establish measurement → 8+ relevance score" - this is measurement detail, not a metric name
+
+NOTE: Specific measurements (baseline → target) belong on Opportunities, not Objectives. Keep OMTM simple.
 
 ## Tone
 
@@ -99,46 +109,22 @@ Use THEIR words from the themes - make it feel like them, not like a consultant 
       <title>Short Title (3-8 words)</title>
       <statement>The full objective statement</statement>
       <explanation>Why this matters and connects to strategy</explanation>
-      <key_results>
-        <kr>
-          <belief_action>the action we're taking</belief_action>
-          <belief_outcome>the outcome we expect</belief_outcome>
-          <signal>the metric we'll observe</signal>
-          <baseline>current state or TBD</baseline>
-          <target>target state</target>
-          <timeframe>3M, 6M, 9M, 12M, or 18M</timeframe>
-        </kr>
-      </key_results>
+      <omtm>The Metric Name</omtm>
+      <aspiration>Short directional goal (optional)</aspiration>
     </objective>
     <objective>
       <title>Second Objective</title>
       <statement>The second objective statement</statement>
       <explanation>Why this matters</explanation>
-      <key_results>
-        <kr>
-          <belief_action>action</belief_action>
-          <belief_outcome>outcome</belief_outcome>
-          <signal>metric</signal>
-          <baseline>current</baseline>
-          <target>target</target>
-          <timeframe>6M</timeframe>
-        </kr>
-      </key_results>
+      <omtm>Another Metric</omtm>
+      <aspiration>Target aspiration</aspiration>
     </objective>
     <objective>
       <title>Third Objective</title>
       <statement>The third objective statement</statement>
       <explanation>Why this matters</explanation>
-      <key_results>
-        <kr>
-          <belief_action>action</belief_action>
-          <belief_outcome>outcome</belief_outcome>
-          <signal>metric</signal>
-          <baseline>current</baseline>
-          <target>target</target>
-          <timeframe>6M</timeframe>
-        </kr>
-      </key_results>
+      <omtm>Third Metric</omtm>
+      <aspiration>Growth target</aspiration>
     </objective>
   </objectives>
 </statements>`,
