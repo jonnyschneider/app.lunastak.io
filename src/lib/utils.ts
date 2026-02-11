@@ -39,8 +39,10 @@ export function extractAllXML(text: string, tag: string): string[] {
 }
 
 /**
- * Parse OKR-style objectives from XML.
- * Used by v3-okr-objectives prompt.
+ * Parse objectives from XML.
+ * Supports both:
+ * - New simplified OMTM format (omtm + aspiration)
+ * - Legacy key_results format (for backwards compatibility)
  */
 export function parseOKRObjectives(objectivesXML: string): Objective[] {
   const objectiveBlocks = extractAllXML(objectivesXML, 'objective');
@@ -49,20 +51,29 @@ export function parseOKRObjectives(objectivesXML: string): Objective[] {
     const title = extractXML(block, 'title');
     const statement = extractXML(block, 'statement');
     const explanation = extractXML(block, 'explanation');
+
+    // New simplified OMTM format
+    const omtm = extractXML(block, 'omtm');
+    const aspiration = extractXML(block, 'aspiration');
+
+    // Legacy key_results format (for backwards compat)
     const keyResultsXML = extractXML(block, 'key_results');
     const krBlocks = extractAllXML(keyResultsXML, 'kr');
 
-    const keyResults: KeyResult[] = krBlocks.map((kr, krIndex) => ({
-      id: `kr-${Date.now()}-${index}-${krIndex}`,
-      belief: {
-        action: extractXML(kr, 'belief_action'),
-        outcome: extractXML(kr, 'belief_outcome'),
-      },
-      signal: extractXML(kr, 'signal'),
-      baseline: extractXML(kr, 'baseline'),
-      target: extractXML(kr, 'target'),
-      timeframe: (extractXML(kr, 'timeframe') || '6M') as KeyResult['timeframe'],
-    }));
+    let keyResults: KeyResult[] | undefined;
+    if (krBlocks.length > 0) {
+      keyResults = krBlocks.map((kr, krIndex) => ({
+        id: `kr-${Date.now()}-${index}-${krIndex}`,
+        belief: {
+          action: extractXML(kr, 'belief_action'),
+          outcome: extractXML(kr, 'belief_outcome'),
+        },
+        signal: extractXML(kr, 'signal'),
+        baseline: extractXML(kr, 'baseline'),
+        target: extractXML(kr, 'target'),
+        timeframe: (extractXML(kr, 'timeframe') || '6M') as KeyResult['timeframe'],
+      }));
+    }
 
     return {
       id: `obj-${Date.now()}-${index}`,
@@ -70,7 +81,11 @@ export function parseOKRObjectives(objectivesXML: string): Objective[] {
       objective: statement,
       pithy: statement, // For backwards compat
       explanation,
-      keyResults,
+      // New simplified OMTM
+      omtm: omtm || undefined,
+      aspiration: aspiration || undefined,
+      // Legacy (only if present)
+      keyResults: keyResults?.length ? keyResults : undefined,
     };
   });
 }
