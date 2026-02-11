@@ -8,6 +8,7 @@ import {
   PaywallResponseContract,
   PaywallFeature,
 } from '@/lib/contracts/paywall';
+import { isUserPro } from '@/lib/user';
 
 const MODAL_CONTENT: Record<PaywallFeature, { title: string; message: string }> = {
   create_project: {
@@ -41,13 +42,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
-  // Check if user is paid or upgraded to Pro
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isPaid: true, upgradedAt: true },
-  });
-
-  if (user?.isPaid || user?.upgradedAt) {
+  // Check if user is Pro
+  if (await isUserPro(session.user.id)) {
     const response: PaywallResponseContract = { blocked: false };
     return NextResponse.json(response);
   }

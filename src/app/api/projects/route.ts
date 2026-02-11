@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { isGuestUser } from '@/lib/projects'
+import { isUserPro } from '@/lib/user'
 
 const GUEST_COOKIE_NAME = 'guestUserId'
 
@@ -117,14 +118,9 @@ export async function POST(request: Request) {
     },
   })
 
-  // Check if user is paid or Pro
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isPaid: true, upgradedAt: true },
-  })
-
   // Free users limited to 1 non-demo project
-  if (!user?.isPaid && !user?.upgradedAt && existingProjects >= 1) {
+  const isPro = await isUserPro(session.user.id)
+  if (!isPro && existingProjects >= 1) {
     return NextResponse.json({
       error: 'Project limit reached',
       paywall: {
