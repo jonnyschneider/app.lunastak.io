@@ -27,11 +27,26 @@ export interface KeyResult {
   timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
 }
 
+export interface PrimaryMetric {
+  name: string;             // "Weekly Active Users"
+  baseline: string;         // "12%"
+  target: string;           // "40%"
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+  direction: 'increase' | 'decrease';
+}
+
 export interface Objective {
   id: string;              // For filtering relationships
   title?: string;          // Short title (3-5 words) for lists/linking
   explanation: string;     // Full detail for back of card
-  // New OKR format
+
+  // OMTM - One Metric That Matters
+  primaryMetric?: PrimaryMetric;
+
+  // Optional supporting metrics (just names, no targets)
+  supportingMetrics?: string[];
+
+  // Legacy OKR format - still supported
   objective?: string;      // Short 1-2 sentence objective (replaces pithy)
   keyResults?: KeyResult[]; // 1-3 Key Results (replaces metric)
   // Legacy format - still supported
