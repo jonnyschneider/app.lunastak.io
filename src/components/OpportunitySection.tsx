@@ -6,11 +6,6 @@ import { OpportunityCard } from './OpportunityCard';
 import { InfoDialog } from './InfoDialog';
 import { SuccessMetric } from '@/lib/types';
 
-interface ObjectiveContribution {
-  objectiveId: string;
-  contribution: string;
-}
-
 interface Opportunity {
   id: string;
   content: string;  // Legacy: "title\ndescription" format
@@ -20,7 +15,9 @@ interface Opportunity {
   successMetrics?: SuccessMetric[];
   metadata?: {
     coachingDismissed?: boolean;
-    objectiveContributions?: ObjectiveContribution[];
+    objectiveIds?: string[];
+    // Legacy support
+    objectiveContributions?: { objectiveId: string; contribution: string }[];
   };
 }
 
@@ -75,7 +72,7 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
   const handleCreate = async (
     content: string,
     status: 'draft' | 'complete',
-    objectiveContributions: ObjectiveContribution[],
+    objectiveIds: string[],
     successMetrics: SuccessMetric[]
   ) => {
     setSaving(true);
@@ -93,7 +90,7 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
           }),
           status,
           metadata: {
-            objectiveContributions,
+            objectiveIds,
           },
         }),
       });
@@ -114,7 +111,7 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
     id: string,
     content: string,
     status: 'draft' | 'complete',
-    objectiveContributions: ObjectiveContribution[],
+    objectiveIds: string[],
     successMetrics: SuccessMetric[]
   ) => {
     setSaving(true);
@@ -132,7 +129,7 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
           }),
           status,
           metadata: {
-            objectiveContributions,
+            objectiveIds,
           },
         }),
       });
@@ -254,14 +251,19 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
 
             const legacyContent = description ? `${title}\n${description}` : title;
 
+            // Get objectiveIds - prefer new format, fall back to legacy contributions
+            const objectiveIds = opp.metadata?.objectiveIds ||
+              opp.metadata?.objectiveContributions?.map(c => c.objectiveId) ||
+              [];
+
             return editingId === opp.id ? (
               <div key={opp.id} className="col-span-full">
                 <OpportunityEditor
                   initialContent={legacyContent}
-                  initialContributions={opp.metadata?.objectiveContributions || []}
+                  initialObjectiveIds={objectiveIds}
                   initialSuccessMetrics={successMetrics}
                   objectives={objectives}
-                  onSave={(content, status, contributions, metrics) => handleUpdate(opp.id, content, status, contributions, metrics)}
+                  onSave={(content, status, objIds, metrics) => handleUpdate(opp.id, content, status, objIds, metrics)}
                   onCancel={handleCancelEdit}
                   saving={saving}
                 />
@@ -274,7 +276,7 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
                 description={description}
                 status={opp.status}
                 successMetrics={successMetrics}
-                objectiveContributions={opp.metadata?.objectiveContributions}
+                objectiveIds={objectiveIds}
                 objectives={objectives}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

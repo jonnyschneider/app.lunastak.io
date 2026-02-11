@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { CornerDownRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching';
 import { OpportunityCoaching } from './OpportunityCoaching';
 import { FakeDoorDialog } from './FakeDoorDialog';
@@ -10,11 +10,6 @@ import { SuccessMetric } from '@/lib/types';
 import { SuccessMetricEditor } from './SuccessMetricEditor';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-
-interface ObjectiveContribution {
-  objectiveId: string;
-  contribution: string;
-}
 
 interface ObjectiveForLinking {
   id: string;
@@ -25,13 +20,13 @@ interface ObjectiveForLinking {
 
 interface OpportunityEditorProps {
   initialContent?: string;
-  initialContributions?: ObjectiveContribution[];
+  initialObjectiveIds?: string[];
   initialSuccessMetrics?: SuccessMetric[];
   objectives: ObjectiveForLinking[];
   onSave: (
     content: string,
     status: 'draft' | 'complete',
-    contributions: ObjectiveContribution[],
+    objectiveIds: string[],
     successMetrics: SuccessMetric[]
   ) => Promise<void>;
   onCancel: () => void;
@@ -61,7 +56,7 @@ function parseOpportunityContent(content: string): { title: string; details: str
 
 export function OpportunityEditor({
   initialContent = '',
-  initialContributions = [],
+  initialObjectiveIds = [],
   initialSuccessMetrics = [],
   objectives,
   onSave,
@@ -71,7 +66,7 @@ export function OpportunityEditor({
   const parsed = parseOpportunityContent(initialContent);
   const [title, setTitle] = useState(parsed.title);
   const [description, setDescription] = useState(parsed.details);
-  const [contributions, setContributions] = useState<ObjectiveContribution[]>(initialContributions);
+  const [linkedObjectiveIds, setLinkedObjectiveIds] = useState<string[]>(initialObjectiveIds);
   const [successMetrics, setSuccessMetrics] = useState<SuccessMetric[]>(initialSuccessMetrics);
   const [coaching, setCoaching] = useState<CoachingResult | null>(null);
   const [showCoaching, setShowCoaching] = useState(false);
@@ -142,22 +137,23 @@ export function OpportunityEditor({
 
   // Objective linking handlers
   const isObjectiveLinked = (objectiveId: string) => {
-    return contributions.some(c => c.objectiveId === objectiveId);
+    return linkedObjectiveIds.includes(objectiveId);
   };
 
   const toggleObjective = (objectiveId: string) => {
     if (isObjectiveLinked(objectiveId)) {
-      setContributions(prev => prev.filter(c => c.objectiveId !== objectiveId));
+      setLinkedObjectiveIds(prev => prev.filter(id => id !== objectiveId));
+      // Also clear any metrics linked to this objective
+      setSuccessMetrics(prev => prev.map(m =>
+        m.objectiveId === objectiveId ? { ...m, objectiveId: undefined } : m
+      ));
     } else {
-      setContributions(prev => [...prev, { objectiveId, contribution: '' }]);
+      setLinkedObjectiveIds(prev => [...prev, objectiveId]);
     }
   };
 
-  const updateContribution = (objectiveId: string, contribution: string) => {
-    setContributions(prev =>
-      prev.map(c => c.objectiveId === objectiveId ? { ...c, contribution } : c)
-    );
-  };
+  // Get linked objectives for metric selector
+  const linkedObjectives = objectives.filter(obj => linkedObjectiveIds.includes(obj.id));
 
   const handleSave = async () => {
     if (!title.trim() || saving) return;
@@ -167,11 +163,11 @@ export function OpportunityEditor({
 
     // Determine status
     const hasMetrics = successMetrics.some(m => m.signal.trim() && m.target.trim());
-    const hasLinkedObjectives = contributions.length > 0;
+    const hasLinkedObjectives = linkedObjectiveIds.length > 0;
 
     const status = hasMetrics && hasLinkedObjectives ? 'complete' : 'draft';
 
-    await onSave(fullContent, status, contributions, successMetrics);
+    await onSave(fullContent, status, linkedObjectiveIds, successMetrics);
   };
 
   const handleRewriteClick = () => {
@@ -202,6 +198,32 @@ export function OpportunityEditor({
         />
       </div>
 
+      {/* Objective linking - simple checkboxes */}
+      {objectives.length > 0 && (
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Supports Objectives
+          </label>
+          <div className="mt-2 space-y-1">
+            {objectives.map(obj => (
+              <label
+                key={obj.id}
+                className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={isObjectiveLinked(obj.id)}
+                  onChange={() => toggleObjective(obj.id)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  disabled={saving}
+                />
+                <span className="text-sm text-foreground">{getObjectiveTitle(obj)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Description */}
       <div>
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -217,6 +239,14 @@ export function OpportunityEditor({
           disabled={saving}
         />
       </div>
+
+      {/* Suggested improvements */}
+      {showCoaching && coaching && (
+        <OpportunityCoaching
+          result={coaching}
+          onRewriteClick={handleRewriteClick}
+        />
+      )}
 
       {/* Success Metrics */}
       <div>
@@ -244,6 +274,7 @@ export function OpportunityEditor({
               onChange={(updated) => handleMetricChange(index, updated)}
               onRemove={() => handleRemoveMetric(index)}
               canRemove={successMetrics.length > 0}
+              linkedObjectives={linkedObjectives}
             />
           ))}
           {successMetrics.length === 0 && (
@@ -256,51 +287,6 @@ export function OpportunityEditor({
           )}
         </div>
       </div>
-
-      {/* Suggested improvements */}
-      {showCoaching && coaching && (
-        <OpportunityCoaching
-          result={coaching}
-          onRewriteClick={handleRewriteClick}
-        />
-      )}
-
-      {/* Objective linking with inline contributions */}
-      {objectives.length > 0 && (
-        <div className="space-y-1">
-          {objectives.map(obj => {
-            const isLinked = isObjectiveLinked(obj.id);
-            const contribution = contributions.find(c => c.objectiveId === obj.id);
-            return (
-              <div key={obj.id}>
-                <label className="flex items-start gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isLinked}
-                    onChange={() => toggleObjective(obj.id)}
-                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    disabled={saving}
-                  />
-                  <span className="text-sm text-foreground">{getObjectiveTitle(obj)}</span>
-                </label>
-                {isLinked && (
-                  <div className="flex items-start gap-2 ml-9 mt-1 mb-2">
-                    <CornerDownRight className="h-3 w-3 text-muted-foreground mt-2.5 shrink-0" />
-                    <input
-                      type="text"
-                      value={contribution?.contribution || ''}
-                      onChange={(e) => updateContribution(obj.id, e.target.value)}
-                      placeholder="e.g. add an expected result related to this outcome"
-                      className="flex-1 p-2 border border-input rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      disabled={saving}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2 border-t">

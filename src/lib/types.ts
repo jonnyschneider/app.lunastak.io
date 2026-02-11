@@ -44,6 +44,7 @@ export interface SuccessMetric {
   signal: string;     // "S1→S2 conversion"
   baseline: string;   // "25%"
   target: string;     // "50%"
+  objectiveId?: string; // Optional: which specific objective this metric measures
 }
 
 export interface Objective {

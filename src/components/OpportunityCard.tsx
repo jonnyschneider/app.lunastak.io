@@ -1,11 +1,7 @@
 'use client';
 
 import { SuccessMetric } from '@/lib/types';
-
-interface ObjectiveContribution {
-  objectiveId: string;
-  contribution: string;
-}
+import { getObjectiveTitle } from '@/lib/utils';
 
 interface ObjectiveForLinking {
   id: string;
@@ -20,7 +16,7 @@ interface OpportunityCardProps {
   description: string;
   status: 'draft' | 'active' | 'complete';
   successMetrics?: SuccessMetric[];
-  objectiveContributions?: ObjectiveContribution[];
+  objectiveIds?: string[];
   objectives: ObjectiveForLinking[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
@@ -32,20 +28,17 @@ export function OpportunityCard({
   description,
   status,
   successMetrics = [],
-  objectiveContributions = [],
+  objectiveIds = [],
   objectives,
   onEdit,
   onDelete,
 }: OpportunityCardProps) {
-  const showWarning = status === 'draft' && objectiveContributions.length === 0;
+  const showWarning = status === 'draft' && objectiveIds.length === 0;
 
-  // Get linked objectives with their contributions
-  const linkedObjectives = objectiveContributions
-    .map(oc => {
-      const obj = objectives.find(o => o.id === oc.objectiveId);
-      return obj ? { ...obj, contribution: oc.contribution } : null;
-    })
-    .filter(Boolean) as (ObjectiveForLinking & { contribution: string })[];
+  // Get linked objectives
+  const linkedObjectives = objectiveIds
+    .map(objId => objectives.find(o => o.id === objId))
+    .filter(Boolean) as ObjectiveForLinking[];
 
   return (
     <div className={`
@@ -123,24 +116,20 @@ export function OpportunityCard({
         </div>
       )}
 
-      {/* Linked objectives with contributions */}
+      {/* Linked objectives */}
       {linkedObjectives.length > 0 && (
         <div className="mt-3 pt-3 border-t border-border">
-          <div className="space-y-1.5">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Supports
+          </h4>
+          <div className="flex flex-wrap gap-1.5">
             {linkedObjectives.map(obj => (
-              <div key={obj.id} className="flex items-start gap-2 text-xs">
-                <span className="text-[#0A2933]/50">→</span>
-                <div className="flex-1 min-w-0">
-                  <span className="text-muted-foreground truncate block">
-                    {obj.pithy}
-                  </span>
-                  {obj.contribution && (
-                    <span className="text-[#0A2933] font-medium">
-                      {obj.contribution}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <span
+                key={obj.id}
+                className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded"
+              >
+                {getObjectiveTitle(obj)}
+              </span>
             ))}
           </div>
         </div>
