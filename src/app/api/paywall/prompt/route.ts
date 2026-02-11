@@ -41,13 +41,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
-  // Check if user is paid
+  // Check if user is paid or upgraded to Pro
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPaid: true },
+    select: { isPaid: true, upgradedAt: true },
   });
 
-  if (user?.isPaid) {
+  if (user?.isPaid || user?.upgradedAt) {
     const response: PaywallResponseContract = { blocked: false };
     return NextResponse.json(response);
   }
