@@ -10,6 +10,7 @@ import {
   Check,
   ChevronsUpDown,
   Sparkles,
+  User,
   LogOut,
   FolderKanban,
   FolderPlus,
@@ -560,6 +561,13 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   <DropdownMenuItem onSelect={() => triggerUpgrade('model-selection')}>
                     <Sparkles className="h-4 w-4" />
                     Upgrade to Pro
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">
+                      <User className="h-4 w-4" />
+                      Account
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => signOut({ callbackUrl: '/?signedOut=true' })}>
