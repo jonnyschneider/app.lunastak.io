@@ -272,17 +272,69 @@ export function UpgradeSuccessDialog({
   );
 }
 
+// Dialog for Pro users clicking features that aren't ready yet
+interface ProComingSoonDialogProps {
+  feature: ProFeatureKey;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ProComingSoonDialog({
+  feature,
+  open,
+  onOpenChange,
+}: ProComingSoonDialogProps) {
+  const featureConfig = PRO_FEATURES[feature];
+  const Icon = featureConfig.icon;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Icon className="h-6 w-6 text-primary" />
+            </div>
+            <DialogTitle className="text-xl">{featureConfig.title}</DialogTitle>
+          </div>
+          <DialogDescription className="text-base pt-2">
+            {featureConfig.description}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="pt-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm">
+            <Sparkles className="h-4 w-4 text-accent" />
+            <span>You're a Pro — you'll be first to know when this feature is ready.</span>
+          </div>
+
+          <Button onClick={() => onOpenChange(false)} className="w-full">
+            Got it
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Hook to manage the upgrade flow
-export function useProUpgradeFlow() {
+export function useProUpgradeFlow(isPro: boolean = false) {
   const [interstitialOpen, setInterstitialOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [currentFeature, setCurrentFeature] = useState<ProFeatureKey>('monthly-review');
 
   const triggerUpgrade = (feature: ProFeatureKey) => {
     setCurrentFeature(feature);
-    setInterstitialOpen(true);
-    // Log weak signal (viewed feature)
-    console.log('[ProUpgrade] User viewed pro feature:', feature);
+    if (isPro) {
+      // Pro user clicking unreleased feature
+      setComingSoonOpen(true);
+      console.log('[ProUpgrade] Pro user viewed coming soon feature:', feature);
+    } else {
+      // Non-pro user - show upgrade interstitial
+      setInterstitialOpen(true);
+      console.log('[ProUpgrade] User viewed pro feature:', feature);
+    }
   };
 
   const handleUpgrade = async () => {
@@ -321,6 +373,8 @@ export function useProUpgradeFlow() {
     setInterstitialOpen,
     successOpen,
     setSuccessOpen,
+    comingSoonOpen,
+    setComingSoonOpen,
     currentFeature,
     triggerUpgrade,
     handleUpgrade,

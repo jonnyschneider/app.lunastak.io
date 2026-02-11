@@ -83,6 +83,7 @@ import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import {
   ProFeatureInterstitial,
   UpgradeSuccessDialog,
+  ProComingSoonDialog,
   useProUpgradeFlow,
 } from '@/components/ProUpgradeFlow'
 import { PaywallModal } from '@/components/PaywallModal'
@@ -172,11 +173,13 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     setInterstitialOpen,
     successOpen,
     setSuccessOpen,
+    comingSoonOpen,
+    setComingSoonOpen,
     currentFeature,
     triggerUpgrade,
     handleUpgrade,
     handleContinue,
-  } = useProUpgradeFlow()
+  } = useProUpgradeFlow(isPro)
 
   const {
     createProject,
@@ -688,6 +691,11 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         open={successOpen}
         onOpenChange={setSuccessOpen}
         onContinue={handleContinue}
+      />
+      <ProComingSoonDialog
+        feature={currentFeature}
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
       />
 
       {/* Paywall Modal */}
