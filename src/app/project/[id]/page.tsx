@@ -33,6 +33,12 @@ import {
 } from '@/components/ui/item'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
+import {
+  useProUpgradeFlow,
+  ProFeatureInterstitial,
+  UpgradeSuccessDialog,
+  ProComingSoonDialog,
+} from '@/components/ProUpgradeFlow'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
@@ -162,6 +168,20 @@ export default function ProjectPage() {
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
+
+  // Pro upgrade flow for gated features
+  const {
+    interstitialOpen,
+    setInterstitialOpen,
+    successOpen,
+    setSuccessOpen,
+    comingSoonOpen,
+    setComingSoonOpen,
+    currentFeature,
+    triggerUpgrade,
+    handleUpgrade,
+    handleContinue,
+  } = useProUpgradeFlow()
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -295,13 +315,28 @@ export default function ProjectPage() {
     setUploadDialogOpen(true)
   }
 
-  const handleDocumentUploadComplete = () => {
-    fetchProjectData()
+  const handleDocumentUploadComplete = async () => {
+    // Check if this is the first content (no prior fragments, chats, or strategy)
+    const isFirstContent =
+      (stats.fragmentCount ?? 0) === 0 &&
+      (stats.conversationCount ?? 0) === 0 &&
+      (projectData?.strategyOutputs?.length ?? 0) === 0
+
+    await fetchProjectData()
+
     // Re-open the deep dive sheet to show the newly processed document
     if (uploadDeepDiveId) {
       setSelectedDeepDiveId(uploadDeepDiveId)
       setDeepDiveSheetOpen(true)
       setUploadDeepDiveId(undefined)
+    } else if (isFirstContent) {
+      // First document uploaded - open chat to discuss it
+      setChatInitialQuestion("I've extracted some insights from your document. What would you like to explore or clarify?")
+      setChatDeepDiveId(undefined)
+      setChatGapExploration(undefined)
+      setChatResumeConversationId(undefined)
+      setChatViewOnly(false)
+      setChatSheetOpen(true)
     }
   }
 
@@ -553,7 +588,7 @@ export default function ProjectPage() {
                   <Button
                     size="sm"
                     className="flex-1 rounded-l-none"
-                    onClick={() => handleFakeDoor('Add Memo')}
+                    onClick={() => triggerUpgrade('audio-memo')}
                   >
                     <NotebookPen className="h-3 w-3 mr-1" />
                     Add Memo
@@ -804,6 +839,7 @@ export default function ProjectPage() {
         gapExploration={chatGapExploration}
         resumeConversationId={chatResumeConversationId}
         hasExistingStrategy={(projectData?.strategyOutputs?.length ?? 0) > 0}
+        hasKnowledgebaseContent={(stats.fragmentCount ?? 0) > 0}
         viewOnly={chatViewOnly}
       />
 
@@ -862,6 +898,24 @@ export default function ProjectPage() {
           setRefreshStrategyDialogOpen(false)
           router.push(`/strategy/${traceId}`)
         }}
+      />
+
+      {/* Pro Upgrade Flow Dialogs */}
+      <ProFeatureInterstitial
+        feature={currentFeature}
+        open={interstitialOpen}
+        onOpenChange={setInterstitialOpen}
+        onUpgrade={handleUpgrade}
+      />
+      <UpgradeSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        onContinue={handleContinue}
+      />
+      <ProComingSoonDialog
+        feature={currentFeature}
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
       />
     </AppLayout>
   )
