@@ -25,8 +25,8 @@ export default async function Page({
     redirect(`/project/${params.projectId}`);
   }
 
-  // If user just signed out, redirect to signin page instead of creating new guest
-  if (params.signedOut === 'true') {
+  // If user just signed out and not authenticated, redirect to signin page instead of creating new guest
+  if (params.signedOut === 'true' && !session?.user?.id) {
     redirect('/api/auth/signin');
   }
 
