@@ -28,6 +28,12 @@ export interface ObjectiveContract {
   id: string;
   title?: string;  // Short title (3-5 words) for lists/linking
   explanation: string;
+
+  // OMTM - simplified format (preferred)
+  omtm?: string;         // Just the metric name: "Weekly Active Users"
+  aspiration?: string;   // Optional directional goal: "40% increase" or "Significant growth"
+  supportingMetrics?: string[];  // Optional additional metrics (just names)
+
   // New OKR format
   objective?: string;
   keyResults?: KeyResultContract[];

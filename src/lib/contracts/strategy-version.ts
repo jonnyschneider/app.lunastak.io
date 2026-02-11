@@ -33,9 +33,13 @@ export interface ObjectiveContentContract {
   title?: string;  // Short title (3-5 words) for lists/linking
   explanation: string;
 
-  // OMTM format (preferred)
+  // OMTM - simplified format (preferred)
+  omtm?: string;         // Just the metric name: "Weekly Active Users"
+  aspiration?: string;   // Optional directional goal: "40% increase" or "Significant growth"
+  supportingMetrics?: string[];  // Optional additional metrics (just names)
+
+  // Legacy OMTM format - still supported for migration
   primaryMetric?: PrimaryMetricContract;
-  supportingMetrics?: string[];
 
   // OKR format - still supported
   objective?: string;
@@ -102,11 +106,12 @@ export function validateStrategyVersionInput(data: unknown): data is StrategyVer
       return false;
     }
   } else if (obj.componentType === 'objective') {
-    // Accept OMTM format (title + primaryMetric) OR OKR format (objective + keyResults) OR legacy format (pithy + metric)
-    const hasOMTMFormat = typeof content.title === 'string' && content.title.trim();
+    // Accept simplified OMTM (omtm field) OR title-based OR OKR format OR legacy format
+    const hasSimplifiedOMTM = typeof content.omtm === 'string' && content.omtm.trim();
+    const hasTitleFormat = typeof content.title === 'string' && content.title.trim();
     const hasOKRFormat = typeof content.objective === 'string' && content.objective.trim();
     const hasLegacyFormat = typeof content.pithy === 'string' && content.pithy.trim();
-    if (!hasOMTMFormat && !hasOKRFormat && !hasLegacyFormat) {
+    if (!hasSimplifiedOMTM && !hasTitleFormat && !hasOKRFormat && !hasLegacyFormat) {
       return false;
     }
   }

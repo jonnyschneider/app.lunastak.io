@@ -80,6 +80,26 @@ Collapsed \"Luna\'s Memory\" header with expand, limited provocations (3 items +
 
 **Evidence:** PrinciplesSection.tsx, /api/suggest-opposite endpoint.
 
+### 8. Simplified OMTM for Intent, Not Measurement (2026-02-11)
+
+**Challenge:** Initial OMTM design (baseline→target→timeframe) created confusion - users specified "from X to Y" at both Objective level AND Opportunity level. The cognitive overhead undermined the simplicity goal.
+
+**Uncertainty:** Can we separate "intent" (what metric matters) from "measurement" (specific targets) to reduce cognitive load while maintaining strategic rigour?
+
+**Approach:** OMTM on Objectives simplified to metric name + optional aspiration text (e.g., "Weekly Active Users" + "Significant growth"). No baseline/target/timeframe on Objectives. All rigorous measurement ("from X to Y") lives on Opportunities as hypothesis-driven success metrics. This positions Objectives as alignment signals for ICs, while Opportunities drive testable initiative validation.
+
+**Evidence:** docs/plans/2026-02-11-opportunities-okr-redesign.md
+
+### 9. OAuth for Frictionless Return Visits (2026-02-11)
+
+**Challenge:** Magic link authentication requires users to check email on every return visit, creating friction that undermines the "longitudinal coach" value proposition.
+
+**Uncertainty:** Can reducing return-visit friction (magic link → OAuth) improve retention for a product that depends on multi-session engagement?
+
+**Approach:** Google OAuth as primary sign-in with magic link fallback. Provider array structure for future Microsoft OAuth. UI design prioritizes OAuth while keeping magic link visible for users who need it.
+
+**Evidence:** docs/plans/2026-02-11-google-oauth-design.md
+
 ## New Knowledge Generated
 
 1.  **Multiple entry points matter:** Different users prefer different starting modalities. Document upload captures users who won\'t type; conversation captures those who think out loud.
