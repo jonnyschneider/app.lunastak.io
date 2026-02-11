@@ -318,7 +318,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-3 py-3">
+      <SidebarHeader className="h-16 border-b px-3 !flex-row items-center">
         {/* Project Switcher - shown for both auth and guest users */}
         {isLoadingProjects ? (
           <div className="h-9 flex items-center text-sm text-muted-foreground">
@@ -335,20 +335,13 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                 variant="outline"
                 role="combobox"
                 aria-expanded={projectSwitcherOpen}
-                className="w-full justify-between h-auto py-2"
+                className="w-full justify-between h-9 data-[state=open]:bg-muted data-[state=open]:text-foreground"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <FolderKanban className="h-4 w-4 shrink-0" />
-                  <div className="flex flex-col items-start gap-0 min-w-0 text-left">
-                    <span className="font-medium text-sm leading-tight truncate">
-                      {selectedProject?.name || 'Select project'}
-                    </span>
-                    {selectedProject && (
-                      <span className="text-xs text-muted-foreground">
-                        {selectedProject.fragmentCount} fragments
-                      </span>
-                    )}
-                  </div>
+                  <span className="font-medium text-sm truncate">
+                    {selectedProject?.name || 'Select project'}
+                  </span>
                 </div>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -624,36 +617,24 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        {/* Beta Preview label */}
-        <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border/50">
-          <span className="text-muted-foreground/70">Beta Preview</span>
-          <span className="ml-1.5 font-mono text-[10px] text-muted-foreground/50">
-            v{process.env.NEXT_PUBLIC_APP_VERSION}
-          </span>
-        </div>
+      <SidebarFooter className="border-t py-2">
         <SidebarMenu>
           <SidebarMenuItem>
             {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
-                    size="lg"
+                    size="default"
                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   >
-                    <Avatar className="h-8 w-8 rounded-lg bg-primary text-primary-foreground">
-                      <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
+                    <Avatar className="h-6 w-6 rounded-md bg-primary text-primary-foreground">
+                      <AvatarFallback className="rounded-md bg-primary text-primary-foreground text-xs">
                         {getUserInitials()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        {getUserDisplay()}
-                      </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {session.user?.email}
-                      </span>
-                    </div>
+                    <span className="truncate text-sm">
+                      {getUserDisplay()}
+                    </span>
                     <ChevronUp className="ml-auto h-4 w-4" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
@@ -688,17 +669,15 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <SidebarMenuButton size="lg" asChild>
+              <SidebarMenuButton size="default" asChild>
                 <Link href="/auth/signin">
-                  <Avatar className="h-8 w-8 rounded-lg bg-muted text-muted-foreground">
-                    <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">G</AvatarFallback>
+                  <Avatar className="h-6 w-6 rounded-md bg-muted text-muted-foreground">
+                    <AvatarFallback className="rounded-md bg-muted text-muted-foreground text-xs">G</AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Guest</span>
-                    <span className="truncate text-xs text-primary">
-                      Sign in to save your work
-                    </span>
-                  </div>
+                  <span className="truncate text-sm">Guest</span>
+                  <span className="truncate text-xs text-primary">
+                    Sign in
+                  </span>
                 </Link>
               </SidebarMenuButton>
             )}
