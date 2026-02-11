@@ -52,9 +52,9 @@ export default function OutcomesPage() {
   const projectId = params.id as string
   const [projectName, setProjectName] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
-  const [isPro, setIsPro] = useState(false)
 
   const {
+    isPro,
     interstitialOpen,
     setInterstitialOpen,
     successOpen,
@@ -65,19 +65,15 @@ export default function OutcomesPage() {
     triggerUpgrade,
     handleUpgrade,
     handleContinue,
-  } = useProUpgradeFlow(isPro)
+  } = useProUpgradeFlow()
 
   useEffect(() => {
     if (status === 'loading') return
 
-    // Fetch project and user pro status in parallel
-    Promise.all([
-      fetch(`/api/project/${projectId}`).then(res => res.json()),
-      fetch('/api/user/account').then(res => res.ok ? res.json() : null),
-    ])
-      .then(([projectData, accountData]) => {
+    fetch(`/api/project/${projectId}`)
+      .then(res => res.json())
+      .then(projectData => {
         setProjectName(projectData.name)
-        if (accountData?.isPro) setIsPro(true)
         setIsLoading(false)
       })
       .catch(() => setIsLoading(false))

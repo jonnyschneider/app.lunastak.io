@@ -170,12 +170,12 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
   const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
-  const [isPro, setIsPro] = useState(false)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
   const { isGenerating } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const {
+    isPro,
     interstitialOpen,
     setInterstitialOpen,
     successOpen,
@@ -186,7 +186,27 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     triggerUpgrade,
     handleUpgrade,
     handleContinue,
-  } = useProUpgradeFlow(isPro)
+  } = useProUpgradeFlow()
+
+  // Custom paywall trigger that uses ProUpgradeFlow instead of external pricing link
+  const triggerProjectPaywall = async (): Promise<boolean> => {
+    // Check if user would be blocked
+    const response = await fetch('/api/paywall/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feature: 'create_project' }),
+    })
+
+    if (!response.ok) return false // Allow on error
+
+    const data = await response.json()
+    if (data.blocked) {
+      // Show ProUpgradeFlow instead of PaywallModal
+      triggerUpgrade('unlimited-projects')
+      return true
+    }
+    return false
+  }
 
   const {
     createProject,
@@ -195,7 +215,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     isCreating: isCreatingProject,
     isRestoring: isRestoringDemo,
     isDeleting,
-  } = useProjectActions({ triggerPaywall })
+  } = useProjectActions({ triggerPaywall: triggerProjectPaywall })
 
   // Derive selected project from pathname, fall back to first project
   const pathnameProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
@@ -206,17 +226,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   useEffect(() => {
     fetchProjects()
   }, [])
-
-  // Fetch user pro status
-  useEffect(() => {
-    if (!session) return
-    fetch('/api/user/account')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.isPro) setIsPro(true)
-      })
-      .catch(() => {})
-  }, [session])
 
   // Fetch strategy history when selected project changes
   useEffect(() => {
