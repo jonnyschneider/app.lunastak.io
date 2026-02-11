@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-02-12
+
+**Template flow overhaul and Strategy page enhancements.**
+
+### Added
+
+- **Decision Stack Template Flow** - Restored and overhauled "I have a strategy" entry
+  - Decision Stack branding, logo, and "Learn more" link
+  - Progressive disclosure vision examples ("Need inspiration?")
+  - "Improve with AI" Pro upgrade gates on all steps (Vision, Strategy, Objectives, Opportunities)
+  - Opportunities step using existing OpportunitySection component
+  - "I'm done for now" escape hatch — submit partial Decision Stack from any step
+  - Relaxed validation: only Vision required, all other steps optional
+  - Review step with full summary including opportunities
+
+- **Add Objectives on Strategy Page** - Plus card to append new objectives to generated set
+
+- **Pro Feature: AI Improve** - Added `ai-improve` to Pro features registry with upgrade interstitial
+
+### Changed
+
+- **First-time UX copy** - Better description for three entry paths (chat, doc upload, template); improved chat placeholder for coldstart
+- **Template coaching tips** - "What matters right NOW" for objectives; generic example placeholders (removed Lunastak-specific text); OMTM description simplified
+- **Opportunity cards** - `compact` mode for simplified display (title + description only); `readOnly` mode for review contexts
+
+### Fixed
+
+- **Template strategy persistence** - Added GeneratedOutput record and `generationComplete` event so template-created strategies appear in sidebar
+- **Template objective persistence** - Broadened filter to include objectives with title or OMTM (not just statement); fixed StrategyVersion field mapping (`omtm`/`aspiration` instead of legacy `metric`/`successCriteria`)
+- **ProComingSoonDialog missing** - Pro users clicking "Improve with AI" now see "Coming soon" dialog (was silently failing)
+- **Strategy-version append** - New objectives now append to Trace.output instead of being silently dropped
+
 ## [2.0.0] - 2026-02-11
 
 **Production Customer Beta.** First release to real customers.

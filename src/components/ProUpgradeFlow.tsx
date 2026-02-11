@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Dialog,
@@ -15,6 +15,11 @@ import { Sparkles, Check, Calendar, FileText, Plug, Mic } from 'lucide-react';
 
 // Feature definitions for the interstitial
 export const PRO_FEATURES = {
+  'unlimited-projects': {
+    icon: Sparkles,
+    title: 'Unlimited Projects',
+    description: 'Free accounts are limited to one project. Upgrade to Pro for unlimited projects to manage all your strategic initiatives.',
+  },
   'monthly-review': {
     icon: Calendar,
     title: 'Monthly Review Drafts',
@@ -44,6 +49,11 @@ export const PRO_FEATURES = {
     icon: Sparkles,
     title: 'Premium AI Model',
     description: 'Access to Opus, our most capable model for deeper strategic analysis.',
+  },
+  'ai-improve': {
+    icon: Sparkles,
+    title: 'Improve with AI',
+    description: 'Luna analyses your input and suggests improvements — sharper language, stronger positioning, and gaps you might have missed.',
   },
 } as const;
 
@@ -317,12 +327,25 @@ export function ProComingSoonDialog({
   );
 }
 
-// Hook to manage the upgrade flow
-export function useProUpgradeFlow(isPro: boolean = false) {
+// Hook to manage the upgrade flow - fetches Pro status internally
+export function useProUpgradeFlow() {
+  const [isPro, setIsPro] = useState(false);
+  const [isLoadingProStatus, setIsLoadingProStatus] = useState(true);
   const [interstitialOpen, setInterstitialOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [currentFeature, setCurrentFeature] = useState<ProFeatureKey>('monthly-review');
+
+  // Fetch Pro status on mount
+  useEffect(() => {
+    fetch('/api/user/account')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.isPro) setIsPro(true);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingProStatus(false));
+  }, []);
 
   const triggerUpgrade = (feature: ProFeatureKey) => {
     setCurrentFeature(feature);
@@ -349,17 +372,21 @@ export function useProUpgradeFlow(isPro: boolean = false) {
       });
 
       if (res.ok) {
+        // User is now Pro - update local state
+        setIsPro(true);
         setSuccessOpen(true);
       } else {
         // Log error but still show success (it's free anyway)
         const error = await res.json().catch(() => ({}));
         console.error('[ProUpgrade] API error:', res.status, error);
         // Show success dialog anyway - worst case they're not marked as upgraded in DB
+        setIsPro(true);
         setSuccessOpen(true);
       }
     } catch (error) {
       console.error('[ProUpgrade] Upgrade failed:', error);
       // Show success dialog anyway for better UX
+      setIsPro(true);
       setSuccessOpen(true);
     }
   };
@@ -369,6 +396,8 @@ export function useProUpgradeFlow(isPro: boolean = false) {
   };
 
   return {
+    isPro,
+    isLoadingProStatus,
     interstitialOpen,
     setInterstitialOpen,
     successOpen,

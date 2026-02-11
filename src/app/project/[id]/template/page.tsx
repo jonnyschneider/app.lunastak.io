@@ -4,13 +4,29 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { BadgeInfo, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { PrinciplesSection } from '@/components/PrinciplesSection';
+import { OpportunitySection } from '@/components/OpportunitySection';
+import {
+  ProFeatureInterstitial,
+  UpgradeSuccessDialog,
+  ProComingSoonDialog,
+  useProUpgradeFlow,
+} from '@/components/ProUpgradeFlow';
 import type { StrategyStatements, Objective, Principle } from '@/lib/types';
 
 function generateId(): string {
   return `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+interface ObjectiveInput {
+  id: string;
+  title: string;
+  objective: string;
+  omtm: string;
+  aspiration: string;
 }
 
 export default function TemplateEntryPage() {
@@ -18,33 +34,36 @@ export default function TemplateEntryPage() {
   const router = useRouter();
   const projectId = params.id as string;
 
-  const [vision, setVision] = useState('');
-  const [strategy, setStrategy] = useState('');
-  const [objectives, setObjectives] = useState<Partial<Objective>[]>([
-    { id: generateId(), pithy: '', metric: { summary: '', full: '', category: '' } },
+  // Vision: headline + elaboration
+  const [visionHeadline, setVisionHeadline] = useState('');
+  const [visionElaboration, setVisionElaboration] = useState('');
+
+  // Strategy: headline + elaboration
+  const [strategyHeadline, setStrategyHeadline] = useState('');
+  const [strategyElaboration, setStrategyElaboration] = useState('');
+
+  // Objectives: title + objective + omtm + aspiration
+  const [objectives, setObjectives] = useState<ObjectiveInput[]>([
+    { id: generateId(), title: '', objective: '', omtm: '', aspiration: '' },
   ]);
+
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [saving, setSaving] = useState(false);
-  const [step, setStep] = useState<'vision' | 'strategy' | 'objectives' | 'principles' | 'review'>('vision');
+  const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<'vision' | 'strategy' | 'objectives' | 'opportunities' | 'principles' | 'review'>('vision');
+  const [showVisionExamples, setShowVisionExamples] = useState(false);
+  const pro = useProUpgradeFlow();
 
   const handleAddObjective = () => {
     setObjectives([
       ...objectives,
-      { id: generateId(), pithy: '', metric: { summary: '', full: '', category: '' } },
+      { id: generateId(), title: '', objective: '', omtm: '', aspiration: '' },
     ]);
   };
 
-  const handleUpdateObjective = (index: number, field: string, value: string) => {
+  const handleUpdateObjective = (index: number, field: keyof ObjectiveInput, value: string) => {
     const updated = [...objectives];
-    if (field === 'pithy') {
-      updated[index] = { ...updated[index], pithy: value };
-    } else if (field.startsWith('metric.')) {
-      const metricField = field.split('.')[1];
-      updated[index] = {
-        ...updated[index],
-        metric: { ...updated[index].metric!, [metricField]: value },
-      };
-    }
+    updated[index] = { ...updated[index], [field]: value };
     setObjectives(updated);
   };
 
@@ -55,25 +74,35 @@ export default function TemplateEntryPage() {
   };
 
   const handleComplete = async () => {
+    console.log('[Template] handleComplete called');
     setSaving(true);
+    setError(null);
     try {
+      // Combine headline + elaboration for vision/strategy
+      const visionText = visionElaboration
+        ? `${visionHeadline}\n\n${visionElaboration}`
+        : visionHeadline;
+      const strategyText = strategyElaboration
+        ? `${strategyHeadline}\n\n${strategyElaboration}`
+        : strategyHeadline;
+
       const statements: StrategyStatements = {
-        vision,
-        strategy,
-        objectives: objectives.filter((o) => o.pithy?.trim()).map((o) => ({
-          id: o.id!,
-          pithy: o.pithy!,
-          metric: {
-            summary: o.metric?.summary || '',
-            full: o.metric?.full || '',
-            category: o.metric?.category || 'General',
-          },
+        vision: visionText,
+        strategy: strategyText,
+        objectives: objectives.filter((o) => o.title.trim() || o.objective.trim() || o.omtm.trim()).map((o): Objective => ({
+          id: o.id,
+          title: o.title || undefined,
+          objective: o.objective || o.title, // Fall back to title if no statement
+          pithy: o.objective || o.title, // For backwards compat
+          omtm: o.omtm || undefined,
+          aspiration: o.aspiration || undefined,
           explanation: '',
-          successCriteria: '',
         })),
         opportunities: [],
         principles,
       };
+
+      console.log('[Template] Sending to API:', statements);
 
       const response = await fetch(`/api/project/${projectId}/template-entry`, {
         method: 'POST',
@@ -81,12 +110,26 @@ export default function TemplateEntryPage() {
         body: JSON.stringify({ statements }),
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      console.log('[Template] API response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[Template] API error:', errorData);
+        throw new Error(errorData.error || 'Failed to save');
+      }
 
       const { traceId } = await response.json();
+      console.log('[Template] Success, redirecting to:', traceId);
+
+      // Notify sidebar to refresh strategy list
+      window.dispatchEvent(new CustomEvent('generationComplete', {
+        detail: { projectId, traceId },
+      }));
+
       router.push(`/strategy/${traceId}`);
-    } catch (error) {
-      console.error('Failed to save template:', error);
+    } catch (err) {
+      console.error('[Template] Error:', err);
+      setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setSaving(false);
     }
@@ -95,13 +138,11 @@ export default function TemplateEntryPage() {
   const canProceed = () => {
     switch (step) {
       case 'vision':
-        return vision.trim().length > 20;
+        return visionHeadline.trim().length >= 10;
       case 'strategy':
-        return strategy.trim().length > 20;
       case 'objectives':
-        return objectives.some((o) => o.pithy?.trim());
+      case 'opportunities':
       case 'principles':
-        return true;
       case 'review':
         return true;
       default:
@@ -109,15 +150,43 @@ export default function TemplateEntryPage() {
     }
   };
 
-  const steps = ['vision', 'strategy', 'objectives', 'principles', 'review'] as const;
+  const canFinish = visionHeadline.trim().length >= 10;
+
+  const steps = ['vision', 'strategy', 'objectives', 'opportunities', 'principles', 'review'] as const;
   const currentStepIndex = steps.indexOf(step);
 
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-ds-teal tracking-tight">Build your Decision Stack</h1>
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/Decision Stack Logo.svg"
+                alt="Decision Stack"
+                className="h-6"
+              />
+              <a
+                href="https://www.thedecisionstack.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground text-xs hover:text-foreground transition-colors"
+              >
+                Learn more →
+              </a>
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-1">
+            Fill in what you know — skip what you don't. You can refine everything later in your Strategy view.
+          </p>
+        </div>
+
         {/* Progress */}
         <div className="mb-8">
-          <div className="flex justify-between text-xs text-gray-400 mb-2">
+          <div className="flex justify-between text-xs text-muted-foreground mb-2">
             {steps.map((s, i) => (
               <span
                 key={s}
@@ -127,7 +196,7 @@ export default function TemplateEntryPage() {
               </span>
             ))}
           </div>
-          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-ds-teal transition-all"
               style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
@@ -137,119 +206,289 @@ export default function TemplateEntryPage() {
 
         {/* Vision step */}
         {step === 'vision' && (
-          <div className="space-y-4">
+          <div className="bg-ds-teal rounded-lg p-6 space-y-5">
             <div>
-              <h1 className="text-2xl font-bold text-ds-teal">What's your vision?</h1>
-              <p className="text-gray-500 mt-1">
-                Your aspirational future state. Where are you heading in 3+ years?
+              <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1">Vision</h3>
+              <h1 className="text-xl font-bold text-white">What world are you creating?</h1>
+            </div>
+
+            {/* Coaching tip */}
+            <div className="flex items-start gap-2">
+              <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
+              <p className="text-sm text-white/90 italic">
+                Great visions are customer-centric (how does this change lives?), aspirational (lofty enough you may never fully achieve it), and unique to your business.
               </p>
             </div>
-            <Textarea
-              value={vision}
-              onChange={(e) => setVision(e.target.value)}
-              placeholder="e.g., To be the trusted partner that empowers growth-stage teams to turn ambiguity into action..."
-              rows={4}
-              className="text-lg"
-            />
-            <p className="text-xs text-gray-400">
-              Tip: Be specific about who you serve and what transformation you enable.
-            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-white mb-1.5 block">
+                  Headline (4-15 words)
+                </label>
+                <div className="relative">
+                  <Input
+                    value={visionHeadline}
+                    onChange={(e) => setVisionHeadline(e.target.value)}
+                    placeholder="A world where..."
+                    className="text-lg bg-white border-border pr-36"
+                  />
+                  <button
+                    onClick={() => pro.triggerUpgrade('ai-improve')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-ds-teal transition-colors rounded-md hover:bg-muted"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Improve with AI
+                  </button>
+                </div>
+                {/* Progressive disclosure examples */}
+                <div className="mt-2">
+                  <button
+                    onClick={() => setShowVisionExamples(!showVisionExamples)}
+                    className="flex items-center gap-1 text-xs text-white/50 hover:text-white/70"
+                  >
+                    {showVisionExamples ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {showVisionExamples ? 'Hide examples' : 'Need inspiration?'}
+                  </button>
+                  {showVisionExamples && (
+                    <p className="mt-2 text-xs text-white/50">
+                      "To create a better everyday life for many people" (IKEA) · "A world without poverty" (Oxfam) · "Bring inspiration to every athlete" (Nike)
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-white mb-1.5 block">
+                  Elaboration (optional)
+                </label>
+                <Textarea
+                  value={visionElaboration}
+                  onChange={(e) => setVisionElaboration(e.target.value)}
+                  placeholder="Why this matters and what it means for your customers..."
+                  rows={2}
+                  className="bg-white border-border"
+                />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Strategy step */}
         {step === 'strategy' && (
-          <div className="space-y-4">
+          <div className="bg-ds-teal rounded-lg p-6 space-y-5">
             <div>
-              <h1 className="text-2xl font-bold text-ds-teal">What's your strategy?</h1>
-              <p className="text-gray-500 mt-1">
-                Your coherent set of choices. How will you achieve the vision in 12-18 months?
+              <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1">Strategy</h3>
+              <h1 className="text-xl font-bold text-white">How will you get there?</h1>
+            </div>
+
+            {/* Coaching tip */}
+            <div className="flex items-start gap-2">
+              <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
+              <p className="text-sm text-white/90 italic">
+                Strategy is the coherent "how" — what you're choosing to do (and NOT do), how these choices work together, and why this approach will win.
               </p>
             </div>
-            <Textarea
-              value={strategy}
-              onChange={(e) => setStrategy(e.target.value)}
-              placeholder="e.g., Focus on enterprise customers, build a partner ecosystem, invest in automation..."
-              rows={4}
-              className="text-lg"
-            />
-            <p className="text-xs text-gray-400">
-              Tip: Great strategy is as much about what you won't do as what you will.
-            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-white mb-1.5 block">
+                  Headline (15-25 words)
+                </label>
+                <div className="relative">
+                  <Textarea
+                    value={strategyHeadline}
+                    onChange={(e) => setStrategyHeadline(e.target.value)}
+                    placeholder="We will focus on... by... while choosing not to..."
+                    rows={2}
+                    className="text-lg bg-white border-border pr-36"
+                  />
+                  <button
+                    onClick={() => pro.triggerUpgrade('ai-improve')}
+                    className="absolute right-2 top-3 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-ds-teal transition-colors rounded-md hover:bg-muted"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Improve with AI
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-white mb-1.5 block">
+                  Elaboration (optional)
+                </label>
+                <Textarea
+                  value={strategyElaboration}
+                  onChange={(e) => setStrategyElaboration(e.target.value)}
+                  placeholder="How this plays out. The mechanism..."
+                  rows={3}
+                  className="bg-white border-border"
+                />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Objectives step */}
         {step === 'objectives' && (
           <div className="space-y-4">
-            <div>
-              <h1 className="text-2xl font-bold text-ds-teal">What are your objectives?</h1>
-              <p className="text-gray-500 mt-1">
-                Measurable outcomes for the next 12-18 months. What does success look like?
+            <div className="bg-ds-teal rounded-lg p-6 space-y-4">
+              <div>
+                <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1">Objectives</h3>
+                <h1 className="text-xl font-bold text-white">What are you trying to achieve?</h1>
+              </div>
+
+              {/* Coaching tip */}
+              <div className="flex items-start gap-2">
+                <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
+                <p className="text-sm text-white/90 italic">
+                  What matters right NOW. Start with a verb. Be specific. Each objective has one metric that matters. Just pick a metric, we'll set specific goals for each opportunity later.
+                </p>
+              </div>
+
+              <p className="text-xs text-white/60">
+                Examples: "Capture more data" · "Improve speed of search results" · "Establish market leadership"
               </p>
             </div>
-            <div className="space-y-4">
-              {objectives.map((obj, index) => (
-                <div key={obj.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex justify-between items-start">
-                    <Label>Objective {index + 1}</Label>
+
+            {objectives.map((obj, index) => (
+              <div key={obj.id} className="bg-ds-teal rounded-lg p-5 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+                    Objective {index + 1}
+                  </h4>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => pro.triggerUpgrade('ai-improve')}
+                      className="flex items-center gap-1 text-xs text-ds-neon/70 hover:text-ds-neon transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      Improve with AI
+                    </button>
                     {objectives.length > 1 && (
                       <button
                         onClick={() => handleRemoveObjective(index)}
-                        className="text-xs text-gray-400 hover:text-red-500"
+                        className="text-xs text-white/50 hover:text-white"
                       >
                         Remove
                       </button>
                     )}
                   </div>
-                  <Textarea
-                    value={obj.pithy || ''}
-                    onChange={(e) => handleUpdateObjective(index, 'pithy', e.target.value)}
-                    placeholder="e.g., Achieve product-market fit with 100 paying customers"
-                    rows={2}
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-white mb-1.5 block">
+                    Title (3-8 words)
+                  </label>
+                  <Input
+                    value={obj.title}
+                    onChange={(e) => handleUpdateObjective(index, 'title', e.target.value)}
+                    placeholder="e.g., Achieve product-market fit"
+                    className="bg-white border-border"
                   />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={obj.metric?.summary || ''}
-                      onChange={(e) => handleUpdateObjective(index, 'metric.summary', e.target.value)}
-                      placeholder="Metric (e.g., 100 customers)"
-                      className="px-3 py-2 border rounded text-sm"
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-white mb-1.5 block">
+                    Objective statement
+                  </label>
+                  <Textarea
+                    value={obj.objective}
+                    onChange={(e) => handleUpdateObjective(index, 'objective', e.target.value)}
+                    placeholder="e.g., Reduce time-to-value for new customers by streamlining the onboarding experience"
+                    rows={2}
+                    className="bg-white border-border"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-white mb-1.5 block">
+                      OMTM (metric name)
+                    </label>
+                    <Input
+                      value={obj.omtm}
+                      onChange={(e) => handleUpdateObjective(index, 'omtm', e.target.value)}
+                      placeholder="e.g., Weekly Active Users"
+                      className="bg-white border-border"
                     />
-                    <input
-                      type="text"
-                      value={obj.metric?.category || ''}
-                      onChange={(e) => handleUpdateObjective(index, 'metric.category', e.target.value)}
-                      placeholder="Category (e.g., Growth)"
-                      className="px-3 py-2 border rounded text-sm"
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-white mb-1.5 block">
+                      Aspiration (optional)
+                    </label>
+                    <Input
+                      value={obj.aspiration}
+                      onChange={(e) => handleUpdateObjective(index, 'aspiration', e.target.value)}
+                      placeholder="e.g., 40% increase"
+                      className="bg-white border-border"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
-            <Button variant="outline" onClick={handleAddObjective} className="w-full">
+              </div>
+            ))}
+
+            <Button
+              variant="outline"
+              onClick={handleAddObjective}
+              className="w-full border-ds-teal text-ds-teal hover:bg-ds-teal hover:text-white"
+            >
               + Add another objective
             </Button>
           </div>
         )}
 
+        {/* Opportunities step */}
+        {step === 'opportunities' && (
+          <div className="space-y-4">
+            <div className="bg-ds-teal rounded-lg p-6 space-y-4">
+              <div>
+                <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1">Opportunities</h3>
+                <h1 className="text-xl font-bold text-white">How are you going to get there? What actions will you take?</h1>
+              </div>
+
+              {/* Coaching tip */}
+              <div className="flex items-start gap-2">
+                <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
+                <p className="text-sm text-white/90 italic">
+                  Concrete initiatives that contribute to your objectives. Link each one to the objective it supports.
+                </p>
+              </div>
+            </div>
+
+            <OpportunitySection
+              projectId={projectId}
+              objectives={objectives.filter(o => o.objective.trim()).map(o => ({
+                id: o.id,
+                objective: o.objective,
+                pithy: o.objective,
+              }))}
+              onImproveWithAI={() => pro.triggerUpgrade('ai-improve')}
+              compact
+            />
+          </div>
+        )}
+
         {/* Principles step */}
         {step === 'principles' && (
-          <div className="space-y-4">
+          <div className="bg-ds-teal rounded-lg p-6 space-y-5">
             <div>
-              <h1 className="text-2xl font-bold text-ds-teal">What are your principles?</h1>
-              <p className="text-gray-500 mt-1">
-                Trade-offs that guide decisions. What do you prioritize "even over" alternatives?
+              <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1">Principles</h3>
+              <h1 className="text-xl font-bold text-white">What trade-offs guide your decisions?</h1>
+            </div>
+
+            {/* Coaching tip */}
+            <div className="flex items-start gap-2">
+              <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
+              <p className="text-sm text-white/90 italic">
+                Good principles address real tensions. "Quality over speed" only matters if you sometimes sacrifice quality for speed. Frame as "X even over Y."
               </p>
             </div>
-            <PrinciplesSection
-              projectId={projectId}
-              initialPrinciples={principles}
-              onUpdate={setPrinciples}
-            />
-            <p className="text-xs text-gray-400">
-              Tip: Good principles address real tensions. "Quality over speed" only matters if you sometimes sacrifice quality for speed.
-            </p>
+
+            <div className="bg-white/10 rounded-lg p-4">
+              <PrinciplesSection
+                projectId={projectId}
+                initialPrinciples={principles}
+                onUpdate={setPrinciples}
+              />
+            </div>
           </div>
         )}
 
@@ -258,41 +497,79 @@ export default function TemplateEntryPage() {
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-ds-teal">Review your Decision Stack</h1>
-              <p className="text-gray-500 mt-1">
+              <p className="text-muted-foreground mt-1">
                 Here's what you've defined. You can always edit these later.
               </p>
             </div>
 
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-sm text-gray-500 mb-1">Vision</h3>
-                <p>{vision}</p>
+              <div className="p-5 bg-ds-teal rounded-lg">
+                <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">Vision</h3>
+                <p className="text-white font-medium">{visionHeadline}</p>
+                {visionElaboration && (
+                  <p className="text-white/80 text-sm mt-2">{visionElaboration}</p>
+                )}
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-sm text-gray-500 mb-1">Strategy</h3>
-                <p>{strategy}</p>
+              <div className="p-5 bg-ds-teal rounded-lg">
+                <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">Strategy</h3>
+                <p className="text-white font-medium">{strategyHeadline}</p>
+                {strategyElaboration && (
+                  <p className="text-white/80 text-sm mt-2">{strategyElaboration}</p>
+                )}
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-sm text-gray-500 mb-1">Objectives</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {objectives.filter((o) => o.pithy?.trim()).map((obj) => (
-                    <li key={obj.id}>{obj.pithy}</li>
+              <div className="p-5 bg-ds-teal rounded-lg">
+                <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">Objectives</h3>
+                <div className="space-y-3">
+                  {objectives.filter((o) => o.title.trim() || o.objective.trim() || o.omtm.trim()).map((obj) => (
+                    <div key={obj.id} className="text-white">
+                      {obj.title && (
+                        <p className="font-medium text-ds-neon text-sm">{obj.title}</p>
+                      )}
+                      <p>{obj.objective || obj.title}</p>
+                      {obj.omtm && (
+                        <p className="text-sm text-white/70 mt-1">
+                          OMTM: {obj.omtm}
+                          {obj.aspiration && <span className="text-ds-neon"> · {obj.aspiration}</span>}
+                        </p>
+                      )}
+                    </div>
                   ))}
-                </ul>
+                </div>
+              </div>
+              <div className="p-5 bg-ds-teal rounded-lg">
+                <OpportunitySection
+                  projectId={projectId}
+                  objectives={objectives.filter(o => o.objective.trim()).map(o => ({
+                    id: o.id,
+                    objective: o.objective,
+                    pithy: o.objective,
+                  }))}
+                  compact
+                  readOnly
+                />
               </div>
               {principles.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium text-sm text-gray-500 mb-1">Principles</h3>
-                  <ul className="space-y-1">
+                <div className="p-5 bg-ds-teal rounded-lg">
+                  <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">Principles</h3>
+                  <ul className="space-y-1.5">
                     {principles.map((p) => (
-                      <li key={p.id}>
-                        <strong>{p.priority}</strong> even over {p.deprioritized}
+                      <li key={p.id} className="text-white">
+                        <strong className="text-ds-neon">{p.priority}</strong>
+                        <span className="text-white/70"> even over </span>
+                        {p.deprioritized}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Error display */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
           </div>
         )}
 
@@ -305,19 +582,52 @@ export default function TemplateEntryPage() {
           >
             Back
           </Button>
-          {step === 'review' ? (
-            <Button onClick={handleComplete} disabled={saving}>
-              {saving ? 'Saving...' : 'Complete & View Strategy'}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => setStep(steps[currentStepIndex + 1])}
-              disabled={!canProceed()}
-            >
-              Continue
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            {step !== 'review' && canFinish && (
+              <Button
+                variant="ghost"
+                onClick={handleComplete}
+                disabled={saving}
+                className="text-muted-foreground text-sm"
+              >
+                {saving ? 'Saving...' : "I'm done for now"}
+              </Button>
+            )}
+            {step === 'review' ? (
+              <Button
+                onClick={handleComplete}
+                disabled={saving}
+                className="bg-ds-teal text-white hover:bg-ds-teal/90"
+              >
+                {saving ? 'Saving...' : 'Complete & View Strategy'}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setStep(steps[currentStepIndex + 1])}
+                disabled={!canProceed()}
+                className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
+              >
+                Continue
+              </Button>
+            )}
+          </div>
         </div>
+        <ProFeatureInterstitial
+          feature={pro.currentFeature}
+          open={pro.interstitialOpen}
+          onOpenChange={pro.setInterstitialOpen}
+          onUpgrade={pro.handleUpgrade}
+        />
+        <UpgradeSuccessDialog
+          open={pro.successOpen}
+          onOpenChange={pro.setSuccessOpen}
+          onContinue={pro.handleContinue}
+        />
+        <ProComingSoonDialog
+          feature={pro.currentFeature}
+          open={pro.comingSoonOpen}
+          onOpenChange={pro.setComingSoonOpen}
+        />
       </div>
     </AppLayout>
   );

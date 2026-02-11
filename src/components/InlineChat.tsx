@@ -575,7 +575,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Tell me more..."
+            placeholder="Start anywhere — a customer observation, a pain point, a hunch, anything."
             disabled={isLoading}
             rows={3}
             className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"

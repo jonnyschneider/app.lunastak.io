@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Info, Loader2 } from 'lucide-react'
+import { Upload, Info, Loader2, FileText } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -81,8 +81,7 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
           </h1>
           {!chatStarted && (
             <p className="text-muted-foreground">
-              To start, tell me about your strategic challenge, upload an existing doc and we can
-              brainstorm from there, or check out an example to see what the output looks like.
+              Start a conversation, upload an existing doc, or fill in your Decision Stack directly.
             </p>
           )}
         </div>
@@ -109,6 +108,14 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
             >
               <Upload className="h-4 w-4" />
               Upload a document
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/project/${projectId}/template`)}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              I have a strategy
             </Button>
             <Button
               variant="outline"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { FakeDoorDialog } from './FakeDoorDialog';
@@ -24,6 +25,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
   const [editingVision, setEditingVision] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState(false);
   const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null);
+  const [newObjective, setNewObjective] = useState<Objective | null>(null);
   const [fakeDoorConfig, setFakeDoorConfig] = useState<{
     name: string;
     description: string;
@@ -185,6 +187,44 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
     }
   };
 
+  const handleAddObjective = async (objective: Objective) => {
+    try {
+      const response = await fetch(`/api/project/${projectId}/strategy-version`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          componentType: 'objective',
+          componentId: objective.id,
+          content: {
+            id: objective.id,
+            title: objective.title,
+            explanation: objective.explanation,
+            omtm: objective.omtm,
+            aspiration: objective.aspiration,
+            supportingMetrics: objective.supportingMetrics,
+            objective: objective.objective,
+            pithy: objective.pithy || objective.objective,
+          },
+          sourceType: 'user_edit',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      if (onUpdate) {
+        onUpdate({
+          ...strategy,
+          objectives: [...strategy.objectives, objective],
+        });
+      }
+      setNewObjective(null);
+    } catch (error) {
+      console.error('Failed to add objective:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Strategy Output */}
@@ -343,6 +383,31 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 )}
               </div>
             ))}
+
+            {/* Add Objective */}
+            {newObjective ? (
+              <div className="col-span-full px-8 lg:px-16">
+                <ObjectiveInlineEditor
+                  objective={newObjective}
+                  onSave={handleAddObjective}
+                  onCancel={() => setNewObjective(null)}
+                />
+              </div>
+            ) : !editingObjectiveId && (
+              <div
+                onClick={() => setNewObjective({
+                  id: `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`,
+                  explanation: '',
+                  objective: '',
+                })}
+                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-muted-foreground/40 hover:bg-muted/50 transition-colors min-h-[120px]"
+              >
+                <div className="text-center">
+                  <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
+                  <span className="text-sm text-muted-foreground/50">Add objective</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

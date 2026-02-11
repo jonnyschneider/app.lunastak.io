@@ -77,6 +77,10 @@ interface KnowledgebaseHeaderProps {
   isGenerating?: boolean
   /** Whether knowledgebase is syncing after generation */
   isSyncing?: boolean
+  /** Whether documents are being processed */
+  isProcessingDocuments?: boolean
+  /** Number of documents currently processing */
+  processingDocumentCount?: number
 }
 
 export function KnowledgebaseHeader({
@@ -90,9 +94,11 @@ export function KnowledgebaseHeader({
   onRefreshClick,
   isGenerating = false,
   isSyncing = false,
+  isProcessingDocuments = false,
+  processingDocumentCount = 0,
 }: KnowledgebaseHeaderProps) {
-  // Either actively generating or syncing after generation
-  const isBusy = isGenerating || isSyncing
+  // Either actively generating, syncing, or processing documents
+  const isBusy = isGenerating || isSyncing || isProcessingDocuments
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
@@ -111,7 +117,13 @@ export function KnowledgebaseHeader({
             className={isBusy ? 'animate-pulse' : ''}
           />
           <span className="font-medium text-sm">
-            {isGenerating ? 'adding knowledge and drafting strategy...' : isSyncing ? 'updating...' : 'Knowledgebase'}
+            {isGenerating
+              ? 'adding knowledge and drafting strategy...'
+              : isSyncing
+              ? 'updating...'
+              : isProcessingDocuments
+              ? `processing ${processingDocumentCount > 1 ? `${processingDocumentCount} documents` : 'document'}...`
+              : 'Knowledgebase'}
           </span>
         </div>
 
@@ -170,6 +182,10 @@ export function KnowledgebaseHeader({
                 {knowledgeSummary}
               </p>
             </div>
+          ) : fragmentCount > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper—you can generate new versions of your strategy any time.
+            </p>
           ) : (
             <p className="text-sm text-muted-foreground">
               Have conversations with Luna to build context about your strategy.

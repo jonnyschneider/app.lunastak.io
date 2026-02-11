@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useDocumentStatus } from '@/hooks/use-document-status'
-import { toast } from 'sonner'
+import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import {
   Dialog,
   DialogContent,
@@ -46,15 +45,21 @@ export function DocumentUploadDialog({
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { startPolling } = useDocumentStatus({
-    onComplete: () => {
-      toast.success('Document processed successfully')
-      onUploadComplete(selectedFile?.name)
-    },
-    onError: (err) => {
-      toast.error(`Document processing failed: ${err}`)
-    },
-  })
+  const { startProcessing } = useDocumentProcessingContext()
+
+  // Listen for document processed events to trigger onUploadComplete
+  useEffect(() => {
+    const handleDocumentProcessed = (event: CustomEvent<{ projectId: string }>) => {
+      if (event.detail.projectId === projectId) {
+        onUploadComplete()
+      }
+    }
+
+    window.addEventListener('documentProcessed', handleDocumentProcessed as EventListener)
+    return () => {
+      window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
+    }
+  }, [projectId, onUploadComplete])
 
   // Guest users need to sign in to upload documents
   if (!session?.user) {
@@ -122,11 +127,10 @@ export function DocumentUploadDialog({
 
       const data = await response.json()
 
-      // Start polling for processing status
-      startPolling(data.documentId)
+      // Start background processing tracking
+      startProcessing(data.documentId, projectId, selectedFile.name)
 
-      // Close dialog immediately - polling continues in background
-      toast('Processing document...', { duration: 3000 })
+      // Close dialog - processing continues in background with indicator
       onOpenChange(false)
       resetState()
     } catch (err) {
@@ -186,9 +190,9 @@ export function DocumentUploadDialog({
           {/* Selected File */}
           {selectedFile && state === 'selected' && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50 overflow-hidden">
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
                 <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
-                <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex-1 min-w-0 w-0">
                   <p className="text-sm font-medium truncate">{selectedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatFileSize(selectedFile.size)}
@@ -227,9 +231,9 @@ export function DocumentUploadDialog({
           {/* Upload Progress */}
           {(state === 'uploading' || state === 'processing') && (
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50 overflow-hidden">
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
                 <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
-                <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex-1 min-w-0 w-0">
                   <p className="text-sm font-medium truncate">{selectedFile?.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {state === 'uploading' ? 'Uploading...' : 'Processing...'}

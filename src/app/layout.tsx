@@ -5,6 +5,7 @@ import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
 import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
 import { GenerationStatusProvider } from '@/components/providers/GenerationStatusProvider'
+import { DocumentProcessingProvider } from '@/components/providers/DocumentProcessingProvider'
 import { StatsigProvider } from '@/components/StatsigProvider'
 import { Toaster } from '@/components/ui/sonner'
 import { getServerSession } from 'next-auth/next'
@@ -37,8 +38,10 @@ export default async function RootLayout({
           <SessionTransferProvider>
             <StatsigProvider>
               <GenerationStatusProvider>
-                {children}
-                <Toaster position="bottom-right" />
+                <DocumentProcessingProvider>
+                  {children}
+                  <Toaster position="bottom-right" />
+                </DocumentProcessingProvider>
               </GenerationStatusProvider>
             </StatsigProvider>
           </SessionTransferProvider>

@@ -1,5 +1,6 @@
 // src/lib/prompts/generation/v4-pithy-statements.ts
 import { PromptVersion } from '../types'
+import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '../shared/objectives'
 
 export const GENERATION_PITHY_STATEMENTS_V4: PromptVersion = {
   id: 'v4-pithy-statements',
@@ -61,29 +62,7 @@ Strategy describes the coherent "how" - the key choices that will get you to the
 - Headline: 15-25 words. The mechanism. The coherent choices.
 - Elaboration: 2-3 sentences unpacking how this plays out.
 
-## Objectives Guidelines
-
-Objectives are what you're trying to achieve NOW. Start with a verb. Be specific.
-
-**Objective examples (Google):**
-- "Capture more data"
-- "Improve relevance by understanding content"
-- "Improve speed of search results"
-
-**Objective format:**
-- Title: 3-8 words. Just the essence.
-- Objective: 1-2 sentences. The full statement.
-- OMTM (One Metric That Matters): Just the metric NAME, not a full measurement. Keep it simple.
-- Aspiration: Optional short directional goal (e.g., "40% increase", "Industry-leading", "Significant growth")
-
-**OMTM examples:**
-- Good: "Weekly Active Users" with aspiration "40% increase"
-- Good: "Net Promoter Score" with aspiration "Best in class"
-- Good: "Revenue" with aspiration "Sustainable growth"
-- Bad: "Context relevance score (user-rated) and connection rate (% of new inputs linked to prior context)" - TOO VERBOSE
-- Bad: "TBD - need to establish measurement → 8+ relevance score" - this is measurement detail, not a metric name
-
-NOTE: Specific measurements (baseline → target) belong on Opportunities, not Objectives. Keep OMTM simple.
+${OBJECTIVE_GUIDELINES}
 
 ## Tone
 
@@ -104,28 +83,6 @@ Use THEIR words from the themes - make it feel like them, not like a consultant 
     <headline>The coherent choices (15-25 words)</headline>
     <elaboration>How this plays out. The mechanism. (2-3 sentences)</elaboration>
   </strategy>
-  <objectives>
-    <objective>
-      <title>Short Title (3-8 words)</title>
-      <statement>The full objective statement</statement>
-      <explanation>Why this matters and connects to strategy</explanation>
-      <omtm>The Metric Name</omtm>
-      <aspiration>Short directional goal (optional)</aspiration>
-    </objective>
-    <objective>
-      <title>Second Objective</title>
-      <statement>The second objective statement</statement>
-      <explanation>Why this matters</explanation>
-      <omtm>Another Metric</omtm>
-      <aspiration>Target aspiration</aspiration>
-    </objective>
-    <objective>
-      <title>Third Objective</title>
-      <statement>The third objective statement</statement>
-      <explanation>Why this matters</explanation>
-      <omtm>Third Metric</omtm>
-      <aspiration>Growth target</aspiration>
-    </objective>
-  </objectives>
+  ${OBJECTIVE_XML_FORMAT}
 </statements>`,
 }

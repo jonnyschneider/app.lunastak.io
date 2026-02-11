@@ -151,11 +151,17 @@ export async function POST(
       updatedOutput.strategy = (content as { text: string }).text;
     } else if (componentType === 'objective' && componentId) {
       const objectives = (currentOutput.objectives || []) as Array<{ id: string; [key: string]: unknown }>;
-      updatedOutput.objectives = objectives.map((obj) =>
-        obj.id === componentId
-          ? { ...obj, ...(content as object) }
-          : obj
-      );
+      const exists = objectives.some((obj) => obj.id === componentId);
+      if (exists) {
+        updatedOutput.objectives = objectives.map((obj) =>
+          obj.id === componentId
+            ? { ...obj, ...(content as object) }
+            : obj
+        );
+      } else {
+        // New objective — append to array
+        updatedOutput.objectives = [...objectives, { id: componentId, ...(content as object) }];
+      }
     }
 
     await prisma.trace.update({

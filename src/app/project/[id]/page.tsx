@@ -33,10 +33,17 @@ import {
 } from '@/components/ui/item'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FakeDoorDialog } from '@/components/FakeDoorDialog'
+import {
+  useProUpgradeFlow,
+  ProFeatureInterstitial,
+  UpgradeSuccessDialog,
+  ProComingSoonDialog,
+} from '@/components/ProUpgradeFlow'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
 import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import { StructuredProvocation } from '@/lib/types'
@@ -131,6 +138,7 @@ export default function ProjectPage() {
   const params = useParams()
   const projectId = params.id as string
   const { isGenerating, hasActiveGeneration } = useGenerationStatusContext()
+  const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -160,6 +168,22 @@ export default function ProjectPage() {
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
+  // Track if current upload is first content (set when upload starts, cleared on completion)
+  const [pendingFirstContentUpload, setPendingFirstContentUpload] = useState(false)
+
+  // Pro upgrade flow for gated features
+  const {
+    interstitialOpen,
+    setInterstitialOpen,
+    successOpen,
+    setSuccessOpen,
+    comingSoonOpen,
+    setComingSoonOpen,
+    currentFeature,
+    triggerUpgrade,
+    handleUpgrade,
+    handleContinue,
+  } = useProUpgradeFlow()
 
   // Fetch dismissals
   const fetchDismissals = async () => {
@@ -247,6 +271,27 @@ export default function ProjectPage() {
     }
   }, [])
 
+  // Listen for documentProcessed event - open chat if this was first content
+  useEffect(() => {
+    const handleDocumentProcessed = (event: CustomEvent<{ projectId: string }>) => {
+      if (event.detail.projectId !== projectId) return
+
+      fetchProjectData()
+
+      if (pendingFirstContentUpload) {
+        setPendingFirstContentUpload(false)
+        setChatInitialQuestion("I've got the gist from your document. What would you like to explore?")
+        setChatDeepDiveId(undefined)
+        setChatGapExploration(undefined)
+        setChatResumeConversationId(undefined)
+        setChatViewOnly(false)
+        setChatSheetOpen(true)
+      }
+    }
+    window.addEventListener('documentProcessed', handleDocumentProcessed as EventListener)
+    return () => window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
+  }, [projectId, pendingFirstContentUpload])
+
   const fetchProjectData = async () => {
     setIsLoading(true)
     setError(null)
@@ -291,6 +336,17 @@ export default function ProjectPage() {
     setDeepDiveSheetOpen(false)
     setUploadDeepDiveId(deepDiveId)
     setUploadDialogOpen(true)
+  }
+
+  const handleDocumentUploadComplete = async () => {
+    // Re-open the deep dive sheet to show the newly processed document
+    if (uploadDeepDiveId) {
+      setSelectedDeepDiveId(uploadDeepDiveId)
+      setDeepDiveSheetOpen(true)
+      setUploadDeepDiveId(undefined)
+    }
+    // Note: fetchProjectData and first-content chat opening are handled
+    // by the documentProcessed event listener above
   }
 
   // Fake door handlers
@@ -456,6 +512,8 @@ export default function ProjectPage() {
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
           isGenerating={hasActiveGeneration(projectId)}
           isSyncing={recentlyGenerated && !hasActiveGeneration(projectId)}
+          isProcessingDocuments={isProcessingDocuments(projectId)}
+          processingDocumentCount={processingCount(projectId)}
         />
 
         {/* Documents | Chats */}
@@ -528,6 +586,14 @@ export default function ProjectPage() {
                     size="sm"
                     className="flex-1 rounded-r-none"
                     onClick={() => {
+                      // Track if this is first content upload
+                      const isFirstContent =
+                        (stats.fragmentCount ?? 0) === 0 &&
+                        (stats.conversationCount ?? 0) === 0 &&
+                        (projectData?.strategyOutputs?.length ?? 0) === 0
+                      if (isFirstContent) {
+                        setPendingFirstContentUpload(true)
+                      }
                       setUploadDeepDiveId(undefined)
                       setUploadDialogOpen(true)
                     }}
@@ -539,7 +605,7 @@ export default function ProjectPage() {
                   <Button
                     size="sm"
                     className="flex-1 rounded-l-none"
-                    onClick={() => handleFakeDoor('Add Memo')}
+                    onClick={() => triggerUpgrade('audio-memo')}
                   >
                     <NotebookPen className="h-3 w-3 mr-1" />
                     Add Memo
@@ -765,7 +831,7 @@ export default function ProjectPage() {
         projectId={projectId}
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        onUploadComplete={fetchProjectData}
+        onUploadComplete={handleDocumentUploadComplete}
         deepDiveId={uploadDeepDiveId}
       />
 
@@ -790,6 +856,7 @@ export default function ProjectPage() {
         gapExploration={chatGapExploration}
         resumeConversationId={chatResumeConversationId}
         hasExistingStrategy={(projectData?.strategyOutputs?.length ?? 0) > 0}
+        hasKnowledgebaseContent={(stats.fragmentCount ?? 0) > 0}
         viewOnly={chatViewOnly}
       />
 
@@ -848,6 +915,24 @@ export default function ProjectPage() {
           setRefreshStrategyDialogOpen(false)
           router.push(`/strategy/${traceId}`)
         }}
+      />
+
+      {/* Pro Upgrade Flow Dialogs */}
+      <ProFeatureInterstitial
+        feature={currentFeature}
+        open={interstitialOpen}
+        onOpenChange={setInterstitialOpen}
+        onUpgrade={handleUpgrade}
+      />
+      <UpgradeSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        onContinue={handleContinue}
+      />
+      <ProComingSoonDialog
+        feature={currentFeature}
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
       />
     </AppLayout>
   )

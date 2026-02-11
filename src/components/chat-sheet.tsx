@@ -68,6 +68,8 @@ interface ChatSheetProps {
   gapExploration?: GapExploration
   resumeConversationId?: string
   hasExistingStrategy?: boolean
+  /** If true, allow new conversations even without strategy (e.g., document uploaded) */
+  hasKnowledgebaseContent?: boolean
   viewOnly?: boolean
 }
 
@@ -80,6 +82,7 @@ export function ChatSheet({
   gapExploration,
   resumeConversationId,
   hasExistingStrategy = false,
+  hasKnowledgebaseContent = false,
   viewOnly = false,
 }: ChatSheetProps) {
   // Background generation context
@@ -167,12 +170,11 @@ export function ChatSheet({
       } else if (deepDiveId || gapExploration) {
         // Special modes don't need to wait for check
         startConversationWithQuestion(initialQuestion)
-      } else if (hasCheckedForInitial && hasExistingStrategy) {
-        // Only start new conversation if project already has a strategy
-        // (first-time users should complete InlineChat flow first)
+      } else if (hasCheckedForInitial && (hasExistingStrategy || hasKnowledgebaseContent)) {
+        // Start conversation if project has strategy OR has content from document upload
         startConversationWithQuestion(initialQuestion)
       }
-      // If no existing strategy, don't start - show blocking UI directing to InlineChat
+      // If no strategy and no content, don't start - show blocking UI directing to InlineChat
     }
   }, [open, hasCheckedForInitial, incompleteInitialConvoId])
 
@@ -615,8 +617,8 @@ export function ChatSheet({
             <ChatSkeleton />
           )}
 
-          {/* Block new conversation if no strategy exists yet (first-time flow) */}
-          {flowStep === 'chat' && messages.length === 0 && !isLoading && hasCheckedForInitial && !hasExistingStrategy && !deepDiveId && !gapExploration && !resumeConversationId && (
+          {/* Block new conversation if no strategy and no knowledgebase content (first-time flow) */}
+          {flowStep === 'chat' && messages.length === 0 && !isLoading && hasCheckedForInitial && !hasExistingStrategy && !hasKnowledgebaseContent && !deepDiveId && !gapExploration && !resumeConversationId && (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 max-w-md">
                 <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">

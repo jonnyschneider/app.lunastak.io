@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ChevronUp,
   ChevronRight,
@@ -93,6 +94,7 @@ import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
 import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { GenerationStatusIndicator } from '@/components/GenerationStatusIndicator'
 import { cn } from '@/lib/utils'
 
@@ -168,11 +170,12 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
   const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
-  const [isPro, setIsPro] = useState(false)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
   const { isGenerating } = useGenerationStatusContext()
+  const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const {
+    isPro,
     interstitialOpen,
     setInterstitialOpen,
     successOpen,
@@ -183,7 +186,27 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     triggerUpgrade,
     handleUpgrade,
     handleContinue,
-  } = useProUpgradeFlow(isPro)
+  } = useProUpgradeFlow()
+
+  // Custom paywall trigger that uses ProUpgradeFlow instead of external pricing link
+  const triggerProjectPaywall = async (): Promise<boolean> => {
+    // Check if user would be blocked
+    const response = await fetch('/api/paywall/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feature: 'create_project' }),
+    })
+
+    if (!response.ok) return false // Allow on error
+
+    const data = await response.json()
+    if (data.blocked) {
+      // Show ProUpgradeFlow instead of PaywallModal
+      triggerUpgrade('unlimited-projects')
+      return true
+    }
+    return false
+  }
 
   const {
     createProject,
@@ -192,7 +215,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     isCreating: isCreatingProject,
     isRestoring: isRestoringDemo,
     isDeleting,
-  } = useProjectActions({ triggerPaywall })
+  } = useProjectActions({ triggerPaywall: triggerProjectPaywall })
 
   // Derive selected project from pathname, fall back to first project
   const pathnameProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
@@ -203,17 +226,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   useEffect(() => {
     fetchProjects()
   }, [])
-
-  // Fetch user pro status
-  useEffect(() => {
-    if (!session) return
-    fetch('/api/user/account')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.isPro) setIsPro(true)
-      })
-      .catch(() => {})
-  }, [session])
 
   // Fetch strategy history when selected project changes
   useEffect(() => {
@@ -515,9 +527,21 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
-                    <Link href={`/project/${selectedProject.id}`}>
+                    <Link href={`/project/${selectedProject.id}`} className="flex items-center gap-2">
                       <Glasses className="h-4 w-4" />
                       <span>Your Thinking</span>
+                      {isProcessingDocuments(selectedProject.id) && (
+                        <span className="flex items-center gap-1.5 ml-auto text-xs text-muted-foreground">
+                          <Image
+                            src="/animated-logo-glitch.svg"
+                            alt=""
+                            width={12}
+                            height={12}
+                            className="animate-pulse"
+                          />
+                          <span>processing</span>
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
