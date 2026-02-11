@@ -8,6 +8,56 @@ interface RouteParams {
 }
 
 /**
+ * PATCH /api/projects/[id]
+ * Update project (currently just name)
+ */
+export async function PATCH(request: Request, { params }: RouteParams) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id: projectId } = await params;
+
+  // Verify ownership
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      userId: session.user.id,
+    },
+  });
+
+  if (!project) {
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  }
+
+  try {
+    const body = await request.json();
+    const { name } = body;
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    const updated = await prisma.project.update({
+      where: { id: projectId },
+      data: { name: name.trim() },
+    });
+
+    return NextResponse.json({
+      project: {
+        id: updated.id,
+        name: updated.name,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating project:', error);
+    return NextResponse.json({ error: 'Failed to update project' }, { status: 500 });
+  }
+}
+
+/**
  * DELETE /api/projects/[id]
  * Hard deletes a project and all related data
  */

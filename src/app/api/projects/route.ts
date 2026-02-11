@@ -137,7 +137,15 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json().catch(() => ({}))
-    const name = body.name || 'My Strategy'
+
+    // Auto-generate name: "My Project 1", "My Project 2", etc.
+    let name = body.name
+    if (!name) {
+      const totalProjects = await prisma.project.count({
+        where: { userId: session.user.id },
+      })
+      name = `My Project ${totalProjects + 1}`
+    }
 
     const project = await prisma.project.create({
       data: {

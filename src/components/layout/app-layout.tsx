@@ -22,6 +22,7 @@ import {
   Glasses,
   TrendingUp,
   NotebookPen,
+  Pencil,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -158,6 +159,9 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null)
+  const [projectToRename, setProjectToRename] = useState<Project | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [isRenaming, setIsRenaming] = useState(false)
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null)
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false)
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
@@ -293,6 +297,31 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     }
   }
 
+  const handleRenameProject = async () => {
+    if (!projectToRename || !renameValue.trim()) return
+
+    setIsRenaming(true)
+    try {
+      const res = await fetch(`/api/projects/${projectToRename.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: renameValue.trim() }),
+      })
+
+      if (res.ok) {
+        setProjects(projects.map(p =>
+          p.id === projectToRename.id ? { ...p, name: renameValue.trim() } : p
+        ))
+        setProjectToRename(null)
+        setRenameValue('')
+      }
+    } catch (error) {
+      console.error('Failed to rename project:', error)
+    } finally {
+      setIsRenaming(false)
+    }
+  }
+
   const handleRestoreDemo = async () => {
     const projectId = await restoreDemo()
     if (projectId) {
@@ -414,6 +443,18 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                       >
                         <RotateCcw className={`h-4 w-4 shrink-0 ${isRestoringDemo ? 'animate-spin' : ''}`} />
                         <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo'}</span>
+                      </CommandItem>
+                    )}
+                    {session && selectedProject && (
+                      <CommandItem
+                        onSelect={() => {
+                          setProjectToRename(selectedProject)
+                          setRenameValue(selectedProject.name)
+                          setProjectSwitcherOpen(false)
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 shrink-0" />
+                        <span>Rename Project</span>
                       </CommandItem>
                     )}
                     {session && selectedProject && (
@@ -649,6 +690,45 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
           hasExistingStrategy={selectedProject.hasStrategy}
         />
       )}
+
+      {/* Rename Project Dialog */}
+      <AlertDialog open={!!projectToRename} onOpenChange={(open) => {
+        if (!open) {
+          setProjectToRename(null)
+          setRenameValue('')
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter a new name for this project.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <input
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md text-sm"
+            placeholder="Project name"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && renameValue.trim()) {
+                handleRenameProject()
+              }
+            }}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRenaming}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRenameProject}
+              disabled={isRenaming || !renameValue.trim()}
+            >
+              {isRenaming ? 'Saving...' : 'Save'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
