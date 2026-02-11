@@ -15,25 +15,117 @@ export interface ObjectiveMetric {
   timeframe?: '3M' | '6M' | '9M' | '12M' | '18M';  // Planning horizon
 }
 
+export interface KeyResult {
+  id: string;
+  belief: {
+    action: string;   // "improving onboarding"
+    outcome: string;  // "increase retention"
+  };
+  signal: string;     // "7-day active user rate"
+  baseline: string;   // "40%"
+  target: string;     // "55%"
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+}
+
+export interface PrimaryMetric {
+  name: string;             // "Weekly Active Users"
+  baseline: string;         // "12%"
+  target: string;           // "40%"
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+  direction: 'increase' | 'decrease';
+}
+
+export interface SuccessMetric {
+  id: string;
+  belief: {
+    action: string;   // "showing insights in first 3 minutes"
+    outcome: string;  // "increase session 2 return rate"
+  };
+  signal: string;     // "S1→S2 conversion"
+  baseline: string;   // "25%"
+  target: string;     // "50%"
+  objectiveId?: string; // Optional: which specific objective this metric measures
+}
+
 export interface Objective {
-  id: string;            // For filtering relationships
-  pithy: string;         // Short 1-2 sentence objective
-  metric: ObjectiveMetric;
-  explanation: string;   // Full detail for back of card
-  successCriteria: string; // What success looks like
+  id: string;              // For filtering relationships
+  title?: string;          // Short title (3-5 words) for lists/linking
+  explanation: string;     // Full detail for back of card
+
+  // OMTM - simplified format (preferred)
+  omtm?: string;           // Just the metric name: "Weekly Active Users"
+  aspiration?: string;     // Optional directional goal: "40% increase" or "Significant growth"
+  supportingMetrics?: string[];  // Optional additional metrics (just names)
+
+  // Legacy OMTM format - still supported for migration
+  primaryMetric?: PrimaryMetric;
+
+  // Legacy OKR format - still supported
+  objective?: string;      // Short 1-2 sentence objective (replaces pithy)
+  keyResults?: KeyResult[]; // 1-3 Key Results (replaces metric)
+  // Legacy format - still supported
+  pithy?: string;          // Original field, maps to objective
+  metric?: ObjectiveMetric;
+  successCriteria?: string; // Kept for AI context
 }
 
 export interface Opportunity {
   id: string;
-  title: string;
-  description: string;
-  objectiveIds: string[]; // References to objectives this supports
+  title: string;              // Initiative name
+  description: string;        // What we're doing
+  objectiveIds: string[];     // Links to objectives this supports
+  successMetrics?: SuccessMetric[];  // Hypothesis-driven metrics
+  status?: 'draft' | 'active' | 'complete';
 }
 
 export interface Principle {
   id: string;
-  title: string;
-  description: string;
+  priority: string;        // What we prioritize: "Strategic clients"
+  deprioritized: string;   // What we deprioritize: "any paying client"
+  context?: string;        // Optional: why this matters
+  // Legacy support
+  title?: string;          // Maps to priority for backward compat
+  description?: string;    // Maps to context for backward compat
+}
+
+// Strategy Version types (for edit history)
+export type StrategyComponentType = 'vision' | 'strategy' | 'objective';
+export type StrategyVersionSource = 'generation' | 'user_edit' | 'coaching';
+export type StrategyVersionCreator = 'user' | 'ai' | 'system';
+
+export interface StrategyVersion {
+  id: string;
+  projectId: string;
+  componentType: StrategyComponentType;
+  componentId: string | null;
+  content: VisionContent | StrategyContent | ObjectiveContent;
+  version: number;
+  createdAt: Date;
+  createdBy: StrategyVersionCreator;
+  sourceType: StrategyVersionSource;
+  sourceId: string | null;
+}
+
+// Content types for each component
+export interface VisionContent {
+  text: string;           // The pithy headline (4-15 words)
+  elaboration?: string;   // Why this matters, what it means (optional)
+}
+
+export interface StrategyContent {
+  text: string;           // The coherent choices (15-25 words)
+  elaboration?: string;   // How this plays out (optional)
+}
+
+export interface ObjectiveContent {
+  explanation: string;
+  // New OKR format
+  objective?: string;
+  keyResults?: KeyResult[];
+  // Legacy format - still supported
+  pithy?: string;
+  metric?: ObjectiveMetric;
+  successCriteria?: string;
 }
 
 export interface StrategyStatements {

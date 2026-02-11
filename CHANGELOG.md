@@ -5,7 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.7.9] - 2026-02-11
+
+### Added
+
+- **Google OAuth Sign-In** - One-click authentication with fallback
+  - Google OAuth provider integrated with NextAuth
+  - Magic link email fallback for users without Google
+  - Account linking for existing email users
+  - Signed-out redirect handling
+
+- **Simplified OMTM Model** - Cleaner objective metrics
+  - Objectives now use simple `omtm` (metric name) + `aspiration` format
+  - Example: "Session 2 return rate" with aspiration "↑ 50%"
+  - Removed verbose baseline/target/timeframe from display
+  - Backward compatible with legacy primaryMetric and keyResults formats
+  - Generation prompt updated for new format
+
+- **Improved Opportunity-Objective Linking** - Cleaner UX
+  - Simple checkbox linking (removed confusing contribution text)
+  - Reordered editor: Title → Objective links → Description → Success Metrics
+  - Success metrics can optionally tag specific objectives
+  - Linked objectives display as clean chips
+
+- **Pithy Vision/Strategy Generation** - Radical brevity for memorability
+  - New v4 prompt (`v4-pithy-statements`) with Decision Stack guidance
+  - Vision: 4-15 words (headline) + elaboration
+  - Strategy: 15-25 words (headline) + elaboration
+  - Real examples (IKEA, Nike, Oxfam, Google) in prompt
+  - Good/bad criteria: customer-centric, aspirational, NOT "to be the leading..."
+  - Tone guidance: "Write like a manifesto, not a business plan"
+  - Auto-detects headline/elaboration format in responses
+
+- **Eval Index Page** - Browse all evaluations at `/admin/eval`
+  - Shows date, purpose, summary preview, outcome badge
+  - Links directly to individual eval pages
+  - No more typing timestamped URLs
+
+- **Backtesting Infrastructure** - Frozen v1 generation prompt
+  - v1 module now uses frozen v2 prompt for emergent extraction
+  - Enables proper comparison across prompt versions
+  - 4PL fixture traces: baseline-v2, v3-okr, v4-pithy
+
+- **Click-to-Edit Pattern** - Consistent editing UX across Decision Stack
+  - Vision, Strategy, Objectives all clickable to enter edit mode
+  - Removed hover edit icons and info icons
+  - Embedded coaching callouts appear during editing (subtle amber left-border style)
+  - Coaching tips guide users on best practices without being intrusive
+
+- **OKR-Style Objectives Generation** - Hypothesis-driven Key Results
+  - New v3 prompt (`v3-okr-objectives`) generates structured objectives
+  - Each objective includes: title, statement, explanation, keyResults[]
+  - Key Results follow belief/signal/baseline/target/timeframe format
+  - Backwards compatible: auto-detects OKR vs legacy format in responses
+  - `parseOKRObjectives()` utility for XML parsing
+
+- **Socratic Principles UX** - LLM-powered trade-off suggestions
+  - Replaced curated trade-off selection with open question flow
+  - User types what matters most, LLM suggests the opposite
+  - `/api/suggest-opposite` endpoint for quick LLM responses
+  - Editable suggestions before confirmation
+  - Vertical stacked chip layout with flip/remove actions
+
+### Changed
+
+- **VisionContent/StrategyContent Types** - Support for elaboration
+  - Added optional `elaboration` field for unpacking pithy headlines
+  - StrategyVersion records now store elaboration from generation
+
+- **Eval API** - Enhanced metadata
+  - Returns purpose, summary, outcome, baseline fields
+  - Supports richer eval index display
+
+- **Coaching Callout Styling** - Refined visual treatment
+  - Warm amber/beige background (`bg-amber-50/50`)
+  - Left border accent (`border-l-2 border-l-amber-200/80`)
+  - Italic text for "aside" quality
+  - Applied consistently across InlineTextEditor and ObjectiveInlineEditor
+
+- **Prompt Versioning** - v4-pithy-statements now current
+  - v2, v3 preserved for back-testing
+  - Registry updated in `src/lib/prompts/index.ts`
 
 ---
 ## [1.7.8] - 2026-02-08

@@ -18,6 +18,8 @@ dist/
 .env.test.local
 .env.production.local
 .env*.local
+.env.preview
+.env.production
 
 # Testing
 coverage/
@@ -106,6 +108,9 @@ logs
 *.db-wal
 *.sqlite
 *.sqlite3
+
+# Project-specific exclusions
+TECH_DILIGENCE_BRIEFING.md
 
 
 

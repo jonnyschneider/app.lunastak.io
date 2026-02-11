@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Info, Loader2 } from 'lucide-react'
+import { Upload, Info, Loader2, FileEdit } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -101,7 +101,7 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
 
         {/* Action buttons - hide once chat started */}
         {!chatStarted && (
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-wrap gap-4 justify-center">
             <Button
               variant="outline"
               onClick={() => setUploadDialogOpen(true)}
@@ -109,6 +109,14 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
             >
               <Upload className="h-4 w-4" />
               Upload a document
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/project/${projectId}/template`)}
+              className="flex items-center gap-2"
+            >
+              <FileEdit className="h-4 w-4" />
+              I have a strategy
             </Button>
             <Button
               variant="outline"

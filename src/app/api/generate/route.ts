@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
-import { extractXML } from '@/lib/utils';
-import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
+import { extractXML, parseOKRObjectives } from '@/lib/utils';
+import { StrategyStatements, ExtractedContextVariant, isEmergentContext, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
 import { logStatsigEvent } from '@/lib/statsig';
@@ -252,15 +252,54 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
     const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
     const thoughts = extractXML(content, 'thoughts');
     const statementsXML = extractXML(content, 'statements');
+    const objectivesXML = extractXML(statementsXML, 'objectives');
 
-    const objectiveStrings = extractXML(statementsXML, 'objectives')
-      .split('\n')
-      .filter(line => line.trim().length > 0);
+    // Detect format: OKR (has <objective> tags) vs legacy (numbered list)
+    const isOKRFormat = objectivesXML.includes('<objective>');
+
+    let objectives: Objective[];
+    if (isOKRFormat) {
+      objectives = parseOKRObjectives(objectivesXML);
+      console.log('[Generate Background] Parsed OKR-style objectives:', objectives.length);
+    } else {
+      // Legacy: numbered list format
+      const objectiveStrings = objectivesXML
+        .split('\n')
+        .filter(line => line.trim().length > 0);
+      objectives = convertLegacyObjectives(objectiveStrings);
+      console.log('[Generate Background] Parsed legacy objectives:', objectives.length);
+    }
+
+    // Parse vision - detect v4 pithy format (has <headline>) vs v3/legacy (plain text)
+    const visionXML = extractXML(statementsXML, 'vision');
+    const isPithyFormat = visionXML.includes('<headline>');
+
+    let vision: string;
+    let visionElaboration: string | undefined;
+    if (isPithyFormat) {
+      vision = extractXML(visionXML, 'headline');
+      visionElaboration = extractXML(visionXML, 'elaboration') || undefined;
+      console.log('[Generate Background] Parsed pithy vision:', vision.split(' ').length, 'words');
+    } else {
+      vision = visionXML;
+    }
+
+    // Parse strategy - same detection
+    const strategyXML = extractXML(statementsXML, 'strategy');
+    let strategy: string;
+    let strategyElaboration: string | undefined;
+    if (strategyXML.includes('<headline>')) {
+      strategy = extractXML(strategyXML, 'headline');
+      strategyElaboration = extractXML(strategyXML, 'elaboration') || undefined;
+      console.log('[Generate Background] Parsed pithy strategy:', strategy.split(' ').length, 'words');
+    } else {
+      strategy = strategyXML;
+    }
 
     const statements: StrategyStatements = {
-      vision: extractXML(statementsXML, 'vision'),
-      strategy: extractXML(statementsXML, 'strategy'),
-      objectives: convertLegacyObjectives(objectiveStrings),
+      vision,
+      strategy,
+      objectives,
       opportunities: [],
       principles: []
     };
@@ -296,6 +335,58 @@ async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
       }
     });
     console.log('[Generate Background] GeneratedOutput updated to complete');
+
+    // Seed initial StrategyVersion records
+    await prisma.$transaction([
+      // Vision version
+      prisma.strategyVersion.create({
+        data: {
+          projectId,
+          componentType: 'vision',
+          content: { text: vision, elaboration: visionElaboration },
+          version: 1,
+          createdBy: 'ai',
+          sourceType: 'generation',
+          sourceId: trace.id,
+        },
+      }),
+      // Strategy version
+      prisma.strategyVersion.create({
+        data: {
+          projectId,
+          componentType: 'strategy',
+          content: { text: strategy, elaboration: strategyElaboration },
+          version: 1,
+          createdBy: 'ai',
+          sourceType: 'generation',
+          sourceId: trace.id,
+        },
+      }),
+      // Objective versions
+      ...objectives.map((obj) =>
+        prisma.strategyVersion.create({
+          data: {
+            projectId,
+            componentType: 'objective',
+            componentId: obj.id,
+            content: {
+              title: obj.title,
+              objective: obj.objective,
+              pithy: obj.pithy || obj.objective,
+              keyResults: obj.keyResults,
+              metric: obj.metric,
+              explanation: obj.explanation,
+              successCriteria: obj.successCriteria,
+            } as object,
+            version: 1,
+            createdBy: 'ai',
+            sourceType: 'generation',
+            sourceId: trace.id,
+          },
+        })
+      ),
+    ]);
+    console.log('[Generate Background] StrategyVersion records seeded');
 
     // Get fragment IDs and create ExtractionRun
     const fragments = await prisma.fragment.findMany({

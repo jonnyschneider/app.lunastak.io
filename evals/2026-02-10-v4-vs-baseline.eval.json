@@ -1,0 +1,42 @@
+{
+  "name": "V4 Vs Baseline",
+  "date": "2026-02-10",
+  "purpose": "Compare v4 pithy statements against v2 baseline",
+  "traces": [
+    "baseline-v2-4pl",
+    "v4-pithy-4pl"
+  ],
+  "baseline": "baseline-v2-4pl",
+  "evaluation": {
+    "baseline-v2-4pl": {
+      "conversation": {
+        "notes": "",
+        "tags": []
+      },
+      "extraction": {
+        "notes": "",
+        "tags": []
+      },
+      "generation": {
+        "notes": "",
+        "tags": []
+      }
+    },
+    "v4-pithy-4pl": {
+      "conversation": {
+        "notes": "",
+        "tags": []
+      },
+      "extraction": {
+        "notes": "",
+        "tags": []
+      },
+      "generation": {
+        "notes": "",
+        "tags": []
+      }
+    }
+  },
+  "summary": "",
+  "outcome": ""
+}

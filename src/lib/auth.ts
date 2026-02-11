@@ -1,4 +1,5 @@
 import type { NextAuthOptions } from "next-auth"
+import GoogleProvider from "next-auth/providers/google"
 import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
@@ -24,6 +25,10 @@ async function notifySlackNewUser(email: string) {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     EmailProvider({
       server: "", // Not needed for Resend
       from: EMAIL_CONFIG.from,
@@ -47,7 +52,10 @@ export const authOptions: NextAuthOptions = {
 
         console.log('[Auth] Verification email sent:', data?.id)
       },
-    }),
+      // Allow email sign-in to link to existing accounts (e.g., Google)
+      // Type missing in next-auth@4 but option is valid at runtime
+      allowDangerousEmailAccountLinking: true,
+    } as Parameters<typeof EmailProvider>[0] & { allowDangerousEmailAccountLinking?: boolean }),
   ],
   pages: {
     signIn: "/auth/signin",

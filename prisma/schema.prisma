@@ -186,6 +186,7 @@ model Project {
   extractionRuns       ExtractionRun[]
   dismissals           UserDismissal[]
   userContent          UserContent[]
+  strategyVersions     StrategyVersion[]
 
   @@index([userId])
   @@index([status])
@@ -403,6 +404,24 @@ model GeneratedOutput {
   @@index([outputType])
   @@index([status])
   @@index([createdAt])
+}
+
+model StrategyVersion {
+  id            String   @id @default(cuid())
+  projectId     String
+  componentType String   // 'vision' | 'strategy' | 'objective'
+  componentId   String?  // For objectives: which objective (null for vision/strategy)
+  content       Json     // The actual content
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  createdBy     String   // 'user' | 'ai' | 'system'
+  sourceType    String   // 'generation' | 'user_edit' | 'coaching'
+  sourceId      String?  // traceId, conversationId if relevant
+
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, componentType, componentId])
+  @@index([projectId, componentType, version])
 }
 
 model ExtractionRun {

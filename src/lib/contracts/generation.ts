@@ -10,11 +10,36 @@ import { ExtractionOutputContract } from './extraction';
 // Re-export extraction for convenience
 export type { ExtractionOutputContract };
 
+// KeyResult structure for OKR-style objectives
+export interface KeyResultContract {
+  id: string;
+  belief: {
+    action: string;
+    outcome: string;
+  };
+  signal: string;
+  baseline: string;
+  target: string;
+  timeframe: '3M' | '6M' | '9M' | '12M' | '18M';
+}
+
 // Objective structure in generated output
 export interface ObjectiveContract {
   id: string;
-  pithy: string;
-  metric: {
+  title?: string;  // Short title (3-5 words) for lists/linking
+  explanation: string;
+
+  // OMTM - simplified format (preferred)
+  omtm?: string;         // Just the metric name: "Weekly Active Users"
+  aspiration?: string;   // Optional directional goal: "40% increase" or "Significant growth"
+  supportingMetrics?: string[];  // Optional additional metrics (just names)
+
+  // New OKR format
+  objective?: string;
+  keyResults?: KeyResultContract[];
+  // Legacy format - still supported
+  pithy?: string;
+  metric?: {
     summary: string;
     full: string;
     category: string;
@@ -23,8 +48,7 @@ export interface ObjectiveContract {
     metricValue?: string;
     timeframe?: '3M' | '6M' | '9M' | '12M' | '18M';
   };
-  explanation: string;
-  successCriteria: string;
+  successCriteria?: string;
 }
 
 // Strategy statements - the core output
@@ -40,8 +64,12 @@ export interface StrategyStatementsContract {
   }>;
   principles: Array<{
     id: string;
-    title: string;
-    description: string;
+    priority: string;
+    deprioritized: string;
+    context?: string;
+    // Legacy
+    title?: string;
+    description?: string;
   }>;
 }
 
