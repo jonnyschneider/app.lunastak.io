@@ -6,12 +6,11 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
-import { extractXML } from '@/lib/utils'
-import { convertLegacyObjectives } from '@/lib/placeholders'
+import { extractXML, parseOKRObjectives } from '@/lib/utils'
+import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
 import { StrategyStatements } from '@/lib/types'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import {
-  RefreshStrategyStep,
   RefreshStrategyProgressContract,
   RefreshStrategyDeltaContract,
 } from '@/lib/contracts/refresh-strategy'
@@ -42,15 +41,13 @@ Objectives:
 
 Update the strategy to incorporate the new insights. Be conservative - only change what the new information warrants. If an objective is still valid, keep it. If the vision still holds, preserve it.
 
+${OBJECTIVE_GUIDELINES}
+
 Output format:
 <statements>
   <vision>Your updated or unchanged vision</vision>
   <strategy>Your updated or unchanged strategy</strategy>
-  <objectives>
-  1. First objective
-  2. Second objective
-  3. Third objective
-  </objectives>
+  ${OBJECTIVE_XML_FORMAT}
 </statements>`
 
 const CHANGE_SUMMARY_PROMPT = `Compare these two versions of a business strategy and summarize what changed and why.
@@ -199,7 +196,12 @@ export async function POST(
           .join('\n\n')
 
         const currentObjectives = previousStatements.objectives
-          .map((o, i) => `${i + 1}. ${o.objective || o.pithy}: ${o.keyResults?.[0]?.target || o.metric?.summary || ''}`)
+          .map((o, i) => {
+            const title = o.title || o.objective || o.pithy || ''
+            const metric = o.omtm || o.keyResults?.[0]?.signal || o.metric?.metricName || ''
+            const aspiration = o.aspiration || o.keyResults?.[0]?.target || o.metric?.summary || ''
+            return `${i + 1}. ${title}${metric ? ` (${metric}${aspiration ? ': ' + aspiration : ''})` : ''}`
+          })
           .join('\n')
 
         const newFragmentsContent = newFragments.length > 0
@@ -233,14 +235,20 @@ export async function POST(
           : ''
 
         const statementsXML = extractXML(genContent, 'statements')
-        const objectiveStrings = extractXML(statementsXML, 'objectives')
-          .split('\n')
-          .filter(line => line.trim().length > 0)
+        const objectivesXML = extractXML(statementsXML, 'objectives')
+
+        // Parse objectives using shared parser (same as /generate route)
+        const parsedObjectives = parseOKRObjectives(objectivesXML)
+
+        // Fallback: if no objectives parsed, preserve previous objectives
+        const objectives = parsedObjectives.length > 0
+          ? parsedObjectives
+          : previousStatements.objectives
 
         const newStatements: StrategyStatements = {
           vision: extractXML(statementsXML, 'vision') || previousStatements.vision,
           strategy: extractXML(statementsXML, 'strategy') || previousStatements.strategy,
-          objectives: convertLegacyObjectives(objectiveStrings),
+          objectives,
           opportunities: previousStatements.opportunities || [],
           principles: previousStatements.principles || [],
         }
@@ -251,10 +259,10 @@ export async function POST(
         let changeSummary: string | null = null
         try {
           const oldObjectives = previousStatements.objectives
-            .map((o, i) => `${i + 1}. ${o.pithy}`)
+            .map((o, i) => `${i + 1}. ${o.title || o.objective || o.pithy}`)
             .join('\n')
           const newObjectives = newStatements.objectives
-            .map((o, i) => `${i + 1}. ${o.pithy}`)
+            .map((o, i) => `${i + 1}. ${o.title || o.objective || o.pithy}`)
             .join('\n')
 
           const summaryPrompt = CHANGE_SUMMARY_PROMPT
