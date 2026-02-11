@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { FakeDoorDialog } from './FakeDoorDialog';
@@ -9,6 +9,7 @@ import { InlineTextEditor } from './InlineTextEditor';
 import { ObjectiveInlineEditor } from './ObjectiveInlineEditor';
 import { PrinciplesSection } from './PrinciplesSection';
 import { getObjectiveTitle } from '@/lib/utils';
+import { normalizeToOMTM } from '@/lib/objective-omtm-migration';
 
 interface StrategyDisplayProps {
   strategy: StrategyStatements;
@@ -29,17 +30,17 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
     feature: string;
   } | null>(null);
 
-  // Handle legacy objectives (string[]) by converting to new format
+  // Handle legacy objectives (string[]) by converting to new format and normalizing to OMTM
   const objectives: Objective[] = useMemo(() => {
     if (strategy.objectives.length === 0) return [];
 
     // Check if objectives are already in new format
     if (typeof strategy.objectives[0] === 'object' && 'id' in strategy.objectives[0]) {
-      return strategy.objectives as Objective[];
+      return (strategy.objectives as Objective[]).map(normalizeToOMTM);
     }
 
     // Convert legacy string[] format
-    return convertLegacyObjectives(strategy.objectives as unknown as string[]);
+    return convertLegacyObjectives(strategy.objectives as unknown as string[]).map(normalizeToOMTM);
   }, [strategy.objectives]);
 
   const handleFakeDoor = async (feature: string) => {
@@ -152,12 +153,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           componentId: updatedObjective.id,
           content: {
             title: updatedObjective.title,
+            explanation: updatedObjective.explanation,
+            primaryMetric: updatedObjective.primaryMetric,
+            supportingMetrics: updatedObjective.supportingMetrics,
+            // Legacy compat
             objective: updatedObjective.objective,
             pithy: updatedObjective.pithy || updatedObjective.objective,
-            keyResults: updatedObjective.keyResults,
-            metric: updatedObjective.metric,
-            explanation: updatedObjective.explanation,
-            successCriteria: updatedObjective.successCriteria,
           },
           sourceType: 'user_edit',
         }),
@@ -268,9 +269,9 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     className="bg-white border border-[#0A2933] rounded-lg p-4 hover:shadow-md transition-shadow relative cursor-pointer hover:bg-muted/30"
                   >
                     {/* Timeframe badge - top left */}
-                    {(objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe) && (
+                    {(objective.primaryMetric?.timeframe || objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe) && (
                       <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-[#E0FF4F] text-[#0A2933] rounded">
-                        {objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe}
+                        {objective.primaryMetric?.timeframe || objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe}
                       </span>
                     )}
 
@@ -283,8 +284,21 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                       {objective.objective || objective.pithy}
                     </p>
 
-                    {/* Key Results or Metric information */}
-                    {objective.keyResults?.length ? (
+                    {/* OMTM Primary Metric (preferred) */}
+                    {objective.primaryMetric ? (
+                      <div className="flex items-center gap-2 text-xs text-[#7F556D]">
+                        <span>
+                          {objective.primaryMetric.direction === 'increase' ? '↑' : '↓'}
+                        </span>
+                        <span className="font-medium">
+                          {objective.primaryMetric.name}
+                        </span>
+                        <span>|</span>
+                        <span>
+                          {objective.primaryMetric.baseline || '?'} → {objective.primaryMetric.target}
+                        </span>
+                      </div>
+                    ) : objective.keyResults?.length ? (
                       <div className="text-xs text-[#7F556D]">
                         {objective.keyResults[0].signal}: {objective.keyResults[0].baseline} → {objective.keyResults[0].target}
                       </div>
