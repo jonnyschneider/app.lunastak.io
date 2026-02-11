@@ -52,7 +52,10 @@ export const authOptions: NextAuthOptions = {
 
         console.log('[Auth] Verification email sent:', data?.id)
       },
-    }),
+      // Allow email sign-in to link to existing accounts (e.g., Google)
+      // Type missing in next-auth@4 but option is valid at runtime
+      allowDangerousEmailAccountLinking: true,
+    } as Parameters<typeof EmailProvider>[0] & { allowDangerousEmailAccountLinking?: boolean }),
   ],
   pages: {
     signIn: "/auth/signin",
