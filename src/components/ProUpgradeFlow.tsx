@@ -223,9 +223,9 @@ export function UpgradeSuccessDialog({
                       autoFocus
                     />
                     <Button
-                      variant="outline"
                       onClick={handleJoinWaitlist}
                       disabled={isJoining || !effectiveEmail.trim()}
+                      className="bg-accent text-accent-foreground hover:bg-accent/90"
                     >
                       {isJoining ? 'Joining...' : 'Join'}
                     </Button>
@@ -245,10 +245,10 @@ export function UpgradeSuccessDialog({
                       </button>
                     </div>
                     <Button
-                      variant="outline"
                       size="sm"
                       onClick={handleJoinWaitlist}
                       disabled={isJoining || !effectiveEmail.trim()}
+                      className="bg-accent text-accent-foreground hover:bg-accent/90"
                     >
                       {isJoining ? 'Joining...' : 'Join Waitlist'}
                     </Button>
