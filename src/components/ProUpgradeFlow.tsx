@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,
@@ -120,26 +121,32 @@ export function UpgradeSuccessDialog({
   onOpenChange,
   onContinue,
 }: UpgradeSuccessDialogProps) {
-  const [email, setEmail] = useState('');
+  const { data: session } = useSession();
+  const sessionEmail = session?.user?.email || '';
+
+  const [email, setEmail] = useState(sessionEmail);
+  const [isEditing, setIsEditing] = useState(false);
   const [joinedWaitlist, setJoinedWaitlist] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
 
+  // Update email when session loads
+  const effectiveEmail = email || sessionEmail;
+
   const handleJoinWaitlist = async () => {
-    if (!email.trim()) return;
+    if (!effectiveEmail.trim()) return;
 
     setIsJoining(true);
     try {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, feature: 'pro-early-access' }),
+        body: JSON.stringify({ email: effectiveEmail, feature: 'pro-early-access' }),
       });
 
       if (res.ok) {
         setJoinedWaitlist(true);
       } else {
         console.error('[ProUpgrade] Waitlist signup failed');
-        // Show success anyway for better UX
         setJoinedWaitlist(true);
       }
     } catch (error) {
@@ -147,6 +154,7 @@ export function UpgradeSuccessDialog({
       setJoinedWaitlist(true);
     } finally {
       setIsJoining(false);
+      setIsEditing(false);
     }
   };
 
@@ -203,23 +211,49 @@ export function UpgradeSuccessDialog({
             {!joinedWaitlist ? (
               <>
                 <p className="text-sm mb-3">Want early access to new features?</p>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="flex-1"
-                    disabled={isJoining}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={handleJoinWaitlist}
-                    disabled={isJoining || !email.trim()}
-                  >
-                    {isJoining ? 'Joining...' : 'Join Waitlist'}
-                  </Button>
-                </div>
+                {isEditing ? (
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="flex-1"
+                      disabled={isJoining}
+                      autoFocus
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleJoinWaitlist}
+                      disabled={isJoining || !effectiveEmail.trim()}
+                    >
+                      {isJoining ? 'Joining...' : 'Join'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">{effectiveEmail}</span>
+                      <button
+                        onClick={() => {
+                          setEmail(effectiveEmail);
+                          setIsEditing(true);
+                        }}
+                        className="ml-2 text-primary hover:underline text-xs"
+                      >
+                        change
+                      </button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleJoinWaitlist}
+                      disabled={isJoining || !effectiveEmail.trim()}
+                    >
+                      {isJoining ? 'Joining...' : 'Join Waitlist'}
+                    </Button>
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-sm text-green-600 flex items-center gap-2">
