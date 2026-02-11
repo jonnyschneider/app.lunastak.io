@@ -163,6 +163,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
   const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
+  const [isPro, setIsPro] = useState(false)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
   const { isGenerating } = useGenerationStatusContext()
@@ -195,6 +196,17 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  // Fetch user pro status
+  useEffect(() => {
+    if (!session) return
+    fetch('/api/user/account')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.isPro) setIsPro(true)
+      })
+      .catch(() => {})
+  }, [session])
 
   // Fetch strategy history when selected project changes
   useEffect(() => {
@@ -558,11 +570,15 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                   align="end"
                   sideOffset={4}
                 >
-                  <DropdownMenuItem onSelect={() => triggerUpgrade('model-selection')}>
-                    <Sparkles className="h-4 w-4" />
-                    Upgrade to Pro
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  {!isPro && (
+                    <>
+                      <DropdownMenuItem onSelect={() => triggerUpgrade('model-selection')}>
+                        <Sparkles className="h-4 w-4" />
+                        Upgrade to Pro
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/account">
                       <User className="h-4 w-4" />
