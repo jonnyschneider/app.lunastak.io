@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ChevronUp,
   ChevronRight,
@@ -93,6 +94,7 @@ import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
 import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { GenerationStatusIndicator } from '@/components/GenerationStatusIndicator'
 import { cn } from '@/lib/utils'
 
@@ -172,6 +174,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
   const { isGenerating } = useGenerationStatusContext()
+  const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const {
     interstitialOpen,
     setInterstitialOpen,
@@ -515,9 +518,18 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
-                    <Link href={`/project/${selectedProject.id}`}>
+                    <Link href={`/project/${selectedProject.id}`} className="flex items-center gap-2">
                       <Glasses className="h-4 w-4" />
                       <span>Your Thinking</span>
+                      {isProcessingDocuments(selectedProject.id) && (
+                        <Image
+                          src="/animated-logo-glitch.svg"
+                          alt=""
+                          width={12}
+                          height={12}
+                          className="animate-pulse ml-auto"
+                        />
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

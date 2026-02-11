@@ -37,6 +37,7 @@ import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
 import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import { StructuredProvocation } from '@/lib/types'
@@ -131,6 +132,7 @@ export default function ProjectPage() {
   const params = useParams()
   const projectId = params.id as string
   const { isGenerating, hasActiveGeneration } = useGenerationStatusContext()
+  const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -291,6 +293,16 @@ export default function ProjectPage() {
     setDeepDiveSheetOpen(false)
     setUploadDeepDiveId(deepDiveId)
     setUploadDialogOpen(true)
+  }
+
+  const handleDocumentUploadComplete = () => {
+    fetchProjectData()
+    // Re-open the deep dive sheet to show the newly processed document
+    if (uploadDeepDiveId) {
+      setSelectedDeepDiveId(uploadDeepDiveId)
+      setDeepDiveSheetOpen(true)
+      setUploadDeepDiveId(undefined)
+    }
   }
 
   // Fake door handlers
@@ -456,6 +468,8 @@ export default function ProjectPage() {
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
           isGenerating={hasActiveGeneration(projectId)}
           isSyncing={recentlyGenerated && !hasActiveGeneration(projectId)}
+          isProcessingDocuments={isProcessingDocuments(projectId)}
+          processingDocumentCount={processingCount(projectId)}
         />
 
         {/* Documents | Chats */}
@@ -765,7 +779,7 @@ export default function ProjectPage() {
         projectId={projectId}
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        onUploadComplete={fetchProjectData}
+        onUploadComplete={handleDocumentUploadComplete}
         deepDiveId={uploadDeepDiveId}
       />
 
