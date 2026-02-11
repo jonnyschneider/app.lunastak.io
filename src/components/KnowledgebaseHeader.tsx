@@ -182,6 +182,10 @@ export function KnowledgebaseHeader({
                 {knowledgeSummary}
               </p>
             </div>
+          ) : fragmentCount > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper—you can generate new versions of your strategy any time.
+            </p>
           ) : (
             <p className="text-sm text-muted-foreground">
               Have conversations with Luna to build context about your strategy.

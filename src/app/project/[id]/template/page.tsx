@@ -6,8 +6,15 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { BadgeInfo } from 'lucide-react';
+import { BadgeInfo, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { PrinciplesSection } from '@/components/PrinciplesSection';
+import { OpportunitySection } from '@/components/OpportunitySection';
+import {
+  ProFeatureInterstitial,
+  UpgradeSuccessDialog,
+  ProComingSoonDialog,
+  useProUpgradeFlow,
+} from '@/components/ProUpgradeFlow';
 import type { StrategyStatements, Objective, Principle } from '@/lib/types';
 
 function generateId(): string {
@@ -43,7 +50,9 @@ export default function TemplateEntryPage() {
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'vision' | 'strategy' | 'objectives' | 'principles' | 'review'>('vision');
+  const [step, setStep] = useState<'vision' | 'strategy' | 'objectives' | 'opportunities' | 'principles' | 'review'>('vision');
+  const [showVisionExamples, setShowVisionExamples] = useState(false);
+  const pro = useProUpgradeFlow();
 
   const handleAddObjective = () => {
     setObjectives([
@@ -80,11 +89,11 @@ export default function TemplateEntryPage() {
       const statements: StrategyStatements = {
         vision: visionText,
         strategy: strategyText,
-        objectives: objectives.filter((o) => o.objective.trim()).map((o): Objective => ({
+        objectives: objectives.filter((o) => o.title.trim() || o.objective.trim() || o.omtm.trim()).map((o): Objective => ({
           id: o.id,
           title: o.title || undefined,
-          objective: o.objective,
-          pithy: o.objective, // For backwards compat
+          objective: o.objective || o.title, // Fall back to title if no statement
+          pithy: o.objective || o.title, // For backwards compat
           omtm: o.omtm || undefined,
           aspiration: o.aspiration || undefined,
           explanation: '',
@@ -111,6 +120,12 @@ export default function TemplateEntryPage() {
 
       const { traceId } = await response.json();
       console.log('[Template] Success, redirecting to:', traceId);
+
+      // Notify sidebar to refresh strategy list
+      window.dispatchEvent(new CustomEvent('generationComplete', {
+        detail: { projectId, traceId },
+      }));
+
       router.push(`/strategy/${traceId}`);
     } catch (err) {
       console.error('[Template] Error:', err);
@@ -125,11 +140,9 @@ export default function TemplateEntryPage() {
       case 'vision':
         return visionHeadline.trim().length >= 10;
       case 'strategy':
-        return strategyHeadline.trim().length >= 10;
       case 'objectives':
-        return objectives.some((o) => o.objective.trim());
+      case 'opportunities':
       case 'principles':
-        return true;
       case 'review':
         return true;
       default:
@@ -137,12 +150,40 @@ export default function TemplateEntryPage() {
     }
   };
 
-  const steps = ['vision', 'strategy', 'objectives', 'principles', 'review'] as const;
+  const canFinish = visionHeadline.trim().length >= 10;
+
+  const steps = ['vision', 'strategy', 'objectives', 'opportunities', 'principles', 'review'] as const;
   const currentStepIndex = steps.indexOf(step);
 
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-ds-teal tracking-tight">Build your Decision Stack</h1>
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/Decision Stack Logo.svg"
+                alt="Decision Stack"
+                className="h-6"
+              />
+              <a
+                href="https://www.thedecisionstack.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground text-xs hover:text-foreground transition-colors"
+              >
+                Learn more →
+              </a>
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-1">
+            Fill in what you know — skip what you don't. You can refine everything later in your Strategy view.
+          </p>
+        </div>
+
         {/* Progress */}
         <div className="mb-8">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
@@ -184,12 +225,36 @@ export default function TemplateEntryPage() {
                 <label className="text-xs font-medium text-white mb-1.5 block">
                   Headline (4-15 words)
                 </label>
-                <Input
-                  value={visionHeadline}
-                  onChange={(e) => setVisionHeadline(e.target.value)}
-                  placeholder="A world where..."
-                  className="text-lg bg-white border-border"
-                />
+                <div className="relative">
+                  <Input
+                    value={visionHeadline}
+                    onChange={(e) => setVisionHeadline(e.target.value)}
+                    placeholder="A world where..."
+                    className="text-lg bg-white border-border pr-36"
+                  />
+                  <button
+                    onClick={() => pro.triggerUpgrade('ai-improve')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-ds-teal transition-colors rounded-md hover:bg-muted"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Improve with AI
+                  </button>
+                </div>
+                {/* Progressive disclosure examples */}
+                <div className="mt-2">
+                  <button
+                    onClick={() => setShowVisionExamples(!showVisionExamples)}
+                    className="flex items-center gap-1 text-xs text-white/50 hover:text-white/70"
+                  >
+                    {showVisionExamples ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {showVisionExamples ? 'Hide examples' : 'Need inspiration?'}
+                  </button>
+                  {showVisionExamples && (
+                    <p className="mt-2 text-xs text-white/50">
+                      "To create a better everyday life for many people" (IKEA) · "A world without poverty" (Oxfam) · "Bring inspiration to every athlete" (Nike)
+                    </p>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-white mb-1.5 block">
@@ -204,10 +269,6 @@ export default function TemplateEntryPage() {
                 />
               </div>
             </div>
-
-            <p className="text-xs text-white/60">
-              Examples: "To create a better everyday life for many people" (IKEA) · "A world without poverty" (Oxfam) · "Bring inspiration to every athlete" (Nike)
-            </p>
           </div>
         )}
 
@@ -232,13 +293,22 @@ export default function TemplateEntryPage() {
                 <label className="text-xs font-medium text-white mb-1.5 block">
                   Headline (15-25 words)
                 </label>
-                <Textarea
-                  value={strategyHeadline}
-                  onChange={(e) => setStrategyHeadline(e.target.value)}
-                  placeholder="We will focus on... by... while choosing not to..."
-                  rows={2}
-                  className="text-lg bg-white border-border"
-                />
+                <div className="relative">
+                  <Textarea
+                    value={strategyHeadline}
+                    onChange={(e) => setStrategyHeadline(e.target.value)}
+                    placeholder="We will focus on... by... while choosing not to..."
+                    rows={2}
+                    className="text-lg bg-white border-border pr-36"
+                  />
+                  <button
+                    onClick={() => pro.triggerUpgrade('ai-improve')}
+                    className="absolute right-2 top-3 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-ds-teal transition-colors rounded-md hover:bg-muted"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Improve with AI
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-white mb-1.5 block">
@@ -253,10 +323,6 @@ export default function TemplateEntryPage() {
                 />
               </div>
             </div>
-
-            <p className="text-xs text-white/60">
-              Great strategy is as much about what you won't do as what you will.
-            </p>
           </div>
         )}
 
@@ -273,7 +339,7 @@ export default function TemplateEntryPage() {
               <div className="flex items-start gap-2">
                 <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
                 <p className="text-sm text-white/90 italic">
-                  What you're trying to achieve NOW. Start with a verb. Be specific. Each objective has an OMTM (One Metric That Matters) — just the metric name, not a full target.
+                  What matters right NOW. Start with a verb. Be specific. Each objective has one metric that matters. Just pick a metric, we'll set specific goals for each opportunity later.
                 </p>
               </div>
 
@@ -284,18 +350,27 @@ export default function TemplateEntryPage() {
 
             {objectives.map((obj, index) => (
               <div key={obj.id} className="bg-ds-teal rounded-lg p-5 space-y-4">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-center">
                   <h4 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
                     Objective {index + 1}
                   </h4>
-                  {objectives.length > 1 && (
+                  <div className="flex items-center gap-3">
                     <button
-                      onClick={() => handleRemoveObjective(index)}
-                      className="text-xs text-white/50 hover:text-white"
+                      onClick={() => pro.triggerUpgrade('ai-improve')}
+                      className="flex items-center gap-1 text-xs text-ds-neon/70 hover:text-ds-neon transition-colors"
                     >
-                      Remove
+                      <Sparkles className="w-3 h-3" />
+                      Improve with AI
                     </button>
-                  )}
+                    {objectives.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveObjective(index)}
+                        className="text-xs text-white/50 hover:text-white"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -317,7 +392,7 @@ export default function TemplateEntryPage() {
                   <Textarea
                     value={obj.objective}
                     onChange={(e) => handleUpdateObjective(index, 'objective', e.target.value)}
-                    placeholder="e.g., Establish Lunastak as the default tool leaders reach for when they need strategic clarity"
+                    placeholder="e.g., Reduce time-to-value for new customers by streamlining the onboarding experience"
                     rows={2}
                     className="bg-white border-border"
                   />
@@ -357,6 +432,37 @@ export default function TemplateEntryPage() {
             >
               + Add another objective
             </Button>
+          </div>
+        )}
+
+        {/* Opportunities step */}
+        {step === 'opportunities' && (
+          <div className="space-y-4">
+            <div className="bg-ds-teal rounded-lg p-6 space-y-4">
+              <div>
+                <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1">Opportunities</h3>
+                <h1 className="text-xl font-bold text-white">How are you going to get there? What actions will you take?</h1>
+              </div>
+
+              {/* Coaching tip */}
+              <div className="flex items-start gap-2">
+                <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
+                <p className="text-sm text-white/90 italic">
+                  Concrete initiatives that contribute to your objectives. Link each one to the objective it supports.
+                </p>
+              </div>
+            </div>
+
+            <OpportunitySection
+              projectId={projectId}
+              objectives={objectives.filter(o => o.objective.trim()).map(o => ({
+                id: o.id,
+                objective: o.objective,
+                pithy: o.objective,
+              }))}
+              onImproveWithAI={() => pro.triggerUpgrade('ai-improve')}
+              compact
+            />
           </div>
         )}
 
@@ -414,12 +520,12 @@ export default function TemplateEntryPage() {
               <div className="p-5 bg-ds-teal rounded-lg">
                 <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-2">Objectives</h3>
                 <div className="space-y-3">
-                  {objectives.filter((o) => o.objective.trim()).map((obj) => (
+                  {objectives.filter((o) => o.title.trim() || o.objective.trim() || o.omtm.trim()).map((obj) => (
                     <div key={obj.id} className="text-white">
                       {obj.title && (
                         <p className="font-medium text-ds-neon text-sm">{obj.title}</p>
                       )}
-                      <p>{obj.objective}</p>
+                      <p>{obj.objective || obj.title}</p>
                       {obj.omtm && (
                         <p className="text-sm text-white/70 mt-1">
                           OMTM: {obj.omtm}
@@ -429,6 +535,18 @@ export default function TemplateEntryPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="p-5 bg-ds-teal rounded-lg">
+                <OpportunitySection
+                  projectId={projectId}
+                  objectives={objectives.filter(o => o.objective.trim()).map(o => ({
+                    id: o.id,
+                    objective: o.objective,
+                    pithy: o.objective,
+                  }))}
+                  compact
+                  readOnly
+                />
               </div>
               {principles.length > 0 && (
                 <div className="p-5 bg-ds-teal rounded-lg">
@@ -464,24 +582,52 @@ export default function TemplateEntryPage() {
           >
             Back
           </Button>
-          {step === 'review' ? (
-            <Button
-              onClick={handleComplete}
-              disabled={saving}
-              className="bg-ds-teal text-white hover:bg-ds-teal/90"
-            >
-              {saving ? 'Saving...' : 'Complete & View Strategy'}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => setStep(steps[currentStepIndex + 1])}
-              disabled={!canProceed()}
-              className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
-            >
-              Continue
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            {step !== 'review' && canFinish && (
+              <Button
+                variant="ghost"
+                onClick={handleComplete}
+                disabled={saving}
+                className="text-muted-foreground text-sm"
+              >
+                {saving ? 'Saving...' : "I'm done for now"}
+              </Button>
+            )}
+            {step === 'review' ? (
+              <Button
+                onClick={handleComplete}
+                disabled={saving}
+                className="bg-ds-teal text-white hover:bg-ds-teal/90"
+              >
+                {saving ? 'Saving...' : 'Complete & View Strategy'}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setStep(steps[currentStepIndex + 1])}
+                disabled={!canProceed()}
+                className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
+              >
+                Continue
+              </Button>
+            )}
+          </div>
         </div>
+        <ProFeatureInterstitial
+          feature={pro.currentFeature}
+          open={pro.interstitialOpen}
+          onOpenChange={pro.setInterstitialOpen}
+          onUpgrade={pro.handleUpgrade}
+        />
+        <UpgradeSuccessDialog
+          open={pro.successOpen}
+          onOpenChange={pro.setSuccessOpen}
+          onContinue={pro.handleContinue}
+        />
+        <ProComingSoonDialog
+          feature={pro.currentFeature}
+          open={pro.comingSoonOpen}
+          onOpenChange={pro.setComingSoonOpen}
+        />
       </div>
     </AppLayout>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching';
 import { OpportunityCoaching } from './OpportunityCoaching';
 import { FakeDoorDialog } from './FakeDoorDialog';
@@ -31,6 +31,8 @@ interface OpportunityEditorProps {
   ) => Promise<void>;
   onCancel: () => void;
   saving?: boolean;
+  compact?: boolean;
+  onImproveWithAI?: () => void;
 }
 
 function generateMetricId(): string {
@@ -62,6 +64,8 @@ export function OpportunityEditor({
   onSave,
   onCancel,
   saving = false,
+  compact = false,
+  onImproveWithAI,
 }: OpportunityEditorProps) {
   const parsed = parseOpportunityContent(initialContent);
   const [title, setTitle] = useState(parsed.title);
@@ -186,9 +190,20 @@ export function OpportunityEditor({
     <div className="space-y-4 bg-ds-teal border-l-4 border-l-luna rounded-lg shadow-md p-6">
       {/* Title */}
       <div>
-        <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
-          Initiative Title
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+            Initiative Title
+          </label>
+          {onImproveWithAI && (
+            <button
+              onClick={onImproveWithAI}
+              className="flex items-center gap-1 text-xs text-ds-neon/70 hover:text-ds-neon transition-colors"
+            >
+              <Sparkles className="w-3 h-3" />
+              Improve with AI
+            </button>
+          )}
+        </div>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -241,7 +256,7 @@ export function OpportunityEditor({
       </div>
 
       {/* Suggested improvements */}
-      {showCoaching && coaching && (
+      {!compact && showCoaching && coaching && (
         <OpportunityCoaching
           result={coaching}
           onRewriteClick={handleRewriteClick}
@@ -249,45 +264,47 @@ export function OpportunityEditor({
       )}
 
       {/* Success Metrics */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
-            Success Metrics
-          </label>
-          {successMetrics.length < 3 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAddMetric}
-              className="h-7 text-xs text-white hover:bg-white/10 hover:text-white"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Add Metric
-            </Button>
-          )}
+      {!compact && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+              Success Metrics
+            </label>
+            {successMetrics.length < 3 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAddMetric}
+                className="h-7 text-xs text-white hover:bg-white/10 hover:text-white"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Metric
+              </Button>
+            )}
+          </div>
+          <div className="space-y-3">
+            {successMetrics.map((metric, index) => (
+              <SuccessMetricEditor
+                key={metric.id}
+                metric={metric}
+                onChange={(updated) => handleMetricChange(index, updated)}
+                onRemove={() => handleRemoveMetric(index)}
+                canRemove={successMetrics.length > 0}
+                linkedObjectives={linkedObjectives}
+                darkMode
+              />
+            ))}
+            {successMetrics.length === 0 && (
+              <button
+                onClick={handleAddMetric}
+                className="w-full py-3 border border-dashed border-white/30 rounded-lg text-sm text-white/70 hover:text-white hover:border-white/50 transition-colors"
+              >
+                + Add success metric
+              </button>
+            )}
+          </div>
         </div>
-        <div className="space-y-3">
-          {successMetrics.map((metric, index) => (
-            <SuccessMetricEditor
-              key={metric.id}
-              metric={metric}
-              onChange={(updated) => handleMetricChange(index, updated)}
-              onRemove={() => handleRemoveMetric(index)}
-              canRemove={successMetrics.length > 0}
-              linkedObjectives={linkedObjectives}
-              darkMode
-            />
-          ))}
-          {successMetrics.length === 0 && (
-            <button
-              onClick={handleAddMetric}
-              className="w-full py-3 border border-dashed border-white/30 rounded-lg text-sm text-white/70 hover:text-white hover:border-white/50 transition-colors"
-            >
-              + Add success metric
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-4 border-t border-white/20">

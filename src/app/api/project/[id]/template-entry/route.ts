@@ -59,8 +59,8 @@ export async function POST(
   const body = await request.json();
   const { statements } = body as { statements: StrategyStatements };
 
-  if (!statements || !statements.vision || !statements.strategy) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  if (!statements || !statements.vision) {
+    return NextResponse.json({ error: 'Vision is required' }, { status: 400 });
   }
 
   try {
@@ -131,10 +131,12 @@ export async function POST(
             componentType: 'objective',
             componentId: obj.id,
             content: {
+              title: obj.title,
               pithy: obj.pithy,
-              metric: obj.metric,
+              objective: obj.objective,
+              omtm: obj.omtm,
+              aspiration: obj.aspiration,
               explanation: obj.explanation,
-              successCriteria: obj.successCriteria,
             } as object,
             version: 1,
             createdBy: 'user',
@@ -159,7 +161,21 @@ export async function POST(
       });
     }
 
-    console.log('[Template Entry] Created conversation, trace, and versions for project:', projectId);
+    // Create GeneratedOutput record (mirrors /generate flow — drives hasStrategy + sidebar)
+    await prisma.generatedOutput.create({
+      data: {
+        projectId,
+        userId,
+        outputType: 'full_decision_stack',
+        version: 1,
+        status: 'complete',
+        content: statements as object,
+        modelUsed: 'template-entry',
+        startedAt: new Date(),
+      },
+    });
+
+    console.log('[Template Entry] Created conversation, trace, output, and versions for project:', projectId);
 
     // Trigger post-hoc extraction in background (don't wait)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';

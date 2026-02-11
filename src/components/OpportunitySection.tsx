@@ -37,9 +37,12 @@ interface ObjectiveForLinking {
 interface OpportunitySectionProps {
   projectId: string;
   objectives: ObjectiveForLinking[];
+  onImproveWithAI?: () => void;
+  compact?: boolean;
+  readOnly?: boolean;
 }
 
-export function OpportunitySection({ projectId, objectives }: OpportunitySectionProps) {
+export function OpportunitySection({ projectId, objectives, onImproveWithAI, compact = false, readOnly = false }: OpportunitySectionProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -193,23 +196,25 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+        <h3 className={`text-xs font-semibold uppercase tracking-wide ${readOnly ? 'text-ds-neon' : 'text-ds-teal'}`}>
           Opportunities
         </h3>
       </div>
 
       {/* Placeholder state */}
       {showPlaceholder && (
-        <div className="bg-ds-teal rounded-lg shadow-sm border border-dashed border-white/30 p-12 text-center">
+        <div className={`${readOnly ? '' : 'bg-ds-teal rounded-lg shadow-sm border border-dashed border-white/30 p-12'} text-center`}>
           <p className="text-white/70 mb-4">
-            Define opportunities that support your objectives
+            {readOnly ? 'No opportunities defined yet' : 'Define opportunities that support your objectives'}
           </p>
-          <button
-            onClick={handleStartAdding}
-            className="px-6 py-2 bg-ds-neon text-ds-teal font-medium rounded-lg hover:bg-ds-neon/90 transition-colors"
-          >
-            Create Opportunities
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleStartAdding}
+              className="px-6 py-2 bg-ds-neon text-ds-teal font-medium rounded-lg hover:bg-ds-neon/90 transition-colors"
+            >
+              Create Opportunities
+            </button>
+          )}
         </div>
       )}
 
@@ -253,6 +258,8 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
                   onSave={(content, status, objIds, metrics) => handleUpdate(opp.id, content, status, objIds, metrics)}
                   onCancel={handleCancelEdit}
                   saving={saving}
+                  compact={compact}
+                  onImproveWithAI={onImproveWithAI}
                 />
               </div>
             ) : (
@@ -267,6 +274,8 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
                 objectives={objectives}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onImproveWithAI={onImproveWithAI}
+                compact={compact}
               />
             );
           })}
@@ -281,12 +290,14 @@ export function OpportunitySection({ projectId, objectives }: OpportunitySection
             onSave={handleCreate}
             onCancel={handleCancelAdd}
             saving={saving}
+            compact={compact}
+            onImproveWithAI={onImproveWithAI}
           />
         </div>
       )}
 
       {/* Add button when has opportunities but not adding */}
-      {hasOpportunities && !isAdding && !editingId && (
+      {!readOnly && hasOpportunities && !isAdding && !editingId && (
         <button
           onClick={handleStartAdding}
           className="w-full py-3 border border-dashed border-muted-foreground/50 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors"
