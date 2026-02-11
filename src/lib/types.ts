@@ -35,6 +35,17 @@ export interface PrimaryMetric {
   direction: 'increase' | 'decrease';
 }
 
+export interface SuccessMetric {
+  id: string;
+  belief: {
+    action: string;   // "showing insights in first 3 minutes"
+    outcome: string;  // "increase session 2 return rate"
+  };
+  signal: string;     // "S1→S2 conversion"
+  baseline: string;   // "25%"
+  target: string;     // "50%"
+}
+
 export interface Objective {
   id: string;              // For filtering relationships
   title?: string;          // Short title (3-5 words) for lists/linking
@@ -57,9 +68,11 @@ export interface Objective {
 
 export interface Opportunity {
   id: string;
-  title: string;
-  description: string;
-  objectiveIds: string[]; // References to objectives this supports
+  title: string;              // Initiative name
+  description: string;        // What we're doing
+  objectiveIds: string[];     // Links to objectives this supports
+  successMetrics?: SuccessMetric[];  // Hypothesis-driven metrics
+  status?: 'draft' | 'active' | 'complete';
 }
 
 export interface Principle {
