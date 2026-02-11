@@ -154,9 +154,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           content: {
             title: updatedObjective.title,
             explanation: updatedObjective.explanation,
-            primaryMetric: updatedObjective.primaryMetric,
+            // New simplified OMTM
+            omtm: updatedObjective.omtm,
+            aspiration: updatedObjective.aspiration,
             supportingMetrics: updatedObjective.supportingMetrics,
             // Legacy compat
+            primaryMetric: updatedObjective.primaryMetric,
             objective: updatedObjective.objective,
             pithy: updatedObjective.pithy || updatedObjective.objective,
           },
@@ -284,8 +287,19 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                       {objective.objective || objective.pithy}
                     </p>
 
-                    {/* OMTM Primary Metric (preferred) */}
-                    {objective.primaryMetric ? (
+                    {/* OMTM - simplified format (preferred) */}
+                    {objective.omtm ? (
+                      <div className="flex items-center gap-2 text-xs text-[#7F556D]">
+                        <span className="font-medium">{objective.omtm}</span>
+                        {objective.aspiration && (
+                          <>
+                            <span className="text-[#7F556D]/60">·</span>
+                            <span className="text-[#7F556D]/80">{objective.aspiration}</span>
+                          </>
+                        )}
+                      </div>
+                    ) : objective.primaryMetric ? (
+                      /* Legacy: primaryMetric format */
                       <div className="flex items-center gap-2 text-xs text-[#7F556D]">
                         <span>
                           {objective.primaryMetric.direction === 'increase' ? '↑' : '↓'}
@@ -299,10 +313,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                         </span>
                       </div>
                     ) : objective.keyResults?.length ? (
+                      /* Legacy: keyResults format */
                       <div className="text-xs text-[#7F556D]">
                         {objective.keyResults[0].signal}: {objective.keyResults[0].baseline} → {objective.keyResults[0].target}
                       </div>
                     ) : objective.metric?.direction && objective.metric?.metricName && (
+                      /* Legacy: metric format */
                       <div className="flex items-center gap-2 text-xs text-[#7F556D]">
                         <span>
                           {objective.metric.direction === 'increase' ? '↑' : '↓'}
