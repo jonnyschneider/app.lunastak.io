@@ -1,6 +1,6 @@
 'use client';
 
-import { parseOpportunityContent } from '@/lib/opportunity-coaching';
+import { SuccessMetric } from '@/lib/types';
 
 interface ObjectiveContribution {
   objectiveId: string;
@@ -9,15 +9,17 @@ interface ObjectiveContribution {
 
 interface ObjectiveForLinking {
   id: string;
+  title?: string;
   pithy?: string;
   objective?: string;
 }
 
 interface OpportunityCardProps {
   id: string;
-  content: string;
-  status: 'draft' | 'complete';
-  coachingDismissed?: boolean;
+  title: string;
+  description: string;
+  status: 'draft' | 'active' | 'complete';
+  successMetrics?: SuccessMetric[];
   objectiveContributions?: ObjectiveContribution[];
   objectives: ObjectiveForLinking[];
   onEdit: (id: string) => void;
@@ -26,16 +28,16 @@ interface OpportunityCardProps {
 
 export function OpportunityCard({
   id,
-  content,
+  title,
+  description,
   status,
-  coachingDismissed,
+  successMetrics = [],
   objectiveContributions = [],
   objectives,
   onEdit,
   onDelete,
 }: OpportunityCardProps) {
-  const parsed = parseOpportunityContent(content);
-  const showWarning = status === 'draft' && !coachingDismissed;
+  const showWarning = status === 'draft' && objectiveContributions.length === 0;
 
   // Get linked objectives with their contributions
   const linkedObjectives = objectiveContributions
@@ -89,14 +91,37 @@ export function OpportunityCard({
       {/* Content */}
       <div className="pr-20">
         <p className="text-sm font-medium text-[#0A2933]">
-          {parsed.title}
+          {title}
         </p>
-        {parsed.details && (
+        {description && (
           <p className="mt-1 text-sm text-muted-foreground">
-            {parsed.details}
+            {description}
           </p>
         )}
       </div>
+
+      {/* Success Metrics */}
+      {successMetrics.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Success Metrics
+          </h4>
+          <div className="space-y-2">
+            {successMetrics.map((metric) => (
+              <div key={metric.id} className="text-xs space-y-0.5">
+                {(metric.belief.action || metric.belief.outcome) && (
+                  <p className="text-muted-foreground italic">
+                    We believe {metric.belief.action} will {metric.belief.outcome}
+                  </p>
+                )}
+                <p className="font-medium">
+                  {metric.signal}: {metric.baseline || '?'} → {metric.target}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Linked objectives with contributions */}
       {linkedObjectives.length > 0 && (
