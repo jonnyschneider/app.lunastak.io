@@ -120,31 +120,63 @@ export async function processDocument(
     // Step 1: Extract text using Unstructured API
     console.log(`[DocumentProcessing] Extracting text from ${document.fileName}`)
 
-    const extractionResult = await unstructured.general.partition({
-      partitionParameters: {
-        files: {
-          content: fileBuffer,
-          fileName: document.fileName,
+    let extractedText = ''
+    try {
+      // Add timeout for Unstructured API (60 seconds)
+      const EXTRACTION_TIMEOUT = 60000
+      const extractionPromise = unstructured.general.partition({
+        partitionParameters: {
+          files: {
+            content: fileBuffer,
+            fileName: document.fileName,
+          },
+          strategy: Strategy.Auto,
         },
-        strategy: Strategy.Auto,
-      },
-    })
+      })
 
-    // Combine all elements into text
-    const elements = typeof extractionResult === 'string'
-      ? JSON.parse(extractionResult)
-      : extractionResult
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Document extraction timed out after 60 seconds')), EXTRACTION_TIMEOUT)
+      })
 
-    const extractedText = elements
-      ?.map((el: any) => el.text)
-      .filter(Boolean)
-      .join('\n\n') || ''
+      const extractionResult = await Promise.race([extractionPromise, timeoutPromise]) as Awaited<typeof extractionPromise>
+
+      console.log(`[DocumentProcessing] Unstructured response type: ${typeof extractionResult}`)
+
+      // Handle both string (JSON) and array responses
+      let elements: any[]
+      if (typeof extractionResult === 'string') {
+        try {
+          elements = JSON.parse(extractionResult)
+        } catch (parseErr) {
+          console.error('[DocumentProcessing] Failed to parse Unstructured response:', parseErr)
+          throw new Error('Failed to parse document extraction response')
+        }
+      } else if (Array.isArray(extractionResult)) {
+        elements = extractionResult
+      } else {
+        console.error('[DocumentProcessing] Unexpected response format:', JSON.stringify(extractionResult).slice(0, 500))
+        throw new Error('Unexpected response format from document extraction service')
+      }
+
+      if (!elements || elements.length === 0) {
+        throw new Error('No content elements extracted from document')
+      }
+
+      extractedText = elements
+        .map((el: any) => el.text)
+        .filter(Boolean)
+        .join('\n\n')
+
+      console.log(`[DocumentProcessing] Extracted ${elements.length} elements, ${extractedText.length} characters`)
+    } catch (unstructuredError) {
+      console.error('[DocumentProcessing] Unstructured API error:', unstructuredError)
+      const errorMessage = unstructuredError instanceof Error ? unstructuredError.message : 'Unknown extraction error'
+      throw new Error(`Document extraction failed: ${errorMessage}`)
+    }
 
     if (!extractedText || extractedText.length < 50) {
       throw new Error('Could not extract meaningful text from document')
     }
-
-    console.log(`[DocumentProcessing] Extracted ${extractedText.length} characters`)
 
     // Step 2: Extract strategic themes using Claude
     console.log('[DocumentProcessing] Extracting strategic themes')
@@ -209,14 +241,19 @@ export async function processDocument(
   } catch (error) {
     console.error(`[DocumentProcessing] Error processing document ${documentId}:`, error)
 
-    // Update document status to failed
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      },
-    })
+    // Update document status to failed - wrap in try-catch to prevent silent failures
+    try {
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          status: 'failed',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        },
+      })
+      console.log(`[DocumentProcessing] Marked document ${documentId} as failed`)
+    } catch (updateError) {
+      console.error(`[DocumentProcessing] Failed to update document status to failed:`, updateError)
+    }
 
     throw error
   }
