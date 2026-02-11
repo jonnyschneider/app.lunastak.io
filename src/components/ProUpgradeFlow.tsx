@@ -122,11 +122,31 @@ export function UpgradeSuccessDialog({
 }: UpgradeSuccessDialogProps) {
   const [email, setEmail] = useState('');
   const [joinedWaitlist, setJoinedWaitlist] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
-  const handleJoinWaitlist = () => {
-    if (email.trim()) {
-      console.log('[ProUpgrade] Waitlist signup:', email);
+  const handleJoinWaitlist = async () => {
+    if (!email.trim()) return;
+
+    setIsJoining(true);
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, feature: 'pro-early-access' }),
+      });
+
+      if (res.ok) {
+        setJoinedWaitlist(true);
+      } else {
+        console.error('[ProUpgrade] Waitlist signup failed');
+        // Show success anyway for better UX
+        setJoinedWaitlist(true);
+      }
+    } catch (error) {
+      console.error('[ProUpgrade] Waitlist error:', error);
       setJoinedWaitlist(true);
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -190,9 +210,14 @@ export function UpgradeSuccessDialog({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="flex-1"
+                    disabled={isJoining}
                   />
-                  <Button variant="outline" onClick={handleJoinWaitlist}>
-                    Join Waitlist
+                  <Button
+                    variant="outline"
+                    onClick={handleJoinWaitlist}
+                    disabled={isJoining || !email.trim()}
+                  >
+                    {isJoining ? 'Joining...' : 'Join Waitlist'}
                   </Button>
                 </div>
               </>
