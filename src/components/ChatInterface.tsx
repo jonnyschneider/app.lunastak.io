@@ -125,8 +125,8 @@ export default function ChatInterface({
           </div>
         )}
 
-        {/* Early exit card with Generate button + suggested question */}
-        {earlyExitOffered && !isLoading && (
+        {/* Early exit card with Generate button + suggested question (initial conversation only) */}
+        {earlyExitOffered && !isLoading && onGenerateStrategy && (
           <div className="space-y-4">
             {/* Generate Strategy button */}
             <div className="flex justify-center py-2">
