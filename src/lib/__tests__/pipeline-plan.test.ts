@@ -103,4 +103,24 @@ describe('planPipeline', () => {
       expect(plan.generation).toEqual({ mode: 'refresh', source: 'fragments_and_syntheses' })
     })
   })
+
+  describe('config consistency', () => {
+    const allTriggers: PipelineTrigger[] = [
+      { type: 'conversation_ended', projectId: 'p', conversationId: 'c', userId: 'u', isInitial: true, experimentVariant: null },
+      { type: 'conversation_ended', projectId: 'p', conversationId: 'c', userId: 'u', isInitial: false, experimentVariant: null },
+      { type: 'document_uploaded', projectId: 'p', documentId: 'd', documentText: 'text' },
+      { type: 'template_submitted', projectId: 'p', userId: 'u', statements: { vision: 'v', strategy: 's', objectives: [], opportunities: [], principles: [] } },
+      { type: 'refresh_requested', projectId: 'p', userId: 'u' },
+    ]
+
+    it.each(allTriggers)('should set a model for trigger type: $type', (trigger) => {
+      const plan = planPipeline(trigger)
+      expect(plan.model).toBeTruthy()
+    })
+
+    it.each(allTriggers)('should set backgroundSteps array for trigger type: $type', (trigger) => {
+      const plan = planPipeline(trigger)
+      expect(Array.isArray(plan.backgroundSteps)).toBe(true)
+    })
+  })
 })
