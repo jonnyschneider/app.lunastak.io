@@ -2,8 +2,7 @@
  * Document processing pipeline
  * - Extracts text from documents using Unstructured API
  * - Extracts strategic themes using Claude
- * - Creates fragments with document lineage
- * - Triggers knowledge summary refresh
+ * - Delegates fragment creation + synthesis to pipeline orchestrator
  */
 
 import { prisma } from '@/lib/db'

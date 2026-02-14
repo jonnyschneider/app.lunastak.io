@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
+import { isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { logStatsigEvent } from '@/lib/statsig';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
