@@ -35,6 +35,28 @@ export async function GET(req: Request) {
     }),
   ])
 
+  // Load latest trace per conversation (for extractedContext needed by /generate)
+  const traces = await prisma.trace.findMany({
+    where: { projectId },
+    select: {
+      conversationId: true,
+      extractedContext: true,
+      dimensionalCoverage: true,
+    },
+    orderBy: { id: 'desc' },
+  })
+
+  // Map: conversationId → latest trace data
+  const traceByConv = new Map<string, { extractedContext: unknown; dimensionalCoverage: unknown }>()
+  for (const t of traces) {
+    if (t.conversationId && !traceByConv.has(t.conversationId)) {
+      traceByConv.set(t.conversationId, {
+        extractedContext: t.extractedContext,
+        dimensionalCoverage: t.dimensionalCoverage,
+      })
+    }
+  }
+
   return NextResponse.json({
     projectId,
     conversations: conversations.map(c => ({
@@ -44,6 +66,7 @@ export async function GET(req: Request) {
       isInitialConversation: c.isInitialConversation,
       experimentVariant: c.experimentVariant,
       messageCount: c._count.messages,
+      trace: traceByConv.get(c.id) || null,
     })),
     fragmentCount,
     synthesesCount,

@@ -37,6 +37,7 @@ interface ProjectConversation {
   isInitialConversation: boolean
   experimentVariant: string | null
   messageCount: number
+  trace: { extractedContext: unknown; dimensionalCoverage: unknown } | null
 }
 
 interface ProjectState {
@@ -97,11 +98,16 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'conversation_ended',
     responseType: 'json',
     requiresHydration: true,
-    hint: 'Needs conversation with status=extracted',
+    hint: 'Needs conversation with trace (extractedContext). Run Extract first.',
     buildPayload: (state: ProjectState) => {
-      const conv = state.conversations.find(c => c.status === 'extracted')
-      if (!conv) return null
-      return { conversationId: conv.id }
+      // Find a conversation that has a trace with extractedContext
+      const conv = state.conversations.find(c => c.trace?.extractedContext)
+      if (!conv || !conv.trace) return null
+      return {
+        conversationId: conv.id,
+        extractedContext: conv.trace.extractedContext,
+        dimensionalCoverage: conv.trace.dimensionalCoverage,
+      }
     },
   },
   {
@@ -352,9 +358,21 @@ export default function PipelineTestPage() {
       .catch(() => setError('Failed to load fixture index'))
   }, [])
 
-  // Load snapshots from localStorage
+  // Load snapshots from localStorage + check for server-side imports
   useEffect(() => {
-    setSnapshots(loadSnapshots())
+    const existing = loadSnapshots()
+    setSnapshots(existing)
+    // Check for pending imports from /api/dev/snapshots
+    fetch('/api/dev/snapshots')
+      .then(r => r.json())
+      .then(data => {
+        if (data.snapshots?.length > 0) {
+          const merged = [...data.snapshots, ...existing]
+          setSnapshots(merged)
+          saveSnapshots(merged)
+        }
+      })
+      .catch(() => { /* ignore */ })
   }, [])
 
   // Load project state from DB when project ID changes
