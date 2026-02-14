@@ -53,8 +53,14 @@ export interface ExportedTrace {
       strategy: string;
       objectives: Array<{
         id: string;
-        pithy: string;
-        metric: {
+        title?: string;
+        explanation: string;
+        // Current OMTM format
+        omtm?: string;
+        aspiration?: string;
+        // Legacy format
+        pithy?: string;
+        metric?: {
           summary: string;
           full: string;
           category: string;
@@ -63,8 +69,20 @@ export interface ExportedTrace {
           metricValue?: string;
           timeframe?: string;
         };
-        explanation: string;
-        successCriteria: string;
+        successCriteria?: string;
+      }>;
+      opportunities?: Array<{
+        id: string;
+        title: string;
+        description: string;
+        objectiveIds: string[];
+        successMetrics?: Array<{
+          id: string;
+          belief: { action: string; outcome: string };
+          signal: string;
+          baseline: string;
+          target: string;
+        }>;
       }>;
     };
   };

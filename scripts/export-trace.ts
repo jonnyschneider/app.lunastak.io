@@ -37,6 +37,30 @@ function parseArgs(): { traceIds: string[]; projectId?: string; force: boolean }
   return { traceIds, projectId, force };
 }
 
+async function getOpportunities(projectId: string | null): Promise<ExportedTrace['components']['generation']['opportunities']> {
+  if (!projectId) return undefined;
+  try {
+    const items = await prisma.userContent.findMany({
+      where: { projectId, type: 'opportunity' },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (items.length === 0) return undefined;
+    return items.map(item => {
+      const meta = item.metadata as Record<string, unknown> | null;
+      return {
+        id: item.id,
+        title: (meta?.title as string) || item.content.slice(0, 60),
+        description: (meta?.description as string) || item.content,
+        objectiveIds: (meta?.objectiveIds as string[]) || [],
+        successMetrics: (meta?.successMetrics as any) || undefined,
+      };
+    });
+  } catch {
+    // UserContent table may not exist yet in this environment
+    return undefined;
+  }
+}
+
 async function exportTrace(traceId: string, force: boolean): Promise<string | null> {
   const outDir = path.join(process.cwd(), 'evals', 'traces');
   const outPath = path.join(outDir, `${traceId}.json`);
@@ -97,6 +121,7 @@ async function exportTrace(traceId: string, force: boolean): Promise<string | nu
         vision: (output?.vision as string) || '',
         strategy: (output?.strategy as string) || '',
         objectives: (output?.objectives as ExportedTrace['components']['generation']['objectives']) || [],
+        opportunities: await getOpportunities(trace.projectId),
       },
     },
     timing: {

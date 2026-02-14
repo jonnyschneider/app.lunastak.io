@@ -354,12 +354,20 @@ function TraceColumn({
             <div className="mt-2 space-y-3">
               {trace.components.generation.objectives.map((obj, idx) => (
                 <div key={obj.id} className="border rounded p-2 bg-white">
-                  <div className="font-medium">{idx + 1}. {obj.pithy}</div>
-                  <div className="mt-1 grid grid-cols-3 gap-2 text-muted-foreground">
-                    <div><span className="font-medium text-foreground">Metric:</span> {obj.metric?.metricName || obj.metric?.summary || '-'}</div>
-                    <div><span className="font-medium text-foreground">Target:</span> {obj.metric?.direction && obj.metric?.metricValue ? `${obj.metric.direction} ${obj.metric.metricValue}` : obj.metric?.metricValue || '-'}</div>
-                    <div><span className="font-medium text-foreground">Timeframe:</span> {obj.metric?.timeframe || '-'}</div>
-                  </div>
+                  <div className="font-medium">{idx + 1}. {obj.title || obj.pithy}</div>
+                  {obj.omtm && (
+                    <div className="mt-1 text-muted-foreground">
+                      <span className="font-medium text-foreground">OMTM:</span> {obj.omtm}
+                      {obj.aspiration && <span className="ml-1">({obj.aspiration})</span>}
+                    </div>
+                  )}
+                  {!obj.omtm && obj.metric && (
+                    <div className="mt-1 grid grid-cols-3 gap-2 text-muted-foreground">
+                      <div><span className="font-medium text-foreground">Metric:</span> {obj.metric.metricName || obj.metric.summary || '-'}</div>
+                      <div><span className="font-medium text-foreground">Target:</span> {obj.metric.direction && obj.metric.metricValue ? `${obj.metric.direction} ${obj.metric.metricValue}` : obj.metric.metricValue || '-'}</div>
+                      <div><span className="font-medium text-foreground">Timeframe:</span> {obj.metric.timeframe || '-'}</div>
+                    </div>
+                  )}
                   {obj.explanation && (
                     <div className="mt-1 text-muted-foreground"><span className="font-medium text-foreground">Why:</span> {obj.explanation}</div>
                   )}
@@ -370,6 +378,39 @@ function TraceColumn({
               ))}
             </div>
           </div>
+          {trace.components.generation.opportunities && trace.components.generation.opportunities.length > 0 && (
+            <div className="mt-3">
+              <span className="font-medium">Opportunities ({trace.components.generation.opportunities.length}):</span>
+              <div className="mt-2 space-y-3">
+                {trace.components.generation.opportunities.map((opp, idx) => (
+                  <div key={opp.id} className="border rounded p-2 bg-white">
+                    <div className="font-medium">{idx + 1}. {opp.title}</div>
+                    <div className="mt-1 text-muted-foreground">{opp.description}</div>
+                    {opp.objectiveIds.length > 0 && (
+                      <div className="mt-1 text-muted-foreground">
+                        <span className="font-medium text-foreground">Linked to:</span>{' '}
+                        {opp.objectiveIds.map(oid => {
+                          const obj = trace.components.generation.objectives.find(o => o.id === oid)
+                          return obj?.title || obj?.pithy || oid.slice(0, 8)
+                        }).join(', ')}
+                      </div>
+                    )}
+                    {opp.successMetrics && opp.successMetrics.length > 0 && (
+                      <div className="mt-1 space-y-1">
+                        {opp.successMetrics.map(m => (
+                          <div key={m.id} className="text-muted-foreground pl-2 border-l-2">
+                            <span className="font-medium text-foreground">If</span> {m.belief.action},{' '}
+                            <span className="font-medium text-foreground">then</span> {m.belief.outcome}{' '}
+                            <span className="text-muted-foreground">({m.signal}: {m.baseline} → {m.target})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </ComponentSection>
     </div>
