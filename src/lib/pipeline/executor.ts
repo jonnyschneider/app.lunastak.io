@@ -3,7 +3,12 @@ import { createFragmentsFromThemes, createFragmentsFromDocument, type ThemeWithD
 import { updateAllSyntheses } from '@/lib/synthesis'
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
 import { runBackgroundTasks } from '@/lib/background-tasks'
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { extractXML, parseOKRObjectives } from '@/lib/utils'
+import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
+import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import type { StrategyStatements } from '@/lib/types'
+import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
 import type { PipelinePlan, PipelineTrigger, PipelineResult } from './types'
 
 /**
@@ -86,7 +91,12 @@ export async function executePipeline(
         }
         break
       }
-      // Other modes added in subsequent tasks
+      case 'refresh': {
+        const t = trigger as Extract<PipelineTrigger, { type: 'refresh_requested' }>
+        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model)
+        break
+      }
+      // Initial generation added in Task 7
     }
   }
 
@@ -216,5 +226,270 @@ async function runTemplateGeneration(
     statements,
     version: 1,
     changeSummary: null,
+  }
+}
+
+// --- Prompts for refresh strategy ---
+
+const STRATEGY_UPDATE_PROMPT = `You are Luna, refining a business strategy based on new insights.
+
+## Current Strategy
+Vision: {current_vision}
+Strategy: {current_strategy}
+Objectives:
+{current_objectives}
+
+## Strategic Context (Dimensional Syntheses)
+{dimensional_summaries}
+
+## What's New (since last strategy)
+{new_fragments_content}
+
+## What's Been Removed
+{archived_fragments_content}
+
+---
+
+Produce a COMPLETE REPLACEMENT strategy that reflects the current state of understanding. Your output replaces the previous strategy entirely — do not concatenate or append new text onto the old text.
+
+Be conservative: if the vision still holds, output it unchanged. If an objective is still valid, keep it as-is. Only modify what the new insights warrant. But every field must be a clean, self-contained statement — not old text with new text bolted on.
+
+${OBJECTIVE_GUIDELINES}
+
+Output format:
+<statements>
+  <vision>Your updated or unchanged vision</vision>
+  <strategy>Your updated or unchanged strategy</strategy>
+  ${OBJECTIVE_XML_FORMAT}
+</statements>`
+
+const CHANGE_SUMMARY_PROMPT = `Compare these two versions of a business strategy and summarize what changed and why.
+
+## Previous Strategy
+Vision: {old_vision}
+Strategy: {old_strategy}
+Objectives: {old_objectives}
+
+## Updated Strategy
+Vision: {new_vision}
+Strategy: {new_strategy}
+Objectives: {new_objectives}
+
+## New Insights That Informed Changes
+{new_fragments_summary}
+
+Write 2-4 sentences explaining what changed and why. Be specific. If nothing meaningful changed, say "No significant changes - strategy remains aligned with current insights."`
+
+/**
+ * Generate refreshed strategy from accumulated fragments + syntheses.
+ * Moved from /api/project/[id]/refresh-strategy/route.ts
+ */
+async function runRefreshGeneration(
+  projectId: string,
+  userId: string,
+  model: string
+): Promise<NonNullable<PipelineResult['generation']>> {
+  // Load previous strategy
+  const previousOutput = await prisma.generatedOutput.findFirst({
+    where: { projectId, outputType: 'full_decision_stack' },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  if (!previousOutput) {
+    throw new Error('No previous strategy found for refresh')
+  }
+
+  const previousStatements = previousOutput.content as unknown as StrategyStatements
+
+  // Get dimensional syntheses
+  const syntheses = await prisma.dimensionalSynthesis.findMany({
+    where: { projectId, fragmentCount: { gt: 0 } },
+    orderBy: { fragmentCount: 'desc' },
+  })
+
+  // Get delta: new fragments since last generation
+  const newFragments = await prisma.fragment.findMany({
+    where: {
+      projectId,
+      status: 'active',
+      createdAt: { gt: previousOutput.createdAt },
+    },
+    select: { content: true },
+    take: 20,
+  })
+
+  // Get removed fragments (archived since last generation)
+  const removedFragments = await prisma.fragment.findMany({
+    where: {
+      projectId,
+      status: { in: ['archived', 'soft_deleted'] },
+      updatedAt: { gt: previousOutput.createdAt },
+    },
+    select: { content: true },
+    take: 10,
+  })
+
+  const delta: RefreshStrategyDeltaContract = {
+    newFragmentCount: newFragments.length,
+    removedFragmentCount: removedFragments.length,
+    newFragmentSummaries: newFragments.map(f => f.content.slice(0, 100)),
+    removedFragmentSummaries: removedFragments.map(f => f.content.slice(0, 100)),
+  }
+
+  // Build prompt context
+  const dimensionalSummaries = syntheses
+    .map(s => {
+      const context = DIMENSION_CONTEXT[s.dimension as Tier1Dimension]
+      const name = context?.name || s.dimension
+      return `### ${name}\n${s.summary || 'No summary yet'}`
+    })
+    .join('\n\n')
+
+  const currentObjectives = previousStatements.objectives
+    .map((o, i) => {
+      const title = o.title || o.objective || o.pithy || ''
+      const metric = o.omtm || o.keyResults?.[0]?.signal || o.metric?.metricName || ''
+      const aspiration = o.aspiration || o.keyResults?.[0]?.target || o.metric?.summary || ''
+      return `${i + 1}. ${title}${metric ? ` (${metric}${aspiration ? ': ' + aspiration : ''})` : ''}`
+    })
+    .join('\n')
+
+  const newFragmentsContent = newFragments.length > 0
+    ? newFragments.map(f => `- ${f.content}`).join('\n')
+    : 'No new insights since last strategy.'
+
+  const archivedContent = removedFragments.length > 0
+    ? removedFragments.map(f => `- ${f.content}`).join('\n')
+    : 'No insights removed.'
+
+  // Generate updated strategy
+  const updatePrompt = STRATEGY_UPDATE_PROMPT
+    .replace('{current_vision}', previousStatements.vision)
+    .replace('{current_strategy}', previousStatements.strategy)
+    .replace('{current_objectives}', currentObjectives)
+    .replace('{dimensional_summaries}', dimensionalSummaries)
+    .replace('{new_fragments_content}', newFragmentsContent)
+    .replace('{archived_fragments_content}', archivedContent)
+
+  const genResponse = await createMessage({
+    model,
+    max_tokens: 3000,
+    messages: [{ role: 'user', content: updatePrompt }],
+    temperature: 0.7,
+  }, 'refresh_strategy_generation')
+
+  const genContent = genResponse.content[0]?.type === 'text'
+    ? genResponse.content[0].text
+    : ''
+
+  const statementsXML = extractXML(genContent, 'statements')
+  const objectivesXML = extractXML(statementsXML, 'objectives')
+
+  // Parse objectives using shared parser
+  const parsedObjectives = parseOKRObjectives(objectivesXML)
+
+  // Fallback: if no objectives parsed, preserve previous objectives
+  const objectives = parsedObjectives.length > 0
+    ? parsedObjectives
+    : previousStatements.objectives
+
+  const newStatements: StrategyStatements = {
+    vision: extractXML(statementsXML, 'vision') || previousStatements.vision,
+    strategy: extractXML(statementsXML, 'strategy') || previousStatements.strategy,
+    objectives,
+    opportunities: previousStatements.opportunities || [],
+    principles: previousStatements.principles || [],
+  }
+
+  // Generate change summary (best-effort)
+  let changeSummary: string | null = null
+  try {
+    const oldObjectives = previousStatements.objectives
+      .map((o, i) => `${i + 1}. ${o.title || o.objective || o.pithy}`)
+      .join('\n')
+    const newObjectives = newStatements.objectives
+      .map((o, i) => `${i + 1}. ${o.title || o.objective || o.pithy}`)
+      .join('\n')
+
+    const summaryPrompt = CHANGE_SUMMARY_PROMPT
+      .replace('{old_vision}', previousStatements.vision)
+      .replace('{old_strategy}', previousStatements.strategy)
+      .replace('{old_objectives}', oldObjectives)
+      .replace('{new_vision}', newStatements.vision)
+      .replace('{new_strategy}', newStatements.strategy)
+      .replace('{new_objectives}', newObjectives)
+      .replace('{new_fragments_summary}', delta.newFragmentSummaries.join('; '))
+
+    const summaryResponse = await createMessage({
+      model,
+      max_tokens: 300,
+      messages: [{ role: 'user', content: summaryPrompt }],
+      temperature: 0.5,
+    }, 'refresh_strategy_summary')
+
+    changeSummary = summaryResponse.content[0]?.type === 'text'
+      ? summaryResponse.content[0].text.trim()
+      : null
+  } catch (summaryError) {
+    console.error('[Pipeline] Change summary failed:', summaryError)
+  }
+
+  // Persist: synthetic conversation, trace, generated output
+  const syntheticConversation = await prisma.conversation.create({
+    data: {
+      userId,
+      projectId,
+      status: 'completed',
+      title: 'Strategy Refresh',
+      currentPhase: 'generation',
+    },
+  })
+
+  const trace = await prisma.trace.create({
+    data: {
+      conversationId: syntheticConversation.id,
+      projectId,
+      userId,
+      extractedContext: { type: 'refresh', delta } as any,
+      output: newStatements as any,
+      claudeThoughts: `Incremental refresh based on ${delta.newFragmentCount} new and ${delta.removedFragmentCount} removed fragments.`,
+      modelUsed: model,
+      totalTokens: genResponse.usage.input_tokens + genResponse.usage.output_tokens,
+      promptTokens: genResponse.usage.input_tokens,
+      completionTokens: genResponse.usage.output_tokens,
+      latencyMs: 0,
+    },
+  })
+
+  const newOutput = await prisma.generatedOutput.create({
+    data: {
+      projectId,
+      userId,
+      outputType: 'full_decision_stack',
+      version: previousOutput.version + 1,
+      content: newStatements as any,
+      generatedFrom: 'incremental_refresh',
+      modelUsed: model,
+      promptTokens: genResponse.usage.input_tokens,
+      completionTokens: genResponse.usage.output_tokens,
+      previousOutputId: previousOutput.id,
+      changeSummary,
+    },
+  })
+
+  // Reset unsynthesized fragment count
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { knowledgeUpdatedAt: new Date() },
+  })
+
+  console.log('[Pipeline] Refresh generation complete for project:', projectId)
+
+  return {
+    generatedOutputId: newOutput.id,
+    traceId: trace.id,
+    statements: newStatements,
+    version: newOutput.version,
+    changeSummary,
   }
 }
