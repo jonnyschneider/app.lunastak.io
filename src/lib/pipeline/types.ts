@@ -29,6 +29,10 @@ export type PipelineTrigger =
       documentId: string
       documentText: string
       uploadContext?: string
+      // Set by document-processing after theme extraction completes
+      extractionResult?: {
+        themes: EmergentThemeContract[]
+      }
     }
   | {
       type: 'template_submitted'

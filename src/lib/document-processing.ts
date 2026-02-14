@@ -11,9 +11,7 @@ import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { UnstructuredClient } from 'unstructured-client'
 import { Strategy } from 'unstructured-client/sdk/models/shared'
 import { extractXML } from '@/lib/utils'
-import { createFragmentsFromDocument } from '@/lib/fragments'
-import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
-import { updateAllSyntheses } from '@/lib/synthesis'
+import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { EmergentThemeContract } from '@/lib/contracts/extraction'
 
 const unstructured = new UnstructuredClient({
@@ -208,18 +206,21 @@ export async function processDocument(
       throw new Error('Could not extract any themes from document')
     }
 
-    // Step 3: Create fragments with document lineage
-    console.log('[DocumentProcessing] Creating fragments')
-
-    const fragments = await createFragmentsFromDocument(
-      document.projectId,
+    // Steps 3-5: Delegate to pipeline orchestrator (fragments + synthesis + knowledge summary)
+    const trigger = {
+      type: 'document_uploaded' as const,
+      projectId: document.projectId,
       documentId,
-      themes
-    )
+      documentText: extractedText,
+      uploadContext,
+      extractionResult: { themes },
+    }
+    const plan = planPipeline(trigger)
+    const result = await executePipeline(plan, trigger)
 
-    console.log(`[DocumentProcessing] Created ${fragments.length} fragments`)
+    console.log(`[DocumentProcessing] Created ${result.fragmentsCreated} fragments via pipeline`)
 
-    // Step 4: Update document status to complete
+    // Update document status to complete
     await prisma.document.update({
       where: { id: documentId },
       data: {
@@ -227,14 +228,6 @@ export async function processDocument(
         processedAt: new Date(),
       },
     })
-
-    // Step 5: Trigger synthesis and knowledge summary refresh (async)
-    // IMPORTANT: Knowledge summary must run AFTER synthesis so fragmentCount is accurate
-    updateAllSyntheses(document.projectId)
-      .then(() => generateKnowledgeSummary(document.projectId))
-      .catch(error => {
-        console.error('[DocumentProcessing] Failed to update syntheses or generate knowledge summary:', error)
-      })
 
     console.log(`[DocumentProcessing] Completed processing for document ${documentId}`)
 

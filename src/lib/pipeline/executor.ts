@@ -52,6 +52,20 @@ export async function executePipeline(
     }
   }
 
+  if (plan.persistFragments && trigger.type === 'document_uploaded' && trigger.extractionResult?.themes) {
+    try {
+      const fragments = await createFragmentsFromDocument(
+        projectId,
+        trigger.documentId,
+        trigger.extractionResult.themes as ThemeWithDimensions[]
+      )
+      fragmentsCreated = fragments.length
+      console.log(`[Pipeline] Created ${fragmentsCreated} document fragments`)
+    } catch (error) {
+      console.error('[Pipeline] Failed to create document fragments:', error)
+    }
+  }
+
   // Layer 2: Meaning-making (background)
   if (plan.runSynthesis || plan.runKnowledgeSummary) {
     const tasks = []
