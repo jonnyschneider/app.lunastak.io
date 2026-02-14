@@ -3,6 +3,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 const SNAPSHOTS_FILE = path.join(process.cwd(), 'docs/evals/snapshots/pending-import.json')
+const SNAPSHOTS_DIR = path.join(process.cwd(), 'docs/evals/snapshots')
 
 /**
  * GET: Read pending snapshot imports (consumed by the UI on load)
@@ -48,4 +49,26 @@ export async function POST(req: Request) {
   fs.writeFileSync(SNAPSHOTS_FILE, JSON.stringify(existing, null, 2))
 
   return NextResponse.json({ ok: true })
+}
+
+/**
+ * PUT: Persist a snapshot to disk as an individual JSON file.
+ * Files land in docs/evals/snapshots/<id>.json for VS Code diffing and R&D records.
+ */
+export async function PUT(req: Request) {
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
+  }
+
+  const snapshot = await req.json()
+  if (!snapshot.id) {
+    return NextResponse.json({ error: 'snapshot.id required' }, { status: 400 })
+  }
+
+  if (!fs.existsSync(SNAPSHOTS_DIR)) fs.mkdirSync(SNAPSHOTS_DIR, { recursive: true })
+
+  const filePath = path.join(SNAPSHOTS_DIR, `${snapshot.id}.json`)
+  fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2))
+
+  return NextResponse.json({ ok: true, path: `docs/evals/snapshots/${snapshot.id}.json` })
 }

@@ -250,6 +250,17 @@ function SnapshotCard({ snapshot, onCompare, onDelete }: {
   onDelete: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [savedPath, setSavedPath] = useState<string | null>(null)
+
+  const handleSaveToDisk = async () => {
+    const res = await fetch('/api/dev/snapshots', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snapshot),
+    })
+    const data = await res.json()
+    if (data.path) setSavedPath(data.path)
+  }
 
   return (
     <div className="border rounded-lg p-3">
@@ -265,10 +276,16 @@ function SnapshotCard({ snapshot, onCompare, onDelete }: {
           {snapshot.notes && (
             <div className="text-xs mt-1 text-blue-600 dark:text-blue-400">{snapshot.notes}</div>
           )}
+          {savedPath && (
+            <div className="text-xs mt-1 text-green-600 dark:text-green-400">{savedPath}</div>
+          )}
         </div>
         <div className="flex gap-1.5">
           <button onClick={() => setExpanded(!expanded)} className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200">
             {expanded ? 'Collapse' : 'Expand'}
+          </button>
+          <button onClick={handleSaveToDisk} className="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900 hover:bg-green-200 text-green-700 dark:text-green-300">
+            {savedPath ? 'Saved' : 'Save to disk'}
           </button>
           <button onClick={onCompare} className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 text-blue-700 dark:text-blue-300">
             Compare
