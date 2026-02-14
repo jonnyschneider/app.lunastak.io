@@ -112,6 +112,11 @@ logs
 # Project-specific exclusions
 TECH_DILIGENCE_BRIEFING.md
 
+# Local R&D docs, fixtures, and eval traces
+docs/
+evals/
+scripts/seed/fixtures/
+
 
 
 

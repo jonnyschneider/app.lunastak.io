@@ -363,9 +363,12 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       return;
     }
 
-    // Reset: delete existing conversations and fragments in project
+    // Reset: delete existing data in project
     if (options.reset) {
       console.log(`[INFO] Deleting existing data in project...`);
+      await prisma.userContent.deleteMany({ where: { projectId: options.projectId } });
+      await prisma.generatedOutput.deleteMany({ where: { projectId: options.projectId } });
+      await prisma.dimensionalSynthesis.deleteMany({ where: { projectId: options.projectId } });
       await prisma.fragment.deleteMany({ where: { projectId: options.projectId } });
       await prisma.conversation.deleteMany({ where: { projectId: options.projectId } });
       console.log(`[INFO] Existing data deleted`);
