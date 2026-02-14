@@ -4,12 +4,9 @@ import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ExtractedContext, ExtractionConfidence, Message, isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
-import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
-import { updateAllSyntheses } from '@/lib/synthesis';
 import { logStatsigEvent } from '@/lib/statsig';
-import { generateKnowledgeSummary } from '@/lib/knowledge-summary';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
-import { runBackgroundTasks } from '@/lib/background-tasks';
+import { planPipeline, executePipeline } from '@/lib/pipeline';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -361,9 +358,8 @@ export async function POST(req: Request) {
           keys: Object.keys(extractedContext),
         });
 
-        // Step 4: Save insights (fragments)
-        // Use inline dimensions from extraction (more reliable than post-hoc matching)
-        if (isEmergentContext(extractedContext)) {
+        // Step 4: Save insights (fragments) + schedule background tasks via pipeline
+        if (isEmergentContext(extractedContext) && conversation.projectId) {
           sendProgress({ step: 'saving_insights' });
 
           if (dimensionalCoverage) {
@@ -388,22 +384,22 @@ export async function POST(req: Request) {
             }
           }
 
-          // Create fragments from themes with inline dimension tags
-          if (conversation.projectId) {
-            const projectId = conversation.projectId;
-            try {
-              // themes already have dimensions from parseEmergentThemes
-              const fragments = await createFragmentsFromThemes(
-                projectId,
-                conversationId,
-                extractedContext.themes as ThemeWithDimensions[]
-              );
-              console.log(`[Extract] Created ${fragments.length} fragments with dimension tags`);
-            } catch (error) {
-              // Log but don't fail extraction if fragment creation fails
-              console.error('[Extract] Failed to create fragments:', error);
-            }
-          }
+          // Delegate fragment creation + background tasks to pipeline orchestrator
+          const trigger = {
+            type: 'conversation_ended' as const,
+            projectId: conversation.projectId,
+            conversationId,
+            userId: conversation.userId,
+            isInitial: !lightweight,
+            experimentVariant: conversation.experimentVariant,
+            extractionResult: {
+              extractedContext,
+              dimensionalCoverage,
+              themes: extractedContext.themes,
+            },
+          };
+          const plan = planPipeline(trigger);
+          await executePipeline(plan, trigger);
         }
 
         // Update conversation status to 'extracted'
@@ -413,7 +409,7 @@ export async function POST(req: Request) {
         });
         console.log(`[Extract] Updated conversation status to 'extracted'`);
 
-        // Step 5: Complete - send immediately (background tasks run after)
+        // Step 5: Complete
         sendProgress({
           step: 'complete',
           data: {
@@ -423,26 +419,6 @@ export async function POST(req: Request) {
         });
 
         controller.close();
-
-        // Schedule background tasks (runs after response sent via waitUntil)
-        // Only for emergent extraction with a project, and not in lightweight mode
-        if (isEmergent && conversation.projectId && !lightweight) {
-          const projectId = conversation.projectId;
-
-          runBackgroundTasks({
-            projectId,
-            tasks: [
-              {
-                name: 'updateAllSyntheses',
-                fn: async () => { await updateAllSyntheses(projectId) }
-              },
-              {
-                name: 'generateKnowledgeSummary',
-                fn: async () => { await generateKnowledgeSummary(projectId) }
-              }
-            ]
-          });
-        }
       } catch (error) {
         console.error('Extract context error:', error);
         sendProgress({

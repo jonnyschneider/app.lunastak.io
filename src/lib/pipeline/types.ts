@@ -14,6 +14,12 @@ export type PipelineTrigger =
       userId: string | null
       isInitial: boolean
       experimentVariant: string | null
+      // Set by route after extraction completes (route owns streaming)
+      extractionResult?: {
+        extractedContext: ExtractedContextVariant
+        dimensionalCoverage?: unknown
+        themes?: EmergentThemeContract[]
+      }
     }
   | {
       type: 'document_uploaded'

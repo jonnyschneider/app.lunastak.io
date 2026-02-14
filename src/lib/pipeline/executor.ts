@@ -23,8 +23,24 @@ export async function executePipeline(
   // The plan.extraction field is used by the route to decide which extraction to run.
 
   // Layer 1: Persist fragments
-  // Fragment creation is handled by routes during extraction streaming.
-  // This will be moved here as routes migrate (Tasks 5, 8).
+  if (plan.persistFragments && trigger.type === 'conversation_ended' && trigger.extractionResult?.themes) {
+    try {
+      const fragments = await createFragmentsFromThemes(
+        projectId,
+        trigger.conversationId,
+        trigger.extractionResult.themes as ThemeWithDimensions[]
+      )
+      fragmentsCreated = fragments.length
+      console.log(`[Pipeline] Created ${fragmentsCreated} fragments`)
+    } catch (error) {
+      console.error('[Pipeline] Failed to create fragments:', error)
+    }
+
+    extraction = {
+      extractedContext: trigger.extractionResult.extractedContext,
+      dimensionalCoverage: trigger.extractionResult.dimensionalCoverage,
+    }
+  }
 
   // Layer 2: Meaning-making (background)
   if (plan.runSynthesis || plan.runKnowledgeSummary) {
