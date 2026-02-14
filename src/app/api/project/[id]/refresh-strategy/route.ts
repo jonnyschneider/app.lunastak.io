@@ -39,7 +39,9 @@ Objectives:
 
 ---
 
-Update the strategy to incorporate the new insights. Be conservative - only change what the new information warrants. If an objective is still valid, keep it. If the vision still holds, preserve it.
+Produce a COMPLETE REPLACEMENT strategy that reflects the current state of understanding. Your output replaces the previous strategy entirely — do not concatenate or append new text onto the old text.
+
+Be conservative: if the vision still holds, output it unchanged. If an objective is still valid, keep it as-is. Only modify what the new insights warrant. But every field must be a clean, self-contained statement — not old text with new text bolted on.
 
 ${OBJECTIVE_GUIDELINES}
 
@@ -225,7 +227,7 @@ export async function POST(
 
         const genResponse = await createMessage({
           model: CLAUDE_MODEL,
-          max_tokens: 1500,
+          max_tokens: 3000,
           messages: [{ role: 'user', content: updatePrompt }],
           temperature: 0.7,
         }, 'refresh_strategy_generation')
