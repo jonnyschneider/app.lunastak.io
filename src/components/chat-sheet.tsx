@@ -396,12 +396,12 @@ export function ChatSheet({
             setExtractedContext(ctx)
             setDimensionalCoverage(coverage)
 
-            if (isExplicitEnd) {
-              // User clicked End - close sheet with toast
+            if (isExplicitEnd || hasExistingStrategy) {
+              // Side chat or explicit end - fragments only, no generation
               toast.success('Added to your knowledge base')
               onOpenChange(false)
             } else {
-              // Skip ExtractionConfirm, go straight to generation
+              // Initial conversation - generate strategy
               // Pass context directly to avoid React state timing issues
               handleGenerate(ctx, coverage)
             }
@@ -644,7 +644,7 @@ export function ChatSheet({
               conversationId={conversationId}
               messages={messages}
               onUserResponse={handleUserResponse}
-              onGenerateStrategy={extractContext}
+              onGenerateStrategy={hasExistingStrategy ? undefined : extractContext}
               onEndConversation={isReadOnly ? undefined : handleEndConversation}
               isLoading={isLoading}
               isComplete={isReadOnly}
