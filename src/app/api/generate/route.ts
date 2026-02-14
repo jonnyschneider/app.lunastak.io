@@ -1,57 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
-import { extractXML, parseOKRObjectives } from '@/lib/utils';
-import { StrategyStatements, ExtractedContextVariant, isEmergentContext, Objective } from '@/lib/types';
-import { convertLegacyObjectives } from '@/lib/placeholders';
-import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
-import { logStatsigEvent } from '@/lib/statsig';
+import { ExtractedContextVariant } from '@/lib/types';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
-import { getCurrentPrompt } from '@/lib/prompts';
 import { waitUntil } from '@vercel/functions';
+import { planPipeline, executePipeline } from '@/lib/pipeline';
 import type { GenerationStartedContract } from '@/lib/contracts/generation-status';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
-
-const GENERATION_PROMPT = `Generate compelling strategy statements based on the comprehensive business context provided.
-
-CORE CONTEXT:
-Industry: {industry}
-Target Market: {target_market}
-Unique Value: {unique_value}
-
-ENRICHMENT DETAILS:
-{enrichment}
-
-INSIGHTS FROM CONVERSATION:
-Strengths identified:
-{strengths}
-
-Emerging themes:
-{emerging}
-
-Areas to explore further:
-{unexplored}
-
-Guidelines:
-- Use the core context as foundation
-- Leverage enrichment details to add specificity and differentiation
-- Incorporate the strengths and emerging themes identified
-- Vision: Should be aspirational, future-focused, and memorable
-- Strategy: Should be clear, actionable, and focused on current purpose
-- Objectives: Should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
-
-Format your response as:
-<thoughts>Your reasoning about the strategy, referencing specific insights from the context</thoughts>
-<statements>
-  <vision>The vision statement</vision>
-  <strategy>The strategy statement</strategy>
-  <objectives>
-  1. First objective
-  2. Second objective
-  3. Third objective
-  </objectives>
-</statements>`;
 
 /**
  * Fire-and-forget generation API.
@@ -138,18 +93,35 @@ export async function POST(req: Request) {
 
   console.log('[Generate API] Created GeneratedOutput with ID:', generatedOutput.id, 'status: generating');
 
-  // Start background generation
-  waitUntil(
-    runBackgroundGeneration({
-      generatedOutputId: generatedOutput.id,
-      conversationId,
-      projectId: conversation.projectId,
-      userId: conversation.userId,
-      experimentVariant: conversation.experimentVariant,
-      extractedContext,
-      dimensionalCoverage,
-    })
-  );
+  // Start background generation via pipeline orchestrator
+  waitUntil((async () => {
+    try {
+      const trigger = {
+        type: 'conversation_ended' as const,
+        projectId: conversation.projectId!,
+        conversationId,
+        userId: conversation.userId,
+        isInitial: true,
+        experimentVariant: conversation.experimentVariant,
+        extractionResult: {
+          extractedContext,
+          dimensionalCoverage,
+        },
+        generatedOutputId: generatedOutput.id,
+      };
+      const plan = planPipeline(trigger);
+      await executePipeline(plan, trigger);
+    } catch (error) {
+      console.error('[Generate API] Background generation failed:', error);
+      await prisma.generatedOutput.update({
+        where: { id: generatedOutput.id },
+        data: {
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Generation failed',
+        },
+      });
+    }
+  })());
 
   const setupTime = Date.now() - requestStartTime;
   console.log(`[Generate API] Returning immediately after ${setupTime}ms`);
@@ -161,292 +133,4 @@ export async function POST(req: Request) {
   };
 
   return NextResponse.json(response);
-}
-
-interface BackgroundGenerationOptions {
-  generatedOutputId: string;
-  conversationId: string;
-  projectId: string;
-  userId: string | null;
-  experimentVariant: string | null;
-  extractedContext: ExtractedContextVariant;
-  dimensionalCoverage: any;
-}
-
-/**
- * Background generation task.
- * Runs after response is sent, updates GeneratedOutput on completion/failure.
- */
-async function runBackgroundGeneration(options: BackgroundGenerationOptions) {
-  const {
-    generatedOutputId,
-    conversationId,
-    projectId,
-    userId,
-    experimentVariant,
-    extractedContext,
-    dimensionalCoverage,
-  } = options;
-
-  const startTime = Date.now();
-  console.log('[Generate Background] Starting generation for:', generatedOutputId);
-
-  try {
-    // Build prompt based on extraction approach
-    const context = extractedContext as ExtractedContextVariant;
-    let prompt: string;
-
-    if (isEmergentContext(context)) {
-      const generationPrompt = getCurrentPrompt('generation');
-      const themesText = context.themes
-        .map(theme => `${theme.theme_name}:\n${theme.content}`)
-        .join('\n\n');
-      prompt = generationPrompt.template.replace('{themes}', themesText);
-    } else {
-      const enrichmentText = Object.entries(context.enrichment || {})
-        .filter(([_, value]) => value)
-        .map(([key, value]) => {
-          const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-          return `${label}: ${Array.isArray(value) ? value.join(', ') : value}`;
-        })
-        .join('\n');
-
-      const strengthsText = (context.reflective_summary?.strengths || [])
-        .map(s => `- ${s}`)
-        .join('\n');
-
-      const emergingText = (context.reflective_summary?.emerging || [])
-        .map(e => `- ${e}`)
-        .join('\n');
-
-      const opportunitiesText = (context.reflective_summary?.opportunities_for_enrichment || [])
-        .map((opp: string) => `- ${opp}`)
-        .join('\n');
-
-      prompt = GENERATION_PROMPT
-        .replace('{industry}', context.core.industry)
-        .replace('{target_market}', context.core.target_market)
-        .replace('{unique_value}', context.core.unique_value)
-        .replace('{enrichment}', enrichmentText || 'None provided')
-        .replace('{strengths}', strengthsText || 'None identified')
-        .replace('{emerging}', emergingText || 'None identified')
-        .replace('{unexplored}', opportunitiesText || 'None identified');
-    }
-
-    // Call Claude API
-    console.log('[Generate Background] Calling Claude API...');
-    const claudeStartTime = Date.now();
-    const response = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 4000,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }],
-      temperature: 0.7
-    }, 'strategy_generation');
-    const latency = Date.now() - claudeStartTime;
-    console.log(`[Generate Background] Claude API responded in ${latency}ms`);
-
-    // Parse response
-    const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
-    const thoughts = extractXML(content, 'thoughts');
-    const statementsXML = extractXML(content, 'statements');
-    const objectivesXML = extractXML(statementsXML, 'objectives');
-
-    // Detect format: OKR (has <objective> tags) vs legacy (numbered list)
-    const isOKRFormat = objectivesXML.includes('<objective>');
-
-    let objectives: Objective[];
-    if (isOKRFormat) {
-      objectives = parseOKRObjectives(objectivesXML);
-      console.log('[Generate Background] Parsed OKR-style objectives:', objectives.length);
-    } else {
-      // Legacy: numbered list format
-      const objectiveStrings = objectivesXML
-        .split('\n')
-        .filter(line => line.trim().length > 0);
-      objectives = convertLegacyObjectives(objectiveStrings);
-      console.log('[Generate Background] Parsed legacy objectives:', objectives.length);
-    }
-
-    // Parse vision - detect v4 pithy format (has <headline>) vs v3/legacy (plain text)
-    const visionXML = extractXML(statementsXML, 'vision');
-    const isPithyFormat = visionXML.includes('<headline>');
-
-    let vision: string;
-    let visionElaboration: string | undefined;
-    if (isPithyFormat) {
-      vision = extractXML(visionXML, 'headline');
-      visionElaboration = extractXML(visionXML, 'elaboration') || undefined;
-      console.log('[Generate Background] Parsed pithy vision:', vision.split(' ').length, 'words');
-    } else {
-      vision = visionXML;
-    }
-
-    // Parse strategy - same detection
-    const strategyXML = extractXML(statementsXML, 'strategy');
-    let strategy: string;
-    let strategyElaboration: string | undefined;
-    if (strategyXML.includes('<headline>')) {
-      strategy = extractXML(strategyXML, 'headline');
-      strategyElaboration = extractXML(strategyXML, 'elaboration') || undefined;
-      console.log('[Generate Background] Parsed pithy strategy:', strategy.split(' ').length, 'words');
-    } else {
-      strategy = strategyXML;
-    }
-
-    const statements: StrategyStatements = {
-      vision,
-      strategy,
-      objectives,
-      opportunities: [],
-      principles: []
-    };
-
-    // Save trace (legacy)
-    const trace = await prisma.trace.create({
-      data: {
-        conversationId,
-        projectId,
-        userId,
-        extractedContext: extractedContext as any,
-        dimensionalCoverage: dimensionalCoverage as any,
-        output: statements as any,
-        claudeThoughts: thoughts,
-        modelUsed: CLAUDE_MODEL,
-        totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-        promptTokens: response.usage.input_tokens,
-        completionTokens: response.usage.output_tokens,
-        latencyMs: latency,
-      },
-    });
-    console.log('[Generate Background] Trace saved with ID:', trace.id);
-
-    // Update GeneratedOutput with results
-    await prisma.generatedOutput.update({
-      where: { id: generatedOutputId },
-      data: {
-        status: 'complete',
-        content: statements as any,
-        modelUsed: CLAUDE_MODEL,
-        promptTokens: response.usage.input_tokens,
-        completionTokens: response.usage.output_tokens,
-        latencyMs: latency,
-      }
-    });
-    console.log('[Generate Background] GeneratedOutput updated to complete');
-
-    // Seed initial StrategyVersion records
-    await prisma.$transaction([
-      // Vision version
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'vision',
-          content: { text: vision, elaboration: visionElaboration },
-          version: 1,
-          createdBy: 'ai',
-          sourceType: 'generation',
-          sourceId: trace.id,
-        },
-      }),
-      // Strategy version
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'strategy',
-          content: { text: strategy, elaboration: strategyElaboration },
-          version: 1,
-          createdBy: 'ai',
-          sourceType: 'generation',
-          sourceId: trace.id,
-        },
-      }),
-      // Objective versions
-      ...objectives.map((obj) =>
-        prisma.strategyVersion.create({
-          data: {
-            projectId,
-            componentType: 'objective',
-            componentId: obj.id,
-            content: {
-              title: obj.title,
-              objective: obj.objective,
-              pithy: obj.pithy || obj.objective,
-              keyResults: obj.keyResults,
-              metric: obj.metric,
-              explanation: obj.explanation,
-              successCriteria: obj.successCriteria,
-            } as object,
-            version: 1,
-            createdBy: 'ai',
-            sourceType: 'generation',
-            sourceId: trace.id,
-          },
-        })
-      ),
-    ]);
-    console.log('[Generate Background] StrategyVersion records seeded');
-
-    // Get fragment IDs and create ExtractionRun
-    const fragments = await prisma.fragment.findMany({
-      where: { conversationId },
-      select: { id: true }
-    });
-    const fragmentIds = fragments.map(f => f.id);
-
-    const extractionRun = await createExtractionRun({
-      projectId,
-      conversationId,
-      experimentVariant: experimentVariant || undefined,
-      fragmentIds,
-      modelUsed: CLAUDE_MODEL,
-      promptTokens: response.usage.input_tokens,
-      completionTokens: response.usage.output_tokens,
-      latencyMs: latency,
-      generatedOutputId
-    });
-    console.log('[Generate Background] ExtractionRun saved with ID:', extractionRun.id);
-
-    // Update with syntheses
-    try {
-      await updateExtractionRunWithSyntheses(extractionRun.id, projectId);
-    } catch (err) {
-      console.error('[Generate Background] Failed to update extraction run with syntheses:', err);
-    }
-
-    // Update conversation status
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { status: 'completed' },
-    });
-
-    // Log to Statsig
-    if (userId) {
-      await logStatsigEvent(
-        userId,
-        'strategy_generated',
-        1,
-        { variant: experimentVariant || 'unknown' }
-      );
-    }
-
-    const totalTime = Date.now() - startTime;
-    console.log(`[Generate Background] Completed successfully in ${totalTime}ms`);
-
-  } catch (error) {
-    const totalTime = Date.now() - startTime;
-    console.error(`[Generate Background] Error after ${totalTime}ms:`, error);
-
-    // Update GeneratedOutput with error status
-    await prisma.generatedOutput.update({
-      where: { id: generatedOutputId },
-      data: {
-        status: 'failed',
-        error: error instanceof Error ? error.message : 'Generation failed',
-      }
-    });
-    console.log('[Generate Background] GeneratedOutput updated to failed');
-  }
 }

@@ -20,6 +20,8 @@ export type PipelineTrigger =
         dimensionalCoverage?: unknown
         themes?: EmergentThemeContract[]
       }
+      // Set by /generate route for fire-and-forget pattern (route creates upfront for polling)
+      generatedOutputId?: string
     }
   | {
       type: 'document_uploaded'
