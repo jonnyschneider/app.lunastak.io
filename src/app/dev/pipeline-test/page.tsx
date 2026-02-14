@@ -30,14 +30,33 @@ interface Snapshot {
   durationMs: number
 }
 
+interface ProjectConversation {
+  id: string
+  title: string | null
+  status: string
+  isInitialConversation: boolean
+  experimentVariant: string | null
+  messageCount: number
+}
+
+interface ProjectState {
+  projectId: string
+  conversations: ProjectConversation[]
+  fragmentCount: number
+  synthesesCount: number
+  hasGeneratedOutput: boolean
+  latestOutput: { id: string; version: number; status: string; outputType: string } | null
+}
+
 type RouteConfig = {
   label: string
   method: string
   path: string | ((projectId: string) => string)
   triggerType: string
-  buildPayload: (fixture: any, projectId: string) => Record<string, unknown> | null
+  buildPayload: (projectState: ProjectState) => Record<string, unknown> | null
   requiresHydration: boolean
   responseType: 'stream' | 'json'
+  hint: string
 }
 
 // ─── Route definitions ─────────────────────────────────
@@ -50,12 +69,11 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'conversation_ended',
     responseType: 'stream',
     requiresHydration: true,
-    buildPayload: (fixture: any) => {
-      const conv = fixture.projects?.[0]?.conversations?.find(
-        (c: any) => c.isInitialConversation && c.status === 'in_progress'
-      )
+    hint: 'Needs in_progress conversation with isInitialConversation=true',
+    buildPayload: (state: ProjectState) => {
+      const conv = state.conversations.find(c => c.isInitialConversation && c.status === 'in_progress')
       if (!conv) return null
-      return { conversationId: conv._hydratedId || conv.id, lightweight: false }
+      return { conversationId: conv.id, lightweight: false }
     },
   },
   {
@@ -65,12 +83,11 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'conversation_ended',
     responseType: 'stream',
     requiresHydration: true,
-    buildPayload: (fixture: any) => {
-      const conv = fixture.projects?.[0]?.conversations?.find(
-        (c: any) => !c.isInitialConversation && c.status === 'in_progress'
-      )
+    hint: 'Needs in_progress conversation that is not initial',
+    buildPayload: (state: ProjectState) => {
+      const conv = state.conversations.find(c => !c.isInitialConversation && c.status === 'in_progress')
       if (!conv) return null
-      return { conversationId: conv._hydratedId || conv.id, lightweight: true }
+      return { conversationId: conv.id, lightweight: true }
     },
   },
   {
@@ -80,12 +97,11 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'conversation_ended',
     responseType: 'json',
     requiresHydration: true,
-    buildPayload: (fixture: any) => {
-      const conv = fixture.projects?.[0]?.conversations?.find(
-        (c: any) => c.isInitialConversation || c.status === 'extracted'
-      )
+    hint: 'Needs conversation with status=extracted',
+    buildPayload: (state: ProjectState) => {
+      const conv = state.conversations.find(c => c.status === 'extracted')
       if (!conv) return null
-      return { conversationId: conv._hydratedId || conv.id }
+      return { conversationId: conv.id }
     },
   },
   {
@@ -95,6 +111,7 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'refresh_requested',
     responseType: 'stream',
     requiresHydration: true,
+    hint: 'Needs existing generatedOutput + fragments',
     buildPayload: () => ({}),
   },
   {
@@ -104,6 +121,7 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'template_submitted',
     responseType: 'json',
     requiresHydration: false,
+    hint: 'Just needs a valid project',
     buildPayload: () => ({
       statements: {
         vision: 'Test vision statement',
@@ -311,9 +329,10 @@ function CompareView({ a, b, onClose }: { a: Snapshot; b: Snapshot; onClose: () 
 export default function PipelineTestPage() {
   const [fixtures, setFixtures] = useState<FixtureIndex[]>([])
   const [selectedFixture, setSelectedFixture] = useState<FixtureIndex | null>(null)
-  const [fixtureData, setFixtureData] = useState<any>(null)
   const [selectedRoute, setSelectedRoute] = useState<RouteConfig | null>(null)
   const [projectId, setProjectId] = useState('')
+  const [projectState, setProjectState] = useState<ProjectState | null>(null)
+  const [loadingState, setLoadingState] = useState(false)
   const [payload, setPayload] = useState('')
   const [response, setResponse] = useState<unknown>(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -338,33 +357,51 @@ export default function PipelineTestPage() {
     setSnapshots(loadSnapshots())
   }, [])
 
-  // Load fixture JSON when selected
+  // Load project state from DB when project ID changes
+  const loadProjectState = useCallback(async (pid: string) => {
+    if (!pid || pid.length < 10) {
+      setProjectState(null)
+      return
+    }
+    setLoadingState(true)
+    try {
+      const r = await fetch(`/api/dev/project-state?projectId=${pid}`)
+      if (r.ok) {
+        const data = await r.json()
+        setProjectState(data)
+      } else {
+        setProjectState(null)
+        setError('Project not found')
+      }
+    } catch {
+      setProjectState(null)
+    } finally {
+      setLoadingState(false)
+    }
+  }, [])
+
+  // Load fixture when selected
   const handleSelectFixture = useCallback(async (fixture: FixtureIndex) => {
     setSelectedFixture(fixture)
     setSelectedRoute(null)
     setPayload('')
     setResponse(null)
     setError(null)
-    try {
-      const r = await fetch(`/api/dev/fixtures/${fixture.file}`)
-      const data = await r.json()
-      setFixtureData(data)
-    } catch {
-      setError(`Failed to load fixture: ${fixture.file}`)
-    }
   }, [])
 
-  // Build payload when route selected
+  // Build payload when route selected — uses live DB state, not fixture JSON
   const handleSelectRoute = useCallback((route: RouteConfig) => {
     setSelectedRoute(route)
     setResponse(null)
     setError(null)
     setDurationMs(null)
-    if (fixtureData) {
-      const built = route.buildPayload(fixtureData, projectId)
-      setPayload(built ? JSON.stringify(built, null, 2) : '// No matching data in fixture for this route')
+    if (projectState) {
+      const built = route.buildPayload(projectState)
+      setPayload(built ? JSON.stringify(built, null, 2) : `// No matching data in DB for this route\n// Hint: ${route.hint}`)
+    } else {
+      setPayload(`// Load project state first\n// Hint: ${route.hint}`)
     }
-  }, [fixtureData, projectId])
+  }, [projectState])
 
   // Fire the request
   const handleRun = useCallback(async () => {
@@ -508,16 +545,44 @@ export default function PipelineTestPage() {
             {selectedFixture && (
               <div>
                 <h2 className="text-sm font-medium mb-2">Project ID</h2>
-                <input
-                  type="text"
-                  value={projectId}
-                  onChange={e => setProjectId(e.target.value)}
-                  placeholder="Hydrated project ID"
-                  className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-900"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={projectId}
+                    onChange={e => setProjectId(e.target.value)}
+                    placeholder="Hydrated project ID"
+                    className="flex-1 px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-900"
+                  />
+                  <button
+                    onClick={() => loadProjectState(projectId)}
+                    disabled={loadingState || !projectId}
+                    className="px-3 py-2 text-sm rounded-lg bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:opacity-90 disabled:opacity-50"
+                  >
+                    {loadingState ? '...' : 'Load'}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Hydrate fixture first, then paste the project ID
+                  Hydrate fixture first, then paste the project ID and click Load
                 </p>
+
+                {/* Project state summary */}
+                {projectState && (
+                  <div className="mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-xs space-y-1">
+                    <div className="font-medium text-green-800 dark:text-green-300">Project loaded</div>
+                    <div>{projectState.conversations.length} conversations:</div>
+                    {projectState.conversations.map(c => (
+                      <div key={c.id} className="pl-2 text-muted-foreground">
+                        <span className="font-mono">{c.id.slice(-8)}</span>
+                        {' '}{c.title || 'Untitled'}
+                        {' · '}<span className={c.status === 'in_progress' ? 'text-orange-600' : c.status === 'extracted' ? 'text-blue-600' : 'text-green-600'}>{c.status}</span>
+                        {c.isInitialConversation && ' · initial'}
+                        {' · '}{c.messageCount} msgs
+                      </div>
+                    ))}
+                    <div>{projectState.fragmentCount} fragments · {projectState.synthesesCount} syntheses</div>
+                    <div>{projectState.hasGeneratedOutput ? 'Has generated output' : 'No generated output'}</div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -541,6 +606,7 @@ export default function PipelineTestPage() {
                       <span className="font-mono text-xs text-muted-foreground mr-2">{route.method}</span>
                       {route.label}
                       <span className="text-xs text-muted-foreground ml-2">({route.responseType})</span>
+                      <div className="text-xs text-muted-foreground mt-0.5">{route.hint}</div>
                     </button>
                   ))}
                 </div>
