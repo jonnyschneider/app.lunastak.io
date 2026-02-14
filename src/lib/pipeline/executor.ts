@@ -3,7 +3,7 @@ import { createFragmentsFromThemes, createFragmentsFromDocument, type ThemeWithD
 import { updateAllSyntheses } from '@/lib/synthesis'
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
 import { runBackgroundTasks } from '@/lib/background-tasks'
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { extractXML, parseOKRObjectives } from '@/lib/utils'
 import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
@@ -11,8 +11,7 @@ import { convertLegacyObjectives } from '@/lib/placeholders'
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
 import { getCurrentPrompt } from '@/lib/prompts'
-import type { StrategyStatements, ExtractedContextVariant, Objective } from '@/lib/types'
-import { isEmergentContext } from '@/lib/types'
+import type { StrategyStatements, Objective } from '@/lib/types'
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
 import type { PipelinePlan, PipelineTrigger, PipelineResult } from './types'
 
@@ -117,16 +116,11 @@ export async function executePipeline(
       }
       case 'initial': {
         const t = trigger as Extract<PipelineTrigger, { type: 'conversation_ended' }>
-        if (!t.extractionResult) {
-          throw new Error('extractionResult required for initial generation')
-        }
         generation = await runInitialGeneration(
           t.projectId,
           t.conversationId,
           t.userId,
           t.experimentVariant,
-          t.extractionResult.extractedContext,
-          t.extractionResult.dimensionalCoverage,
           t.generatedOutputId,
           plan.model
         )
@@ -529,48 +523,6 @@ async function runRefreshGeneration(
   }
 }
 
-// --- Prescriptive generation prompt (legacy, used by baseline-v1) ---
-
-const PRESCRIPTIVE_GENERATION_PROMPT = `Generate compelling strategy statements based on the comprehensive business context provided.
-
-CORE CONTEXT:
-Industry: {industry}
-Target Market: {target_market}
-Unique Value: {unique_value}
-
-ENRICHMENT DETAILS:
-{enrichment}
-
-INSIGHTS FROM CONVERSATION:
-Strengths identified:
-{strengths}
-
-Emerging themes:
-{emerging}
-
-Areas to explore further:
-{unexplored}
-
-Guidelines:
-- Use the core context as foundation
-- Leverage enrichment details to add specificity and differentiation
-- Incorporate the strengths and emerging themes identified
-- Vision: Should be aspirational, future-focused, and memorable
-- Strategy: Should be clear, actionable, and focused on current purpose
-- Objectives: Should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
-
-Format your response as:
-<thoughts>Your reasoning about the strategy, referencing specific insights from the context</thoughts>
-<statements>
-  <vision>The vision statement</vision>
-  <strategy>The strategy statement</strategy>
-  <objectives>
-  1. First objective
-  2. Second objective
-  3. Third objective
-  </objectives>
-</statements>`
-
 /**
  * Generate initial strategy from extracted context.
  * Moved from /api/generate/route.ts (runBackgroundGeneration)
@@ -580,52 +532,28 @@ async function runInitialGeneration(
   conversationId: string,
   userId: string | null,
   experimentVariant: string | null,
-  extractedContext: ExtractedContextVariant,
-  dimensionalCoverage: unknown,
   generatedOutputId: string | undefined,
   model: string
 ): Promise<NonNullable<PipelineResult['generation']>> {
   const startTime = Date.now()
 
-  // Build prompt based on extraction approach
-  let prompt: string
+  // Load fragments from DB (created earlier in the pipeline)
+  const fragments = await prisma.fragment.findMany({
+    where: { projectId, status: 'active' },
+    select: { id: true, content: true },
+    orderBy: { capturedAt: 'desc' },
+  })
 
-  if (isEmergentContext(extractedContext)) {
-    const generationPrompt = getCurrentPrompt('generation')
-    const themesText = extractedContext.themes
-      .map(theme => `${theme.theme_name}:\n${theme.content}`)
-      .join('\n\n')
-    prompt = generationPrompt.template.replace('{themes}', themesText)
-  } else {
-    const enrichmentText = Object.entries(extractedContext.enrichment || {})
-      .filter(([_, value]) => value)
-      .map(([key, value]) => {
-        const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        return `${label}: ${Array.isArray(value) ? value.join(', ') : value}`
-      })
-      .join('\n')
-
-    const strengthsText = (extractedContext.reflective_summary?.strengths || [])
-      .map(s => `- ${s}`)
-      .join('\n')
-
-    const emergingText = (extractedContext.reflective_summary?.emerging || [])
-      .map(e => `- ${e}`)
-      .join('\n')
-
-    const opportunitiesText = (extractedContext.reflective_summary?.opportunities_for_enrichment || [])
-      .map((opp: string) => `- ${opp}`)
-      .join('\n')
-
-    prompt = PRESCRIPTIVE_GENERATION_PROMPT
-      .replace('{industry}', extractedContext.core.industry)
-      .replace('{target_market}', extractedContext.core.target_market)
-      .replace('{unique_value}', extractedContext.core.unique_value)
-      .replace('{enrichment}', enrichmentText || 'None provided')
-      .replace('{strengths}', strengthsText || 'None identified')
-      .replace('{emerging}', emergingText || 'None identified')
-      .replace('{unexplored}', opportunitiesText || 'None identified')
+  if (fragments.length === 0) {
+    throw new Error('No active fragments found for initial generation')
   }
+
+  // Build prompt from fragments — same data as extractedContext.themes, read from DB
+  const generationPrompt = getCurrentPrompt('generation')
+  const themesText = fragments
+    .map(f => f.content)
+    .join('\n\n')
+  const prompt = generationPrompt.template.replace('{themes}', themesText)
 
   // Call Claude API
   const claudeStartTime = Date.now()
@@ -688,14 +616,13 @@ async function runInitialGeneration(
     principles: [],
   }
 
-  // Save trace
+  // Save trace — store fragment content as extractedContext for audit trail
   const trace = await prisma.trace.create({
     data: {
       conversationId,
       projectId,
       userId,
-      extractedContext: extractedContext as any,
-      dimensionalCoverage: dimensionalCoverage as any,
+      extractedContext: { source: 'fragments', fragmentCount: fragments.length, fragments: fragments.map(f => f.content) } as any,
       output: statements as any,
       claudeThoughts: thoughts,
       modelUsed: model,
@@ -788,12 +715,7 @@ async function runInitialGeneration(
     ),
   ])
 
-  // Create ExtractionRun
-  const fragments = await prisma.fragment.findMany({
-    where: { conversationId },
-    select: { id: true },
-  })
-
+  // Create ExtractionRun (reuses fragments loaded at top of function)
   const extractionRun = await createExtractionRun({
     projectId,
     conversationId,
