@@ -16,6 +16,7 @@ import * as path from 'path';
 import { prisma } from '../../src/lib/db';
 import type { Prisma } from '@prisma/client';
 import type { Fixture, HydrateOptions } from './types';
+import { TIER_1_DIMENSIONS } from '../../src/lib/constants/dimensions';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
@@ -399,6 +400,16 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       await prisma.dimensionalSynthesis.deleteMany({ where: { projectId: options.projectId } });
       await prisma.fragment.deleteMany({ where: { projectId: options.projectId } });
       await prisma.conversation.deleteMany({ where: { projectId: options.projectId } });
+      // Recreate empty synthesis records (synthesis code requires them)
+      await prisma.dimensionalSynthesis.createMany({
+        data: TIER_1_DIMENSIONS.map(dimension => ({
+          projectId: options.projectId!,
+          dimension,
+          confidence: 'LOW',
+          fragmentCount: 0,
+        })),
+        skipDuplicates: true,
+      });
       console.log(`[INFO] Existing data deleted`);
     }
 

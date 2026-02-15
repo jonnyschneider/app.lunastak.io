@@ -44,16 +44,25 @@ export async function updateDimensionalSynthesis(
 ): Promise<void> {
   console.log(`[Synthesis] Updating ${dimension} for project ${projectId}`)
 
-  // 1. Get existing synthesis
-  const existingSynthesis = await prisma.dimensionalSynthesis.findUnique({
+  // 1. Get or create synthesis record
+  let existingSynthesis = await prisma.dimensionalSynthesis.findUnique({
     where: {
       projectId_dimension: { projectId, dimension }
     }
   })
 
   if (!existingSynthesis) {
-    console.error(`[Synthesis] No synthesis record found for ${dimension}`)
-    return
+    // Record missing (e.g. reset/migration) — create it so synthesis can proceed
+    console.log(`[Synthesis] Creating missing synthesis record for ${dimension}`)
+    existingSynthesis = await prisma.dimensionalSynthesis.create({
+      data: {
+        projectId,
+        dimension,
+        confidence: 'LOW',
+        fragmentCount: 0,
+        lastSynthesizedAt: new Date(0), // epoch — ensures all fragments count as "new"
+      },
+    })
   }
 
   // 2. Get all active fragments for this dimension
