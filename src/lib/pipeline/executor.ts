@@ -58,32 +58,27 @@ export async function executePipeline(
     }
   }
 
-  // Layer 1.5: Threshold check — should we run synthesis + knowledge summary
-  // even if the plan didn't request it? (e.g. documents accumulate fragments
-  // without triggering synthesis/knowledge summary individually)
+  // Layer 1.5: Fragment-count threshold for synthesis + knowledge summary.
+  // No caller requests these directly — they fire automatically when
+  // accumulated fragments since last summary ≥ SUMMARY_FRAGMENT_THRESHOLD.
+  // Only exception: refresh_requested sets plan.runSynthesis = true (foreground).
+  const SUMMARY_FRAGMENT_THRESHOLD = 15
   let shouldSynthesise = plan.runSynthesis
   let shouldKnowledgeSummary = plan.runKnowledgeSummary
 
   if (!shouldKnowledgeSummary && fragmentsCreated > 0) {
-    const latestStrategy = await prisma.generatedOutput.findFirst({
-      where: { projectId, status: 'complete' },
-      orderBy: { startedAt: 'desc' },
-      select: { startedAt: true },
+    const project = await prisma.project.findUniqueOrThrow({
+      where: { id: projectId },
+      select: { knowledgeUpdatedAt: true },
     })
-    const sinceDate = latestStrategy?.startedAt || new Date(0)
+    const sinceDate = project.knowledgeUpdatedAt || new Date(0)
 
-    const [newFragmentCount, hasDocFragments] = await Promise.all([
-      prisma.fragment.count({
-        where: { projectId, status: 'active', createdAt: { gt: sinceDate } },
-      }),
-      prisma.fragment.findFirst({
-        where: { projectId, status: 'active', documentId: { not: null }, createdAt: { gt: sinceDate } },
-        select: { id: true },
-      }),
-    ])
+    const fragmentsSinceSummary = await prisma.fragment.count({
+      where: { projectId, status: 'active', createdAt: { gt: sinceDate } },
+    })
 
-    if (newFragmentCount > 10 && hasDocFragments) {
-      console.log(`[Pipeline] Fragment threshold met (${newFragmentCount} new, docs present) — upgrading to synthesis + knowledge summary`)
+    if (fragmentsSinceSummary >= SUMMARY_FRAGMENT_THRESHOLD) {
+      console.log(`[Pipeline] Fragment threshold met (${fragmentsSinceSummary} since last summary, threshold ${SUMMARY_FRAGMENT_THRESHOLD}) — running synthesis + knowledge summary`)
       shouldSynthesise = true
       shouldKnowledgeSummary = true
     }

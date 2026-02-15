@@ -4,6 +4,10 @@ import type { PipelineTrigger, PipelinePlan } from './types'
 /**
  * Determine what pipeline steps to run for a given trigger.
  * Pure function — no DB calls, no side effects.
+ *
+ * Synthesis + knowledge summary are NOT requested by individual callers.
+ * The executor auto-triggers them when fragment count since last summary ≥ 15.
+ * Only refresh_requested runs them foreground (needed before generation).
  */
 export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
   switch (trigger.type) {
@@ -13,21 +17,21 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
             trigger: 'conversation_ended',
             extraction: { approach: 'emergent', source: 'conversation' },
             persistFragments: true,
-            runSynthesis: true,
-            runKnowledgeSummary: true,
+            runSynthesis: false,
+            runKnowledgeSummary: false,
             generation: { mode: 'initial', source: 'extracted_context' },
             model: CLAUDE_MODEL,
-            backgroundSteps: ['synthesis', 'knowledgeSummary'],
+            backgroundSteps: [],
           }
         : {
             trigger: 'conversation_ended',
             extraction: { approach: 'emergent', source: 'conversation' },
             persistFragments: true,
-            runSynthesis: true,
-            runKnowledgeSummary: true,
+            runSynthesis: false,
+            runKnowledgeSummary: false,
             generation: null,
             model: CLAUDE_MODEL,
-            backgroundSteps: ['synthesis', 'knowledgeSummary'],
+            backgroundSteps: [],
           }
 
     case 'document_uploaded':
@@ -35,8 +39,8 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
         trigger: 'document_uploaded',
         extraction: { approach: 'document', source: 'document' },
         persistFragments: true,
-        runSynthesis: false, // Deferred — runs when knowledge summary threshold is met
-        runKnowledgeSummary: false, // Deferred — executor runs if fragment threshold met
+        runSynthesis: false,
+        runKnowledgeSummary: false,
         generation: null,
         model: CLAUDE_MODEL,
         backgroundSteps: [],

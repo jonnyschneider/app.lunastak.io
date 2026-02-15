@@ -235,6 +235,11 @@ export async function GET(
     // Stale if new fragments exist — doesn't depend on background synthesis completing
     const strategyIsStale = fragmentsSinceStrategy > 0
 
+    // Count fragments since last knowledge summary
+    const fragmentsSinceSummary = project.knowledgeUpdatedAt
+      ? project.fragments.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
+      : project.fragments.length
+
     // Return project data
     return NextResponse.json({
       id: project.id,
@@ -246,6 +251,7 @@ export async function GET(
         dimensionalCoverage,
         strategyIsStale,
         fragmentsSinceStrategy,
+        fragmentsSinceSummary,
       },
       conversations,
       documents,

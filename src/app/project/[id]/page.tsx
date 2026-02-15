@@ -68,6 +68,7 @@ interface ProjectStats {
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
+  fragmentsSinceSummary: number
 }
 
 interface ConversationSummary {
@@ -506,6 +507,7 @@ export default function ProjectPage() {
     dimensionalCoverage: {},
     strategyIsStale: false,
     fragmentsSinceStrategy: 0,
+    fragmentsSinceSummary: 0,
   }
 
   return (
@@ -528,6 +530,7 @@ export default function ProjectPage() {
           documentCount={stats.documentCount}
           strategyIsStale={stats.strategyIsStale}
           fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+          fragmentsSinceSummary={stats.fragmentsSinceSummary}
           knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
           knowledgeSummary={projectData?.knowledgeSummary || null}
           dimensionalCoverage={stats.dimensionalCoverage}

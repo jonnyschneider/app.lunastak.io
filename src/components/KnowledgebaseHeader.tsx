@@ -87,6 +87,7 @@ interface KnowledgebaseHeaderProps {
   documentCount: number
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
+  fragmentsSinceSummary: number
   knowledgeUpdatedAt: string | null
   knowledgeSummary: string | null
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
@@ -108,6 +109,7 @@ export function KnowledgebaseHeader({
   documentCount,
   strategyIsStale,
   fragmentsSinceStrategy,
+  fragmentsSinceSummary,
   knowledgeUpdatedAt,
   knowledgeSummary,
   dimensionalCoverage,
@@ -277,11 +279,11 @@ export function KnowledgebaseHeader({
               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {knowledgeSummary}
               </p>
-              {knowledgeUpdatedAt && (
-                <p className="text-xs text-muted-foreground/60">
-                  Summary {formatRelativeTime(knowledgeUpdatedAt)}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground/60">
+                {fragmentsSinceSummary === 0
+                  ? 'Summary · current'
+                  : `Summary · ${fragmentsSinceSummary} new insight${fragmentsSinceSummary !== 1 ? 's' : ''} since`}
+              </p>
             </div>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">

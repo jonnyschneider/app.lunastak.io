@@ -16,27 +16,21 @@ describe('planPipeline', () => {
   }
 
   describe('conversation_ended (initial)', () => {
-    it('should run full pipeline: extract + fragments + synthesis + summary + generate', () => {
+    it('should extract + fragments + generate, synthesis/summary deferred to executor threshold', () => {
       const plan = planPipeline(baseConversation)
 
       expect(plan.trigger).toBe('conversation_ended')
       expect(plan.extraction).toEqual({ approach: 'emergent', source: 'conversation' })
       expect(plan.persistFragments).toBe(true)
-      expect(plan.runSynthesis).toBe(true)
-      expect(plan.runKnowledgeSummary).toBe(true)
+      expect(plan.runSynthesis).toBe(false)
+      expect(plan.runKnowledgeSummary).toBe(false)
       expect(plan.generation).toEqual({ mode: 'initial', source: 'extracted_context' })
-    })
-
-    it('should run synthesis and knowledgeSummary as background steps', () => {
-      const plan = planPipeline(baseConversation)
-
-      expect(plan.backgroundSteps).toContain('synthesis')
-      expect(plan.backgroundSteps).toContain('knowledgeSummary')
+      expect(plan.backgroundSteps).toEqual([])
     })
   })
 
   describe('conversation_ended (follow-up)', () => {
-    it('should run extract + fragments + synthesis + summary, no generation', () => {
+    it('should extract + fragments only, synthesis/summary deferred to executor threshold', () => {
       const plan = planPipeline({
         ...baseConversation,
         isInitial: false,
@@ -44,16 +38,15 @@ describe('planPipeline', () => {
 
       expect(plan.extraction).toEqual({ approach: 'emergent', source: 'conversation' })
       expect(plan.persistFragments).toBe(true)
-      expect(plan.runSynthesis).toBe(true)
-      expect(plan.runKnowledgeSummary).toBe(true)
+      expect(plan.runSynthesis).toBe(false)
+      expect(plan.runKnowledgeSummary).toBe(false)
       expect(plan.generation).toBeNull()
-      expect(plan.backgroundSteps).toContain('synthesis')
-      expect(plan.backgroundSteps).toContain('knowledgeSummary')
+      expect(plan.backgroundSteps).toEqual([])
     })
   })
 
   describe('document_uploaded', () => {
-    it('should extract + persist fragments only — synthesis and summary deferred', () => {
+    it('should extract + persist fragments only — synthesis and summary deferred to executor threshold', () => {
       const plan = planPipeline({
         type: 'document_uploaded',
         projectId: 'proj-1',
@@ -93,7 +86,7 @@ describe('planPipeline', () => {
   })
 
   describe('refresh_requested', () => {
-    it('should run synthesis + generate from fragments and syntheses, no extraction', () => {
+    it('should run foreground synthesis + summary + generate (only trigger that requests synthesis)', () => {
       const plan = planPipeline({
         type: 'refresh_requested',
         projectId: 'proj-1',
@@ -105,6 +98,27 @@ describe('planPipeline', () => {
       expect(plan.runSynthesis).toBe(true)
       expect(plan.runKnowledgeSummary).toBe(true)
       expect(plan.generation).toEqual({ mode: 'refresh', source: 'fragments_and_syntheses' })
+    })
+  })
+
+  describe('synthesis/summary ownership', () => {
+    it('only refresh_requested should request synthesis', () => {
+      const nonRefreshTriggers: PipelineTrigger[] = [
+        { type: 'conversation_ended', projectId: 'p', conversationId: 'c', userId: 'u', isInitial: true, experimentVariant: null },
+        { type: 'conversation_ended', projectId: 'p', conversationId: 'c', userId: 'u', isInitial: false, experimentVariant: null },
+        { type: 'document_uploaded', projectId: 'p', documentId: 'd', documentText: 'text' },
+        { type: 'template_submitted', projectId: 'p', userId: 'u', statements: { vision: 'v', strategy: 's', objectives: [], opportunities: [], principles: [] } },
+      ]
+
+      for (const trigger of nonRefreshTriggers) {
+        const plan = planPipeline(trigger)
+        expect(plan.runSynthesis).toBe(false)
+        expect(plan.runKnowledgeSummary).toBe(false)
+      }
+
+      const refreshPlan = planPipeline({ type: 'refresh_requested', projectId: 'p', userId: 'u' })
+      expect(refreshPlan.runSynthesis).toBe(true)
+      expect(refreshPlan.runKnowledgeSummary).toBe(true)
     })
   })
 
