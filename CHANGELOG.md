@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-02-15
+
+**Pipeline orchestrator, background extraction, and refresh strategy overhaul.**
+
+### Added
+
+- **Pipeline Orchestrator** - All business logic flows through `planPipeline()` → `executePipeline()`
+  - Pure-function decision matrix determines extraction, persistence, synthesis, and generation steps
+  - Routes are now thin HTTP wrappers — `/extract`, `/generate`, `/refresh-strategy`, `/template-entry`, `/doc-upload` all delegate to orchestrator
+  - Exhaustiveness tests ensure all trigger types are handled
+  - Dev pipeline testing UI with fixture index and snapshot save-to-disk
+
+- **Background Extraction** - Follow-up conversations extract in background
+  - Sheet closes immediately after conversation ends — no more locked UI
+  - Extraction runs via `waitUntil()` with status polling
+  - New `/api/extraction-status/[conversationId]` polling endpoint
+  - Extraction status contract (`ExtractionStatusResponseContract`)
+  - Toast notification when extraction completes with fragment count
+
+- **BackgroundTaskProvider** - Unified provider for all background tasks
+  - Replaces `GenerationStatusProvider` with generic task tracking
+  - Supports `extraction`, `generation`, and `refresh` task types
+  - Per-type toast messages and completion handling
+  - Legacy aliases maintain backward compatibility (`useGenerationStatusContext`)
+
+- **Refresh Strategy Overhaul** - Fire-and-forget with foreground synthesis
+  - Quick-prep dialog with immediate hand-off to background polling
+  - Synthesis runs in foreground (required before generation reads syntheses)
+  - Accepts pre-created `generatedOutputId` for reliable status tracking
+  - Generation status includes `traceId` for "View" action in toast
+
+### Changed
+
+- **Initial generation** now reads from fragments (DB) instead of `extractedContext` passed through the pipeline
+- **Neon connection pool** limited to `max: 10` to prevent connection exhaustion
+
+### Fixed
+
+- **Strategy refresh concatenation** - Refresh output was appending to previous strategy text instead of replacing
+- **Side chat triggering generation** - Follow-up conversations no longer trigger strategy generation
+- **Query flood on project page** - `fetchProjectData` debounced at 500ms, `extractionComplete` event listener added, duplicate fetch on sheet close removed
+- **Delayed refetch cascade** - Removed unnecessary 5s/15s/30s refetch timers on generation complete
+- **Refresh strategy** - Fixed 4 issues from testing (status tracking, toast messaging, sidebar refresh, knowledgeUpdatedAt)
+- **Hydrate script** - `knowledgeUpdatedAt` now set correctly in `--projectId` path
+
 ## [2.0.1] - 2026-02-12
 
 **Template flow overhaul and Strategy page enhancements.**
