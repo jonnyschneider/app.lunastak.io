@@ -251,40 +251,51 @@ export function KnowledgebaseHeader({
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-border px-4 py-4 space-y-4">
-          {/* Chat / Edit button group */}
-          {fragmentCount > 0 && (
-            <div className="inline-flex border border-border rounded-md">
-              <button
-                onClick={handleChatClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-l-md"
-              >
-                <MessageCircle className="h-3 w-3" />
-                Chat
-              </button>
-              <div className="w-px bg-border" />
-              <button
-                onClick={handleEditClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-r-md"
-              >
-                <Pencil className="h-3 w-3" />
-                Edit
-              </button>
+        <div className="border-t border-border px-4 py-4 space-y-3">
+          {/* Heading row: label + actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Summary</span>
+              {knowledgeSummary && fragmentsSinceSummary > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  · {15 - fragmentsSinceSummary > 0
+                    ? `${15 - fragmentsSinceSummary} more 'til next update`
+                    : 'updating soon'}
+                </span>
+              )}
+              {knowledgeSummary && fragmentsSinceSummary === 0 && (
+                <span className="text-xs text-muted-foreground">· up to date</span>
+              )}
             </div>
-          )}
+            {fragmentCount > 0 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleChatClick}
+                  className="h-6 text-xs px-2 gap-1"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  Chat
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditClick}
+                  className="h-6 text-xs px-2 gap-1"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </Button>
+              </div>
+            )}
+          </div>
 
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {knowledgeSummary}
-              </p>
-              <p className="text-xs text-muted-foreground/60">
-                {fragmentsSinceSummary === 0
-                  ? 'Summary · current'
-                  : `Summary · ${fragmentsSinceSummary} new insight${fragmentsSinceSummary !== 1 ? 's' : ''} since`}
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {knowledgeSummary}
+            </p>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">
               Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper.
