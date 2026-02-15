@@ -98,16 +98,12 @@ const ROUTES: RouteConfig[] = [
     triggerType: 'conversation_ended',
     responseType: 'json',
     requiresHydration: true,
-    hint: 'Needs conversation with trace (extractedContext). Run Extract first.',
+    hint: 'Needs extracted conversation with fragments. Run Extract first.',
     buildPayload: (state: ProjectState) => {
-      // Find a conversation that has a trace with extractedContext
-      const conv = state.conversations.find(c => c.trace?.extractedContext)
-      if (!conv || !conv.trace) return null
-      return {
-        conversationId: conv.id,
-        extractedContext: conv.trace.extractedContext,
-        dimensionalCoverage: conv.trace.dimensionalCoverage,
-      }
+      // Find a conversation that has been extracted (has a trace)
+      const conv = state.conversations.find(c => c.trace)
+      if (!conv) return null
+      return { conversationId: conv.id }
     },
   },
   {

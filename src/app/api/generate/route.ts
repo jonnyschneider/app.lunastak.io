@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { ExtractedContextVariant } from '@/lib/types';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 import { waitUntil } from '@vercel/functions';
 import { planPipeline, executePipeline } from '@/lib/pipeline';
@@ -20,14 +19,10 @@ export async function POST(req: Request) {
 
   // Parse request body
   let conversationId: string;
-  let extractedContext: ExtractedContextVariant;
-  let dimensionalCoverage: any;
 
   try {
     const body = await req.json();
     conversationId = body.conversationId;
-    extractedContext = body.extractedContext;
-    dimensionalCoverage = body.dimensionalCoverage;
     console.log('[Generate API] Parsed request body, conversationId:', conversationId);
   } catch (error) {
     return NextResponse.json(
@@ -36,10 +31,10 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!conversationId || !extractedContext) {
-    console.error('[Generate API] Missing required fields');
+  if (!conversationId) {
+    console.error('[Generate API] Missing conversationId');
     return NextResponse.json(
-      { error: 'conversationId and extractedContext are required' },
+      { error: 'conversationId is required' },
       { status: 400 }
     );
   }
@@ -103,10 +98,6 @@ export async function POST(req: Request) {
         userId: conversation.userId,
         isInitial: true,
         experimentVariant: conversation.experimentVariant,
-        extractionResult: {
-          extractedContext,
-          dimensionalCoverage,
-        },
         generatedOutputId: generatedOutput.id,
       };
       const plan = planPipeline(trigger);

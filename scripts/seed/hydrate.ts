@@ -208,10 +208,20 @@ async function hydrateProjectData(
     }
   }
 
-  // Create dimensional syntheses
+  // Upsert dimensional syntheses (may already exist from previous hydration)
   for (const synthFixture of projectFixture.syntheses || []) {
-    await prisma.dimensionalSynthesis.create({
-      data: {
+    await prisma.dimensionalSynthesis.upsert({
+      where: {
+        projectId_dimension: { projectId, dimension: synthFixture.dimension },
+      },
+      update: {
+        summary: synthFixture.summary,
+        keyThemes: synthFixture.keyThemes,
+        gaps: JSON.parse(JSON.stringify(synthFixture.gaps || [])),
+        confidence: synthFixture.confidence,
+        fragmentCount: synthFixture.fragmentCount,
+      },
+      create: {
         projectId,
         dimension: synthFixture.dimension,
         summary: synthFixture.summary,

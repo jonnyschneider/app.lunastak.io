@@ -525,6 +525,7 @@ export default function ProjectPage() {
         <KnowledgebaseHeader
           fragmentCount={stats.fragmentCount}
           chatCount={stats.conversationCount}
+          documentCount={stats.documentCount}
           strategyIsStale={stats.strategyIsStale}
           fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
           knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}

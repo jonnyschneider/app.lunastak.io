@@ -142,8 +142,10 @@ export async function runRefreshGeneration(
     orderBy: { capturedAt: 'desc' },
   })
 
-  const newFragments = allFragments.filter(f => f.createdAt > previousOutput.createdAt)
-  const existingFragments = allFragments.filter(f => f.createdAt <= previousOutput.createdAt)
+  // Split by startedAt (when generation ran), not createdAt (when DB row was inserted)
+  const cutoff = previousOutput.startedAt || previousOutput.createdAt
+  const newFragments = allFragments.filter(f => f.createdAt > cutoff)
+  const existingFragments = allFragments.filter(f => f.createdAt <= cutoff)
 
   // Get removed fragments (archived since last generation)
   const removedFragments = await prisma.fragment.findMany({
