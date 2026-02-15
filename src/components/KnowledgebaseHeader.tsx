@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -74,6 +74,22 @@ function formatRelativeTime(dateStr: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+/** Render inline markdown: **bold** */
+function InlineMarkdown({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/)
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith('**') && part.endsWith('**') ? (
+          <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
 }
 
 interface DimensionalSynthesis {
@@ -253,51 +269,45 @@ export function KnowledgebaseHeader({
       {/* Expanded Content */}
       {isExpanded && (
         <div className="border-t border-border px-4 py-4 space-y-3">
-          {/* Heading row: Summary · status · Refine */}
-          <div className="flex items-baseline gap-1.5 text-sm">
-            <span className="font-medium">Summary</span>
-            {knowledgeSummary && (
+          {/* Heading row: Refine popover + countdown */}
+          {knowledgeSummary && fragmentCount > 0 && (
+            <div className="flex items-baseline gap-1.5 text-sm">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="font-medium hover:text-muted-foreground transition-colors inline-flex items-center gap-1">
+                    <Pencil className="h-3 w-3" />
+                    Refine this summary
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-44 p-1">
+                  <button
+                    onClick={handleChatClick}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    Talk it through
+                  </button>
+                  <button
+                    onClick={handleEditClick}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    Edit directly
+                  </button>
+                </PopoverContent>
+              </Popover>
               <span className="text-muted-foreground">
                 {fragmentsSinceSummary === 0
                   ? '· up to date'
-                  : `· ${15 - fragmentsSinceSummary > 0 ? `${15 - fragmentsSinceSummary} more 'til next update` : 'updating soon'}`}
+                  : `· ${15 - fragmentsSinceSummary > 0 ? `${15 - fragmentsSinceSummary} more insights 'til next auto-update` : 'auto-updating soon'}`}
               </span>
-            )}
-            {knowledgeSummary && fragmentCount > 0 && (
-              <>
-                <span className="text-muted-foreground">·</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-0.5">
-                      Refine
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-44 p-1">
-                    <button
-                      onClick={handleChatClick}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                      Talk it through
-                    </button>
-                    <button
-                      onClick={handleEditClick}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      Edit directly
-                    </button>
-                  </PopoverContent>
-                </Popover>
-              </>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {knowledgeSummary}
+              <InlineMarkdown text={knowledgeSummary} />
             </p>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">

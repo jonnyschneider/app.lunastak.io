@@ -121,7 +121,7 @@ export function ObjectiveInlineEditor({ objective: initialObjective, onSave, onC
               <div className="flex items-start gap-2 mb-2">
                 <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
                 <p className="text-sm text-white/90 italic">
-                  Start with a verb. What measurable outcome are you trying to achieve?
+                  Describe the state you want to be true. Ambitious enough to persist across quarters.
                 </p>
               </div>
               <Textarea

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-02-16
+
+**Knowledge panel polish and objectives prompt overhaul.**
+
+### Changed
+
+- **Knowledge panel summary** - "Refine this summary" is now the heading (pencil icon + popover), replaces separate Summary/Refine labels
+- **Summary countdown** - "N more insights 'til next auto-update" replaces generic "next update" label
+- **Markdown in summary** - `**bold**` text in knowledge summary now renders correctly
+- **Objectives prompts** - Rewritten to generate outcome-oriented objectives ("state you want to be true") instead of action-oriented ones that read like initiatives
+- **Objectives UI copy** - Template entry and inline editor guidance updated to match new prompt direction
+
+### Fixed
+
+- **Demo fixture** - Complete export with syntheses, generated outputs, deep dive links, and `isInitialConversation` flags
+
 ## [2.0.2] - 2026-02-16
 
 **Pipeline orchestrator, fire-and-forget UX, knowledge panel redesign, and fragment snapshots.**

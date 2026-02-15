@@ -6,19 +6,27 @@
 
 export const OBJECTIVE_GUIDELINES = `## Objectives Guidelines
 
-Objectives are what you're trying to achieve NOW. Start with a verb. Be specific.
+Objectives describe the outcome or state you want to be true — not the action you're taking to get there.
 
-**Objective examples:**
-- "Capture more data"
-- "Improve relevance by understanding content"
-- "Improve speed of search results"
+They should be ambitious enough that 12-18 months isn't enough to fully achieve them. You make progress toward objectives; you don't "complete" them. They persist across quarters while the initiatives underneath change.
+
+**Good objectives** (outcome-oriented, enduring):
+- "Deliver strategy quality that rivals expert consultants"
+- "Make the first experience so good it sells itself"
+- "Become the tool founders recommend to each other"
+- "Create a self-reinforcing loop between consulting and product"
+
+**Bad objectives** (these are initiatives/projects, not objectives):
+- "Validate consulting replacement threshold" — that's a project with an end date
+- "Launch with meta-demo validation" — that's a milestone
+- "Activate warm network for first customers" — that's a campaign
 
 **Objective format:**
-- Title: 3-8 words. Just the essence.
-- Statement: 1-2 sentences. The full objective.
+- Title: 3-8 words. The essence of the desired state.
+- Statement: 1-2 sentences. The full objective — what will be true when you're succeeding.
 - Explanation: Why this matters and connects to strategy.
-- OMTM (One Metric That Matters): Just the metric NAME, not a full measurement. Keep it simple.
-- Aspiration: Optional short directional goal (e.g., "40% increase", "Industry-leading", "Significant growth")
+- OMTM (One Metric That Matters): Just the metric NAME, not a full measurement. A north star you track, not a project KPI.
+- Aspiration: Optional short directional goal (e.g., "Industry-leading", "Significant growth", "Best in class")
 
 **OMTM examples:**
 - Good: "Weekly Active Users" with aspiration "40% increase"

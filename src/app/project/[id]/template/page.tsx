@@ -339,12 +339,12 @@ export default function TemplateEntryPage() {
               <div className="flex items-start gap-2">
                 <BadgeInfo className="w-4 h-4 text-white/90 mt-0.5 shrink-0" />
                 <p className="text-sm text-white/90 italic">
-                  What matters right NOW. Start with a verb. Be specific. Each objective has one metric that matters. Just pick a metric, we'll set specific goals for each opportunity later.
+                  What matters most. Describe the outcome you want to be true — ambitious enough to persist across quarters. Each objective has one metric that matters.
                 </p>
               </div>
 
               <p className="text-xs text-white/60">
-                Examples: "Capture more data" · "Improve speed of search results" · "Establish market leadership"
+                Examples: "Strategy quality that rivals expert consultants" · "Product growth is self-sustaining" · "The go-to tool founders recommend"
               </p>
             </div>
 
