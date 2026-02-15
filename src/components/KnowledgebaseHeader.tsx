@@ -3,7 +3,8 @@
 import { useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
@@ -84,6 +85,7 @@ interface KnowledgebaseHeaderProps {
   fragmentCount: number
   chatCount: number
   strategyIsStale: boolean
+  fragmentsSinceStrategy: number
   knowledgeUpdatedAt: string | null
   knowledgeSummary: string | null
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
@@ -91,21 +93,19 @@ interface KnowledgebaseHeaderProps {
   latestStrategyTraceId: string | null
   onRefreshClick: () => void
   onChatClick: () => void
+  onEditClick: () => void
   onDimensionClick: (dimension: string) => void
-  /** Whether generation is in progress */
-  isGenerating?: boolean
-  /** Whether knowledgebase is syncing after generation */
-  isSyncing?: boolean
-  /** Whether documents are being processed */
-  isProcessingDocuments?: boolean
-  /** Number of documents currently processing */
-  processingDocumentCount?: number
+  /** Knowledge-side busy message (extraction, doc processing, syncing) */
+  knowledgeBusyMessage?: string | null
+  /** Strategy-side busy message (generation, refresh) — shown on RHS */
+  strategyBusyMessage?: string | null
 }
 
 export function KnowledgebaseHeader({
   fragmentCount,
   chatCount,
   strategyIsStale,
+  fragmentsSinceStrategy,
   knowledgeUpdatedAt,
   knowledgeSummary,
   dimensionalCoverage,
@@ -113,13 +113,14 @@ export function KnowledgebaseHeader({
   latestStrategyTraceId,
   onRefreshClick,
   onChatClick,
+  onEditClick,
   onDimensionClick,
-  isGenerating = false,
-  isSyncing = false,
-  isProcessingDocuments = false,
-  processingDocumentCount = 0,
+  knowledgeBusyMessage = null,
+  strategyBusyMessage = null,
 }: KnowledgebaseHeaderProps) {
-  const isBusy = isGenerating || isSyncing || isProcessingDocuments
+  const knowledgeBusy = !!knowledgeBusyMessage
+  const strategyBusy = !!strategyBusyMessage
+  const isBusy = knowledgeBusy || strategyBusy
   const [isExpanded, setIsExpanded] = useState(false)
   const expandedAtRef = useRef<number | null>(null)
 
@@ -138,7 +139,6 @@ export function KnowledgebaseHeader({
 
   const handleRefreshClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    // Measure dwell time from when knowledge was updated
     if (knowledgeUpdatedAt) {
       const dwellMs = Date.now() - new Date(knowledgeUpdatedAt).getTime()
       console.log('[Analytics] strategy_refresh_dwell_time', { dwellMs })
@@ -147,10 +147,16 @@ export function KnowledgebaseHeader({
   }, [knowledgeUpdatedAt, onRefreshClick])
 
   const handleChatClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
+    e.stopPropagation()
     console.log('[Analytics] knowledge_panel_chat_clicked')
     onChatClick()
   }, [onChatClick])
+
+  const handleEditClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('[Analytics] knowledge_panel_edit_clicked')
+    onEditClick()
+  }, [onEditClick])
 
   const handleDimensionClick = useCallback((dimension: string) => {
     console.log('[Analytics] knowledge_panel_dimension_clicked', { dimension })
@@ -164,7 +170,7 @@ export function KnowledgebaseHeader({
 
   return (
     <div className="border border-border rounded-lg bg-card overflow-hidden">
-      {/* Collapsed Header Bar */}
+      {/* Header Bar */}
       <button
         onClick={handleToggle}
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
@@ -178,15 +184,9 @@ export function KnowledgebaseHeader({
             className={isBusy ? 'animate-pulse' : ''}
           />
           <span className="font-medium text-sm">
-            {isGenerating
-              ? 'adding knowledge and drafting strategy...'
-              : isSyncing
-              ? 'updating...'
-              : isProcessingDocuments
-              ? `processing ${processingDocumentCount > 1 ? `${processingDocumentCount} documents` : 'document'}...`
-              : 'Knowledgebase'}
+            {knowledgeBusy ? knowledgeBusyMessage : 'Knowledgebase'}
           </span>
-          {!isBusy && updatedLabel && (
+          {!knowledgeBusy && updatedLabel && (
             <span className="text-xs text-muted-foreground">
               ({updatedLabel})
             </span>
@@ -203,6 +203,34 @@ export function KnowledgebaseHeader({
             </div>
           )}
 
+          {/* Strategy status — RHS */}
+          {strategyBusy ? (
+            <span className="text-sm text-muted-foreground animate-pulse">
+              {strategyBusyMessage}
+            </span>
+          ) : fragmentCount > 0 && (
+            strategyIsStale ? (
+              <div className="flex items-center gap-2">
+                {fragmentsSinceStrategy > 0 && (
+                  <span className="text-sm font-medium text-accent">
+                    {fragmentsSinceStrategy} added since last strategy
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleRefreshClick}
+                  className="h-7 text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  Create strategy
+                </Button>
+              </div>
+            ) : latestStrategyTraceId ? (
+              <span className="text-xs text-muted-foreground">
+                Strategy in sync
+              </span>
+            ) : null
+          )}
+
           {/* Chevron */}
           {isExpanded ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -215,13 +243,32 @@ export function KnowledgebaseHeader({
       {/* Expanded Content */}
       {isExpanded && (
         <div className="border-t border-border px-4 py-4 space-y-4">
+          {/* Chat / Edit button group */}
+          {fragmentCount > 0 && (
+            <div className="inline-flex border border-border rounded-md">
+              <button
+                onClick={handleChatClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-l-md"
+              >
+                <MessageCircle className="h-3 w-3" />
+                Chat
+              </button>
+              <div className="w-px bg-border" />
+              <button
+                onClick={handleEditClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded-r-md"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </button>
+            </div>
+          )}
+
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {knowledgeSummary}
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {knowledgeSummary}
+            </p>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">
               Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper.
@@ -232,83 +279,49 @@ export function KnowledgebaseHeader({
             </p>
           )}
 
-          {/* "Want to talk about this?" link */}
-          {fragmentCount > 0 && (
-            <button
-              onClick={handleChatClick}
-              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Want to talk about this?
-            </button>
-          )}
-
           {/* Dimensions Grid */}
           {fragmentCount > 0 && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
-                {TIER_1_DIMENSIONS.map((dimension) => {
-                  const coverage = dimensionalCoverage[dimension]
-                  const dimFragmentCount = coverage?.fragmentCount || 0
-                  const synthesis = syntheses?.find(s => s.dimension === dimension)
-                  const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : 'LOW')
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
+              {TIER_1_DIMENSIONS.map((dimension) => {
+                const coverage = dimensionalCoverage[dimension]
+                const dimFragmentCount = coverage?.fragmentCount || 0
+                const synthesis = syntheses?.find(s => s.dimension === dimension)
+                const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : 'LOW')
 
-                  return (
-                    <button
-                      key={dimension}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDimensionClick(dimension)
-                      }}
-                      className="flex items-center gap-2 py-1 text-xs hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
-                    >
-                      <HarveyBall confidence={confidence} />
-                      <span className="text-muted-foreground truncate">
-                        {DIMENSION_LABELS[dimension]}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+                return (
+                  <button
+                    key={dimension}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDimensionClick(dimension)
+                    }}
+                    className="flex items-center gap-2 py-1 text-xs hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                  >
+                    <HarveyBall confidence={confidence} />
+                    <span className="text-muted-foreground truncate">
+                      {DIMENSION_LABELS[dimension]}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
 
-          {/* Strategy staleness alert + CTA */}
-          {!isBusy && fragmentCount > 0 && (
-            <>
-              {strategyIsStale && latestStrategyTraceId && (
-                <div className="flex items-start gap-2 rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-3 py-2.5">
-                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    This summary hasn&apos;t been applied to your strategy yet.
-                  </p>
-                </div>
-              )}
-
-              {strategyIsStale ? (
-                <Button
-                  onClick={handleRefreshClick}
-                  className="w-full"
-                >
-                  Create strategy from this
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : latestStrategyTraceId ? (
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Link href={`/strategy/${latestStrategyTraceId}`}>
-                      Your Strategy
-                      <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              ) : null}
-            </>
+          {/* Ghost link to strategy when in sync */}
+          {!isBusy && !strategyIsStale && latestStrategyTraceId && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Link href={`/strategy/${latestStrategyTraceId}`}>
+                  Your Strategy
+                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
       )}

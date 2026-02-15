@@ -67,6 +67,7 @@ interface ProjectStats {
   documentCount: number
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
   strategyIsStale: boolean
+  fragmentsSinceStrategy: number
 }
 
 interface ConversationSummary {
@@ -150,7 +151,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { isGenerating, hasActiveGeneration } = useGenerationStatusContext()
+  const { hasActiveGeneration, isRunning } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -504,6 +505,7 @@ export default function ProjectPage() {
     documentCount: 0,
     dimensionalCoverage: {},
     strategyIsStale: false,
+    fragmentsSinceStrategy: 0,
   }
 
   return (
@@ -524,6 +526,7 @@ export default function ProjectPage() {
           fragmentCount={stats.fragmentCount}
           chatCount={stats.conversationCount}
           strategyIsStale={stats.strategyIsStale}
+          fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
           knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
           knowledgeSummary={projectData?.knowledgeSummary || null}
           dimensionalCoverage={stats.dimensionalCoverage}
@@ -531,11 +534,19 @@ export default function ProjectPage() {
           latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
           onChatClick={() => triggerUpgrade('knowledge-chat')}
+          onEditClick={() => triggerUpgrade('knowledge-chat')}
           onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
-          isGenerating={hasActiveGeneration(projectId)}
-          isSyncing={recentlyGenerated && !hasActiveGeneration(projectId)}
-          isProcessingDocuments={isProcessingDocuments(projectId)}
-          processingDocumentCount={processingCount(projectId)}
+          knowledgeBusyMessage={
+            isRunning(projectId, 'extraction') ? 'processing insights...'
+            : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
+            : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
+            : null
+          }
+          strategyBusyMessage={
+            isRunning(projectId, 'generation') ? 'drafting strategy...'
+            : isRunning(projectId, 'refresh') ? 'refreshing strategy...'
+            : null
+          }
         />
 
         {/* Documents | Chats */}

@@ -231,6 +231,11 @@ export async function GET(
       ? !latestGeneration?.startedAt || project.knowledgeUpdatedAt > latestGeneration.startedAt
       : project.fragments.length > 0 // If never synthesized but has fragments, strategy is stale
 
+    // Count fragments added since last strategy generation
+    const fragmentsSinceStrategy = latestGeneration?.startedAt
+      ? project.fragments.filter(f => f.createdAt > latestGeneration.startedAt!).length
+      : project.fragments.length // No strategy yet = all fragments are new
+
     // Return project data
     return NextResponse.json({
       id: project.id,
@@ -241,6 +246,7 @@ export async function GET(
         documentCount: project.documents.length,
         dimensionalCoverage,
         strategyIsStale,
+        fragmentsSinceStrategy,
       },
       conversations,
       documents,

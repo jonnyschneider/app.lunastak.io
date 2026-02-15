@@ -94,6 +94,7 @@ New pipeline behaviour (triggers, layers, generation paths) should go through th
 ## Constraints
 
 - **Build sensibly:** Anticipate likely future needs. If something will have multiple callers or use-cases, set it up to be centrally managed (orchestrator, provider, service). Don't gold-plate for scale, but don't leave obvious extension points unserved either.
+- **Use the component library:** Reuse existing UI components from `src/components/ui/`. If a bespoke component is needed, build it properly in the component library (`src/components/ui/`) so it's available for future use. No one-off custom UI implementations scattered through page components.
 - **Validated learning:** Use fake door tests before building features.
 
 ## Domain: Decision Stack Framework
