@@ -194,16 +194,24 @@ export function KnowledgebaseHeader({
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Stats */}
+          {/* Stats + strategy status */}
           {!isBusy && fragmentCount > 0 && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <span>{fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}</span>
               <span>&middot;</span>
               <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
+              {strategyIsStale && fragmentsSinceStrategy > 0 && (
+                <>
+                  <span>&middot;</span>
+                  <span className="font-medium text-lunastak dark:text-lunastak">
+                    {fragmentsSinceStrategy} added since last strategy
+                  </span>
+                </>
+              )}
             </div>
           )}
 
-          {/* Strategy status — RHS */}
+          {/* Strategy action — RHS */}
           {strategyBusy ? (
             <span className="text-sm text-muted-foreground animate-pulse">
               {strategyBusyMessage}
@@ -211,15 +219,10 @@ export function KnowledgebaseHeader({
           ) : fragmentCount > 0 && (
             strategyIsStale ? (
               <div className="flex items-center gap-2">
-                {fragmentsSinceStrategy > 0 && (
-                  <span className="text-sm font-medium text-accent">
-                    {fragmentsSinceStrategy} added since last strategy
-                  </span>
-                )}
                 <Button
                   size="sm"
                   onClick={handleRefreshClick}
-                  className="h-7 text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
+                  className="h-7 text-xs bg-[#b18225] hover:bg-[#9a7120] text-white"
                 >
                   Create strategy
                 </Button>
