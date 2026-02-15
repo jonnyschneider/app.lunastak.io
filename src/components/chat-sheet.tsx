@@ -374,7 +374,6 @@ export function ChatSheet({
         const data = await response.json()
 
         if (data.status === 'started') {
-          console.log('[ChatSheet] Starting extraction task:', data.conversationId)
           startTask('extraction', data.conversationId, projectId)
           toast.info('Processing insights in the background', {
             description: "You'll be notified when it's ready.",

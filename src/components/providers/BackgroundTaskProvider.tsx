@@ -132,17 +132,14 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
             ? `/api/extraction-status/${task.id}`
             : `/api/generation-status/${task.id}`
 
-        console.log(`[BackgroundTask] Polling ${task.type}: ${url}`)
         const response = await fetch(url, { cache: 'no-store' })
         if (!response.ok) {
-          console.log(`[BackgroundTask] Poll error: ${response.status}`)
           // Transient error — keep polling
           pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
           return
         }
 
         const data = await response.json()
-        console.log(`[BackgroundTask] Poll response:`, data)
 
         if (task.type === 'extraction') {
           // --- Extraction poll handling ---
@@ -222,8 +219,6 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
 
   const startTask = useCallback(
     (type: BackgroundTaskType, id: string, projectId: string) => {
-      console.log(`[BackgroundTask] startTask: type=${type} id=${id} projectId=${projectId}`)
-
       // Stop existing polling for this id if any
       if (pollingRef.current.has(id)) {
         clearTimeout(pollingRef.current.get(id))
