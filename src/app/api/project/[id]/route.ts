@@ -220,21 +220,20 @@ export async function GET(
       }
     })
 
-    // Determine if strategy is stale (knowledge updated since last generation)
+    // Determine if strategy is stale (new fragments since last generation)
     const latestGeneration = await prisma.generatedOutput.findFirst({
       where: { projectId, status: 'complete' },
       orderBy: { startedAt: 'desc' },
       select: { startedAt: true, id: true },
     })
 
-    const strategyIsStale = project.knowledgeUpdatedAt
-      ? !latestGeneration?.startedAt || project.knowledgeUpdatedAt > latestGeneration.startedAt
-      : project.fragments.length > 0 // If never synthesized but has fragments, strategy is stale
-
     // Count fragments added since last strategy generation
     const fragmentsSinceStrategy = latestGeneration?.startedAt
       ? project.fragments.filter(f => f.createdAt > latestGeneration.startedAt!).length
       : project.fragments.length // No strategy yet = all fragments are new
+
+    // Stale if new fragments exist — doesn't depend on background synthesis completing
+    const strategyIsStale = fragmentsSinceStrategy > 0
 
     // Return project data
     return NextResponse.json({
