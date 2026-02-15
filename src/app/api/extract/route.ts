@@ -493,7 +493,7 @@ export async function POST(req: Request) {
             projectId: conversation.projectId,
             conversationId,
             userId: conversation.userId,
-            isInitial: !lightweight,
+            isInitial: false,
             experimentVariant: conversation.experimentVariant,
             extractionResult: {
               extractedContext,

@@ -433,7 +433,7 @@ export function ChatSheet({
               onOpenChange(false)
             } else {
               // Initial conversation — generate strategy
-              handleGenerate(ctx, coverage)
+              handleGenerate()
             }
           } else if (update.step === 'error') {
             throw new Error(update.error || 'Extraction failed')
@@ -475,13 +475,9 @@ export function ChatSheet({
     }
   }
 
-  // Generate strategy from extracted context - fire-and-forget with background processing
-  // Accepts optional context/coverage params for immediate calls (bypasses React state timing)
-  const handleGenerate = async (ctx?: ExtractedContextVariant, coverage?: any) => {
-    const contextToUse = ctx || extractedContext
-    const coverageToUse = coverage !== undefined ? coverage : dimensionalCoverage
-
-    if (!conversationId || !contextToUse) return
+  // Generate strategy - fire-and-forget with background processing
+  const handleGenerate = async () => {
+    if (!conversationId) return
 
     setIsLoading(true)
 
@@ -489,11 +485,7 @@ export function ChatSheet({
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          extractedContext: contextToUse,
-          dimensionalCoverage: coverageToUse,
-        }),
+        body: JSON.stringify({ conversationId }),
       })
 
       if (!response.ok) {
