@@ -59,8 +59,11 @@ export function KnowledgeSnapshot({ extractedContext, timestamp }: KnowledgeSnap
     const delta = extractedContext.delta as {
       newFragmentCount?: number
       removedFragmentCount?: number
-      summaries?: string[]
+      newFragmentSummaries?: string[]
+      removedFragmentSummaries?: string[]
     } | undefined
+
+    const summaries = delta?.newFragmentSummaries || []
 
     return (
       <div className="max-w-6xl mx-auto px-6 space-y-4">
@@ -70,9 +73,9 @@ export function KnowledgeSnapshot({ extractedContext, timestamp }: KnowledgeSnap
           {delta?.removedFragmentCount ? `, ${delta.removedFragmentCount} removed` : ''}
           {formattedDate && <span> &middot; {formattedDate}</span>}
         </div>
-        {delta?.summaries && delta.summaries.length > 0 && (
+        {summaries.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
-            {delta.summaries.map((summary, idx) => (
+            {summaries.map((summary, idx) => (
               <div key={idx} className="border border-border rounded-lg p-4">
                 <p className="text-sm text-foreground">{summary}</p>
               </div>

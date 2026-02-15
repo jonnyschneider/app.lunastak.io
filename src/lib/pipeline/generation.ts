@@ -307,6 +307,7 @@ export async function runRefreshGeneration(
         completionTokens: genResponse.usage.output_tokens,
         previousOutputId: previousOutput.id,
         changeSummary,
+        startedAt: new Date(),
       },
     })
   } else {
@@ -324,6 +325,7 @@ export async function runRefreshGeneration(
         completionTokens: genResponse.usage.output_tokens,
         previousOutputId: previousOutput.id,
         changeSummary,
+        startedAt: new Date(),
       },
     })
   }
