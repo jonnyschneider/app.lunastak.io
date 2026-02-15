@@ -82,7 +82,15 @@ export async function executePipeline(
       if (plan.runSynthesis) {
         tasks.push({
           name: 'updateAllSyntheses',
-          fn: async () => { await updateAllSyntheses(projectId) },
+          fn: async () => {
+            await updateAllSyntheses(projectId)
+            // Bump knowledgeUpdatedAt so strategy shows as stale
+            // when new fragments have been synthesized
+            await prisma.project.update({
+              where: { id: projectId },
+              data: { knowledgeUpdatedAt: new Date() },
+            })
+          },
         })
       }
       if (plan.runKnowledgeSummary) {
