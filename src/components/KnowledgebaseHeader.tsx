@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
@@ -57,6 +58,22 @@ function HarveyBall({ confidence }: { confidence: string }) {
   )
 }
 
+/** Format a date as relative time (e.g. "2h ago", "3d ago") */
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 interface DimensionalSynthesis {
   dimension: string
   confidence: string
@@ -66,13 +83,15 @@ interface DimensionalSynthesis {
 interface KnowledgebaseHeaderProps {
   fragmentCount: number
   chatCount: number
-  docCount: number
-  coveragePercentage: number
-  newInsightsCount: number
+  strategyIsStale: boolean
+  knowledgeUpdatedAt: string | null
   knowledgeSummary: string | null
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
   syntheses: DimensionalSynthesis[]
+  latestStrategyTraceId: string | null
   onRefreshClick: () => void
+  onChatClick: () => void
+  onDimensionClick: (dimension: string) => void
   /** Whether generation is in progress */
   isGenerating?: boolean
   /** Whether knowledgebase is syncing after generation */
@@ -86,26 +105,68 @@ interface KnowledgebaseHeaderProps {
 export function KnowledgebaseHeader({
   fragmentCount,
   chatCount,
-  coveragePercentage,
-  newInsightsCount,
+  strategyIsStale,
+  knowledgeUpdatedAt,
   knowledgeSummary,
   dimensionalCoverage,
   syntheses,
+  latestStrategyTraceId,
   onRefreshClick,
+  onChatClick,
+  onDimensionClick,
   isGenerating = false,
   isSyncing = false,
   isProcessingDocuments = false,
   processingDocumentCount = 0,
 }: KnowledgebaseHeaderProps) {
-  // Either actively generating, syncing, or processing documents
   const isBusy = isGenerating || isSyncing || isProcessingDocuments
   const [isExpanded, setIsExpanded] = useState(false)
+  const expandedAtRef = useRef<number | null>(null)
+
+  const handleToggle = useCallback(() => {
+    const willExpand = !isExpanded
+    setIsExpanded(willExpand)
+
+    if (willExpand) {
+      expandedAtRef.current = Date.now()
+      console.log('[Analytics] knowledge_panel_expanded', {
+        strategyIsStale,
+        fragmentCount,
+      })
+    }
+  }, [isExpanded, strategyIsStale, fragmentCount])
+
+  const handleRefreshClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    // Measure dwell time from when knowledge was updated
+    if (knowledgeUpdatedAt) {
+      const dwellMs = Date.now() - new Date(knowledgeUpdatedAt).getTime()
+      console.log('[Analytics] strategy_refresh_dwell_time', { dwellMs })
+    }
+    onRefreshClick()
+  }, [knowledgeUpdatedAt, onRefreshClick])
+
+  const handleChatClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    console.log('[Analytics] knowledge_panel_chat_clicked')
+    onChatClick()
+  }, [onChatClick])
+
+  const handleDimensionClick = useCallback((dimension: string) => {
+    console.log('[Analytics] knowledge_panel_dimension_clicked', { dimension })
+    onDimensionClick(dimension)
+  }, [onDimensionClick])
+
+  // Header timestamp
+  const updatedLabel = knowledgeUpdatedAt
+    ? `updated ${formatRelativeTime(knowledgeUpdatedAt)}`
+    : null
 
   return (
     <div className="border border-border rounded-lg bg-card overflow-hidden">
       {/* Collapsed Header Bar */}
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleToggle}
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-3">
@@ -125,41 +186,21 @@ export function KnowledgebaseHeader({
               ? `processing ${processingDocumentCount > 1 ? `${processingDocumentCount} documents` : 'document'}...`
               : 'Knowledgebase'}
           </span>
+          {!isBusy && updatedLabel && (
+            <span className="text-xs text-muted-foreground">
+              ({updatedLabel})
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Stats - muted */}
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <span>{fragmentCount} insights</span>
-            <span>•</span>
-            <span>{chatCount} chats</span>
-            <span>•</span>
-            <span>{coveragePercentage}%</span>
-          </div>
-
-          {/* Generate strategy - hidden during generation/sync */}
-          {!isBusy && (
-            newInsightsCount > 0 ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-orange-600">
-                  {newInsightsCount} new fragment{newInsightsCount !== 1 ? 's' : ''}
-                </span>
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onRefreshClick()
-                  }}
-                  className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  Generate new strategy
-                </Button>
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                Strategy up to date
-              </span>
-            )
+          {/* Stats */}
+          {!isBusy && fragmentCount > 0 && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <span>{fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}</span>
+              <span>&middot;</span>
+              <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
+            </div>
           )}
 
           {/* Chevron */}
@@ -177,14 +218,13 @@ export function KnowledgebaseHeader({
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">Knowledge Summary</h4>
               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {knowledgeSummary}
               </p>
             </div>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">
-              Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper—you can generate new versions of your strategy any time.
+              Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper.
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -192,30 +232,84 @@ export function KnowledgebaseHeader({
             </p>
           )}
 
-          {/* Dimensions Grid - Compact 2-row layout */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Strategic Dimensions</h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
-              {TIER_1_DIMENSIONS.map((dimension) => {
-                const coverage = dimensionalCoverage[dimension]
-                const dimFragmentCount = coverage?.fragmentCount || 0
-                const synthesis = syntheses?.find(s => s.dimension === dimension)
-                const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : 'LOW')
+          {/* "Want to talk about this?" link */}
+          {fragmentCount > 0 && (
+            <button
+              onClick={handleChatClick}
+              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              Want to talk about this?
+            </button>
+          )}
 
-                return (
-                  <div
-                    key={dimension}
-                    className="flex items-center gap-2 py-1 text-xs"
-                  >
-                    <HarveyBall confidence={confidence} />
-                    <span className="text-muted-foreground truncate">
-                      {DIMENSION_LABELS[dimension]}
-                    </span>
-                  </div>
-                )
-              })}
+          {/* Dimensions Grid */}
+          {fragmentCount > 0 && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
+                {TIER_1_DIMENSIONS.map((dimension) => {
+                  const coverage = dimensionalCoverage[dimension]
+                  const dimFragmentCount = coverage?.fragmentCount || 0
+                  const synthesis = syntheses?.find(s => s.dimension === dimension)
+                  const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : 'LOW')
+
+                  return (
+                    <button
+                      key={dimension}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDimensionClick(dimension)
+                      }}
+                      className="flex items-center gap-2 py-1 text-xs hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                    >
+                      <HarveyBall confidence={confidence} />
+                      <span className="text-muted-foreground truncate">
+                        {DIMENSION_LABELS[dimension]}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Strategy staleness alert + CTA */}
+          {!isBusy && fragmentCount > 0 && (
+            <>
+              {strategyIsStale && latestStrategyTraceId && (
+                <div className="flex items-start gap-2 rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-3 py-2.5">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    This summary hasn&apos;t been applied to your strategy yet.
+                  </p>
+                </div>
+              )}
+
+              {strategyIsStale ? (
+                <Button
+                  onClick={handleRefreshClick}
+                  className="w-full"
+                >
+                  Create strategy from this
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : latestStrategyTraceId ? (
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Link href={`/strategy/${latestStrategyTraceId}`}>
+                      Your Strategy
+                      <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       )}
     </div>

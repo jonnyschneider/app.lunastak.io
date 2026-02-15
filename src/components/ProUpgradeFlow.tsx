@@ -55,6 +55,11 @@ export const PRO_FEATURES = {
     title: 'Improve with AI',
     description: 'Luna analyses your input and suggests improvements — sharper language, stronger positioning, and gaps you might have missed.',
   },
+  'knowledge-chat': {
+    icon: Sparkles,
+    title: 'Discuss Your Knowledge Base',
+    description: 'Chat with Luna about what she\'s learned. Clarify misunderstandings, add nuance, and refine insights before generating your strategy.',
+  },
 } as const;
 
 export type ProFeatureKey = keyof typeof PRO_FEATURES;

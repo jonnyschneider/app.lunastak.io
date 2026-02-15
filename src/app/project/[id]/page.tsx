@@ -17,7 +17,7 @@ import {
   NotebookPen,
   CornerDownRight,
 } from 'lucide-react'
-import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
+
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
 import { DeepDiveSheet } from '@/components/deep-dive-sheet'
@@ -66,7 +66,7 @@ interface ProjectStats {
   conversationCount: number
   documentCount: number
   dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
-  unsynthesizedFragmentCount: number
+  strategyIsStale: boolean
 }
 
 interface ConversationSummary {
@@ -503,12 +503,8 @@ export default function ProjectPage() {
     conversationCount: 0,
     documentCount: 0,
     dimensionalCoverage: {},
-    unsynthesizedFragmentCount: 0,
+    strategyIsStale: false,
   }
-
-  // Calculate coverage percentage (dimensions with at least 1 fragment)
-  const coveredDimensions = Object.values(stats.dimensionalCoverage).filter(d => d.fragmentCount > 0).length
-  const coveragePercentage = Math.round((coveredDimensions / TIER_1_DIMENSIONS.length) * 100)
 
   return (
     <AppLayout>
@@ -527,13 +523,15 @@ export default function ProjectPage() {
         <KnowledgebaseHeader
           fragmentCount={stats.fragmentCount}
           chatCount={stats.conversationCount}
-          docCount={stats.documentCount}
-          coveragePercentage={coveragePercentage}
-          newInsightsCount={stats.unsynthesizedFragmentCount}
+          strategyIsStale={stats.strategyIsStale}
+          knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
           knowledgeSummary={projectData?.knowledgeSummary || null}
           dimensionalCoverage={stats.dimensionalCoverage}
           syntheses={projectData?.syntheses || []}
+          latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
+          onChatClick={() => triggerUpgrade('knowledge-chat')}
+          onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
           isGenerating={hasActiveGeneration(projectId)}
           isSyncing={recentlyGenerated && !hasActiveGeneration(projectId)}
           isProcessingDocuments={isProcessingDocuments(projectId)}

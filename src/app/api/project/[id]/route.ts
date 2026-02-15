@@ -220,11 +220,16 @@ export async function GET(
       }
     })
 
-    // Count unsynthesized fragments (created after last knowledge summary)
-    // If never synthesized (knowledgeUpdatedAt is null), ALL fragments are new
-    const unsynthesizedFragmentCount = project.knowledgeUpdatedAt
-      ? project.fragments.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
-      : project.fragments.length
+    // Determine if strategy is stale (knowledge updated since last generation)
+    const latestGeneration = await prisma.generatedOutput.findFirst({
+      where: { projectId, status: 'complete' },
+      orderBy: { startedAt: 'desc' },
+      select: { startedAt: true, id: true },
+    })
+
+    const strategyIsStale = project.knowledgeUpdatedAt
+      ? !latestGeneration?.startedAt || project.knowledgeUpdatedAt > latestGeneration.startedAt
+      : project.fragments.length > 0 // If never synthesized but has fragments, strategy is stale
 
     // Return project data
     return NextResponse.json({
@@ -235,7 +240,7 @@ export async function GET(
         conversationCount: project.conversations.length,
         documentCount: project.documents.length,
         dimensionalCoverage,
-        unsynthesizedFragmentCount,
+        strategyIsStale,
       },
       conversations,
       documents,
