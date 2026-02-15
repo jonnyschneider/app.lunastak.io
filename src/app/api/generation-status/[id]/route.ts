@@ -79,8 +79,19 @@ export async function GET(
     }
   }
 
+  // Map DB status to contract status + derive progressLabel
+  // 'extracting' is an internal status — map to 'generating' for backward compat
+  const dbStatus = generatedOutput.status;
+  const contractStatus: 'pending' | 'generating' | 'complete' | 'failed' =
+    dbStatus === 'extracting' ? 'generating' : dbStatus as 'pending' | 'generating' | 'complete' | 'failed';
+  const progressLabel =
+    dbStatus === 'extracting' ? 'Extracting themes'
+    : dbStatus === 'generating' ? 'Crafting strategy'
+    : undefined;
+
   const response: GenerationStatusResponseContract = {
-    status: generatedOutput.status as 'pending' | 'generating' | 'complete' | 'failed',
+    status: contractStatus,
+    ...(progressLabel && { progressLabel }),
     startedAt: generatedOutput.startedAt?.toISOString(),
     ...(generatedOutput.status === 'complete' && traceId && { traceId }),
     ...(generatedOutput.status === 'complete' && { completedAt: new Date().toISOString() }),

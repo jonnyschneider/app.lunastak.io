@@ -25,6 +25,7 @@ export interface GenerationStartedContract {
  */
 export interface GenerationStatusResponseContract {
   status: GenerationStatus;
+  progressLabel?: string;  // Dynamic label for UI (e.g. "Extracting themes", "Crafting strategy")
   traceId?: string;      // Set when complete
   error?: string;        // Set when failed
   startedAt?: string;    // ISO timestamp

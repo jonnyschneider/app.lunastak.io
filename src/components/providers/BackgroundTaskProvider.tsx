@@ -17,6 +17,7 @@ interface BackgroundTask {
   projectId: string
   status: TaskStatus
   startedAt: Date
+  progressLabel?: string
 }
 
 interface BackgroundTaskContextValue {
@@ -30,6 +31,8 @@ interface BackgroundTaskContextValue {
   hasActiveTasks: (projectId: string) => boolean
   /** Check if a specific type is running for a project */
   isRunning: (projectId: string, type: BackgroundTaskType) => boolean
+  /** Get progress label for the active generation/refresh task */
+  getProgressLabel: (projectId: string) => string | undefined
 
   // Legacy aliases (used by existing code, avoid big refactor)
   /** @deprecated Use startTask('generation', ...) */
@@ -203,7 +206,12 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
             })
             setTimeout(() => removeTask(task.id), 2000)
           } else {
-            // Still generating — keep polling
+            // Still generating — update progress label and keep polling
+            if (data.progressLabel) {
+              setTasks((prev) =>
+                prev.map((t) => (t.id === task.id ? { ...t, progressLabel: data.progressLabel } : t))
+              )
+            }
             pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
           }
         }
@@ -262,6 +270,16 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
     [tasks]
   )
 
+  const getProgressLabel = useCallback(
+    (projectId: string) => {
+      const task = tasks.find(
+        (t) => t.projectId === projectId && (t.type === 'generation' || t.type === 'refresh') && t.status === 'running'
+      )
+      return task?.progressLabel
+    },
+    [tasks]
+  )
+
   // --- Legacy aliases for backward compat ---
   const startGeneration = useCallback(
     (generationId: string, projectId: string) => startTask('generation', generationId, projectId),
@@ -310,6 +328,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
         stopTask,
         hasActiveTasks,
         isRunning,
+        getProgressLabel,
         // Legacy aliases
         startGeneration,
         isGenerating,

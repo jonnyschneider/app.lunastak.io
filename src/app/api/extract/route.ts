@@ -168,9 +168,10 @@ function parseEmergentThemes(xml: string): ParsedTheme[] {
 }
 
 export async function POST(req: Request) {
-  const { conversationId, lightweight } = await req.json() as {
+  const { conversationId, lightweight, isInitial } = await req.json() as {
     conversationId: string;
     lightweight?: boolean; // Skip heavy synthesis for follow-on conversations
+    isInitial?: boolean;   // Fire-and-forget initial conversation path
   };
 
   if (!conversationId) {
@@ -305,6 +306,143 @@ export async function POST(req: Request) {
     return NextResponse.json({
       status: 'started',
       conversationId,
+    });
+  }
+
+  // Fire-and-forget initial conversation path
+  // Creates GeneratedOutput upfront for polling, runs extraction + generation in background
+  if (isInitial && conversation.projectId) {
+    const projectId = conversation.projectId;
+
+    // Create GeneratedOutput upfront so client can poll
+    const generatedOutput = await prisma.generatedOutput.create({
+      data: {
+        projectId,
+        userId: conversation.userId,
+        outputType: 'full_decision_stack',
+        version: 1,
+        status: 'extracting',
+        startedAt: new Date(),
+        content: {},
+      },
+    });
+
+    // Mark conversation as extracting
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: 'extracting' },
+    });
+
+    const backgroundWork = (async () => {
+      try {
+        console.log(`[Extract] Fire-and-forget initial extraction starting for ${conversationId}`);
+
+        // Build conversation history
+        const conversationHistory = conversation.messages
+          .map((m: { role: string; content: string }) =>
+            `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`
+          )
+          .join('\n\n');
+
+        const isEmergent = conversation.experimentVariant !== 'baseline-v1';
+
+        // Extract themes
+        const extractionPrompt = isEmergent
+          ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
+          : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
+
+        const extractionResponse = await createMessage({
+          model: CLAUDE_MODEL,
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: extractionPrompt }],
+          temperature: 0.3,
+        }, 'extraction');
+
+        const extractionContent = extractionResponse.content[0]?.type === 'text'
+          ? extractionResponse.content[0].text
+          : '';
+
+        const extractionXML = extractXML(extractionContent, 'extraction');
+
+        if (isEmergent) {
+          const themes = parseEmergentThemes(extractionXML);
+          const dimensionalCoverage = computeDimensionalCoverageFromInline(themes);
+          const extractedContext = {
+            themes,
+            extraction_approach: 'emergent' as const,
+          };
+
+          // Update status to generating before pipeline runs
+          await prisma.generatedOutput.update({
+            where: { id: generatedOutput.id },
+            data: { status: 'generating' },
+          });
+
+          // Log dimensional coverage
+          if (dimensionalCoverage && conversation.userId) {
+            logStatsigEvent(
+              conversation.userId,
+              'dimensional_coverage',
+              dimensionalCoverage.summary.coveragePercentage,
+              {
+                variant: conversation.experimentVariant || 'unknown',
+                dimensionsCovered: String(dimensionalCoverage.summary.dimensionsCovered),
+                gaps: dimensionalCoverage.summary.gaps.join(','),
+              }
+            ).catch(err => console.error('[Extract] Statsig event failed:', err));
+          }
+
+          // Run pipeline: fragments → synthesis → generation
+          const trigger = {
+            type: 'conversation_ended' as const,
+            projectId,
+            conversationId,
+            userId: conversation.userId,
+            isInitial: true,
+            generatedOutputId: generatedOutput.id,
+            experimentVariant: conversation.experimentVariant,
+            extractionResult: {
+              extractedContext: extractedContext as any,
+              dimensionalCoverage,
+              themes: themes as any,
+            },
+          };
+          const plan = planPipeline(trigger);
+          console.log(`[Extract] Running initial pipeline for ${conversationId}...`);
+          await executePipeline(plan, trigger);
+          console.log(`[Extract] Initial pipeline complete for ${conversationId}`);
+        }
+
+        // Mark conversation extracted
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { status: 'extracted' },
+        });
+        console.log(`[Extract] Fire-and-forget initial extraction complete for ${conversationId}`);
+      } catch (error) {
+        console.error('[Extract] Fire-and-forget initial extraction failed:', error);
+        // Update GeneratedOutput to failed
+        await prisma.generatedOutput.update({
+          where: { id: generatedOutput.id },
+          data: {
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Extraction + generation failed',
+          },
+        }).catch((e) => console.error('[Extract] Failed to update GeneratedOutput status:', e));
+        // Update conversation status
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { status: 'extraction_failed' },
+        }).catch((e) => console.error('[Extract] Failed to update conversation status:', e));
+      }
+    })();
+
+    waitUntil(backgroundWork);
+    backgroundWork.catch(() => {}); // Already handled in try/catch above
+
+    return NextResponse.json({
+      status: 'started',
+      generationId: generatedOutput.id,
     });
   }
 

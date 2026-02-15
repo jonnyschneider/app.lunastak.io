@@ -354,11 +354,12 @@ export function ChatSheet({
   }
 
   // Extract context from conversation
-  const extractContext = async () => {
+  // explicitEnd: passed directly to avoid React state timing issues with isExplicitEnd
+  const extractContext = async (explicitEnd = false) => {
     if (!conversationId) return
 
-    // Follow-up conversations: fire-and-forget, close sheet immediately
-    if (hasExistingStrategy) {
+    // Follow-up conversations or explicit end: fire-and-forget lightweight extraction
+    if (hasExistingStrategy || explicitEnd) {
       try {
         const response = await fetch('/api/extract', {
           method: 'POST',
@@ -386,92 +387,42 @@ export function ChatSheet({
         toast.error('Failed to process insights', {
           description: error instanceof Error ? error.message : 'Something went wrong',
         })
-        // Don't close sheet on error — user can try again
       }
       return
     }
 
-    // Initial conversation: keep existing streaming path
-    setFlowStep('extracting')
-    setIsLoading(true)
-    setExtractionStep('starting')
-    setExtractionError(undefined)
-
+    // Initial conversation: fire-and-forget extraction + generation
     try {
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, lightweight: false }),
+        body: JSON.stringify({ conversationId, isInitial: true }),
       })
 
       if (!response.ok) {
-        throw new Error(`Extraction failed: ${response.status}`)
+        const errorData = await response.json().catch(() => ({ error: 'Extraction failed' }))
+        throw new Error(errorData.error || `Extraction failed: ${response.status}`)
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
-      }
+      const data = await response.json()
 
-      const decoder = new TextDecoder()
-      let buffer = ''
+      if (data.status === 'started' && data.generationId) {
+        // Track via generation polling (covers extracting → generating → complete)
+        startGeneration(data.generationId, projectId)
 
-      const processLine = (line: string) => {
-        if (!line.trim()) return
+        // Notify listeners
+        window.dispatchEvent(new Event('strategySaved'))
 
-        try {
-          const update = JSON.parse(line)
-
-          if (update.step === 'complete') {
-            const { extractedContext: ctx, dimensionalCoverage: coverage } = update.data
-            setExtractedContext(ctx)
-            setDimensionalCoverage(coverage)
-
-            if (isExplicitEnd) {
-              // Explicit end without existing strategy — still close
-              toast.success('Added to your knowledge base')
-              onOpenChange(false)
-            } else {
-              // Initial conversation — generate strategy
-              handleGenerate()
-            }
-          } else if (update.step === 'error') {
-            throw new Error(update.error || 'Extraction failed')
-          } else {
-            setExtractionStep(update.step)
-          }
-        } catch (parseError) {
-          console.error('Failed to parse progress update:', line, parseError)
-        }
-      }
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          processLine(line)
-        }
-      }
-
-      if (buffer.trim()) {
-        processLine(buffer)
+        toast.success('Building your strategy', {
+          description: "This will take a few moments. We'll notify you when it's ready.",
+        })
+        onOpenChange(false)
       }
     } catch (error) {
-      console.error('Failed to extract context:', error)
-      setExtractionStep('error')
-      setExtractionError(error instanceof Error ? error.message : 'Something went wrong')
-      setTimeout(() => {
-        setFlowStep('chat')
-        setCurrentPhase('QUESTIONING')
-      }, 2000)
-    } finally {
-      setIsLoading(false)
+      console.error('Failed to start extraction:', error)
+      toast.error('Failed to start strategy generation', {
+        description: error instanceof Error ? error.message : 'Something went wrong',
+      })
     }
   }
 
@@ -554,18 +505,11 @@ export function ChatSheet({
   // End conversation explicitly - trigger extraction and close
   const handleEndConversation = () => {
     if (!conversationId) return
-    setIsExplicitEnd(true)
-    extractContext()
+    extractContext(true)
   }
 
   return (
-    <Sheet open={open} onOpenChange={(newOpen) => {
-      // Prevent closing during extraction (generation now runs in background)
-      if (!newOpen && flowStep === 'extracting') {
-        return
-      }
-      onOpenChange(newOpen)
-    }}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
         {/* Header */}
         <div className="bg-muted/50 border-b px-6 py-4">

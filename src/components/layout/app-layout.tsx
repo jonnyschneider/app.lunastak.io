@@ -172,7 +172,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
-  const { isGenerating } = useGenerationStatusContext()
+  const { isGenerating, getProgressLabel } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const {
     isPro,
@@ -563,7 +563,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                               <GenerationStatusIndicator
                                 status="generating"
                                 size="sm"
-                                generatingLabel="generating..."
+                                generatingLabel={getProgressLabel(selectedProject.id) || 'generating...'}
                               />
                             </div>
                           </SidebarMenuSubItem>

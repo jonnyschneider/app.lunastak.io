@@ -151,7 +151,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { hasActiveGeneration, isRunning } = useGenerationStatusContext()
+  const { hasActiveGeneration, isRunning, getProgressLabel } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -544,8 +544,8 @@ export default function ProjectPage() {
             : null
           }
           strategyBusyMessage={
-            isRunning(projectId, 'generation') ? 'drafting strategy...'
-            : isRunning(projectId, 'refresh') ? 'refreshing strategy...'
+            isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
+            : isRunning(projectId, 'refresh') ? (getProgressLabel(projectId) || 'refreshing strategy...')
             : null
           }
         />
