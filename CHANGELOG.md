@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.2] - 2026-02-15
+## [2.0.2] - 2026-02-16
 
-**Pipeline orchestrator, background extraction, and refresh strategy overhaul.**
+**Pipeline orchestrator, fire-and-forget UX, knowledge panel redesign, and fragment snapshots.**
 
 ### Added
 
@@ -17,17 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Exhaustiveness tests ensure all trigger types are handled
   - Dev pipeline testing UI with fixture index and snapshot save-to-disk
 
+- **Fire-and-Forget Initial Conversation** - Sheet closes instantly (~1s) for first conversation
+  - Extraction + generation runs entirely in background via single `/api/extract?isInitial=true` call
+  - `GeneratedOutput` created upfront with `status: 'extracting'` for immediate polling
+  - Progress transitions: extracting → generating → complete
+  - Dynamic progress labels ("Extracting themes" → "Crafting strategy") in KnowledgebaseHeader and sidebar
+  - `progressLabel` added to `GenerationStatusResponseContract`
+
 - **Background Extraction** - Follow-up conversations extract in background
   - Sheet closes immediately after conversation ends — no more locked UI
   - Extraction runs via `waitUntil()` with status polling
   - New `/api/extraction-status/[conversationId]` polling endpoint
   - Extraction status contract (`ExtractionStatusResponseContract`)
   - Toast notification when extraction completes with fragment count
+  - InlineChat also uses fire-and-forget extraction (no more streaming)
 
 - **BackgroundTaskProvider** - Unified provider for all background tasks
   - Replaces `GenerationStatusProvider` with generic task tracking
   - Supports `extraction`, `generation`, and `refresh` task types
   - Per-type toast messages and completion handling
+  - Tracks `progressLabel` from polling responses, exposes `getProgressLabel(projectId)`
   - Legacy aliases maintain backward compatibility (`useGenerationStatusContext`)
 
 - **Refresh Strategy Overhaul** - Fire-and-forget with foreground synthesis
@@ -36,18 +45,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Accepts pre-created `generatedOutputId` for reliable status tracking
   - Generation status includes `traceId` for "View" action in toast
 
+- **Knowledge Panel Redesign** - Notion-style collapsible header
+  - Fragment countdown with knowledge/strategy split stats
+  - Separate busy messages for knowledge processing vs strategy generation
+  - "Refine" popover replaces Chat/Edit fake door buttons
+  - Knowledge summary timestamp display
+  - Chat and Edit features gated behind Pro upgrade flow
+
+- **Fragment Snapshot** - Full knowledge base snapshot with structured storage
+  - Fragments grouped by dimension with markdown parsing
+  - Structured JSON storage for snapshot data
+  - Snapshot delta tracking for refresh generation
+
 ### Changed
 
 - **Initial generation** now reads from fragments (DB) instead of `extractedContext` passed through the pipeline
 - **Neon connection pool** limited to `max: 10` to prevent connection exhaustion
+- **Strategy staleness** derived from fragment timestamps vs last strategy, not `knowledgeUpdatedAt`
+- **Synthesis + knowledge summary** now deferred for document uploads (runs after processing completes)
+- **Synthesis threshold** — only runs when fragment count warrants it
 
 ### Fixed
 
 - **Strategy refresh concatenation** - Refresh output was appending to previous strategy text instead of replacing
 - **Side chat triggering generation** - Follow-up conversations no longer trigger strategy generation
-- **Query flood on project page** - `fetchProjectData` debounced at 500ms, `extractionComplete` event listener added, duplicate fetch on sheet close removed
+- **Double generation bug** - Extract route no longer triggers generation for streaming path
+- **Query flood on project page** - `fetchProjectData` debounced at 500ms, `extractionComplete` event listener added
 - **Delayed refetch cascade** - Removed unnecessary 5s/15s/30s refetch timers on generation complete
 - **Refresh strategy** - Fixed 4 issues from testing (status tracking, toast messaging, sidebar refresh, knowledgeUpdatedAt)
+- **Synthesis upsert** - Missing dimensional synthesis records now created instead of silently skipping
+- **isExplicitEnd timing** - Fixed React state timing bug by passing `explicitEnd` as function parameter
+- **Polling reliability** - `force-dynamic` on status endpoints, `no-store` on client fetch
+- **Fragment grouping** - Fixed stat ordering and fragment group assignment
 - **Hydrate script** - `knowledgeUpdatedAt` now set correctly in `--projectId` path
 
 ## [2.0.1] - 2026-02-12
