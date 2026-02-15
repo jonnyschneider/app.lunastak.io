@@ -58,11 +58,42 @@ export async function executePipeline(
     }
   }
 
+  // Layer 1.5: Threshold check — should we run synthesis + knowledge summary
+  // even if the plan didn't request it? (e.g. documents accumulate fragments
+  // without triggering synthesis/knowledge summary individually)
+  let shouldSynthesise = plan.runSynthesis
+  let shouldKnowledgeSummary = plan.runKnowledgeSummary
+
+  if (!shouldKnowledgeSummary && fragmentsCreated > 0) {
+    const latestStrategy = await prisma.generatedOutput.findFirst({
+      where: { projectId, status: 'complete' },
+      orderBy: { startedAt: 'desc' },
+      select: { startedAt: true },
+    })
+    const sinceDate = latestStrategy?.startedAt || new Date(0)
+
+    const [newFragmentCount, hasDocFragments] = await Promise.all([
+      prisma.fragment.count({
+        where: { projectId, status: 'active', createdAt: { gt: sinceDate } },
+      }),
+      prisma.fragment.findFirst({
+        where: { projectId, status: 'active', documentId: { not: null }, createdAt: { gt: sinceDate } },
+        select: { id: true },
+      }),
+    ])
+
+    if (newFragmentCount > 10 && hasDocFragments) {
+      console.log(`[Pipeline] Fragment threshold met (${newFragmentCount} new, docs present) — upgrading to synthesis + knowledge summary`)
+      shouldSynthesise = true
+      shouldKnowledgeSummary = true
+    }
+  }
+
   // Layer 2: Meaning-making
-  if (plan.runSynthesis || plan.runKnowledgeSummary) {
+  if (shouldSynthesise || shouldKnowledgeSummary) {
     if (trigger.type === 'refresh_requested') {
       // Refresh: synthesis must complete BEFORE generation reads syntheses
-      if (plan.runSynthesis) {
+      if (shouldSynthesise) {
         console.log('[Pipeline] Running foreground synthesis for refresh')
         await updateAllSyntheses(projectId)
         // Mark knowledge as processed so "new fragments" count resets
@@ -72,14 +103,14 @@ export async function executePipeline(
           data: { knowledgeUpdatedAt: new Date() },
         })
       }
-      if (plan.runKnowledgeSummary) {
+      if (shouldKnowledgeSummary) {
         console.log('[Pipeline] Running foreground knowledge summary for refresh')
         await generateKnowledgeSummary(projectId)
       }
     } else {
       // All other triggers: run synthesis + summary in background
       const tasks = []
-      if (plan.runSynthesis) {
+      if (shouldSynthesise) {
         tasks.push({
           name: 'updateAllSyntheses',
           fn: async () => {
@@ -93,7 +124,7 @@ export async function executePipeline(
           },
         })
       }
-      if (plan.runKnowledgeSummary) {
+      if (shouldKnowledgeSummary) {
         tasks.push({
           name: 'generateKnowledgeSummary',
           fn: async () => { await generateKnowledgeSummary(projectId) },

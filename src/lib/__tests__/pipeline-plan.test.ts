@@ -53,7 +53,7 @@ describe('planPipeline', () => {
   })
 
   describe('document_uploaded', () => {
-    it('should extract + fragments + synthesis + summary, no generation', () => {
+    it('should extract + persist fragments only — synthesis and summary deferred', () => {
       const plan = planPipeline({
         type: 'document_uploaded',
         projectId: 'proj-1',
@@ -63,9 +63,10 @@ describe('planPipeline', () => {
 
       expect(plan.extraction).toEqual({ approach: 'document', source: 'document' })
       expect(plan.persistFragments).toBe(true)
-      expect(plan.runSynthesis).toBe(true)
-      expect(plan.runKnowledgeSummary).toBe(true)
+      expect(plan.runSynthesis).toBe(false)
+      expect(plan.runKnowledgeSummary).toBe(false)
       expect(plan.generation).toBeNull()
+      expect(plan.backgroundSteps).toEqual([])
     })
   })
 

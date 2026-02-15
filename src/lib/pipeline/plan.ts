@@ -35,11 +35,11 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
         trigger: 'document_uploaded',
         extraction: { approach: 'document', source: 'document' },
         persistFragments: true,
-        runSynthesis: true,
-        runKnowledgeSummary: true,
+        runSynthesis: false, // Deferred — runs when knowledge summary threshold is met
+        runKnowledgeSummary: false, // Deferred — executor runs if fragment threshold met
         generation: null,
         model: CLAUDE_MODEL,
-        backgroundSteps: ['synthesis', 'knowledgeSummary'],
+        backgroundSteps: [],
       }
 
     case 'template_submitted':
