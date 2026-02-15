@@ -72,6 +72,10 @@ export async function executePipeline(
           data: { knowledgeUpdatedAt: new Date() },
         })
       }
+      if (plan.runKnowledgeSummary) {
+        console.log('[Pipeline] Running foreground knowledge summary for refresh')
+        await generateKnowledgeSummary(projectId)
+      }
     } else {
       // All other triggers: run synthesis + summary in background
       const tasks = []

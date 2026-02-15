@@ -35,8 +35,8 @@ describe('planPipeline', () => {
     })
   })
 
-  describe('conversation_ended (follow-up / lightweight)', () => {
-    it('should run extract + fragments only, no synthesis or generation', () => {
+  describe('conversation_ended (follow-up)', () => {
+    it('should run extract + fragments + synthesis + summary, no generation', () => {
       const plan = planPipeline({
         ...baseConversation,
         isInitial: false,
@@ -44,9 +44,11 @@ describe('planPipeline', () => {
 
       expect(plan.extraction).toEqual({ approach: 'emergent', source: 'conversation' })
       expect(plan.persistFragments).toBe(true)
-      expect(plan.runSynthesis).toBe(false)
-      expect(plan.runKnowledgeSummary).toBe(false)
+      expect(plan.runSynthesis).toBe(true)
+      expect(plan.runKnowledgeSummary).toBe(true)
       expect(plan.generation).toBeNull()
+      expect(plan.backgroundSteps).toContain('synthesis')
+      expect(plan.backgroundSteps).toContain('knowledgeSummary')
     })
   })
 
@@ -100,7 +102,7 @@ describe('planPipeline', () => {
       expect(plan.extraction).toBeNull()
       expect(plan.persistFragments).toBe(false)
       expect(plan.runSynthesis).toBe(true)
-      expect(plan.runKnowledgeSummary).toBe(false)
+      expect(plan.runKnowledgeSummary).toBe(true)
       expect(plan.generation).toEqual({ mode: 'refresh', source: 'fragments_and_syntheses' })
     })
   })

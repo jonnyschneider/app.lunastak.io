@@ -23,11 +23,11 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
             trigger: 'conversation_ended',
             extraction: { approach: 'emergent', source: 'conversation' },
             persistFragments: true,
-            runSynthesis: false,
-            runKnowledgeSummary: false,
+            runSynthesis: true,
+            runKnowledgeSummary: true,
             generation: null,
             model: CLAUDE_MODEL,
-            backgroundSteps: [],
+            backgroundSteps: ['synthesis', 'knowledgeSummary'],
           }
 
     case 'document_uploaded':
@@ -60,7 +60,7 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
         extraction: null,
         persistFragments: false,
         runSynthesis: true,
-        runKnowledgeSummary: false,
+        runKnowledgeSummary: true,
         generation: { mode: 'refresh', source: 'fragments_and_syntheses' },
         model: CLAUDE_MODEL,
         backgroundSteps: [],
