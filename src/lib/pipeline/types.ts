@@ -44,6 +44,8 @@ export type PipelineTrigger =
       type: 'refresh_requested'
       projectId: string
       userId: string
+      // Set by route for fire-and-forget pattern (route creates upfront for polling)
+      generatedOutputId?: string
     }
 
 /**
