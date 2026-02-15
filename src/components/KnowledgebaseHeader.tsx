@@ -273,9 +273,16 @@ export function KnowledgebaseHeader({
 
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {knowledgeSummary}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {knowledgeSummary}
+              </p>
+              {knowledgeUpdatedAt && (
+                <p className="text-xs text-muted-foreground/60">
+                  Summary {formatRelativeTime(knowledgeUpdatedAt)}
+                </p>
+              )}
+            </div>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">
               Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper.
