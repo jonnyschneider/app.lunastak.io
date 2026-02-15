@@ -86,7 +86,7 @@ export function ChatSheet({
   viewOnly = false,
 }: ChatSheetProps) {
   // Background generation context
-  const { startGeneration } = useGenerationStatusContext()
+  const { startGeneration, startTask } = useGenerationStatusContext()
 
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
@@ -357,6 +357,37 @@ export function ChatSheet({
   const extractContext = async () => {
     if (!conversationId) return
 
+    // Follow-up conversations: fire-and-forget, close sheet immediately
+    if (hasExistingStrategy) {
+      try {
+        const response = await fetch('/api/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId, lightweight: true }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Extraction failed' }))
+          throw new Error(errorData.error || `Extraction failed: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        if (data.status === 'started') {
+          startTask('extraction', data.conversationId, projectId)
+          onOpenChange(false)
+        }
+      } catch (error) {
+        console.error('Failed to start extraction:', error)
+        toast.error('Failed to process insights', {
+          description: error instanceof Error ? error.message : 'Something went wrong',
+        })
+        // Don't close sheet on error — user can try again
+      }
+      return
+    }
+
+    // Initial conversation: keep existing streaming path
     setFlowStep('extracting')
     setIsLoading(true)
     setExtractionStep('starting')
@@ -366,11 +397,7 @@ export function ChatSheet({
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          // Lightweight mode for follow-on conversations (skip heavy synthesis)
-          lightweight: hasExistingStrategy,
-        }),
+        body: JSON.stringify({ conversationId, lightweight: false }),
       })
 
       if (!response.ok) {
@@ -396,13 +423,12 @@ export function ChatSheet({
             setExtractedContext(ctx)
             setDimensionalCoverage(coverage)
 
-            if (isExplicitEnd || hasExistingStrategy) {
-              // Side chat or explicit end - fragments only, no generation
+            if (isExplicitEnd) {
+              // Explicit end without existing strategy — still close
               toast.success('Added to your knowledge base')
               onOpenChange(false)
             } else {
-              // Initial conversation - generate strategy
-              // Pass context directly to avoid React state timing issues
+              // Initial conversation — generate strategy
               handleGenerate(ctx, coverage)
             }
           } else if (update.step === 'error') {
@@ -429,7 +455,6 @@ export function ChatSheet({
         }
       }
 
-      // Process any remaining data in buffer after stream ends
       if (buffer.trim()) {
         processLine(buffer)
       }
