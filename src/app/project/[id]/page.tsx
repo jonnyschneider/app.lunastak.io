@@ -246,28 +246,17 @@ export default function ProjectPage() {
   }, [])
 
   // Listen for generationComplete event (fired when strategy generation finishes)
-  // Knowledgebase synthesis may still be running, so refetch multiple times to catch updates
   useEffect(() => {
-    let timeouts: NodeJS.Timeout[] = []
     const handleGenerationComplete = () => {
-      // Hide "Generate strategy" button while knowledgebase catches up
       setRecentlyGenerated(true)
-
-      // Immediate refetch
       fetchProjectData()
-
-      // Delayed refetches to catch knowledgebase synthesis completion
-      timeouts.push(setTimeout(() => fetchProjectData(), 5000))
-      timeouts.push(setTimeout(() => fetchProjectData(), 15000))
-      timeouts.push(setTimeout(() => {
-        fetchProjectData()
-        setRecentlyGenerated(false) // Allow button to show after final refetch
-      }, 30000))
+      // Allow button to reappear after a short delay
+      const timeout = setTimeout(() => setRecentlyGenerated(false), 5000)
+      return () => clearTimeout(timeout)
     }
     window.addEventListener('generationComplete', handleGenerationComplete)
     return () => {
       window.removeEventListener('generationComplete', handleGenerationComplete)
-      timeouts.forEach(t => clearTimeout(t))
     }
   }, [])
 
