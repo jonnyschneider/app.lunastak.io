@@ -132,7 +132,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
             ? `/api/extraction-status/${task.id}`
             : `/api/generation-status/${task.id}`
 
-        const response = await fetch(url)
+        const response = await fetch(url, { cache: 'no-store' })
         if (!response.ok) {
           // Transient error — keep polling
           pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))

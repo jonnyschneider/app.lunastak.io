@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import type { ExtractionStatusResponseContract } from '@/lib/contracts/extraction-status'
 
+// Polling endpoint — must never be cached
+export const dynamic = 'force-dynamic'
+
 /**
  * Lightweight polling endpoint for extraction status.
  * Client polls every 2 seconds until conversation status is 'extracted' or 'extraction_failed'.

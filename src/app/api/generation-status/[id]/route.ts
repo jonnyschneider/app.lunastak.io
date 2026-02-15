@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import type { GenerationStatusResponseContract } from '@/lib/contracts/generation-status';
 
+// Polling endpoint — must never be cached
+export const dynamic = 'force-dynamic';
+
 /**
  * Polling endpoint for generation status.
  * Client polls every 2-3 seconds until status is 'complete' or 'failed'.
