@@ -28,7 +28,7 @@ export function RefreshStrategyDialog({
   const [error, setError] = useState<string | undefined>()
   const [preparing, setPreparing] = useState(false)
   const refreshRunningRef = useRef(false)
-  const { startGeneration } = useGenerationStatusContext()
+  const { startTask } = useGenerationStatusContext()
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -61,8 +61,8 @@ export function RefreshStrategyDialog({
         const data = await response.json()
 
         if (data.status === 'started' && data.generationId) {
-          // Hand off to GenerationStatusProvider for polling
-          startGeneration(data.generationId, projectId)
+          // Hand off to BackgroundTaskProvider for polling
+          startTask('refresh', data.generationId, projectId)
 
           toast.info('Refreshing strategy in the background', {
             description: 'You\'ll be notified when it\'s ready.',
@@ -82,7 +82,7 @@ export function RefreshStrategyDialog({
     }
 
     runRefresh()
-  }, [open, projectId, startGeneration, onOpenChange, onStarted])
+  }, [open, projectId, startTask, onOpenChange, onStarted])
 
   return (
     <Dialog
