@@ -90,7 +90,7 @@ describe('planPipeline', () => {
   })
 
   describe('refresh_requested', () => {
-    it('should generate from fragments and syntheses, no extraction', () => {
+    it('should run synthesis + generate from fragments and syntheses, no extraction', () => {
       const plan = planPipeline({
         type: 'refresh_requested',
         projectId: 'proj-1',
@@ -99,7 +99,8 @@ describe('planPipeline', () => {
 
       expect(plan.extraction).toBeNull()
       expect(plan.persistFragments).toBe(false)
-      expect(plan.runSynthesis).toBe(false)
+      expect(plan.runSynthesis).toBe(true)
+      expect(plan.runKnowledgeSummary).toBe(false)
       expect(plan.generation).toEqual({ mode: 'refresh', source: 'fragments_and_syntheses' })
     })
   })

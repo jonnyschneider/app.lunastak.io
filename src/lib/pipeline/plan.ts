@@ -59,7 +59,7 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
         trigger: 'refresh_requested',
         extraction: null,
         persistFragments: false,
-        runSynthesis: false,
+        runSynthesis: true,
         runKnowledgeSummary: false,
         generation: { mode: 'refresh', source: 'fragments_and_syntheses' },
         model: CLAUDE_MODEL,
