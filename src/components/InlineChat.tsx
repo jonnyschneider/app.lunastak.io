@@ -15,9 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { ConversationPhase, ExtractedContextVariant } from '@/lib/types'
+import { ConversationPhase } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
-import ExtractionConfirm from '@/components/ExtractionConfirm'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 
 interface InlineMessage {
@@ -51,10 +50,6 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
   const [extractionStep, setExtractionStep] = useState<ExtractionStep>('starting')
   const [extractionError, setExtractionError] = useState<string | undefined>()
 
-  // Extraction confirmation flow
-  const [showExtractionConfirm, setShowExtractionConfirm] = useState(false)
-  const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
-  const [dimensionalCoverage, setDimensionalCoverage] = useState<unknown>(null)
 
   // Start over confirmation
   const [showStartOverConfirm, setShowStartOverConfirm] = useState(false)
@@ -245,7 +240,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
     }
   }
 
-  // Step 1: Extract context and show confirmation
+  // Fire-and-forget extraction + generation via pipeline orchestrator
   const handleExtract = async () => {
     if (!conversationId) return
 
@@ -255,81 +250,33 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
     setExtractionError(undefined)
 
     try {
-      const extractResponse = await fetch('/api/extract', {
+      const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          lightweight: false,
-        }),
+        body: JSON.stringify({ conversationId, isInitial: true }),
       })
 
-      if (!extractResponse.ok) {
-        throw new Error(`Extraction failed: ${extractResponse.status}`)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Extraction failed' }))
+        throw new Error(errorData.error || `Extraction failed: ${response.status}`)
       }
 
-      const reader = extractResponse.body?.getReader()
-      if (!reader) throw new Error('No response body')
+      const data = await response.json()
 
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let context = null
-      let coverage = null
+      if (data.status === 'started' && data.generationId) {
+        setIsExtracting(false)
+        // Track via generation polling (covers extracting → generating → complete)
+        startGeneration(data.generationId, projectId)
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.trim()) continue
-          try {
-            const update = JSON.parse(line)
-            if (update.step === 'complete') {
-              context = update.data.extractedContext
-              coverage = update.data.dimensionalCoverage
-              setExtractionStep('complete')
-            } else if (update.step === 'error') {
-              throw new Error(update.error || 'Extraction failed')
-            } else if (update.step) {
-              const stepMap: Record<string, ExtractionStep> = {
-                'starting': 'starting',
-                'extracting': 'extracting_themes',
-                'extracting_themes': 'extracting_themes',
-                'analyzing': 'analyzing_dimensions',
-                'analyzing_dimensions': 'analyzing_dimensions',
-                'synthesizing': 'generating_summary',
-                'generating_summary': 'generating_summary',
-                'saving': 'saving_insights',
-                'saving_insights': 'saving_insights',
-              }
-              const mappedStep = stepMap[update.step]
-              if (mappedStep) {
-                setExtractionStep(mappedStep)
-              }
-            }
-          } catch {
-            // Ignore parse errors for partial lines
-          }
-        }
+        // Notify listeners that strategy generation started
+        // The project page's event listener will refetch data and re-render,
+        // replacing FirstTimeEmptyState with the dashboard
+        window.dispatchEvent(new Event('strategySaved'))
+      } else {
+        throw new Error('Invalid response from extraction API')
       }
-
-      if (!context) {
-        throw new Error('No context extracted')
-      }
-
-      // Skip confirmation, go straight to generation
-      setExtractedContext(context)
-      setDimensionalCoverage(coverage)
-      setIsExtracting(false)
-
-      // Immediately trigger generation (don't wait for state update)
-      await generateStrategy(context, coverage)
     } catch (err) {
-      console.error('Failed to extract:', err)
+      console.error('Failed to start extraction:', err)
       setExtractionStep('error')
       setExtractionError(err instanceof Error ? err.message : 'Failed to extract')
       setTimeout(() => {
@@ -338,54 +285,6 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
         setExtractionError(undefined)
       }, 3000)
     }
-  }
-
-  // Core generation logic - fire-and-forget with background processing
-  const generateStrategy = async (context: ExtractedContextVariant, coverage: any) => {
-    if (!conversationId) return
-
-    setShowExtractionConfirm(false)
-    setError(null)
-
-    try {
-      const generateResponse = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          extractedContext: context,
-          dimensionalCoverage: coverage,
-        }),
-      })
-
-      if (!generateResponse.ok) {
-        const errorData = await generateResponse.json().catch(() => ({}))
-        throw new Error(errorData.error || `Generation failed: ${generateResponse.status}`)
-      }
-
-      const data = await generateResponse.json()
-
-      if (data.status === 'started' && data.generationId) {
-        // Start tracking generation in context (handles polling and toast)
-        startGeneration(data.generationId, projectId)
-
-        // Notify listeners that strategy generation started
-        // The project page's event listener will refetch data and re-render,
-        // replacing FirstTimeEmptyState with the dashboard
-        window.dispatchEvent(new Event('strategySaved'))
-      } else {
-        throw new Error('Invalid response from generation API')
-      }
-    } catch (err) {
-      console.error('Failed to start strategy generation:', err)
-      setError(err instanceof Error ? err.message : 'Failed to generate strategy')
-    }
-  }
-
-  // Step 2: Generate strategy from extracted context (wrapper using state)
-  const handleGenerate = async () => {
-    if (!conversationId || !extractedContext) return
-    await generateStrategy(extractedContext, dimensionalCoverage)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -408,22 +307,6 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
       e.preventDefault()
       handleSubmit(e)
     }
-  }
-
-  // Handle "Continue" from extraction confirm - go back to chatting
-  const handleContinueFromExtraction = () => {
-    setShowExtractionConfirm(false)
-    setReadyToGenerate(false)
-    // Add the thought_prompt as a follow-up question if available
-    const thoughtPrompt = extractedContext?.reflective_summary?.thought_prompt
-    if (thoughtPrompt) {
-      setMessages(prev => [...prev, {
-        id: `msg-${Date.now()}-thought`,
-        role: 'assistant',
-        content: thoughtPrompt,
-      }])
-    }
-    inputRef.current?.focus()
   }
 
   // Abandon conversation and start fresh
@@ -463,20 +346,6 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
     return (
       <div className="py-8">
         <ExtractionProgress currentStep={extractionStep} error={extractionError} mode="extraction" />
-      </div>
-    )
-  }
-
-  // Show extraction confirmation
-  if (showExtractionConfirm && extractedContext) {
-    return (
-      <div className="py-4">
-        <ExtractionConfirm
-          extractedContext={extractedContext}
-          onGenerate={handleGenerate}
-          onContinue={handleContinueFromExtraction}
-          isGenerating={false}
-        />
       </div>
     )
   }
