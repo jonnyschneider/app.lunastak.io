@@ -40,8 +40,7 @@ export async function GET(
   // Get traceId if complete (need to find associated trace)
   let traceId: string | undefined;
   if (generatedOutput.status === 'complete') {
-    // Find the most recent trace for this generatedOutput
-    // Traces are linked via extractionRun -> generatedOutputId
+    // Path 1: Initial generation — linked via extractionRun -> conversationId -> trace
     const extractionRun = await prisma.extractionRun.findFirst({
       where: { generatedOutputId: id },
       select: { conversationId: true }
@@ -54,6 +53,26 @@ export async function GET(
         select: { id: true }
       });
       traceId = trace?.id;
+    }
+
+    // Path 2: Refresh generation — no extractionRun, find trace by projectId + timing
+    if (!traceId) {
+      const output = await prisma.generatedOutput.findUnique({
+        where: { id },
+        select: { projectId: true, generatedFrom: true, startedAt: true }
+      });
+
+      if (output?.generatedFrom === 'incremental_refresh' && output.startedAt) {
+        const trace = await prisma.trace.findFirst({
+          where: {
+            projectId: output.projectId,
+            timestamp: { gte: output.startedAt },
+          },
+          orderBy: { timestamp: 'desc' },
+          select: { id: true }
+        });
+        traceId = trace?.id;
+      }
     }
   }
 
