@@ -8,75 +8,46 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, RefreshCw } from 'lucide-react'
-import { RefreshStrategyStep } from '@/lib/contracts/refresh-strategy'
-
-interface StepConfig {
-  title: string
-  description: string
-}
-
-const STEP_MESSAGES: Record<RefreshStrategyStep, StepConfig> = {
-  loading_context: {
-    title: 'Loading context',
-    description: 'Gathering your strategic insights and recent changes',
-  },
-  generating_strategy: {
-    title: 'Updating strategy',
-    description: 'Incorporating new insights into your decision stack',
-  },
-  summarizing_changes: {
-    title: 'Summarizing changes',
-    description: 'Documenting what changed and why',
-  },
-  complete: {
-    title: 'Strategy refreshed!',
-    description: 'Your decision stack has been updated',
-  },
-  error: {
-    title: 'Something went wrong',
-    description: 'Failed to refresh strategy',
-  },
-}
+import { RefreshCw, Loader2 } from 'lucide-react'
+import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { toast } from 'sonner'
 
 interface RefreshStrategyDialogProps {
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onComplete: (traceId: string) => void
+  onStarted: () => void
 }
 
 export function RefreshStrategyDialog({
   projectId,
   open,
   onOpenChange,
-  onComplete,
+  onStarted,
 }: RefreshStrategyDialogProps) {
-  const [currentStep, setCurrentStep] = useState<RefreshStrategyStep>('loading_context')
   const [error, setError] = useState<string | undefined>()
-  const [changeSummary, setChangeSummary] = useState<string | null>(null)
-  const [completedTraceId, setCompletedTraceId] = useState<string | null>(null)
+  const [preparing, setPreparing] = useState(false)
   const refreshRunningRef = useRef(false)
-  const onCompleteRef = useRef(onComplete)
+  const { startGeneration } = useGenerationStatusContext()
 
-  useEffect(() => {
-    onCompleteRef.current = onComplete
-  }, [onComplete])
-
+  // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
-      setCurrentStep('loading_context')
       setError(undefined)
-      setChangeSummary(null)
-      setCompletedTraceId(null)
+      setPreparing(false)
       refreshRunningRef.current = false
-      return
     }
+  }, [open])
 
+  // Start refresh when dialog opens
+  useEffect(() => {
+    if (!open) return
     if (refreshRunningRef.current) return
     refreshRunningRef.current = true
 
     const runRefresh = async () => {
+      setPreparing(true)
+
       try {
         const response = await fetch(`/api/project/${projectId}/refresh-strategy`, {
           method: 'POST',
@@ -87,56 +58,38 @@ export function RefreshStrategyDialog({
           throw new Error(errorData.error || `Refresh failed: ${response.status}`)
         }
 
-        const reader = response.body?.getReader()
-        if (!reader) throw new Error('No response body')
+        const data = await response.json()
 
-        const decoder = new TextDecoder()
-        let buffer = ''
+        if (data.status === 'started' && data.generationId) {
+          // Hand off to GenerationStatusProvider for polling
+          startGeneration(data.generationId, projectId)
 
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
+          toast.info('Refreshing strategy in the background', {
+            description: 'You\'ll be notified when it\'s ready.',
+            duration: 4000,
+          })
 
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || ''
-
-          for (const line of lines) {
-            if (!line.trim()) continue
-            try {
-              const update = JSON.parse(line)
-              setCurrentStep(update.step)
-
-              if (update.step === 'error') {
-                setError(update.error || 'Refresh failed')
-              } else if (update.step === 'complete') {
-                setChangeSummary(update.changeSummary)
-                setCompletedTraceId(update.traceId)
-              }
-            } catch (parseError) {
-              console.error('Failed to parse progress:', line, parseError)
-            }
-          }
+          onOpenChange(false)
+          onStarted()
+        } else {
+          throw new Error('Unexpected response from refresh endpoint')
         }
       } catch (err) {
         console.error('Refresh error:', err)
-        setCurrentStep('error')
+        setPreparing(false)
         setError(err instanceof Error ? err.message : 'Refresh failed')
       }
     }
 
     runRefresh()
-  }, [open, projectId])
-
-  const stepConfig = STEP_MESSAGES[currentStep]
-  const isError = currentStep === 'error'
-  const isComplete = currentStep === 'complete'
+  }, [open, projectId, startGeneration, onOpenChange, onStarted])
 
   return (
     <Dialog
       open={open}
       onOpenChange={(newOpen) => {
-        if (!newOpen && !isComplete && !isError) return
+        // Only allow closing if we have an error or are not preparing
+        if (!newOpen && preparing && !error) return
         onOpenChange(newOpen)
       }}
     >
@@ -151,52 +104,26 @@ export function RefreshStrategyDialog({
         <div className="py-6">
           <div
             className={`rounded-lg p-6 ${
-              isError ? 'bg-red-50 dark:bg-red-900/20' : 'bg-muted'
+              error ? 'bg-red-50 dark:bg-red-900/20' : 'bg-muted'
             }`}
           >
-            {/* Progress bars */}
-            {!isComplete && !isError && (
-              <div className="mb-6">
-                <div className="flex justify-center space-x-2">
-                  {(['loading_context', 'generating_strategy', 'summarizing_changes'] as const).map(
-                    (step) => {
-                      const stepOrder = [
-                        'loading_context',
-                        'generating_strategy',
-                        'summarizing_changes',
-                        'complete',
-                      ]
-                      const currentIdx = stepOrder.indexOf(currentStep)
-                      const stepIdx = stepOrder.indexOf(step)
-                      const isActive = stepIdx === currentIdx
-                      const isDone = stepIdx < currentIdx
-
-                      return (
-                        <div
-                          key={step}
-                          className={`h-1.5 w-12 rounded-full transition-all duration-500 ${
-                            isDone
-                              ? 'bg-primary'
-                              : isActive
-                              ? 'bg-primary/60 animate-[pulse_3s_ease-in-out_infinite]'
-                              : 'bg-primary/20'
-                          }`}
-                        />
-                      )
-                    }
-                  )}
-                </div>
+            {/* Preparing state */}
+            {preparing && !error && (
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="font-medium text-center text-foreground">
+                  Preparing refresh...
+                </p>
+                <p className="text-sm text-center text-muted-foreground">
+                  Updating syntheses with your latest insights
+                </p>
               </div>
             )}
 
-            {/* Status icon */}
-            {(isComplete || isError) && (
-              <div className="mb-4 flex justify-center">
-                {isComplete ? (
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30">
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
-                  </div>
-                ) : (
+            {/* Error state */}
+            {error && (
+              <>
+                <div className="mb-4 flex justify-center">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30">
                     <svg
                       className="w-6 h-6 text-red-600 dark:text-red-400"
@@ -212,43 +139,21 @@ export function RefreshStrategyDialog({
                       />
                     </svg>
                   </div>
-                )}
-              </div>
+                </div>
+                <p className="font-medium text-center text-red-700 dark:text-red-300">
+                  Something went wrong
+                </p>
+                <p className="text-sm mt-2 text-center text-red-600 dark:text-red-400">
+                  {error}
+                </p>
+              </>
             )}
-
-            {/* Title */}
-            <p
-              className={`font-medium text-center ${
-                isError ? 'text-red-700 dark:text-red-300' : 'text-foreground'
-              }`}
-            >
-              {stepConfig.title}
-            </p>
-
-            {/* Description or change summary */}
-            <p
-              className={`text-sm mt-2 text-center ${
-                isError ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-              }`}
-            >
-              {error || (isComplete && changeSummary) || stepConfig.description}
-            </p>
           </div>
 
-          {/* Action button */}
-          {(isComplete || isError) && (
+          {/* Close button on error */}
+          {error && (
             <div className="mt-4 flex justify-center">
-              <Button
-                onClick={() => {
-                  if (isComplete && completedTraceId) {
-                    onComplete(completedTraceId)
-                  } else {
-                    onOpenChange(false)
-                  }
-                }}
-              >
-                {isComplete ? 'View Strategy' : 'Close'}
-              </Button>
+              <Button onClick={() => onOpenChange(false)}>Close</Button>
             </div>
           )}
         </div>

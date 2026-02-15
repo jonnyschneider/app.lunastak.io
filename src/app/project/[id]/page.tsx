@@ -911,9 +911,8 @@ export default function ProjectPage() {
         projectId={projectId}
         open={refreshStrategyDialogOpen}
         onOpenChange={setRefreshStrategyDialogOpen}
-        onComplete={(traceId) => {
+        onStarted={() => {
           setRefreshStrategyDialogOpen(false)
-          router.push(`/strategy/${traceId}`)
         }}
       />
 
