@@ -4,15 +4,54 @@
  * Static snapshot of the knowledgebase at the time strategy was generated.
  * Renders fragment contents from the trace's extractedContext field.
  *
- * Three extractedContext shapes exist:
- * - Initial generation: { source: 'fragments', fragmentCount, fragments: string[] }
- * - Refresh generation: { type: 'refresh', delta: { newFragmentCount, removedFragmentCount, summaries } }
- * - Legacy (pre-pipeline): { themes: [{ theme_name, content }], extraction_approach }
+ * extractedContext shapes:
+ * - Initial: { source: 'fragments', fragments: [{ content, contentType }] }
+ * - Refresh: { source: 'refresh', existingFragments: [...], newFragments: [...], removedCount }
+ * - Legacy:  { themes: [{ theme_name, content }], extraction_approach }
+ * - Legacy refresh: { type: 'refresh', delta: { newFragmentSummaries, ... } }
  */
+
+interface FragmentSnapshot {
+  content: string
+  contentType?: string
+}
 
 interface KnowledgeSnapshotProps {
   extractedContext: Record<string, unknown> | null
   timestamp: string | null
+}
+
+/** Parse **Bold Title**\n\nBody into { title, body } */
+function parseFragmentContent(content: string): { title: string | null; body: string } {
+  const match = content.match(/^\*\*(.+?)\*\*\s*\n\n?([\s\S]*)$/)
+  if (match) return { title: match[1], body: match[2].trim() }
+  return { title: null, body: content }
+}
+
+function FragmentCard({ fragment }: { fragment: FragmentSnapshot }) {
+  const { title, body } = parseFragmentContent(fragment.content)
+  return (
+    <div className="border border-border rounded-lg p-4">
+      {title && <h3 className="font-medium text-foreground mb-1 text-sm">{title}</h3>}
+      <p className="text-sm text-muted-foreground">{body}</p>
+    </div>
+  )
+}
+
+function FragmentGrid({ fragments, label }: { fragments: FragmentSnapshot[]; label?: string }) {
+  if (fragments.length === 0) return null
+  return (
+    <section className="space-y-3">
+      {label && (
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {label} ({fragments.length})
+        </h2>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {fragments.map((f, idx) => <FragmentCard key={idx} fragment={f} />)}
+      </div>
+    </section>
+  )
 }
 
 export function KnowledgeSnapshot({ extractedContext, timestamp }: KnowledgeSnapshotProps) {
@@ -32,56 +71,57 @@ export function KnowledgeSnapshot({ extractedContext, timestamp }: KnowledgeSnap
       })
     : null
 
-  // Current pipeline: initial generation stores fragment contents
+  // Current pipeline: initial generation
   if (extractedContext.source === 'fragments') {
-    const fragments = (extractedContext.fragments as string[]) || []
-    const count = (extractedContext.fragmentCount as number) || fragments.length
+    const fragments = (extractedContext.fragments || []) as FragmentSnapshot[]
 
     return (
       <div className="max-w-6xl mx-auto px-6 space-y-4">
         <div className="text-sm text-muted-foreground">
-          {count} insight{count !== 1 ? 's' : ''} used to generate this strategy
+          {fragments.length} insight{fragments.length !== 1 ? 's' : ''} used to generate this strategy
           {formattedDate && <span> &middot; {formattedDate}</span>}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {fragments.map((content, idx) => (
-            <div key={idx} className="border border-border rounded-lg p-4">
-              <p className="text-sm text-foreground">{content}</p>
-            </div>
-          ))}
-        </div>
+        <FragmentGrid fragments={fragments} />
       </div>
     )
   }
 
-  // Current pipeline: refresh generation stores delta
+  // Current pipeline: refresh generation with full snapshot
+  if (extractedContext.source === 'refresh') {
+    const existingFragments = (extractedContext.existingFragments || []) as FragmentSnapshot[]
+    const newFragments = (extractedContext.newFragments || []) as FragmentSnapshot[]
+    const removedCount = (extractedContext.removedCount as number) || 0
+    const totalCount = existingFragments.length + newFragments.length
+
+    return (
+      <div className="max-w-6xl mx-auto px-6 space-y-6">
+        <div className="text-sm text-muted-foreground">
+          {totalCount} insight{totalCount !== 1 ? 's' : ''} after refresh
+          {removedCount > 0 && `, ${removedCount} removed`}
+          {formattedDate && <span> &middot; {formattedDate}</span>}
+        </div>
+        <FragmentGrid fragments={newFragments} label="Recently added" />
+        <FragmentGrid fragments={existingFragments} label="Previous strategy" />
+      </div>
+    )
+  }
+
+  // Legacy refresh: { type: 'refresh', delta }
   if (extractedContext.type === 'refresh') {
     const delta = extractedContext.delta as {
       newFragmentCount?: number
-      removedFragmentCount?: number
       newFragmentSummaries?: string[]
-      removedFragmentSummaries?: string[]
     } | undefined
-
-    const summaries = delta?.newFragmentSummaries || []
+    const summaries = (delta?.newFragmentSummaries || []).map(s => ({ content: s }))
 
     return (
       <div className="max-w-6xl mx-auto px-6 space-y-4">
         <div className="text-sm text-muted-foreground">
           Incremental refresh
           {delta?.newFragmentCount ? ` — ${delta.newFragmentCount} new insight${delta.newFragmentCount !== 1 ? 's' : ''}` : ''}
-          {delta?.removedFragmentCount ? `, ${delta.removedFragmentCount} removed` : ''}
           {formattedDate && <span> &middot; {formattedDate}</span>}
         </div>
-        {summaries.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {summaries.map((summary, idx) => (
-              <div key={idx} className="border border-border rounded-lg p-4">
-                <p className="text-sm text-foreground">{summary}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <FragmentGrid fragments={summaries} />
       </div>
     )
   }

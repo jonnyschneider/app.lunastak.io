@@ -135,16 +135,15 @@ export async function runRefreshGeneration(
     orderBy: { fragmentCount: 'desc' },
   })
 
-  // Get delta: new fragments since last generation
-  const newFragments = await prisma.fragment.findMany({
-    where: {
-      projectId,
-      status: 'active',
-      createdAt: { gt: previousOutput.createdAt },
-    },
-    select: { content: true },
-    take: 20,
+  // Get all active fragments for the snapshot, split into existing vs new
+  const allFragments = await prisma.fragment.findMany({
+    where: { projectId, status: 'active' },
+    select: { content: true, contentType: true, createdAt: true },
+    orderBy: { capturedAt: 'desc' },
   })
+
+  const newFragments = allFragments.filter(f => f.createdAt > previousOutput.createdAt)
+  const existingFragments = allFragments.filter(f => f.createdAt <= previousOutput.createdAt)
 
   // Get removed fragments (archived since last generation)
   const removedFragments = await prisma.fragment.findMany({
@@ -282,7 +281,12 @@ export async function runRefreshGeneration(
       conversationId: syntheticConversation.id,
       projectId,
       userId,
-      extractedContext: { type: 'refresh', delta } as any,
+      extractedContext: {
+        source: 'refresh',
+        existingFragments: existingFragments.map(f => ({ content: f.content, contentType: f.contentType })),
+        newFragments: newFragments.map(f => ({ content: f.content, contentType: f.contentType })),
+        removedCount: removedFragments.length,
+      } as any,
       output: newStatements as any,
       claudeThoughts: `Incremental refresh based on ${delta.newFragmentCount} new and ${delta.removedFragmentCount} removed fragments.`,
       modelUsed: model,
@@ -421,7 +425,7 @@ export async function runInitialGeneration(
   // Load fragments from DB (created earlier in the pipeline)
   const fragments = await prisma.fragment.findMany({
     where: { projectId, status: 'active' },
-    select: { id: true, content: true },
+    select: { id: true, content: true, contentType: true },
     orderBy: { capturedAt: 'desc' },
   })
 
@@ -483,7 +487,10 @@ export async function runInitialGeneration(
       conversationId,
       projectId,
       userId,
-      extractedContext: { source: 'fragments', fragmentCount: fragments.length, fragments: fragments.map(f => f.content) } as any,
+      extractedContext: {
+        source: 'fragments',
+        fragments: fragments.map(f => ({ content: f.content, contentType: f.contentType })),
+      } as any,
       output: statements as any,
       claudeThoughts: thoughts,
       modelUsed: model,
