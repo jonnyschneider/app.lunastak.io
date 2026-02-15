@@ -65,22 +65,31 @@ export async function executePipeline(
     }
   }
 
-  // Layer 2: Meaning-making (background)
+  // Layer 2: Meaning-making
   if (plan.runSynthesis || plan.runKnowledgeSummary) {
-    const tasks = []
-    if (plan.runSynthesis) {
-      tasks.push({
-        name: 'updateAllSyntheses',
-        fn: async () => { await updateAllSyntheses(projectId) },
-      })
+    if (trigger.type === 'refresh_requested') {
+      // Refresh: synthesis must complete BEFORE generation reads syntheses
+      if (plan.runSynthesis) {
+        console.log('[Pipeline] Running foreground synthesis for refresh')
+        await updateAllSyntheses(projectId)
+      }
+    } else {
+      // All other triggers: run synthesis + summary in background
+      const tasks = []
+      if (plan.runSynthesis) {
+        tasks.push({
+          name: 'updateAllSyntheses',
+          fn: async () => { await updateAllSyntheses(projectId) },
+        })
+      }
+      if (plan.runKnowledgeSummary) {
+        tasks.push({
+          name: 'generateKnowledgeSummary',
+          fn: async () => { await generateKnowledgeSummary(projectId) },
+        })
+      }
+      runBackgroundTasks({ projectId, tasks })
     }
-    if (plan.runKnowledgeSummary) {
-      tasks.push({
-        name: 'generateKnowledgeSummary',
-        fn: async () => { await generateKnowledgeSummary(projectId) },
-      })
-    }
-    runBackgroundTasks({ projectId, tasks })
   }
 
   // Layer 3: Generation
@@ -111,7 +120,7 @@ export async function executePipeline(
       }
       case 'refresh': {
         const t = trigger as Extract<PipelineTrigger, { type: 'refresh_requested' }>
-        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model)
+        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
         break
       }
       case 'initial': {
@@ -316,7 +325,8 @@ Write 2-4 sentences explaining what changed and why. Be specific. If nothing mea
 async function runRefreshGeneration(
   projectId: string,
   userId: string,
-  model: string
+  model: string,
+  generatedOutputId?: string
 ): Promise<NonNullable<PipelineResult['generation']>> {
   // Load previous strategy
   const previousOutput = await prisma.generatedOutput.findFirst({
@@ -490,21 +500,40 @@ async function runRefreshGeneration(
     },
   })
 
-  const newOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId,
-      userId,
-      outputType: 'full_decision_stack',
-      version: previousOutput.version + 1,
-      content: newStatements as any,
-      generatedFrom: 'incremental_refresh',
-      modelUsed: model,
-      promptTokens: genResponse.usage.input_tokens,
-      completionTokens: genResponse.usage.output_tokens,
-      previousOutputId: previousOutput.id,
-      changeSummary,
-    },
-  })
+  let newOutput
+  if (generatedOutputId) {
+    // Fire-and-forget: update existing record (created by route for polling)
+    newOutput = await prisma.generatedOutput.update({
+      where: { id: generatedOutputId },
+      data: {
+        status: 'complete',
+        content: newStatements as any,
+        generatedFrom: 'incremental_refresh',
+        modelUsed: model,
+        promptTokens: genResponse.usage.input_tokens,
+        completionTokens: genResponse.usage.output_tokens,
+        previousOutputId: previousOutput.id,
+        changeSummary,
+      },
+    })
+  } else {
+    // Synchronous: create new record (backward compatibility)
+    newOutput = await prisma.generatedOutput.create({
+      data: {
+        projectId,
+        userId,
+        outputType: 'full_decision_stack',
+        version: previousOutput.version + 1,
+        content: newStatements as any,
+        generatedFrom: 'incremental_refresh',
+        modelUsed: model,
+        promptTokens: genResponse.usage.input_tokens,
+        completionTokens: genResponse.usage.output_tokens,
+        previousOutputId: previousOutput.id,
+        changeSummary,
+      },
+    })
+  }
 
   // Reset unsynthesized fragment count
   await prisma.project.update({
