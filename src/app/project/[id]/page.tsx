@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { AppLayout } from '@/components/layout/app-layout'
@@ -47,6 +47,19 @@ import { useDocumentProcessingContext } from '@/components/providers/DocumentPro
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import { StructuredProvocation } from '@/lib/types'
+
+// Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
+function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
+  let timeoutId: NodeJS.Timeout | null = null
+  const debounced = (...args: Parameters<T>) => {
+    if (timeoutId) clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn(...args), ms)
+  }
+  debounced.cancel = () => {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
+  return debounced as T & { cancel: () => void }
+}
 
 interface ProjectStats {
   fragmentCount: number
@@ -227,6 +240,40 @@ export default function ProjectPage() {
     return dismissedItems.has(`${itemType}:${key}`)
   }
 
+  // Debounced fetchProjectData — prevents rapid-fire refetches from multiple events
+  const fetchProjectDataRef = useRef<ReturnType<typeof debounce>>()
+
+  // Create debounced version once per projectId
+  useEffect(() => {
+    fetchProjectDataRef.current = debounce(async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(`/api/project/${projectId}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Project not found')
+          }
+          throw new Error('Failed to fetch project data')
+        }
+        const data = await response.json()
+        setProjectData(data)
+      } catch (err) {
+        console.error('Error fetching project:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load project data')
+      } finally {
+        setIsLoading(false)
+      }
+    }, 500)
+
+    return () => fetchProjectDataRef.current?.cancel()
+  }, [projectId])
+
+  const fetchProjectData = useCallback(() => {
+    fetchProjectDataRef.current?.()
+  }, [])
+
   useEffect(() => {
     if (status === 'loading') return
 
@@ -281,27 +328,15 @@ export default function ProjectPage() {
     return () => window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
   }, [projectId, pendingFirstContentUpload])
 
-  const fetchProjectData = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch(`/api/project/${projectId}`)
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Project not found')
-        }
-        throw new Error('Failed to fetch project data')
-      }
-      const data = await response.json()
-      setProjectData(data)
-    } catch (err) {
-      console.error('Error fetching project:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load project data')
-    } finally {
-      setIsLoading(false)
+  // Listen for extractionComplete event (fired when background extraction finishes)
+  useEffect(() => {
+    const handleExtractionComplete = (event: CustomEvent<{ projectId: string }>) => {
+      if (event.detail.projectId !== projectId) return
+      fetchProjectData()
     }
-  }
+    window.addEventListener('extractionComplete', handleExtractionComplete as EventListener)
+    return () => window.removeEventListener('extractionComplete', handleExtractionComplete as EventListener)
+  }, [projectId, fetchProjectData])
 
   // Deep dive handlers
   const openDeepDiveSheet = (id: string) => {
@@ -836,8 +871,6 @@ export default function ProjectPage() {
             setChatGapExploration(undefined)
             setChatResumeConversationId(undefined)
             setChatViewOnly(false)
-            // Refresh data after conversation to update knowledge base
-            fetchProjectData()
           }
         }}
         initialQuestion={chatInitialQuestion}
