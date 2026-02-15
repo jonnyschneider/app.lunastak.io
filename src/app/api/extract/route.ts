@@ -219,79 +219,87 @@ export async function POST(req: Request) {
     });
 
     // Fire and forget — extraction runs in background
-    waitUntil(
-      (async () => {
-        try {
-          // Build conversation history
-          const conversationHistory = conversation.messages
-            .map((m: { role: string; content: string }) =>
-              `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`
-            )
-            .join('\n\n');
+    const backgroundWork = (async () => {
+      try {
+        console.log(`[Extract] Background extraction starting for ${conversationId}`);
 
-          const isEmergent = conversation.experimentVariant !== 'baseline-v1';
+        // Build conversation history
+        const conversationHistory = conversation.messages
+          .map((m: { role: string; content: string }) =>
+            `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`
+          )
+          .join('\n\n');
 
-          // Extract themes
-          const extractionPrompt = isEmergent
-            ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
-            : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
+        const isEmergent = conversation.experimentVariant !== 'baseline-v1';
 
-          const extractionResponse = await createMessage({
-            model: CLAUDE_MODEL,
-            max_tokens: 2000,
-            messages: [{ role: 'user', content: extractionPrompt }],
-            temperature: 0.3,
-          }, 'extraction');
+        // Extract themes
+        const extractionPrompt = isEmergent
+          ? EMERGENT_EXTRACTION_PROMPT.replace('{conversation}', conversationHistory)
+          : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
 
-          const extractionContent = extractionResponse.content[0]?.type === 'text'
-            ? extractionResponse.content[0].text
-            : '';
+        const extractionResponse = await createMessage({
+          model: CLAUDE_MODEL,
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: extractionPrompt }],
+          temperature: 0.3,
+        }, 'extraction');
 
-          const extractionXML = extractXML(extractionContent, 'extraction');
+        const extractionContent = extractionResponse.content[0]?.type === 'text'
+          ? extractionResponse.content[0].text
+          : '';
 
-          if (isEmergent) {
-            const themes = parseEmergentThemes(extractionXML);
-            const dimensionalCoverage = computeDimensionalCoverageFromInline(themes);
-            const extractedContext = {
-              themes,
-              extraction_approach: 'emergent' as const,
-            };
+        const extractionXML = extractXML(extractionContent, 'extraction');
 
-            // Save fragments via pipeline
-            // Cast extractedContext — reflective_summary is omitted for follow-up
-            // extractions (same as streaming path which uses `any` typing)
-            const trigger = {
-              type: 'conversation_ended' as const,
-              projectId,
-              conversationId,
-              userId: conversation.userId,
-              isInitial: false,
-              experimentVariant: conversation.experimentVariant,
-              extractionResult: {
-                extractedContext: extractedContext as any,
-                dimensionalCoverage,
-                themes: themes as any,
-              },
-            };
-            const plan = planPipeline(trigger);
-            await executePipeline(plan, trigger);
-          }
+        if (isEmergent) {
+          const themes = parseEmergentThemes(extractionXML);
+          const dimensionalCoverage = computeDimensionalCoverageFromInline(themes);
+          const extractedContext = {
+            themes,
+            extraction_approach: 'emergent' as const,
+          };
 
-          // Mark complete
-          await prisma.conversation.update({
-            where: { id: conversationId },
-            data: { status: 'extracted' },
-          });
-          console.log(`[Extract] Background extraction complete for ${conversationId}`);
-        } catch (error) {
-          console.error('[Extract] Background extraction failed:', error);
-          await prisma.conversation.update({
-            where: { id: conversationId },
-            data: { status: 'extraction_failed' },
-          }).catch((e) => console.error('[Extract] Failed to update status:', e));
+          // Save fragments via pipeline
+          // Cast extractedContext — reflective_summary is omitted for follow-up
+          // extractions (same as streaming path which uses `any` typing)
+          const trigger = {
+            type: 'conversation_ended' as const,
+            projectId,
+            conversationId,
+            userId: conversation.userId,
+            isInitial: false,
+            experimentVariant: conversation.experimentVariant,
+            extractionResult: {
+              extractedContext: extractedContext as any,
+              dimensionalCoverage,
+              themes: themes as any,
+            },
+          };
+          const plan = planPipeline(trigger);
+          console.log(`[Extract] Running pipeline for ${conversationId}...`);
+          await executePipeline(plan, trigger);
+          console.log(`[Extract] Pipeline complete for ${conversationId}`);
         }
-      })()
-    );
+
+        // Mark complete
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { status: 'extracted' },
+        });
+        console.log(`[Extract] Background extraction complete for ${conversationId}`);
+      } catch (error) {
+        console.error('[Extract] Background extraction failed:', error);
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { status: 'extraction_failed' },
+        }).catch((e) => console.error('[Extract] Failed to update status:', e));
+      }
+    })();
+
+    // On Vercel, waitUntil extends function lifetime to complete the work.
+    // In dev, waitUntil is a no-op — the promise still runs but we need
+    // to catch any unhandled rejections explicitly.
+    waitUntil(backgroundWork);
+    backgroundWork.catch(() => {}); // Already handled in try/catch above
 
     // Return immediately
     return NextResponse.json({
