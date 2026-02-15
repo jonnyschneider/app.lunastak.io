@@ -16,7 +16,7 @@ import {
 import { MessageCircle, X, Plus } from 'lucide-react'
 import { Message, ExtractedContextVariant, StrategyStatements, ConversationPhase } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
-import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'

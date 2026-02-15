@@ -42,7 +42,7 @@ import {
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
-import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'

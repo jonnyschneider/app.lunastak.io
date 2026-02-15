@@ -18,7 +18,7 @@ import {
 import { ConversationPhase, ExtractedContextVariant } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import ExtractionConfirm from '@/components/ExtractionConfirm'
-import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 
 interface InlineMessage {
   id: string

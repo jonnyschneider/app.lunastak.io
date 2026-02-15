@@ -93,7 +93,7 @@ import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateD
 import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { usePaywall } from '@/hooks/use-paywall'
-import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { GenerationStatusIndicator } from '@/components/GenerationStatusIndicator'
 import { cn } from '@/lib/utils'

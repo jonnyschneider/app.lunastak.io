@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Loader2 } from 'lucide-react'
-import { useGenerationStatusContext } from '@/components/providers/GenerationStatusProvider'
+import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { toast } from 'sonner'
 
 interface RefreshStrategyDialogProps {
