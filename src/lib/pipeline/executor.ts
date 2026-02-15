@@ -34,6 +34,7 @@ export async function executePipeline(
   // Layer 1: Persist fragments
   if (plan.persistFragments && trigger.type === 'conversation_ended' && trigger.extractionResult?.themes) {
     try {
+      console.log(`[Pipeline] Creating fragments from ${trigger.extractionResult.themes.length} themes...`)
       const fragments = await createFragmentsFromThemes(
         projectId,
         trigger.conversationId,
@@ -72,6 +73,12 @@ export async function executePipeline(
       if (plan.runSynthesis) {
         console.log('[Pipeline] Running foreground synthesis for refresh')
         await updateAllSyntheses(projectId)
+        // Mark knowledge as processed so "new fragments" count resets
+        // even if generation later fails
+        await prisma.project.update({
+          where: { id: projectId },
+          data: { knowledgeUpdatedAt: new Date() },
+        })
       }
     } else {
       // All other triggers: run synthesis + summary in background
@@ -384,7 +391,7 @@ async function runRefreshGeneration(
     })
     .join('\n\n')
 
-  const currentObjectives = previousStatements.objectives
+  const currentObjectives = (previousStatements.objectives || [])
     .map((o, i) => {
       const title = o.title || o.objective || o.pithy || ''
       const metric = o.omtm || o.keyResults?.[0]?.signal || o.metric?.metricName || ''
@@ -430,7 +437,7 @@ async function runRefreshGeneration(
   // Fallback: if no objectives parsed, preserve previous objectives
   const objectives = parsedObjectives.length > 0
     ? parsedObjectives
-    : previousStatements.objectives
+    : (previousStatements.objectives || [])
 
   const newStatements: StrategyStatements = {
     vision: extractXML(statementsXML, 'vision') || previousStatements.vision,
@@ -443,7 +450,7 @@ async function runRefreshGeneration(
   // Generate change summary (best-effort)
   let changeSummary: string | null = null
   try {
-    const oldObjectives = previousStatements.objectives
+    const oldObjectives = (previousStatements.objectives || [])
       .map((o, i) => `${i + 1}. ${o.title || o.objective || o.pithy}`)
       .join('\n')
     const newObjectives = newStatements.objectives
@@ -534,12 +541,6 @@ async function runRefreshGeneration(
       },
     })
   }
-
-  // Reset unsynthesized fragment count
-  await prisma.project.update({
-    where: { id: projectId },
-    data: { knowledgeUpdatedAt: new Date() },
-  })
 
   console.log('[Pipeline] Refresh generation complete for project:', projectId)
 

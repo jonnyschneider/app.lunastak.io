@@ -86,8 +86,9 @@ export async function createFragmentsFromThemes(
   conversationId: string,
   themes: ThemeWithDimensions[]
 ) {
+  console.log(`[Fragments] Creating ${themes.length} fragments via Promise.all...`)
   const fragments = await Promise.all(
-    themes.map(theme => {
+    themes.map(async (theme, i) => {
       // Convert inline dimensions to DimensionTagInput[]
       const tags: DimensionTagInput[] = (theme.dimensions || [])
         .map(dim => {
@@ -104,16 +105,18 @@ export async function createFragmentsFromThemes(
         })
         .filter((tag): tag is DimensionTagInput => tag !== null)
 
-
-      return createFragment({
+      const fragment = await createFragment({
         projectId,
         conversationId,
         content: `**${theme.theme_name}**\n\n${theme.content}`,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
       }, tags)
+      console.log(`[Fragments] Fragment ${i + 1}/${themes.length} created: ${fragment.id}`)
+      return fragment
     })
   )
+  console.log(`[Fragments] All ${fragments.length} fragments created`)
 
   return fragments
 }

@@ -5,7 +5,6 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
-import { updateAllSyntheses } from '@/lib/synthesis'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { waitUntil } from '@vercel/functions'
 import type { GenerationStartedContract } from '@/lib/contracts/generation-status'
@@ -73,12 +72,6 @@ export async function POST(
     )
   }
 
-  // Foreground: update stale syntheses before generation reads them
-  // updateAllSyntheses internally skips dimensions with no new fragments,
-  // so calling unconditionally is safe and cheap when nothing's stale.
-  console.log('[RefreshStrategy] Running foreground synthesis update')
-  await updateAllSyntheses(projectId)
-
   // Pre-create GeneratedOutput for polling
   const generatedOutput = await prisma.generatedOutput.create({
     data: {
@@ -94,10 +87,8 @@ export async function POST(
 
   console.log('[RefreshStrategy] Created GeneratedOutput:', generatedOutput.id, 'status: generating')
 
-  // Fire-and-forget: run generation in background
-  // NOTE: plan.runSynthesis is true but we already ran synthesis above,
-  // so the executor will call updateAllSyntheses again — this is safe because
-  // it will find no new fragments and skip immediately.
+  // Fire-and-forget: run synthesis + generation in background
+  // Executor runs foreground synthesis (Layer 2) then generation (Layer 3).
   waitUntil((async () => {
     try {
       const trigger = {
