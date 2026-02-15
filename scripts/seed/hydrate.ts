@@ -254,6 +254,15 @@ async function hydrateProjectData(
     });
   }
 
+  // Set knowledgeUpdatedAt AFTER all fragments are created
+  // This ensures existing fragments don't count as "new"
+  if (projectFixture.fragments.length > 0) {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { knowledgeUpdatedAt: new Date() },
+    });
+  }
+
   const convCount = projectFixture.conversations.length;
   const fragCount = projectFixture.fragments.length;
   console.log(`  [OK] Hydrated: ${convCount} conversations, ${fragCount} fragments`);
