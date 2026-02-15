@@ -7,8 +7,8 @@ import { AppLayout } from '@/components/layout/app-layout'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { GuestSaveBanner } from '@/components/GuestSaveBanner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { StrategyStatements, ExtractedContextVariant } from '@/lib/types'
-import { LunasThinking } from '@/components/LunasThinking'
+import { StrategyStatements } from '@/lib/types'
+import { KnowledgeSnapshot } from '@/components/KnowledgeSnapshot'
 
 export default function StrategyViewPage() {
   const params = useParams()
@@ -16,8 +16,7 @@ export default function StrategyViewPage() {
   const traceId = params.traceId as string
 
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
-  const [extractedContext, setExtractedContext] = useState<ExtractedContextVariant | null>(null)
-  const [thoughts, setThoughts] = useState<string>('')
+  const [extractedContext, setExtractedContext] = useState<Record<string, unknown> | null>(null)
   const [conversationId, setConversationId] = useState<string>('')
   const [projectId, setProjectId] = useState<string>('')
   const [timestamp, setTimestamp] = useState<string | null>(null)
@@ -59,7 +58,6 @@ export default function StrategyViewPage() {
       const data = await response.json()
       setStrategy(data.output)
       setExtractedContext(data.extractedContext || null)
-      setThoughts(data.claudeThoughts || '')
       setConversationId(data.conversationId)
       setProjectId(data.projectId || '')
       setTimestamp(data.timestamp)
@@ -119,10 +117,10 @@ export default function StrategyViewPage() {
                   Your Strategy
                 </TabsTrigger>
                 <TabsTrigger
-                  value="thinking"
+                  value="knowledge"
                   className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
                 >
-                  Luna&apos;s Thinking
+                  Knowledge Snapshot
                 </TabsTrigger>
               </TabsList>
 
@@ -164,10 +162,10 @@ export default function StrategyViewPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="thinking" className="mt-8">
-            <LunasThinking
+          <TabsContent value="knowledge" className="mt-8">
+            <KnowledgeSnapshot
               extractedContext={extractedContext}
-              thoughts={thoughts}
+              timestamp={timestamp}
             />
           </TabsContent>
         </Tabs>

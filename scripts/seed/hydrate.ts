@@ -223,22 +223,6 @@ async function hydrateProjectData(
     });
   }
 
-  // Create generated outputs
-  for (const outputFixture of projectFixture.generatedOutputs || []) {
-    await prisma.generatedOutput.create({
-      data: {
-        projectId,
-        userId,
-        outputType: outputFixture.outputType,
-        version: outputFixture.version,
-        content: outputFixture.content as Prisma.InputJsonValue,
-        generatedFrom: outputFixture.generatedFrom,
-        modelUsed: outputFixture.modelUsed,
-        changeSummary: outputFixture.changeSummary,
-      },
-    });
-  }
-
   // Create user content (opportunities, principles)
   for (const ucFixture of projectFixture.userContent || []) {
     const ucId = resolveId(ucFixture.id);
@@ -259,7 +243,32 @@ async function hydrateProjectData(
   if (projectFixture.fragments.length > 0) {
     await prisma.project.update({
       where: { id: projectId },
-      data: { knowledgeUpdatedAt: new Date() },
+      data: {
+        knowledgeUpdatedAt: new Date(),
+        knowledgeSummary: projectFixture.knowledgeSummary ?? undefined,
+        suggestedQuestions: projectFixture.suggestedQuestions
+          ? JSON.parse(JSON.stringify(projectFixture.suggestedQuestions))
+          : undefined,
+      },
+    });
+  }
+
+  // Create generated outputs AFTER knowledgeUpdatedAt so startedAt > knowledgeUpdatedAt
+  // This ensures strategy shows as "in sync" for complete fixtures
+  for (const outputFixture of projectFixture.generatedOutputs || []) {
+    await prisma.generatedOutput.create({
+      data: {
+        projectId,
+        userId,
+        outputType: outputFixture.outputType,
+        version: outputFixture.version,
+        content: outputFixture.content as Prisma.InputJsonValue,
+        generatedFrom: outputFixture.generatedFrom,
+        modelUsed: outputFixture.modelUsed,
+        changeSummary: outputFixture.changeSummary,
+        status: 'complete',
+        startedAt: new Date(),
+      },
     });
   }
 
@@ -580,22 +589,6 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       });
     }
 
-    // Create generated outputs (for refresh strategy testing)
-    for (const outputFixture of projectFixture.generatedOutputs || []) {
-      await prisma.generatedOutput.create({
-        data: {
-          projectId: project.id,
-          userId: user.id,
-          outputType: outputFixture.outputType,
-          version: outputFixture.version,
-          content: outputFixture.content as Prisma.InputJsonValue,
-          generatedFrom: outputFixture.generatedFrom,
-          modelUsed: outputFixture.modelUsed,
-          changeSummary: outputFixture.changeSummary,
-        },
-      });
-    }
-
     // Create user content (opportunities, principles)
     for (const ucFixture of projectFixture.userContent || []) {
       const ucId = resolveId(ucFixture.id);
@@ -617,6 +610,25 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       where: { id: project.id },
       data: { knowledgeUpdatedAt: new Date() },
     });
+
+    // Create generated outputs AFTER knowledgeUpdatedAt so startedAt > knowledgeUpdatedAt
+    // This ensures strategy shows as "in sync" for complete fixtures
+    for (const outputFixture of projectFixture.generatedOutputs || []) {
+      await prisma.generatedOutput.create({
+        data: {
+          projectId: project.id,
+          userId: user.id,
+          outputType: outputFixture.outputType,
+          version: outputFixture.version,
+          content: outputFixture.content as Prisma.InputJsonValue,
+          generatedFrom: outputFixture.generatedFrom,
+          modelUsed: outputFixture.modelUsed,
+          changeSummary: outputFixture.changeSummary,
+          status: 'complete',
+          startedAt: new Date(),
+        },
+      });
+    }
 
     const synthCount = projectFixture.syntheses?.length || 0;
     const outputCount = projectFixture.generatedOutputs?.length || 0;

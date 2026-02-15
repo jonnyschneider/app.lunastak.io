@@ -60,6 +60,11 @@ export const PRO_FEATURES = {
     title: 'Discuss Your Knowledge Base',
     description: 'Chat with Luna about what she\'s learned. Clarify misunderstandings, add nuance, and refine insights before generating your strategy.',
   },
+  'knowledge-edit': {
+    icon: Sparkles,
+    title: 'Edit Your Knowledge Base',
+    description: 'Review, correct, and refine the insights Luna has extracted. Remove what\'s wrong, add what\'s missing, and shape your strategic context directly.',
+  },
 } as const;
 
 export type ProFeatureKey = keyof typeof PRO_FEATURES;

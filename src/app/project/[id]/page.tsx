@@ -534,7 +534,7 @@ export default function ProjectPage() {
           latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
           onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
           onChatClick={() => triggerUpgrade('knowledge-chat')}
-          onEditClick={() => triggerUpgrade('knowledge-chat')}
+          onEditClick={() => triggerUpgrade('knowledge-edit')}
           onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
           knowledgeBusyMessage={
             isRunning(projectId, 'extraction') ? 'processing insights...'
