@@ -140,6 +140,7 @@ async function hydrateProjectData(
         questionCount: convFixture.questionCount,
         experimentVariant: variant,
         isInitialConversation: convFixture.isInitialConversation ?? false,
+        deepDiveId: convFixture.deepDiveId ? resolveId(convFixture.deepDiveId) : undefined,
       },
     });
 
@@ -526,6 +527,8 @@ async function hydrate(options: HydrateOptions): Promise<void> {
           selectedLens: convFixture.selectedLens,
           questionCount: convFixture.questionCount,
           experimentVariant: variant,
+          isInitialConversation: convFixture.isInitialConversation ?? false,
+          deepDiveId: convFixture.deepDiveId ? resolveId(convFixture.deepDiveId) : undefined,
         },
       });
 

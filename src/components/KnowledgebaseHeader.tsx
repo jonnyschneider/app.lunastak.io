@@ -3,9 +3,10 @@
 import { useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 
 // Dimension display names
@@ -252,42 +253,44 @@ export function KnowledgebaseHeader({
       {/* Expanded Content */}
       {isExpanded && (
         <div className="border-t border-border px-4 py-4 space-y-3">
-          {/* Heading row: label + actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Summary</span>
-              {knowledgeSummary && fragmentsSinceSummary > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  · {15 - fragmentsSinceSummary > 0
-                    ? `${15 - fragmentsSinceSummary} more 'til next update`
-                    : 'updating soon'}
-                </span>
-              )}
-              {knowledgeSummary && fragmentsSinceSummary === 0 && (
-                <span className="text-xs text-muted-foreground">· up to date</span>
-              )}
-            </div>
-            {fragmentCount > 0 && (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleChatClick}
-                  className="h-6 text-xs px-2 gap-1"
-                >
-                  <MessageCircle className="h-3 w-3" />
-                  Chat
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditClick}
-                  className="h-6 text-xs px-2 gap-1"
-                >
-                  <Pencil className="h-3 w-3" />
-                  Edit
-                </Button>
-              </div>
+          {/* Heading row: Summary · status · Refine */}
+          <div className="flex items-baseline gap-1.5 text-sm">
+            <span className="font-medium">Summary</span>
+            {knowledgeSummary && (
+              <span className="text-muted-foreground">
+                {fragmentsSinceSummary === 0
+                  ? '· up to date'
+                  : `· ${15 - fragmentsSinceSummary > 0 ? `${15 - fragmentsSinceSummary} more 'til next update` : 'updating soon'}`}
+              </span>
+            )}
+            {knowledgeSummary && fragmentCount > 0 && (
+              <>
+                <span className="text-muted-foreground">·</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-0.5">
+                      Refine
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-44 p-1">
+                    <button
+                      onClick={handleChatClick}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      Talk it through
+                    </button>
+                    <button
+                      onClick={handleEditClick}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      Edit directly
+                    </button>
+                  </PopoverContent>
+                </Popover>
+              </>
             )}
           </div>
 

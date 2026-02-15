@@ -41,12 +41,13 @@ export interface FixtureTrace {
 export interface FixtureConversation {
   id: string; // "{{CONV_N_ID}}" placeholder
   title?: string;
-  status: 'in_progress' | 'completed' | 'abandoned';
+  status: 'in_progress' | 'completed' | 'abandoned' | 'extracted' | 'extracting';
   currentPhase: string;
   selectedLens?: string;
   questionCount: number;
   experimentVariant?: string;
   isInitialConversation?: boolean;
+  deepDiveId?: string;
   messages: FixtureMessage[];
   traces: FixtureTrace[];
 }
@@ -72,7 +73,7 @@ export interface FixtureDeepDive {
   topic: string;
   notes?: string;
   status: 'pending' | 'active' | 'resolved';
-  origin: 'manual' | 'message' | 'document';
+  origin: 'manual' | 'message' | 'document' | 'suggested_question';
 }
 
 // Document in fixture
