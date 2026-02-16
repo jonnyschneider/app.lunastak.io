@@ -117,9 +117,13 @@ export async function runRefreshGeneration(
   model: string,
   generatedOutputId?: string
 ): Promise<NonNullable<PipelineResult['generation']>> {
-  // Load previous strategy
+  // Load previous strategy (exclude the pre-created record for fire-and-forget)
   const previousOutput = await prisma.generatedOutput.findFirst({
-    where: { projectId, outputType: 'full_decision_stack' },
+    where: {
+      projectId,
+      outputType: 'full_decision_stack',
+      ...(generatedOutputId ? { id: { not: generatedOutputId } } : {}),
+    },
     orderBy: { createdAt: 'desc' },
   })
 
