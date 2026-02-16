@@ -121,6 +121,13 @@ async function hydrateProjectData(
     });
   }
 
+  // Count total traces for chronological timestamp ordering
+  let totalTraces = 0;
+  for (const conv of projectFixture.conversations) {
+    totalTraces += conv.traces.length;
+  }
+  let traceIndex = 0;
+
   // Create conversations
   for (const convFixture of projectFixture.conversations) {
     const convId = resolveId(convFixture.id);
@@ -156,13 +163,16 @@ async function hydrateProjectData(
       });
     }
 
-    // Create traces
+    // Create traces with spaced timestamps (1 hour apart, chronological)
     for (const traceFixture of convFixture.traces) {
+      const jitteredMinutes = 20 + Math.random() * 12; // 20-32 mins apart
+      const traceTimestamp = new Date(Date.now() - (totalTraces - 1 - traceIndex) * jitteredMinutes * 60 * 1000);
       await prisma.trace.create({
         data: {
           conversationId: conversation.id,
           projectId,
           userId,
+          timestamp: traceTimestamp,
           extractedContext: traceFixture.extractedContext as Prisma.InputJsonValue,
           dimensionalCoverage: traceFixture.dimensionalCoverage as Prisma.InputJsonValue | undefined,
           output: traceFixture.output as Prisma.InputJsonValue,
@@ -176,6 +186,7 @@ async function hydrateProjectData(
           starredAt: traceFixture.starred ? new Date() : undefined,
         },
       });
+      traceIndex++;
     }
   }
 
@@ -267,7 +278,12 @@ async function hydrateProjectData(
 
   // Create generated outputs AFTER knowledgeUpdatedAt so startedAt > knowledgeUpdatedAt
   // This ensures strategy shows as "in sync" for complete fixtures
-  for (const outputFixture of projectFixture.generatedOutputs || []) {
+  // Timestamps spaced 25 min apart so version history looks natural
+  const outputs = projectFixture.generatedOutputs || [];
+  const outputBaseTime = Date.now();
+  for (let i = 0; i < outputs.length; i++) {
+    const outputFixture = outputs[i];
+    const startedAt = new Date(outputBaseTime - (outputs.length - 1 - i) * 25 * 60 * 1000);
     await prisma.generatedOutput.create({
       data: {
         projectId,
@@ -279,7 +295,7 @@ async function hydrateProjectData(
         modelUsed: outputFixture.modelUsed,
         changeSummary: outputFixture.changeSummary,
         status: 'complete',
-        startedAt: new Date(),
+        startedAt,
       },
     });
   }
@@ -509,6 +525,13 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       });
     }
 
+    // Count total traces for chronological timestamp ordering
+    let emailTotalTraces = 0;
+    for (const conv of projectFixture.conversations) {
+      emailTotalTraces += conv.traces.length;
+    }
+    let emailTraceIndex = 0;
+
     // Create conversations
     for (const convFixture of projectFixture.conversations) {
       const convId = resolveId(convFixture.id);
@@ -544,13 +567,16 @@ async function hydrate(options: HydrateOptions): Promise<void> {
         });
       }
 
-      // Create traces
+      // Create traces with spaced timestamps (20-32 mins apart, chronological)
       for (const traceFixture of convFixture.traces) {
+        const emailJitteredMinutes = 20 + Math.random() * 12;
+        const traceTimestamp = new Date(Date.now() - (emailTotalTraces - 1 - emailTraceIndex) * emailJitteredMinutes * 60 * 1000);
         await prisma.trace.create({
           data: {
             conversationId: conversation.id,
             projectId: project.id,
             userId: user.id,
+            timestamp: traceTimestamp,
             extractedContext: traceFixture.extractedContext as Prisma.InputJsonValue,
             dimensionalCoverage: traceFixture.dimensionalCoverage as Prisma.InputJsonValue | undefined,
             output: traceFixture.output as Prisma.InputJsonValue,
@@ -564,6 +590,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
             starredAt: traceFixture.starred ? new Date() : undefined,
           },
         });
+        emailTraceIndex++;
       }
     }
 
@@ -637,7 +664,12 @@ async function hydrate(options: HydrateOptions): Promise<void> {
 
     // Create generated outputs AFTER knowledgeUpdatedAt so startedAt > knowledgeUpdatedAt
     // This ensures strategy shows as "in sync" for complete fixtures
-    for (const outputFixture of projectFixture.generatedOutputs || []) {
+    // Timestamps spaced 25 min apart so version history looks natural
+    const emailOutputs = projectFixture.generatedOutputs || [];
+    const emailOutputBaseTime = Date.now();
+    for (let i = 0; i < emailOutputs.length; i++) {
+      const outputFixture = emailOutputs[i];
+      const startedAt = new Date(emailOutputBaseTime - (emailOutputs.length - 1 - i) * 25 * 60 * 1000);
       await prisma.generatedOutput.create({
         data: {
           projectId: project.id,
@@ -649,7 +681,7 @@ async function hydrate(options: HydrateOptions): Promise<void> {
           modelUsed: outputFixture.modelUsed,
           changeSummary: outputFixture.changeSummary,
           status: 'complete',
-          startedAt: new Date(),
+          startedAt,
         },
       });
     }

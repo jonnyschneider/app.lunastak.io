@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Info, Loader2, FileText } from 'lucide-react'
+import { Upload, KeySquare, Loader2, Blocks } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { InlineChat } from '@/components/InlineChat'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 
@@ -100,37 +106,53 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
 
         {/* Action buttons - hide once chat started */}
         {!chatStarted && (
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Button
-              variant="outline"
-              onClick={() => setUploadDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload a document
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/project/${projectId}/template`)}
-              className="flex items-center gap-2"
-            >
-              <FileText className="h-4 w-4" />
-              I have a strategy
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setDemoDialogOpen(true)}
-              disabled={isLoadingDemo}
-              className="flex items-center gap-2"
-            >
-              {isLoadingDemo ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Info className="h-4 w-4" />
-              )}
-              {isLoadingDemo ? 'Setting up demo...' : 'See demo project'}
-            </Button>
-          </div>
+          <TooltipProvider delayDuration={300}>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setUploadDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Upload a document
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/project/${projectId}/template`)}
+                    className="flex items-center gap-2"
+                  >
+                    <Blocks className="h-4 w-4" />
+                    Build my Decision Stack
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Fill in your vision, strategy, objectives and principles directly
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDemoDialogOpen(true)}
+                    disabled={isLoadingDemo}
+                    className="flex items-center gap-2 bg-[hsl(41_60%_58%/0.1)] border-[hsl(41_60%_58%/0.3)] hover:bg-[hsl(41_60%_58%/0.18)]"
+                  >
+                    {isLoadingDemo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <KeySquare className="h-4 w-4 text-[hsl(41_60%_58%)]" />
+                    )}
+                    {isLoadingDemo ? 'Setting up demo...' : "Peek into Luna's Strategy"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  See Lunastak's real strategy, created by Luna
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         )}
       </div>
 
@@ -146,20 +168,20 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
       <AlertDialog open={demoDialogOpen} onOpenChange={setDemoDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Create a demo project?</AlertDialogTitle>
+            <AlertDialogTitle>Peek into Luna's Strategy?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>
-                This will create a new demo project in your account so you can see how Luna works when there's existing content.
+                This creates a demo project built on Lunastak's real Decision Stack — our actual vision, strategy, and objectives. See how Luna works when there's existing content.
               </p>
               <p>
-                You can interact with it (add more chats, upload documents, etc.) or delete it at any time. Your own project will be maintained separately and is safe.
+                You can interact with it, continue conversations, or delete it any time. Your own project stays separate and safe.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleCreateDemo}>
-              Create demo project
+              Let me in
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

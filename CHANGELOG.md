@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.3] - 2026-02-16
 
-**Knowledge panel polish and objectives prompt overhaul.**
+**Knowledge panel polish, objectives prompt overhaul, Luna demo fixture and "see demo" button refresh.**
 
 ### Changed
 
@@ -16,10 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Markdown in summary** - `**bold**` text in knowledge summary now renders correctly
 - **Objectives prompts** - Rewritten to generate outcome-oriented objectives ("state you want to be true") instead of action-oriented ones that read like initiatives
 - **Objectives UI copy** - Template entry and inline editor guidance updated to match new prompt direction
+- **Demo fixture** - Replaced BuildFlow demo with Lunastak's own strategy ("Lunastak's Strategy")
+  - 5 conversations, 42 fragments, 11 syntheses, 3 strategy versions, 5 principles, 5 opportunities
+  - V3 vision/strategy/principles populated in starred trace so strategy page renders correctly
+  - Name redactions applied (company names replaced with generic descriptors)
+- **"See demo" button** - Redesigned with luna gold background, KeySquare icon, "Peek into Luna's Strategy" label, tooltip
+- **"I have a strategy" button** - Renamed to "Build my Decision Stack" with Blocks icon and tooltip
+- **Demo confirmation dialog** - Updated copy to reference Lunastak's real Decision Stack, CTA changed to "Let me in"
+- **Seed timestamps** - Trace timestamps now jittered 20-32 min apart (was fixed 1-hour intervals); strategy versions spaced 25 min apart
 
 ### Fixed
 
-- **Demo fixture** - Complete export with syntheses, generated outputs, deep dive links, and `isInitialConversation` flags
+- **Strategy page showing V1 instead of V3** - Trace timestamps were assigned in reverse order (first conversation got newest timestamp); fixed to chronological
+- **Principles missing from demo** - Strategy page reads principles from trace output, which was empty; V3 trace now includes all 5 principles
+- **No starred trace** - Strategy redirect requires a starred trace; V3 trace now marked as starred
 
 ## [2.0.2] - 2026-02-16
 

@@ -12,7 +12,7 @@ import { Prisma } from '@prisma/client';
 import type { Fixture, FixtureProvocation } from '../../scripts/seed/types';
 
 const FIXTURES_DIR = path.join(process.cwd(), 'scripts/seed/fixtures');
-const DEMO_FIXTURE = 'complete-buildflow-demo.json';
+const DEMO_FIXTURE = 'luna-demo-complete.json';
 
 function generateCuid(): string {
   const timestamp = Date.now().toString(36);
@@ -108,6 +108,13 @@ export interface TransformedFixture {
       modelUsed: string;
       changeSummary?: string;
     }>;
+    userContent: Array<{
+      id: string;
+      type: string;
+      content: string;
+      status: string;
+      metadata?: Record<string, unknown> | null;
+    }>;
   }>;
 }
 
@@ -121,6 +128,7 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
     p.fragments.forEach((f) => idMap.set(f.id, generateCuid()));
     p.deepDives?.forEach((dd) => idMap.set(dd.id, generateCuid()));
     p.documents?.forEach((d) => idMap.set(d.id, generateCuid()));
+    p.userContent?.forEach((uc) => idMap.set(uc.id, generateCuid()));
   });
 
   const resolveId = (id: string): string => idMap.get(id) || generateCuid();
@@ -130,7 +138,7 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
     projects: fixture.projects.map((p) => ({
       id: resolveId(p.id),
       userId,
-      name: 'Demo: BuildFlow Strategy',
+      name: "Lunastak's Strategy",
       status: p.status,
       isDemo: true,
       description: p.description,
@@ -160,6 +168,10 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
       })),
       generatedOutputs: (p.generatedOutputs || []).map((o) => ({
         ...o,
+      })),
+      userContent: (p.userContent || []).map((uc) => ({
+        ...uc,
+        id: resolveId(uc.id),
       })),
     })),
   };
@@ -243,6 +255,12 @@ export async function seedDemoProject(userId: string): Promise<string> {
       });
     }
 
+    // Count total traces for chronological timestamp ordering
+    let totalTraces = 0;
+    for (const conv of projectData.conversations) {
+      totalTraces += conv.traces.length;
+    }
+
     // Create conversations
     let traceIndex = 0;
     for (const conv of projectData.conversations) {
@@ -274,7 +292,8 @@ export async function seedDemoProject(userId: string): Promise<string> {
 
       // Create traces with offset timestamps so they're unique in the UI
       for (const trace of conv.traces) {
-        const traceTimestamp = new Date(Date.now() - traceIndex * 60 * 60 * 1000); // Offset by 1 hour each
+        const jitteredMinutes = 20 + Math.random() * 12; // 20-32 mins apart
+        const traceTimestamp = new Date(Date.now() - (totalTraces - 1 - traceIndex) * jitteredMinutes * 60 * 1000);
         await prisma.trace.create({
           data: {
             conversationId: conversation.id,
@@ -330,8 +349,11 @@ export async function seedDemoProject(userId: string): Promise<string> {
       await createSynthesisRecords(project.id, projectData.syntheses);
     }
 
-    // Create generated outputs (for refresh strategy)
-    for (const output of projectData.generatedOutputs) {
+    // Create generated outputs with spaced timestamps (25 min apart)
+    const baseTime = Date.now();
+    for (let i = 0; i < projectData.generatedOutputs.length; i++) {
+      const output = projectData.generatedOutputs[i];
+      const startedAt = new Date(baseTime - (projectData.generatedOutputs.length - 1 - i) * 25 * 60 * 1000);
       await prisma.generatedOutput.create({
         data: {
           projectId: project.id,
@@ -342,6 +364,22 @@ export async function seedDemoProject(userId: string): Promise<string> {
           generatedFrom: output.generatedFrom,
           modelUsed: output.modelUsed,
           changeSummary: output.changeSummary,
+          status: 'complete',
+          startedAt,
+        },
+      });
+    }
+
+    // Create user content (principles, opportunities)
+    for (const uc of projectData.userContent) {
+      await prisma.userContent.create({
+        data: {
+          id: uc.id,
+          projectId: project.id,
+          type: uc.type,
+          content: uc.content,
+          status: uc.status,
+          metadata: uc.metadata ? JSON.parse(JSON.stringify(uc.metadata)) : undefined,
         },
       });
     }
