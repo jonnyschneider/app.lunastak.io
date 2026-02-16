@@ -45,6 +45,7 @@ export interface TransformedFixture {
       selectedLens?: string;
       questionCount: number;
       experimentVariant?: string;
+      deepDiveId?: string;
       messages: Array<{
         role: string;
         content: string;
@@ -147,6 +148,7 @@ export function transformFixtureForUser(fixture: Fixture, userId: string): Trans
       conversations: p.conversations.map((c) => ({
         ...c,
         id: resolveId(c.id),
+        deepDiveId: c.deepDiveId ? resolveId(c.deepDiveId) : undefined,
       })),
       fragments: p.fragments.map((f) => ({
         ...f,
@@ -275,6 +277,7 @@ export async function seedDemoProject(userId: string): Promise<string> {
           selectedLens: conv.selectedLens,
           questionCount: conv.questionCount,
           experimentVariant: conv.experimentVariant,
+          deepDiveId: conv.deepDiveId,
         },
       });
 

@@ -470,7 +470,8 @@
               "stepNumber": 9
             }
           ],
-          "traces": []
+          "traces": [],
+          "deepDiveId": "{{DD_ID}}"
         },
         {
           "id": "{{CONV_4_ID}}",
