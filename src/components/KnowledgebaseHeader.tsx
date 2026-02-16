@@ -25,15 +25,20 @@ const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
 }
 
 // Harvey ball for confidence visualization
-function HarveyBall({ confidence }: { confidence: string }) {
+function HarveyBall({ confidence }: { confidence: string | null }) {
   const size = 14
   const radius = 6
   const cx = 7
   const cy = 7
 
-  const fillPercent = confidence === 'HIGH' ? 100 : confidence === 'MEDIUM' ? 50 : 0
+  // null/no fragments = empty, LOW = quarter, MEDIUM = half, HIGH/MEDIUM-HIGH = full
+  const level = !confidence ? 0
+    : confidence === 'LOW' ? 1
+    : confidence === 'MEDIUM' ? 2
+    : 3 // HIGH, MEDIUM-HIGH
 
-  if (fillPercent === 0) {
+  // Empty circle
+  if (level === 0) {
     return (
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-muted-foreground/40">
         <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -41,7 +46,8 @@ function HarveyBall({ confidence }: { confidence: string }) {
     )
   }
 
-  if (fillPercent === 100) {
+  // Full circle
+  if (level === 3) {
     return (
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
         <circle cx={cx} cy={cy} r={radius} fill="currentColor" />
@@ -49,11 +55,25 @@ function HarveyBall({ confidence }: { confidence: string }) {
     )
   }
 
+  // Half circle (left half filled)
+  if (level === 2) {
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
+        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <path
+          d={`M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`}
+          fill="currentColor"
+        />
+      </svg>
+    )
+  }
+
+  // Quarter circle (bottom-left quadrant filled)
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
       <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
       <path
-        d={`M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`}
+        d={`M ${cx} ${cy} L ${cx} ${cy + radius} A ${radius} ${radius} 0 0 1 ${cx - radius} ${cy} Z`}
         fill="currentColor"
       />
     </svg>
@@ -326,7 +346,7 @@ export function KnowledgebaseHeader({
                 const coverage = dimensionalCoverage[dimension]
                 const dimFragmentCount = coverage?.fragmentCount || 0
                 const synthesis = syntheses?.find(s => s.dimension === dimension)
-                const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : 'LOW')
+                const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : null)
 
                 return (
                   <button
