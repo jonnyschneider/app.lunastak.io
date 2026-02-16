@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // Hardcoded demo conversation - public showcase
 const DEMO_CONVERSATION_ID = 'cmjz4zjdi0001a4kzehxif92h';
 

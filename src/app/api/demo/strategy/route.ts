@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // Hardcoded demo trace - public showcase
 const DEMO_TRACE_ID = 'cmk1rfbur002qe0jn06m87680';
 
