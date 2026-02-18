@@ -4,7 +4,6 @@ import { useMemo, useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
-import { FakeDoorDialog } from './FakeDoorDialog';
 import { OpportunitySection } from './OpportunitySection';
 import { InlineTextEditor } from './InlineTextEditor';
 import { ObjectiveInlineEditor } from './ObjectiveInlineEditor';
@@ -21,16 +20,10 @@ interface StrategyDisplayProps {
 }
 
 export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate }: StrategyDisplayProps) {
-  const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const [editingVision, setEditingVision] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState(false);
   const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null);
   const [newObjective, setNewObjective] = useState<Objective | null>(null);
-  const [fakeDoorConfig, setFakeDoorConfig] = useState<{
-    name: string;
-    description: string;
-    feature: string;
-  } | null>(null);
 
   // Handle legacy objectives (string[]) by converting to new format and normalizing to OMTM
   const objectives: Objective[] = useMemo(() => {
@@ -45,47 +38,6 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
     return convertLegacyObjectives(strategy.objectives as unknown as string[]).map(normalizeToOMTM);
   }, [strategy.objectives]);
 
-  const handleFakeDoor = async (feature: string) => {
-    console.log(`[Baseline] User clicked: ${feature}`);
-
-    const featureConfig: Record<string, { name: string; description: string }> = {
-      'Edit Vision': {
-        name: 'Edit Vision',
-        description: 'Edit and refine your vision statement.\n\nThis feature would let you directly modify the vision and regenerate related elements.',
-      },
-      'Edit Strategy': {
-        name: 'Edit Strategy',
-        description: 'Edit and refine your strategy statement.\n\nThis feature would let you directly modify the strategy and regenerate related elements.',
-      },
-      'Edit Objective': {
-        name: 'Edit Objectives',
-        description: 'Edit and refine your strategic objectives.\n\nThis feature would let you modify, add, or remove objectives with smart regeneration.',
-      },
-    };
-
-    setFakeDoorConfig({
-      ...featureConfig[feature],
-      feature,
-    });
-    setFakeDoorOpen(true);
-  };
-
-  const handleFakeDoorInterest = async () => {
-    if (!fakeDoorConfig) return;
-
-    await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conversationId,
-        traceId,
-        eventType: 'fake_door_click',
-        eventData: { feature: fakeDoorConfig.feature },
-      }),
-    }).catch(err => console.error('Failed to log event:', err));
-
-    console.log(`User interested in: ${fakeDoorConfig.name}`);
-  };
 
 
   const handleSaveVision = async (newText: string) => {
@@ -434,15 +386,6 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
         </div>
       </div>
 
-      {fakeDoorConfig && (
-        <FakeDoorDialog
-          open={fakeDoorOpen}
-          onOpenChange={setFakeDoorOpen}
-          featureName={fakeDoorConfig.name}
-          description={fakeDoorConfig.description}
-          onInterest={handleFakeDoorInterest}
-        />
-      )}
 
     </div>
   );

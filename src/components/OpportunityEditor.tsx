@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching';
 import { OpportunityCoaching } from './OpportunityCoaching';
-import { FakeDoorDialog } from './FakeDoorDialog';
 import { getStatsigClient } from '@/components/StatsigProvider';
 import { getObjectiveTitle } from '@/lib/utils';
 import { SuccessMetric } from '@/lib/types';
@@ -75,7 +74,6 @@ export function OpportunityEditor({
   const [successMetrics, setSuccessMetrics] = useState<SuccessMetric[]>(initialSuccessMetrics);
   const [coaching, setCoaching] = useState<CoachingResult | null>(null);
   const [showCoaching, setShowCoaching] = useState(false);
-  const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const content = description ? `${title}\n${description}` : title;
@@ -176,7 +174,8 @@ export function OpportunityEditor({
   };
 
   const handleRewriteClick = () => {
-    setFakeDoorOpen(true);
+    getStatsigClient()?.logEvent('fake_door_click', 'AI Rewrite for Opportunities')
+    onImproveWithAI?.()
   };
 
   useEffect(() => {
@@ -325,17 +324,6 @@ export function OpportunityEditor({
         </button>
       </div>
 
-      <FakeDoorDialog
-        open={fakeDoorOpen}
-        onOpenChange={setFakeDoorOpen}
-        featureName="AI Rewrite"
-        description="Get AI-powered suggestions to improve your opportunity based on the coaching feedback.
-
-This feature would help clarify outcomes and rationale while keeping your core idea intact."
-        onInterest={() => {
-          getStatsigClient()?.logEvent('fake_door_click', 'AI Rewrite for Opportunities')
-        }}
-      />
     </div>
   );
 }

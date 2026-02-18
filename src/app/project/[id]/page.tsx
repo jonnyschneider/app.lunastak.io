@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
-import { getStatsigClient } from '@/components/StatsigProvider'
 import { AppLayout } from '@/components/layout/app-layout'
 import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,7 +32,6 @@ import {
   ItemSeparator,
 } from '@/components/ui/item'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { FakeDoorDialog } from '@/components/FakeDoorDialog'
 import {
   useProUpgradeFlow,
   ProFeatureInterstitial,
@@ -173,12 +171,6 @@ export default function ProjectPage() {
   const [addDeepDiveOpen, setAddDeepDiveOpen] = useState(false)
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
   const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
-  const [fakeDoorOpen, setFakeDoorOpen] = useState(false)
-  const [fakeDoorConfig, setFakeDoorConfig] = useState<{
-    name: string
-    description: string
-    feature: string
-  } | null>(null)
   const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
   const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
@@ -374,31 +366,6 @@ export default function ProjectPage() {
     }
     // Note: fetchProjectData and first-content chat opening are handled
     // by the documentProcessed event listener above
-  }
-
-  // Fake door handlers
-  const handleFakeDoor = (feature: string) => {
-    const featureConfig: Record<string, { name: string; description: string }> = {
-      'Add Memo': {
-        name: 'Memos',
-        description: 'Capture quick thoughts, voice notes, or observations directly in your project.\n\nJot down ideas from meetings, record voice memos on the go, or capture spontaneous insights. Luna will extract strategic themes from your memos.',
-      },
-      'Create from Blank': {
-        name: 'Blank Canvas Strategy',
-        description: 'Start with a fresh strategic framework, unconstrained by your existing inputs.\n\nBuild your decision stack from first principles, defining vision, strategy, and objectives without prior context.',
-      },
-    }
-
-    setFakeDoorConfig({
-      ...featureConfig[feature],
-      feature,
-    })
-    setFakeDoorOpen(true)
-  }
-
-  const handleFakeDoorInterest = () => {
-    if (!fakeDoorConfig) return
-    getStatsigClient()?.logEvent('fake_door_click', fakeDoorConfig.feature, { projectId })
   }
 
   // Toggle conversation star
@@ -920,17 +887,6 @@ export default function ProjectPage() {
           setChatSheetOpen(true)
         }}
       />
-
-      {/* Fake Door Dialog */}
-      {fakeDoorConfig && (
-        <FakeDoorDialog
-          open={fakeDoorOpen}
-          onOpenChange={setFakeDoorOpen}
-          featureName={fakeDoorConfig.name}
-          description={fakeDoorConfig.description}
-          onInterest={handleFakeDoorInterest}
-        />
-      )}
 
       {/* Synthesis Dialog */}
       <SynthesisDialog
