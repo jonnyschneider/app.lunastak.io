@@ -4,23 +4,7 @@ import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
-
-async function notifySlackNewUser(email: string) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL
-  if (!webhookUrl) return
-
-  try {
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: `🎉 New user signed up: ${email}`,
-      }),
-    })
-  } catch (err) {
-    console.error('[Slack] Failed to send notification:', err)
-  }
-}
+import { notifySlackNewUser } from "@/lib/notifications"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),

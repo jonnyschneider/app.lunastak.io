@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
+import { getStatsigClient } from '@/components/StatsigProvider'
 import { AppLayout } from '@/components/layout/app-layout'
 import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -397,9 +398,7 @@ export default function ProjectPage() {
 
   const handleFakeDoorInterest = () => {
     if (!fakeDoorConfig) return
-    // Log interest for now - project-level events don't have conversationId required by Event model.
-    // TODO: Once beta scope is locked, implement as Statsig custom event for proper analytics.
-    console.log(`[FakeDoor] User interested in: ${fakeDoorConfig.feature} (project: ${projectId})`)
+    getStatsigClient()?.logEvent('fake_door_click', fakeDoorConfig.feature, { projectId })
   }
 
   // Toggle conversation star

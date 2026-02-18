@@ -5,6 +5,7 @@ import { Plus, Sparkles } from 'lucide-react';
 import { evaluateOpportunity, CoachingResult } from '@/lib/opportunity-coaching';
 import { OpportunityCoaching } from './OpportunityCoaching';
 import { FakeDoorDialog } from './FakeDoorDialog';
+import { getStatsigClient } from '@/components/StatsigProvider';
 import { getObjectiveTitle } from '@/lib/utils';
 import { SuccessMetric } from '@/lib/types';
 import { SuccessMetricEditor } from './SuccessMetricEditor';
@@ -332,7 +333,7 @@ export function OpportunityEditor({
 
 This feature would help clarify outcomes and rationale while keeping your core idea intact."
         onInterest={() => {
-          console.log('[FakeDoor] User interested in: AI Rewrite for Opportunities');
+          getStatsigClient()?.logEvent('fake_door_click', 'AI Rewrite for Opportunities')
         }}
       />
     </div>

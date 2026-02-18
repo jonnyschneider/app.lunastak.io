@@ -22,9 +22,11 @@ const nextConfig = {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
     NEXTAUTH_URL: getNextAuthUrl(),
   },
-  // Include fixture files for runtime seeding
-  outputFileTracingIncludes: {
-    '/api/auth/[...nextauth]': ['./scripts/seed/fixtures/**/*.json'],
+  experimental: {
+    // Include fixture files for runtime seeding
+    outputFileTracingIncludes: {
+      '/api/auth/[...nextauth]': ['./scripts/seed/fixtures/**/*.json'],
+    },
   },
 }
 

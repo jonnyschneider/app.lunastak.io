@@ -8,6 +8,7 @@ import { BackgroundTaskProvider } from '@/components/providers/BackgroundTaskPro
 import { DocumentProcessingProvider } from '@/components/providers/DocumentProcessingProvider'
 import { StatsigProvider } from '@/components/StatsigProvider'
 import { Toaster } from '@/components/ui/sonner'
+import { Analytics } from '@vercel/analytics/react'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
@@ -41,6 +42,7 @@ export default async function RootLayout({
                 <DocumentProcessingProvider>
                   {children}
                   <Toaster position="bottom-right" />
+                  <Analytics />
                 </DocumentProcessingProvider>
               </BackgroundTaskProvider>
             </StatsigProvider>

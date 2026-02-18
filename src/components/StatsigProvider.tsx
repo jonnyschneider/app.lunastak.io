@@ -26,9 +26,12 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
 
     const initStatsig = async () => {
       try {
-        console.log('[Statsig Client] Initializing with autocapture...');
+        const tier = process.env.NEXT_PUBLIC_VERCEL_ENV || 'development';
+        console.log(`[Statsig Client] Initializing (tier: ${tier}) with autocapture...`);
 
-        statsigClient = new StatsigClient(clientKey, {});
+        statsigClient = new StatsigClient(clientKey, {}, {
+          environment: { tier },
+        });
 
         // Enable session replay
         runStatsigSessionReplay(statsigClient);

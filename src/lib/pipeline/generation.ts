@@ -4,6 +4,7 @@ import { extractXML, parseOKRObjectives } from '@/lib/utils'
 import { convertLegacyObjectives } from '@/lib/placeholders'
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
+import { notifySlackStrategyGenerated } from '@/lib/notifications'
 import { getCurrentPrompt } from '@/lib/prompts'
 import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
 import {
@@ -405,6 +406,10 @@ export async function runRefreshGeneration(
 
   console.log('[Pipeline] Refresh generation complete for project:', projectId)
 
+  // Notify Slack (fire-and-forget)
+  prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+    .then(u => { if (u?.email) notifySlackStrategyGenerated(u.email, 'refresh') })
+
   return {
     generatedOutputId: newOutput.id,
     traceId: trace.id,
@@ -622,6 +627,10 @@ export async function runInitialGeneration(
       1,
       { variant: experimentVariant || 'unknown' }
     )
+
+    // Notify Slack (fire-and-forget)
+    prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+      .then(u => { if (u?.email) notifySlackStrategyGenerated(u.email, 'initial') })
   }
 
   console.log(`[Pipeline] Initial generation complete in ${Date.now() - startTime}ms`)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { verifyMagicLinkToken } from '@/lib/jwt'
+import { notifySlackNewUser } from '@/lib/notifications'
 
 /**
  * GET /api/auth/verify-marketing
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     user = await prisma.user.create({
       data: { email },
     })
+    notifySlackNewUser(email)
   }
 
   // Create session token
