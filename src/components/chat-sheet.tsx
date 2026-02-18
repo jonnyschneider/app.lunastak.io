@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
 } from '@/components/ui/sheet'
 import {
   Select,
@@ -511,6 +512,7 @@ export function ChatSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
+        <SheetTitle className="sr-only">Chat</SheetTitle>
         {/* Header */}
         <div className="bg-muted/50 border-b px-6 py-4">
           <div className="flex items-center gap-3">
