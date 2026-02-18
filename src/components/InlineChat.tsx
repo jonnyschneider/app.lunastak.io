@@ -18,6 +18,7 @@ import {
 import { ConversationPhase } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
+import { getStatsigClient } from '@/components/StatsigProvider'
 
 interface InlineMessage {
   id: string
@@ -525,8 +526,8 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           <AlertDialogFooter>
             <AlertDialogCancel>Keep chatting</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
+              getStatsigClient()?.logEvent('cta_generate_strategy', 'inline-chat', { projectId })
               setShowFinishConfirm(false)
-              // Go straight to extraction, don't show another prompt
               handleExtract()
             }}>
               {messages.filter(m => m.role === 'user').length <= 2 ? 'Finish anyway' : 'Generate strategy'}

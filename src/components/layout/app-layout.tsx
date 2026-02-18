@@ -92,6 +92,7 @@ import { PaywallModal } from '@/components/PaywallModal'
 import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateDialog'
 import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
+import { getStatsigClient } from '@/components/StatsigProvider'
 import { usePaywall } from '@/hooks/use-paywall'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
@@ -335,6 +336,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   }
 
   const handleRestoreDemo = async () => {
+    getStatsigClient()?.logEvent('cta_restore_demo', 'sidebar')
     const projectId = await restoreDemo()
     if (projectId) {
       await fetchProjects()
@@ -344,7 +346,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   }
 
   const handleCreateProject = async () => {
-    // Guests must sign in to create projects
+    getStatsigClient()?.logEvent('cta_create_project', 'sidebar')
     if (!session) {
       setProjectSwitcherOpen(false)
       setSignUpDialogOpen(true)
@@ -492,7 +494,10 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setChatSheetOpen(true)}>
+                  <SidebarMenuButton onClick={() => {
+                    getStatsigClient()?.logEvent('cta_new_chat', 'sidebar')
+                    setChatSheetOpen(true)
+                  }}>
                     <MessageSquare className="h-4 w-4" />
                     <span>New Chat</span>
                   </SidebarMenuButton>
@@ -500,6 +505,7 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => {
+                      getStatsigClient()?.logEvent('cta_upload_doc', 'sidebar')
                       setUploadProjectId(selectedProject.id)
                       setUploadDialogOpen(true)
                     }}

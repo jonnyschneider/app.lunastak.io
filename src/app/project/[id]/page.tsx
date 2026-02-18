@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
+import { getStatsigClient } from '@/components/StatsigProvider'
 import { AppLayout } from '@/components/layout/app-layout'
 import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -589,7 +590,7 @@ export default function ProjectPage() {
                     size="sm"
                     className="flex-1 rounded-r-none"
                     onClick={() => {
-                      // Track if this is first content upload
+                      getStatsigClient()?.logEvent('cta_upload_doc', 'project-page', { projectId })
                       const isFirstContent =
                         (stats.fragmentCount ?? 0) === 0 &&
                         (stats.conversationCount ?? 0) === 0 &&
@@ -775,6 +776,7 @@ export default function ProjectPage() {
                   size="sm"
                   className="w-full"
                   onClick={() => {
+                    getStatsigClient()?.logEvent('cta_new_chat', 'project-page', { projectId })
                     setChatInitialQuestion(undefined)
                     setChatDeepDiveId(undefined)
                     setChatGapExploration(undefined)

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Plus, RotateCcw } from 'lucide-react';
+import { getStatsigClient } from '@/components/StatsigProvider';
 
 interface EmptyProjectStateProps {
   onCreateProject: () => void;
@@ -15,6 +16,7 @@ export function EmptyProjectState({ onCreateProject, onRestoreDemo }: EmptyProje
   const [isCreating, setIsCreating] = useState(false);
 
   const handleRestoreDemo = async () => {
+    getStatsigClient()?.logEvent('cta_restore_demo', 'empty-state');
     setIsRestoring(true);
     try {
       await onRestoreDemo();
@@ -24,6 +26,7 @@ export function EmptyProjectState({ onCreateProject, onRestoreDemo }: EmptyProje
   };
 
   const handleCreateProject = async () => {
+    getStatsigClient()?.logEvent('cta_create_project', 'empty-state');
     setIsCreating(true);
     try {
       await onCreateProject();

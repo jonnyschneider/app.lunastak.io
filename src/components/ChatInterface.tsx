@@ -12,6 +12,7 @@ import {
 import { Kbd } from '@/components/ui/kbd';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Crosshair } from 'lucide-react';
+import { getStatsigClient } from '@/components/StatsigProvider';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
@@ -131,7 +132,10 @@ export default function ChatInterface({
             {/* Generate Strategy button */}
             <div className="flex justify-center py-2">
               <Button
-                onClick={onGenerateStrategy}
+                onClick={() => {
+                  getStatsigClient()?.logEvent('cta_generate_strategy', 'early-exit')
+                  onGenerateStrategy?.()
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base font-semibold"
               >
                 Generate Strategy

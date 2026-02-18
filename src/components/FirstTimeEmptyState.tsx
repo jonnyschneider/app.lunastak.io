@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/tooltip'
 import { InlineChat } from '@/components/InlineChat'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
+import { getStatsigClient } from '@/components/StatsigProvider'
 
 interface FirstTimeEmptyStateProps {
   projectId: string
@@ -110,7 +111,10 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
             <div className="flex flex-wrap gap-4 justify-center">
               <Button
                 variant="outline"
-                onClick={() => setUploadDialogOpen(true)}
+                onClick={() => {
+                  getStatsigClient()?.logEvent('cta_upload_doc', 'first-time', { projectId })
+                  setUploadDialogOpen(true)
+                }}
                 className="flex items-center gap-2"
               >
                 <Upload className="h-4 w-4" />
@@ -120,7 +124,10 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={() => router.push(`/project/${projectId}/template`)}
+                    onClick={() => {
+                      getStatsigClient()?.logEvent('cta_build_strategy', 'first-time', { projectId })
+                      router.push(`/project/${projectId}/template`)
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Blocks className="h-4 w-4" />
@@ -135,7 +142,10 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={() => setDemoDialogOpen(true)}
+                    onClick={() => {
+                      getStatsigClient()?.logEvent('cta_demo_peek', 'first-time')
+                      setDemoDialogOpen(true)
+                    }}
                     disabled={isLoadingDemo}
                     className="flex items-center gap-2 bg-[hsl(41_60%_58%/0.1)] border-[hsl(41_60%_58%/0.3)] hover:bg-[hsl(41_60%_58%/0.18)]"
                   >
@@ -180,7 +190,10 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCreateDemo}>
+            <AlertDialogAction onClick={() => {
+              getStatsigClient()?.logEvent('cta_demo_confirm', 'first-time')
+              handleCreateDemo()
+            }}>
               Let me in
             </AlertDialogAction>
           </AlertDialogFooter>

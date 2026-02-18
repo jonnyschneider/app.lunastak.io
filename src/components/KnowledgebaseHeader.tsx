@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucid
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
+import { getStatsigClient } from '@/components/StatsigProvider'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -180,12 +181,9 @@ export function KnowledgebaseHeader({
 
   const handleRefreshClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    if (knowledgeUpdatedAt) {
-      const dwellMs = Date.now() - new Date(knowledgeUpdatedAt).getTime()
-      console.log('[Analytics] strategy_refresh_dwell_time', { dwellMs })
-    }
+    getStatsigClient()?.logEvent('cta_refresh_strategy', 'knowledge-panel')
     onRefreshClick()
-  }, [knowledgeUpdatedAt, onRefreshClick])
+  }, [onRefreshClick])
 
   const handleChatClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
