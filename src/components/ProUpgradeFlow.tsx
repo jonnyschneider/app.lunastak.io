@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sparkles, Check, Calendar, FileText, Plug, Mic } from 'lucide-react';
+import { getStatsigClient } from '@/components/StatsigProvider';
 
 // Feature definitions for the interstitial
 export const PRO_FEATURES = {
@@ -86,8 +87,7 @@ export function ProFeatureInterstitial({
   const Icon = featureConfig.icon;
 
   const handleUpgradeClick = () => {
-    // Log the strong signal
-    console.log('[ProUpgrade] User clicked Upgrade to Pro for:', feature);
+    getStatsigClient()?.logEvent('pro_upgrade_click', feature);
     onUpgrade();
   };
 
@@ -360,13 +360,11 @@ export function useProUpgradeFlow() {
   const triggerUpgrade = (feature: ProFeatureKey) => {
     setCurrentFeature(feature);
     if (isPro) {
-      // Pro user clicking unreleased feature
       setComingSoonOpen(true);
-      console.log('[ProUpgrade] Pro user viewed coming soon feature:', feature);
+      getStatsigClient()?.logEvent('pro_coming_soon_view', feature);
     } else {
-      // Non-pro user - show upgrade interstitial
       setInterstitialOpen(true);
-      console.log('[ProUpgrade] User viewed pro feature:', feature);
+      getStatsigClient()?.logEvent('pro_interstitial_view', feature);
     }
   };
 
