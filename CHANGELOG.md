@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-02-19
+
+**Pre-launch analytics, Slack notifications, and UX fixes.**
+
+### Added
+
+- **Slack notifications** — Shared `notifySlack` utility with wrappers for signup and strategy generation events
+  - `notifySlackNewUser` fires on NextAuth and marketing-site signups
+  - `notifySlackStrategyGenerated` fires on initial and refresh generation (fire-and-forget)
+- **Statsig CTA events** — 12 event types wired across all major buttons (`cta_generate_strategy`, `cta_new_chat`, `cta_upload_doc`, `cta_create_project`, `cta_restore_demo`, `cta_build_strategy`, `cta_demo_peek`, `cta_demo_confirm`, `cta_complete_template`, `cta_refresh_strategy`, `cta_create_account`, `cta_add_deep_dive`)
+  - Value field differentiates button location (e.g. `sidebar` vs `project-page`)
+- **ProUpgradeFlow Statsig events** — `pro_interstitial_view`, `pro_upgrade_click`, `pro_coming_soon_view`
+- **Fake door tracking** — `fake_door_click` event via Statsig (replaces broken `console.log`)
+- **Vercel Analytics** — `<Analytics />` mounted in root layout
+- **Statsig environment tiers** — Client SDK now tagged with `development`/`preview`/`production` via `NEXT_PUBLIC_VERCEL_ENV`
+
+### Fixed
+
+- **Missing favicon** — Added `src/app/icon.svg` (gold circle matching brand)
+- **SheetTitle accessibility warning** — Added visually-hidden `SheetTitle` to chat-sheet
+- **Dead FakeDoorDialog code** — Removed unused component and dead references from StrategyDisplay and project page
+- **OpportunityEditor fake door** — "AI Rewrite" now routes through ProUpgradeFlow instead of deleted FakeDoorDialog
+- **`outputFileTracingIncludes` deprecation** — Moved under `experimental` in `next.config.js`
+
+### Removed
+
+- **`FakeDoorDialog.tsx`** — Replaced by ProUpgradeFlow pattern; no remaining callers
+
 ## [2.0.3] - 2026-02-16
 
 **Knowledge panel polish, objectives prompt overhaul, Luna demo fixture and "see demo" button refresh.**
