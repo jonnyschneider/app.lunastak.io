@@ -6,9 +6,14 @@ interface UseProjectActionsOptions {
   triggerPaywall?: (feature: PaywallFeature) => Promise<boolean>;
 }
 
+interface RestoreDemoResult {
+  projectId: string;
+  latestTraceId: string | null;
+}
+
 interface UseProjectActionsReturn {
   createProject: () => Promise<string | null>;
-  restoreDemo: () => Promise<string | null>;
+  restoreDemo: () => Promise<RestoreDemoResult | null>;
   deleteProject: (projectId: string) => Promise<boolean>;
   isCreating: boolean;
   isRestoring: boolean;
@@ -51,7 +56,7 @@ export function useProjectActions(options: UseProjectActionsOptions = {}): UsePr
     }
   }, [options]);
 
-  const restoreDemo = useCallback(async (): Promise<string | null> => {
+  const restoreDemo = useCallback(async (): Promise<RestoreDemoResult | null> => {
     setIsRestoring(true);
     try {
       const response = await fetch('/api/projects/restore-demo', {
@@ -61,7 +66,7 @@ export function useProjectActions(options: UseProjectActionsOptions = {}): UsePr
       if (response.ok) {
         const data = await response.json();
         options.onSuccess?.();
-        return data.projectId;
+        return { projectId: data.projectId, latestTraceId: data.latestTraceId ?? null };
       }
       console.error('Failed to restore demo project');
       return null;

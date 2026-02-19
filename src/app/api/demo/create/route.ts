@@ -43,11 +43,22 @@ export async function POST() {
   })
 
   if (existingDemo) {
-    return NextResponse.json({ projectId: existingDemo.id, existed: true })
+    const latestTrace = await prisma.trace.findFirst({
+      where: { projectId: existingDemo.id },
+      orderBy: { timestamp: 'desc' },
+      select: { id: true },
+    })
+    return NextResponse.json({ projectId: existingDemo.id, latestTraceId: latestTrace?.id ?? null, existed: true })
   }
 
   // Create new demo project
   const projectId = await seedDemoProject(userId)
 
-  return NextResponse.json({ projectId, existed: false })
+  const latestTrace = await prisma.trace.findFirst({
+    where: { projectId },
+    orderBy: { timestamp: 'desc' },
+    select: { id: true },
+  })
+
+  return NextResponse.json({ projectId, latestTraceId: latestTrace?.id ?? null, existed: false })
 }

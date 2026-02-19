@@ -226,7 +226,7 @@ export function KnowledgebaseHeader({
             {knowledgeBusy ? knowledgeBusyMessage : 'Knowledgebase'}
           </span>
           {!knowledgeBusy && updatedLabel && (
-            <span className="text-xs text-muted-foreground">
+            <span className="hidden md:inline text-xs text-muted-foreground">
               ({updatedLabel})
             </span>
           )}
@@ -236,15 +236,15 @@ export function KnowledgebaseHeader({
           {/* Stats + strategy status */}
           {!isBusy && fragmentCount > 0 && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
-              <span>&middot;</span>
-              <span>{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
-              <span>&middot;</span>
+              <span className="hidden md:inline">{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
+              <span className="hidden md:inline">&middot;</span>
+              <span className="hidden md:inline">{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
+              <span className="hidden md:inline">&middot;</span>
               <span>{fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}</span>
               {strategyIsStale && fragmentsSinceStrategy > 0 && (
                 <>
-                  <span>&middot;</span>
-                  <span className="font-medium text-lunastak dark:text-lunastak">
+                  <span className="hidden md:inline">&middot;</span>
+                  <span className="hidden md:inline font-medium text-lunastak dark:text-lunastak">
                     {fragmentsSinceStrategy} since last strategy
                   </span>
                 </>

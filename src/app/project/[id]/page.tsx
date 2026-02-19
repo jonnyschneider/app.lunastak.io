@@ -520,104 +520,13 @@ export default function ProjectPage() {
           }
         />
 
-        {/* Documents | Chats */}
+        {/* Row 1: Strategy + Chats */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Documents Column */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Upload className="h-4 w-4" />
-                Documents & Memos
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Files and notes that inform your strategy
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projectData?.documents && projectData.documents.length > 0 ? (
-                (() => {
-                  const INPUT_LIMIT = 10
-                  const allDocs = projectData.documents
-                  const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
-                  const hasMore = allDocs.length > INPUT_LIMIT
-
-                  return (
-                    <ItemGroup>
-                      {visibleDocs.map((doc, index) => (
-                        <React.Fragment key={doc.id}>
-                          {index > 0 && <ItemSeparator />}
-                          <Item size="sm">
-                            <ItemContent>
-                              <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
-                              <ItemDescription className="text-xs">
-                                {doc.status === 'complete'
-                                  ? `${doc.fragmentCount} fragments`
-                                  : doc.status === 'processing'
-                                    ? 'Processing...'
-                                    : doc.status}
-                              </ItemDescription>
-                            </ItemContent>
-                          </Item>
-                        </React.Fragment>
-                      ))}
-                      {hasMore && (
-                        <>
-                          <ItemSeparator />
-                          <div className="px-4 py-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full text-muted-foreground"
-                              onClick={() => setShowAllInputs(!showAllInputs)}
-                            >
-                              {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </ItemGroup>
-                  )
-                })()
-              ) : (
-                <div className="text-center py-4 px-6 text-muted-foreground">
-                  <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                  <p className="text-xs">No documents yet</p>
-                </div>
-              )}
-              <div className="p-4 pt-3 border-t">
-                <div className="flex w-full">
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-r-none"
-                    onClick={() => {
-                      getStatsigClient()?.logEvent('cta_upload_doc', 'project-page', { projectId })
-                      const isFirstContent =
-                        (stats.fragmentCount ?? 0) === 0 &&
-                        (stats.conversationCount ?? 0) === 0 &&
-                        (projectData?.strategyOutputs?.length ?? 0) === 0
-                      if (isFirstContent) {
-                        setPendingFirstContentUpload(true)
-                      }
-                      setUploadDeepDiveId(undefined)
-                      setUploadDialogOpen(true)
-                    }}
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload Doc
-                  </Button>
-                  <div className="w-px bg-primary-foreground/20" />
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-l-none"
-                    onClick={() => triggerUpgrade('audio-memo')}
-                  >
-                    <NotebookPen className="h-3 w-3 mr-1" />
-                    Add Memo
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Strategy CTA */}
+          <GoToStrategyCard
+            latestTraceId={projectData?.strategyOutputs?.[0]?.id ?? null}
+            projectId={projectId}
+          />
 
           {/* Chats Column */}
           <Card data-section="chats">
@@ -791,11 +700,10 @@ export default function ProjectPage() {
               </div>
             </CardContent>
           </Card>
-
         </div>
 
-        {/* Explore Next + Go to Strategy */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Row 2: Explore Next + Documents */}
+        <div className="grid gap-6 md:grid-cols-2">
           <ExploreNextSection
             deepDives={projectData?.deepDives || []}
             provocations={projectData?.suggestedQuestions || []}
@@ -827,7 +735,103 @@ export default function ProjectPage() {
             }}
             onAddDeepDive={() => setAddDeepDiveOpen(true)}
           />
-          <GoToStrategyCard />
+
+          {/* Documents & Memos */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Upload className="h-4 w-4" />
+                Documents & Memos
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Files and notes that inform your strategy
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {projectData?.documents && projectData.documents.length > 0 ? (
+                (() => {
+                  const INPUT_LIMIT = 10
+                  const allDocs = projectData.documents
+                  const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
+                  const hasMore = allDocs.length > INPUT_LIMIT
+
+                  return (
+                    <ItemGroup>
+                      {visibleDocs.map((doc, index) => (
+                        <React.Fragment key={doc.id}>
+                          {index > 0 && <ItemSeparator />}
+                          <Item size="sm">
+                            <ItemContent>
+                              <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
+                              <ItemDescription className="text-xs">
+                                {doc.status === 'complete'
+                                  ? `${doc.fragmentCount} fragments`
+                                  : doc.status === 'processing'
+                                    ? 'Processing...'
+                                    : doc.status}
+                              </ItemDescription>
+                            </ItemContent>
+                          </Item>
+                        </React.Fragment>
+                      ))}
+                      {hasMore && (
+                        <>
+                          <ItemSeparator />
+                          <div className="px-4 py-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-muted-foreground"
+                              onClick={() => setShowAllInputs(!showAllInputs)}
+                            >
+                              {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </ItemGroup>
+                  )
+                })()
+              ) : (
+                <div className="text-center py-4 px-6 text-muted-foreground">
+                  <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                  <p className="text-xs">No documents yet</p>
+                </div>
+              )}
+              <div className="p-4 pt-3 border-t">
+                <div className="flex w-full">
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-r-none"
+                    onClick={() => {
+                      getStatsigClient()?.logEvent('cta_upload_doc', 'project-page', { projectId })
+                      const isFirstContent =
+                        (stats.fragmentCount ?? 0) === 0 &&
+                        (stats.conversationCount ?? 0) === 0 &&
+                        (projectData?.strategyOutputs?.length ?? 0) === 0
+                      if (isFirstContent) {
+                        setPendingFirstContentUpload(true)
+                      }
+                      setUploadDeepDiveId(undefined)
+                      setUploadDialogOpen(true)
+                    }}
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Upload Doc
+                  </Button>
+                  <div className="w-px bg-primary-foreground/20" />
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-l-none"
+                    onClick={() => triggerUpgrade('audio-memo')}
+                  >
+                    <NotebookPen className="h-3 w-3 mr-1" />
+                    Add Memo
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

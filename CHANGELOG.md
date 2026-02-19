@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.5] - 2026-02-20
+
+**Demo discoverability and dashboard layout fixes.**
+
+### Fixed
+
+- **Demo lands on strategy view** — Demo creation and restore now redirect to `/strategy/{traceId}` instead of "Your Thinking", so users immediately see the output
+- **Dashboard module order** — Reordered to Strategy (1), Chats (2), Explore Next (3), Documents & Memos (4)
+- **GoToStrategyCard** — Replaced placeholder with real CTA linking to latest strategy, with empty state when no strategy exists
+- **KB header mobile overflow** — On mobile, collapsed stats to show only insight count; chat/doc counts and timestamps hidden below `md` breakpoint
+- **Strategy page** — Removed "Learn more →" link, kept Decision Stack logo
+
+### Changed
+
+- `/api/demo/create` and `/api/projects/restore-demo` now return `latestTraceId` in response
+- `useProjectActions.restoreDemo()` returns `{ projectId, latestTraceId }` instead of plain string
+
 ## [2.0.4] - 2026-02-19
 
 **Pre-launch analytics, Slack notifications, and UX fixes.**

@@ -337,11 +337,16 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
 
   const handleRestoreDemo = async () => {
     getStatsigClient()?.logEvent('cta_restore_demo', 'sidebar')
-    const projectId = await restoreDemo()
-    if (projectId) {
+    const result = await restoreDemo()
+    if (result) {
       await fetchProjects()
       setProjectSwitcherOpen(false)
-      router.push(`/project/${projectId}`)
+      // Navigate to strategy view so users see the output, not just inputs
+      if (result.latestTraceId) {
+        router.push(`/strategy/${result.latestTraceId}`)
+      } else {
+        router.push(`/project/${result.projectId}/strategy`)
+      }
     }
   }
 

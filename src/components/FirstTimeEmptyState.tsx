@@ -55,8 +55,12 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
 
       if (response.ok) {
         const data = await response.json()
-        // Navigate to demo project
-        router.push(`/project/${data.projectId}`)
+        // Navigate to strategy view so users see the output, not just inputs
+        if (data.latestTraceId) {
+          router.push(`/strategy/${data.latestTraceId}`)
+        } else {
+          router.push(`/project/${data.projectId}/strategy`)
+        }
       }
     } catch (error) {
       console.error('Failed to create demo:', error)

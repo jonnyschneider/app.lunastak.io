@@ -127,23 +127,13 @@ export default function StrategyViewPage() {
               {/* Spacer */}
               <div className="flex-1" />
 
-              {/* Right: Decision Stack logo + learn more */}
-              <div className="flex items-center gap-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/Decision Stack Logo.svg"
-                  alt="Decision Stack"
-                  className="h-8"
-                />
-                <a
-                  href="https://www.thedecisionstack.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground text-xs hover:text-foreground transition-colors"
-                >
-                  Learn more →
-                </a>
-              </div>
+              {/* Right: Decision Stack logo */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/Decision Stack Logo.svg"
+                alt="Decision Stack"
+                className="h-8"
+              />
             </div>
           </div>
 

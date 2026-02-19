@@ -33,9 +33,16 @@ export async function POST() {
   try {
     const projectId = await seedDemoProject(session.user.id);
 
+    const latestTrace = await prisma.trace.findFirst({
+      where: { projectId },
+      orderBy: { timestamp: 'desc' },
+      select: { id: true },
+    });
+
     return NextResponse.json({
       success: true,
       projectId,
+      latestTraceId: latestTrace?.id ?? null,
     }, { status: 201 });
   } catch (error) {
     console.error('Error restoring demo project:', error);
