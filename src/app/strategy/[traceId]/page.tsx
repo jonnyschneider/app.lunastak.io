@@ -156,6 +156,7 @@ export default function StrategyViewPage() {
             <KnowledgeSnapshot
               extractedContext={extractedContext}
               timestamp={timestamp}
+              projectId={projectId}
             />
           </TabsContent>
         </Tabs>
