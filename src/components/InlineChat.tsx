@@ -485,7 +485,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
               <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
               <span className="ml-1">to send</span>
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               {conversationId && (
                 <button
                   type="button"
