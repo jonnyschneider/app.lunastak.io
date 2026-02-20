@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, RotateCcw } from 'lucide-react'
+import { Sparkles, RotateCcw, Info } from 'lucide-react'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
@@ -246,7 +246,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           setMessages(prev => [...prev, {
             id: `msg-${Date.now()}-coaching`,
             role: 'system',
-            content: "You've shared a lot of great context. You can generate your strategy now and keep refining with more conversations afterwards — your strategy updates as your thinking evolves.",
+            content: "You've shared great context — keep going for a stronger draft, or hit Generate Strategy now. You can always come back and refine later.",
           }])
         }
       }
@@ -392,9 +392,12 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             {messages.map((message) => (
               message.role === 'system' ? (
                 <div key={message.id} className="flex justify-center py-1">
-                  <p className="text-xs text-muted-foreground italic text-center max-w-[80%]">
-                    {message.content}
-                  </p>
+                  <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 px-4 py-2.5 max-w-[85%]">
+                    <Info className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-900 dark:text-amber-200">
+                      {message.content}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div
@@ -476,7 +479,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
             className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
           <div className="flex items-center justify-between mt-3">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <p className="hidden md:flex text-xs text-muted-foreground items-center gap-1">
               <Kbd>⌘</Kbd><Kbd>Enter</Kbd>
               <span className="mx-1">or</span>
               <Kbd>Ctrl</Kbd><Kbd>Enter</Kbd>
@@ -494,17 +497,14 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
                 </button>
               )}
               {hasUserResponded && (
-                messages.filter(m => m.role === 'user').length >= 3 ? (
+                messages.filter(m => m.role === 'user').length >= 7 ? (
                   <Button
                     type="button"
-                    variant="outline"
                     size="sm"
                     onClick={() => setShowFinishConfirm(true)}
                     disabled={isLoading}
-                    className="flex items-center gap-1.5"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Generate Strategy
+                    Finish
                   </Button>
                 ) : (
                   <button
