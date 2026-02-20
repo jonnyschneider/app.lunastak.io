@@ -246,7 +246,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           setMessages(prev => [...prev, {
             id: `msg-${Date.now()}-coaching`,
             role: 'system',
-            content: "You've shared great context — keep going for a stronger draft, or hit Generate Strategy now. You can always come back and refine later.",
+            content: "Keep going for a stronger draft — I'll tell you when I have enough. Or, hit 'Finish' now. You can always add more after the draft.",
           }])
         }
       }
@@ -467,7 +467,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
 
       {/* Input area - anchored at bottom, hide when ready to generate */}
       {!readyToGenerate && (
-        <form onSubmit={handleSubmit} className="shrink-0 border-t border-border pt-4">
+        <form onSubmit={handleSubmit} className="shrink-0 border-t border-border pt-4 pb-4">
           <textarea
             ref={inputRef}
             value={input}
@@ -498,14 +498,14 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
               )}
               {hasUserResponded && (
                 messages.filter(m => m.role === 'user').length >= 7 ? (
-                  <Button
+                  <button
                     type="button"
-                    size="sm"
                     onClick={() => setShowFinishConfirm(true)}
                     disabled={isLoading}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                   >
                     Finish
-                  </Button>
+                  </button>
                 ) : (
                   <button
                     type="button"
