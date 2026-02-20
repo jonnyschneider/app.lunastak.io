@@ -22,7 +22,7 @@ import { getStatsigClient } from '@/components/StatsigProvider'
 
 interface InlineMessage {
   id: string
-  role: 'assistant' | 'user'
+  role: 'assistant' | 'user' | 'system'
   content: string
 }
 
@@ -232,6 +232,23 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
         if (data.suggestedQuestion) {
           setSuggestedQuestion(data.suggestedQuestion)
         }
+      } else {
+        // Coaching messages at key moments
+        const userMessageCount = messages.filter(m => m.role === 'user').length + 1 // +1 for the one we just added
+
+        if (userMessageCount === 2) {
+          setMessages(prev => [...prev, {
+            id: `msg-${Date.now()}-coaching`,
+            role: 'system',
+            content: "A few more thoughts and I'll have enough to draft your first Decision Stack.",
+          }])
+        } else if (userMessageCount === 7) {
+          setMessages(prev => [...prev, {
+            id: `msg-${Date.now()}-coaching`,
+            role: 'system',
+            content: "You've shared a lot of great context. You can generate your strategy now and keep refining with more conversations afterwards — your strategy updates as your thinking evolves.",
+          }])
+        }
       }
     } catch (err) {
       console.error('Failed to send message:', err)
@@ -373,20 +390,28 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           <div className="flex flex-col min-h-full justify-end">
           <div className="space-y-4">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg p-4 ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-foreground'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+              message.role === 'system' ? (
+                <div key={message.id} className="flex justify-center py-1">
+                  <p className="text-xs text-muted-foreground italic text-center max-w-[80%]">
+                    {message.content}
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg p-4 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </div>
+              )
             ))}
             {isLoading && (
               <div className="flex justify-start">
@@ -469,14 +494,28 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
                 </button>
               )}
               {hasUserResponded && (
-                <button
-                  type="button"
-                  onClick={() => setShowFinishConfirm(true)}
-                  disabled={isLoading}
-                  className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                >
-                  Finish
-                </button>
+                messages.filter(m => m.role === 'user').length >= 3 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFinishConfirm(true)}
+                    disabled={isLoading}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Generate Strategy
+                  </Button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowFinishConfirm(true)}
+                    disabled={isLoading}
+                    className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    Finish
+                  </button>
+                )
               )}
               <button
                 type="submit"
