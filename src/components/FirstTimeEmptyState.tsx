@@ -85,8 +85,8 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
   return (
     <div className={`flex flex-col px-6 ${chatStarted ? 'h-[calc(100vh-4rem)]' : 'min-h-[60vh] justify-center'}`}>
       <div className={`max-w-xl w-full mx-auto ${chatStarted ? 'flex flex-col flex-1 min-h-0' : 'space-y-6'}`}>
-        {/* Header */}
-        <div className={`text-center space-y-2 ${chatStarted ? 'shrink-0 pt-6 pb-4 sticky top-0 z-10 bg-background/80 backdrop-blur-sm' : ''}`}>
+        {/* Header — collapses away once chat starts */}
+        <div className={`text-center space-y-2 overflow-hidden transition-all duration-500 ease-in-out ${chatStarted ? 'max-h-0 opacity-0 py-0' : 'max-h-40'}`}>
           <h1 className="text-2xl font-semibold tracking-tight">
             Hi, I'm Luna. Let's clarify your strategic thinking.
           </h1>
