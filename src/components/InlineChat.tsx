@@ -77,6 +77,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
   }, [autoStart, initialMessage, conversationId])
 
   const startConversation = async (firstMessage: string) => {
+    getStatsigClient()?.logEvent('cta_start_initial_conversation', 'inline-chat', { projectId })
     setIsLoading(true)
     setIsExpanded(true)
     setError(null)
