@@ -2,13 +2,12 @@ import { test, expect } from '@playwright/test'
 import path from 'path'
 import {
   seedAuthUser,
-  waitForPipelineComplete,
   fetchProjectData,
 } from './helpers'
 
-test.describe('Flow 2: Document Upload → Strategy', () => {
-  test('uploading a doc produces fragments and generates strategy from them', async ({ page, context }) => {
-    test.setTimeout(180_000)
+test.describe('Flow 2: Document Upload', () => {
+  test('uploading a doc produces fragments and renders on dashboard', async ({ page, context }) => {
+    test.setTimeout(120_000)
     const baseURL = test.info().project.use.baseURL!
 
     // 1. Seed authenticated user (doc upload requires auth)
@@ -39,36 +38,17 @@ test.describe('Flow 2: Document Upload → Strategy', () => {
         // Dialog may already be gone
       })
 
-    // Dashboard should now show fragment count from document
+    // 4. Dashboard should render with doc fragment info
     await expect(page.locator('text=/\\d+ insight/i')).toBeVisible({ timeout: 30_000 })
 
-    // Verify doc fragments via API
-    const preGenData = await fetchProjectData(context, baseURL, projectId)
-    const docFragmentCount = preGenData.stats.fragmentCount
-    expect(docFragmentCount).toBeGreaterThan(0) // Doc should have produced fragments
+    // Document should appear in the Documents section
+    await expect(page.locator('text="test-strategy-doc.txt"')).toBeVisible({ timeout: 10_000 })
 
-    // 4. Click "Create strategy" to generate from doc fragments
-    const createStrategyBtn = page.getByRole('button', { name: 'Create strategy', exact: true })
-    await expect(createStrategyBtn).toBeVisible({ timeout: 10_000 })
-    await createStrategyBtn.click()
+    // 5. Verify doc fragments via API
+    const projectData = await fetchProjectData(context, baseURL, projectId)
+    expect(projectData.stats.fragmentCount).toBeGreaterThan(0)
 
-    // 5. Wait for pipeline to complete
-    await waitForPipelineComplete(page)
-
-    // 6. Verify strategy was generated from doc fragments
-    const postData = await fetchProjectData(context, baseURL, projectId)
-    expect(postData.stats.fragmentCount).toBe(docFragmentCount)
-    expect(postData.stats.strategyIsStale).toBe(false)
-
-    // Dashboard shows correct state
-    await expect(page.locator('text=/\\d+ insight/i')).toBeVisible()
-    await expect(page.locator('text="Strategy in sync"')).toBeVisible({ timeout: 5_000 })
-
-    // Strategy page renders
-    await page.locator('a:has-text("View")').click()
-    await page.waitForURL(/\/strategy\//)
-    await expect(page.locator('text="Vision"')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text="Strategy"')).toBeVisible()
-    await expect(page.locator('text="Objectives"')).toBeVisible()
+    // Strategy should not exist yet (requires a conversation first)
+    await expect(page.locator('text="No strategies yet"')).toBeVisible()
   })
 })
