@@ -57,7 +57,15 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, email }) {
+      // Skip during verification request phase (sending the magic link email)
+      // The signIn callback fires twice for EmailProvider:
+      // 1. When sending the email (verificationRequest=true, user may not exist yet)
+      // 2. When the magic link is clicked (verificationRequest=false/undefined)
+      if (email?.verificationRequest) {
+        return true
+      }
+
       // Server-side fallback: check for pending guest transfer
       // This handles cross-browser magic link flows where the cookie is lost
       if (user.id && user.email) {
