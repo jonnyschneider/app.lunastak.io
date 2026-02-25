@@ -78,6 +78,13 @@ function SignInForm() {
   const handleAutoSubmit = async () => {
     setIsLoading(true)
     try {
+      // Store guest mapping server-side before sending magic link
+      fetch('/api/auth/prepare-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: prefilledEmail }),
+      }).catch(() => {}) // Fire-and-forget
+
       const result = await signIn('email', {
         email: prefilledEmail,
         redirect: false,
@@ -102,6 +109,13 @@ function SignInForm() {
     setError('')
 
     try {
+      // Store guest mapping server-side before sending magic link
+      fetch('/api/auth/prepare-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }).catch(() => {}) // Fire-and-forget
+
       const result = await signIn('email', {
         email,
         redirect: false,

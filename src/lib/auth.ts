@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
 import { notifySlackNewUser } from "@/lib/notifications"
+import { transferGuestToUser } from "@/lib/transfer-session"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -56,6 +57,38 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    async signIn({ user }) {
+      // Server-side fallback: check for pending guest transfer
+      // This handles cross-browser magic link flows where the cookie is lost
+      if (user.id && user.email) {
+        try {
+          const pending = await prisma.pendingGuestTransfer.findFirst({
+            where: { email: user.email.toLowerCase() },
+          })
+
+          if (pending) {
+            console.log(`[Auth] Found pending transfer for ${user.email}: guest ${pending.guestUserId}`)
+            await transferGuestToUser(pending.guestUserId, user.id)
+
+            // Clean up this pending transfer
+            await prisma.pendingGuestTransfer.delete({
+              where: { id: pending.id },
+            })
+          }
+
+          // Clean up stale pending transfers (older than 24h)
+          await prisma.pendingGuestTransfer.deleteMany({
+            where: {
+              createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+            },
+          })
+        } catch (error) {
+          // Don't block sign-in on transfer failure
+          console.error('[Auth] Pending transfer failed:', error)
+        }
+      }
+      return true
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id

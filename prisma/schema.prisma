@@ -533,6 +533,15 @@ model UserDismissal {
   @@index([userId, itemType])
 }
 
+model PendingGuestTransfer {
+  id          String   @id @default(cuid())
+  email       String
+  guestUserId String
+  createdAt   DateTime @default(now())
+
+  @@index([email])
+}
+
 model UserContent {
   id        String   @id @default(cuid())
   projectId String
