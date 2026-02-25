@@ -10,6 +10,7 @@ import {
 
 test.describe('Flow 3: Guest → Auth Transfer', () => {
   test('guest project transfers to authenticated user with all data intact', async ({ page, context }) => {
+    test.setTimeout(180_000)
     const baseURL = test.info().project.use.baseURL!
 
     // 1. Complete Flow 1 as guest

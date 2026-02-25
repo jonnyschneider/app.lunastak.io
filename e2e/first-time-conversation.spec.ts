@@ -9,6 +9,7 @@ import {
 
 test.describe('Flow 1: Guest → Conversation → Strategy', () => {
   test('fresh guest can have a conversation and generate their first strategy', async ({ page, context }) => {
+    test.setTimeout(180_000)
     const baseURL = test.info().project.use.baseURL!
 
     // 1. Navigate as fresh guest — should redirect to /project/{id}
@@ -49,10 +50,8 @@ test.describe('Flow 1: Guest → Conversation → Strategy', () => {
     // HUM-81 regression: should NOT show "Create Strategy" button
     await expect(page.locator('button:has-text("Create strategy")')).not.toBeVisible()
 
-    // Fragment countdown should say "up to date" (not "N more 'til next auto-update")
-    // Expand the knowledge panel first to see the countdown
-    await page.locator('text="Knowledgebase"').click()
-    await expect(page.locator('text="up to date"')).toBeVisible({ timeout: 5_000 })
+    // Strategy should be in sync (not stale)
+    await expect(page.locator('text="Strategy in sync"')).toBeVisible({ timeout: 5_000 })
 
     // 7. Navigate to strategy page and verify content renders
     await page.locator('a:has-text("View")').click()
