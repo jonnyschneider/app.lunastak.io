@@ -218,10 +218,18 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     isDeleting,
   } = useProjectActions({ triggerPaywall: triggerProjectPaywall })
 
-  // Derive selected project from pathname, fall back to first project
+  // Derive selected project from pathname, fall back to localStorage, then first project
   const pathnameProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
-  const selectedProjectId = pathnameProjectId || projects[0]?.id || null
+  const storedProjectId = typeof window !== 'undefined' ? localStorage.getItem('lastProjectId') : null
+  const selectedProjectId = pathnameProjectId || (storedProjectId && projects.some(p => p.id === storedProjectId) ? storedProjectId : null) || projects[0]?.id || null
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0] || null
+
+  // Persist last-viewed project to localStorage
+  useEffect(() => {
+    if (selectedProjectId) {
+      localStorage.setItem('lastProjectId', selectedProjectId)
+    }
+  }, [selectedProjectId])
 
   // Fetch projects for both auth users and guests (API supports both via cookie)
   useEffect(() => {

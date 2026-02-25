@@ -25,7 +25,9 @@ export default function ProjectRedirect() {
         if (response.ok) {
           const data = await response.json()
           if (data.projects && data.projects.length > 0) {
-            router.replace(`/project/${data.projects[0].id}`)
+            const storedId = localStorage.getItem('lastProjectId')
+            const target = (storedId && data.projects.some((p: { id: string }) => p.id === storedId)) ? storedId : data.projects[0].id
+            router.replace(`/project/${target}`)
           }
         }
       } catch (error) {
