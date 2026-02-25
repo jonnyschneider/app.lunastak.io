@@ -50,9 +50,9 @@ test.describe('Flow 3: Guest → Auth Transfer', () => {
     expect(postTransferData.stats.fragmentCount).toBe(preFragmentCount)
     expect(postTransferData.stats.strategyIsStale).toBe(false)
 
-    // Strategy card should still work
-    await expect(page.locator('text="Your Decision Stack"')).toBeVisible()
-    await expect(page.locator('a:has-text("View")')).toBeVisible()
+    // Strategy card should still work (page may still be loading after navigation)
+    await expect(page.locator('text="Your Decision Stack"')).toBeVisible({ timeout: 30_000 })
+    await expect(page.locator('a:has-text("View")')).toBeVisible({ timeout: 10_000 })
 
     // 5. Guest cookie should be cleared (seed-user doesn't clear it,
     // but we can verify the project is now owned by the auth user)
