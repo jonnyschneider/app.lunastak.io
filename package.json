@@ -23,7 +23,9 @@
     "seed:hydrate": "tsx scripts/seed/hydrate.ts",
     "seed:export": "tsx scripts/seed/export.ts",
     "seed:validate": "tsx scripts/seed/validate.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "e2e": "playwright test",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
@@ -76,6 +78,7 @@
   },
   "devDependencies": {
     "@linear/sdk": "^68.1.0",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.6.1",
