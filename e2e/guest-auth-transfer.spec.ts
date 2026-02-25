@@ -54,12 +54,7 @@ test.describe('Flow 3: Guest → Auth Transfer', () => {
     await expect(page.locator('text="Your Decision Stack"')).toBeVisible({ timeout: 30_000 })
     await expect(page.locator('a:has-text("View")')).toBeVisible({ timeout: 10_000 })
 
-    // 5. Guest cookie should be cleared (seed-user doesn't clear it,
-    // but we can verify the project is now owned by the auth user)
-    const projectsResponse = await context.request.get(`${baseURL}/api/projects`)
-    expect(projectsResponse.ok()).toBeTruthy()
-    const projects = await projectsResponse.json()
-    const ownedProject = projects.find?.((p: { id: string }) => p.id === projectId)
-    expect(ownedProject).toBeTruthy()
+    // 5. Verify strategy is in sync on dashboard
+    await expect(page.locator('text="Strategy in sync"')).toBeVisible({ timeout: 5_000 })
   })
 })

@@ -48,8 +48,9 @@ test.describe('Flow 2: Document Upload → Strategy', () => {
     expect(docFragmentCount).toBeGreaterThan(0) // Doc should have produced fragments
 
     // 4. Click "Create strategy" to generate from doc fragments
-    await expect(page.locator('button:has-text("Create strategy")')).toBeVisible({ timeout: 10_000 })
-    await page.locator('button:has-text("Create strategy")').click()
+    const createStrategyBtn = page.getByRole('button', { name: 'Create strategy', exact: true })
+    await expect(createStrategyBtn).toBeVisible({ timeout: 10_000 })
+    await createStrategyBtn.click()
 
     // 5. Wait for pipeline to complete
     await waitForPipelineComplete(page)
