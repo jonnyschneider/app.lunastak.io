@@ -55,19 +55,11 @@ export const authOptions: NextAuthOptions = {
       // Note: We no longer seed demo projects on signup.
       // New users get an empty project, with "See an example" available on-demand.
     },
-  },
-  callbacks: {
-    async signIn({ user, email }) {
-      // Skip during verification request phase (sending the magic link email)
-      // The signIn callback fires twice for EmailProvider:
-      // 1. When sending the email (verificationRequest=true, user may not exist yet)
-      // 2. When the magic link is clicked (verificationRequest=false/undefined)
-      if (email?.verificationRequest) {
-        return true
-      }
-
+    signIn: async ({ user }) => {
       // Server-side fallback: check for pending guest transfer
-      // This handles cross-browser magic link flows where the cookie is lost
+      // This handles cross-browser magic link flows where the cookie is lost.
+      // Must be in events.signIn (not callbacks.signIn) because for new users
+      // the callback fires BEFORE the user is persisted to the database.
       if (user.id && user.email) {
         try {
           const pending = await prisma.pendingGuestTransfer.findFirst({
@@ -95,8 +87,9 @@ export const authOptions: NextAuthOptions = {
           console.error('[Auth] Pending transfer failed:', error)
         }
       }
-      return true
     },
+  },
+  callbacks: {
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id
