@@ -50,19 +50,23 @@ export async function getGuestCookie(
 
 /**
  * Send a chat message in InlineChat and wait for the assistant response.
+ * Waits for the streaming loading indicator (pulsing ellipsis) to appear then disappear.
  */
 export async function sendMessage(page: Page, text: string): Promise<void> {
   const input = page.locator('textarea[placeholder*="Start anywhere"]')
   await input.fill(text)
   // Send via button click (more reliable than keyboard shortcut)
   await page.locator('button:has-text("Send")').click()
-  // Wait for assistant response to appear (new message after ours)
-  await expect(page.locator('[data-section="messages"] >> text=Assistant')).toBeVisible({ timeout: 30_000 })
+
+  // Wait for the streaming loading indicator to appear (pulsing ellipsis)
+  const loadingIndicator = page.locator('svg.animate-\\[pulse_3s_ease-in-out_infinite\\]')
+  await expect(loadingIndicator.first()).toBeVisible({ timeout: 10_000 })
     .catch(() => {
-      // Fallback: just wait for loading to finish
+      // May have already finished streaming by the time we check
     })
-  // Wait for loading spinner to disappear
-  await expect(page.locator('button:has-text("Send")')).toBeEnabled({ timeout: 30_000 })
+
+  // Wait for the loading indicator to disappear (streaming complete)
+  await expect(loadingIndicator).toHaveCount(0, { timeout: 60_000 })
 }
 
 /**

@@ -9,7 +9,7 @@ import {
 
 test.describe('Flow 1: Guest → Conversation → Strategy', () => {
   test('fresh guest can have a conversation and generate their first strategy', async ({ page, context }) => {
-    const baseURL = page.url() ? new URL(page.url()).origin : test.info().project.use.baseURL!
+    const baseURL = test.info().project.use.baseURL!
 
     // 1. Navigate as fresh guest — should redirect to /project/{id}
     await page.goto('/')

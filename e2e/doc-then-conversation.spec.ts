@@ -31,8 +31,8 @@ test.describe('Flow 2: Document Upload → Conversation → Strategy', () => {
     const fileInput = page.locator('input[type="file"]')
     await fileInput.setInputFiles(path.join(__dirname, 'fixtures/test-strategy-doc.txt'))
 
-    // Click Upload button in dialog
-    await page.locator('button:has-text("Upload")').click()
+    // Click Upload button in dialog (scoped to dialog to avoid sidebar/inline matches)
+    await page.locator('[role="dialog"] button:has-text("Upload")').click()
 
     // Wait for document processing to complete (dialog closes or shows success)
     await expect(page.locator('text=/complete|processed/i')).toBeVisible({ timeout: 60_000 })
