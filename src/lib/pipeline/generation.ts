@@ -444,6 +444,18 @@ export async function runInitialGeneration(
     throw new Error('No active fragments found for initial generation')
   }
 
+  // Bump startedAt to NOW so it's after fragment creation.
+  // The fire-and-forget path pre-creates the GeneratedOutput before extraction,
+  // so its original startedAt predates the fragments. Without this, the UI's
+  // "fragments since last strategy" check sees all fragments as newer than the
+  // strategy and incorrectly shows "Create Strategy". (See HUM-81)
+  if (generatedOutputId) {
+    await prisma.generatedOutput.update({
+      where: { id: generatedOutputId },
+      data: { startedAt: new Date() },
+    })
+  }
+
   // Build prompt from fragments — same data as extractedContext.themes, read from DB
   const generationPrompt = getCurrentPrompt('generation')
   const themesText = fragments
