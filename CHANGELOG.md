@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-02-25
+
+**Auth reliability, pipeline race condition fix, conversation coaching, and E2E regression suite.**
+
+### Added
+
+- **Conversation coaching** — Prominent "Draft First Strategy" button, "Finish" flow with confirmation dialogs, keyboard hint hiding on mobile, coaching copy for first-time users
+- **E2E regression suite** — Playwright tests covering four critical first-time user flows: guest conversation → strategy, document upload → conversation, guest-to-auth session transfer, and demo restore navigation. Runs against preview with real pipeline (no mocking)
+- **Test seed endpoint** — Preview-only `/api/test/seed-user` for E2E auth bypass
+- **Analytics** — `cta_start_initial_conversation` Statsig event for funnel analysis
+- **Navigation persistence** — Active project remembered across navigation via localStorage
+
+### Fixed
+
+- **Pipeline race condition (HUM-81)** — Fire-and-forget path pre-created GeneratedOutput before extraction, so `startedAt` predated all fragments. Strategy showed as stale immediately after generation. Fixed by bumping `startedAt` after fragments load and stamping `knowledgeUpdatedAt` after initial generation
+- **Auth transfer: server-side fallback** — Magic link opening in a different browser lost the guest cookie. Added `PendingGuestTransfer` table with email→guestUserId mapping as cross-browser fallback
+- **Auth transfer: verification timing** — signIn callback was firing during the magic link send phase (before user existed). Skipped transfer during `verificationRequest=true`
+- **Auth transfer: FK ordering** — `callbacks.signIn` fires before user is persisted for new signups. Moved transfer to `events.signIn` which fires after user creation
+- **Header collapse animation** — Header now animates closed on first chat turn instead of jumping
+- **Mobile alignment** — Send and Start Over buttons aligned to RHS on mobile
+- **Knowledge Snapshot** — Nav card truncation and grid alignment fixes
+
 ## [2.0.5] - 2026-02-20
 
 **Demo discoverability and dashboard layout fixes.**
