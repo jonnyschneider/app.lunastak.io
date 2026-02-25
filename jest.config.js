@@ -13,6 +13,7 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/src/lib/__tests__/fixtures/',
+    '<rootDir>/e2e/',
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
