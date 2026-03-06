@@ -36,6 +36,7 @@ test-results/
 *~
 
 # AI Agent/IDE skill directories (created by skill installs)
+CLAUDE.md
 skills/
 .agent/
 .agents/
