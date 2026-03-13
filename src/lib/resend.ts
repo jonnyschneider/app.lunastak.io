@@ -30,5 +30,5 @@ const formattedFrom = fromEmail.includes('<') ? fromEmail : `Lunastak <${fromEma
 export const EMAIL_CONFIG = {
   from: formattedFrom,
   replyTo: 'luna@lunastak.io',
-  adminEmail: 'jonny@humventures.com.au',
+  adminEmail: process.env.ADMIN_EMAIL || 'jonny@humventures.com.au',
 } as const
