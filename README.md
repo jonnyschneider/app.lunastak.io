@@ -67,8 +67,8 @@ npm run verify       # Full verification (type-check + tests + smoke)
 | File | Purpose |
 |------|---------|
 | [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
-| [CLAUDE.md](CLAUDE.md) | Context for Claude Code (workflow, constraints, domain) |
-| [docs/architecture/](docs/architecture/) | Architecture docs (technical overview, pipeline diagrams, decision matrix, ER diagram) |
+| [Architecture Overview](docs/architecture/ARCHITECTURE.md) | System design, data model, key decisions |
+| [Intelligence Pipeline](docs/architecture/intelligence-pipeline-v2.md) | How conversations become strategy |
 
 ## License
 
