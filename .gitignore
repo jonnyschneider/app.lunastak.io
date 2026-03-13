@@ -115,8 +115,9 @@ logs
 # Project-specific exclusions
 TECH_DILIGENCE_BRIEFING.md
 
-# Local R&D docs, fixtures, and eval traces
-docs/
+# Local docs (R&D, plans, archives) — architecture docs are tracked
+docs/*
+!docs/architecture/
 evals/
 scripts/seed/fixtures/
 
