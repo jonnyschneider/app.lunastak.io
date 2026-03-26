@@ -187,17 +187,17 @@ export function OpportunityEditor({
   }, []);
 
   return (
-    <div className="space-y-4 bg-ds-teal border-l-4 border-l-luna rounded-lg shadow-md p-6">
+    <div className="space-y-4 bg-white border rounded-lg shadow-lg p-6">
       {/* Title */}
       <div>
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+          <label className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
             Initiative Title
           </label>
           {onImproveWithAI && (
             <button
               onClick={onImproveWithAI}
-              className="flex items-center gap-1 text-xs text-ds-neon/70 hover:text-ds-neon transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
               <Sparkles className="w-3 h-3" />
               Improve with AI
@@ -216,23 +216,23 @@ export function OpportunityEditor({
       {/* Objective linking - simple checkboxes */}
       {objectives.length > 0 && (
         <div>
-          <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+          <label className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
             Supports Objectives
           </label>
           <div className="mt-2 space-y-1">
             {objectives.map(obj => (
               <label
                 key={obj.id}
-                className="flex items-center gap-3 p-2 rounded hover:bg-white/10 cursor-pointer"
+                className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
               >
                 <input
                   type="checkbox"
                   checked={isObjectiveLinked(obj.id)}
                   onChange={() => toggleObjective(obj.id)}
-                  className="h-4 w-4 rounded border-white/50 bg-white text-ds-teal focus:ring-luna"
+                  className="h-4 w-4 rounded border-gray-300 bg-white text-ds-teal focus:ring-luna"
                   disabled={saving}
                 />
-                <span className="text-sm text-white">{getObjectiveTitle(obj)}</span>
+                <span className="text-sm text-gray-900">{getObjectiveTitle(obj)}</span>
               </label>
             ))}
           </div>
@@ -241,7 +241,7 @@ export function OpportunityEditor({
 
       {/* Description */}
       <div>
-        <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+        <label className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
           Description
         </label>
         <textarea
@@ -267,7 +267,7 @@ export function OpportunityEditor({
       {!compact && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
+            <label className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
               Success Metrics
             </label>
             {successMetrics.length < 3 && (
@@ -275,7 +275,7 @@ export function OpportunityEditor({
                 variant="ghost"
                 size="sm"
                 onClick={handleAddMetric}
-                className="h-7 text-xs text-white hover:bg-white/10 hover:text-white"
+                className="h-7 text-xs"
               >
                 <Plus className="w-3 h-3 mr-1" />
                 Add Metric
@@ -291,13 +291,12 @@ export function OpportunityEditor({
                 onRemove={() => handleRemoveMetric(index)}
                 canRemove={successMetrics.length > 0}
                 linkedObjectives={linkedObjectives}
-                darkMode
               />
             ))}
             {successMetrics.length === 0 && (
               <button
                 onClick={handleAddMetric}
-                className="w-full py-3 border border-dashed border-white/30 rounded-lg text-sm text-white/70 hover:text-white hover:border-white/50 transition-colors"
+                className="w-full py-3 border border-dashed border-gray-300 rounded-lg text-sm text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors"
               >
                 + Add success metric
               </button>
@@ -307,21 +306,20 @@ export function OpportunityEditor({
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4 border-t border-white/20">
-        <button
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+        <Button
+          variant="ghost"
           onClick={onCancel}
           disabled={saving}
-          className="px-4 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleSave}
           disabled={!title.trim() || saving}
-          className="px-4 py-2 text-sm bg-ds-neon text-ds-teal rounded-lg hover:bg-ds-neon/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? 'Saving...' : 'Save'}
-        </button>
+        </Button>
       </div>
 
     </div>

@@ -40,14 +40,29 @@ interface OpportunitySectionProps {
   onImproveWithAI?: () => void;
   compact?: boolean;
   readOnly?: boolean;
+  // Global edit state
+  editingCard?: { type: string; id?: string } | null;
+  onStartEditing?: (id: string) => void;
+  onStopEditing?: () => void;
 }
 
-export function OpportunitySection({ projectId, objectives, onImproveWithAI, compact = false, readOnly = false }: OpportunitySectionProps) {
+export function OpportunitySection({
+  projectId,
+  objectives,
+  onImproveWithAI,
+  compact = false,
+  readOnly = false,
+  editingCard,
+  onStartEditing,
+  onStopEditing,
+}: OpportunitySectionProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Derive editing state from global edit state
+  const editingId = editingCard?.type === 'opportunity' ? (editingCard.id ?? null) : null;
+  const isAdding = editingId === 'new';
 
   // Fetch opportunities on mount
   const fetchOpportunities = useCallback(async () => {
@@ -99,7 +114,7 @@ export function OpportunitySection({ projectId, objectives, onImproveWithAI, com
       if (res.ok) {
         const data = await res.json();
         setOpportunities(prev => [...prev, data.content]);
-        setIsAdding(false);
+        onStopEditing?.();
       }
     } catch (error) {
       console.error('Failed to create opportunity:', error);
@@ -140,7 +155,7 @@ export function OpportunitySection({ projectId, objectives, onImproveWithAI, com
         setOpportunities(prev =>
           prev.map(o => o.id === id ? data.content : o)
         );
-        setEditingId(null);
+        onStopEditing?.();
       }
     } catch (error) {
       console.error('Failed to update opportunity:', error);
@@ -164,21 +179,15 @@ export function OpportunitySection({ projectId, objectives, onImproveWithAI, com
   };
 
   const handleEdit = (id: string) => {
-    setEditingId(id);
-    setIsAdding(false);
+    onStartEditing?.(id);
   };
 
   const handleStartAdding = () => {
-    setIsAdding(true);
-    setEditingId(null);
-  };
-
-  const handleCancelAdd = () => {
-    setIsAdding(false);
+    onStartEditing?.('new');
   };
 
   const handleCancelEdit = () => {
-    setEditingId(null);
+    onStopEditing?.();
   };
 
   if (loading) {
@@ -283,12 +292,12 @@ export function OpportunitySection({ projectId, objectives, onImproveWithAI, com
       )}
 
       {/* Inline editor for adding */}
-      {isAdding && !editingId && (
+      {isAdding && (
         <div className="mb-4">
           <OpportunityEditor
             objectives={objectives}
             onSave={handleCreate}
-            onCancel={handleCancelAdd}
+            onCancel={handleCancelEdit}
             saving={saving}
             compact={compact}
             onImproveWithAI={onImproveWithAI}
