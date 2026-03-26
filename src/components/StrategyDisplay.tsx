@@ -330,7 +330,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     const newId = `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
                     setEditingCard({ type: 'objective', id: newId, isNew: true });
                   }}
-                  className="bg-amber-500 text-white border-amber-500 hover:bg-amber-600 gap-1 h-7 text-xs"
+                  className="bg-luna text-luna-foreground border-luna hover:bg-luna-dark gap-1 h-7 text-xs"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Add
