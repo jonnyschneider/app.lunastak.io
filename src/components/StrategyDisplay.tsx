@@ -331,16 +331,16 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           </p>
                           {/* OMTM */}
                           {objective.omtm && (
-                            <div className="mb-3">
-                              <p className="text-sm font-bold text-white flex items-center gap-1.5">
-                                <TrendingUp className="w-3.5 h-3.5 text-ds-neon shrink-0" />
-                                {objective.omtm}
-                              </p>
-                              {objective.aspiration && (
-                                <p className="text-xs font-medium text-white mt-0.5 pl-0.5">
-                                  ↳ {objective.aspiration}
-                                </p>
-                              )}
+                            <div className="mb-3 flex items-start gap-2">
+                              <TrendingUp className="w-4 h-4 text-ds-neon shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-bold text-white">{objective.omtm}</p>
+                                {objective.aspiration && (
+                                  <p className="text-[13px] font-medium text-white/90 mt-0.5">
+                                    · {objective.aspiration}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           )}
                           {/* Objective statement */}
