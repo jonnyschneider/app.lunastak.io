@@ -1,13 +1,15 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { OpportunitySection } from './OpportunitySection';
 import { InlineTextEditor } from './InlineTextEditor';
 import { ObjectiveInlineEditor } from './ObjectiveInlineEditor';
 import { PrinciplesSection } from './PrinciplesSection';
+import { FlipCard } from './FlipCard';
 import { getObjectiveTitle } from '@/lib/utils';
 import { normalizeToOMTM } from '@/lib/objective-omtm-migration';
 
@@ -19,11 +21,35 @@ interface StrategyDisplayProps {
   onUpdate?: (strategy: StrategyStatements) => void;
 }
 
+type EditingCard = {
+  type: 'vision' | 'strategy' | 'objective' | 'opportunity' | 'principle'
+  id?: string
+  isNew?: boolean
+} | null
+
 export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate }: StrategyDisplayProps) {
-  const [editingVision, setEditingVision] = useState(false);
-  const [editingStrategy, setEditingStrategy] = useState(false);
-  const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null);
-  const [newObjective, setNewObjective] = useState<Objective | null>(null);
+  const [editingCard, setEditingCard] = useState<EditingCard>(null)
+
+  const startEditing = useCallback((type: NonNullable<EditingCard>['type'], id?: string) => {
+    setEditingCard({ type, id })
+  }, [])
+
+  const stopEditing = useCallback(() => {
+    setEditingCard(null)
+  }, [])
+
+  const isEditing = editingCard !== null
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditing) {
+        stopEditing()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isEditing, stopEditing])
 
   // Handle legacy objectives (string[]) by converting to new format and normalizing to OMTM
   const objectives: Objective[] = useMemo(() => {
@@ -63,7 +89,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           vision: newText,
         });
       }
-      setEditingVision(false);
+      stopEditing();
     } catch (error) {
       console.error('Failed to save vision:', error);
     }
@@ -91,7 +117,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           strategy: newText,
         });
       }
-      setEditingStrategy(false);
+      stopEditing();
     } catch (error) {
       console.error('Failed to save strategy:', error);
     }
@@ -133,7 +159,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           ),
         });
       }
-      setEditingObjectiveId(null);
+      stopEditing();
     } catch (error) {
       console.error('Failed to save objective:', error);
     }
@@ -171,222 +197,247 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           objectives: [...strategy.objectives, objective],
         });
       }
-      setNewObjective(null);
+      stopEditing();
     } catch (error) {
       console.error('Failed to add objective:', error);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Strategy Output */}
-      <div className="space-y-4">
-        {/* Vision Card */}
-        <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
-              Vision
-            </h3>
-            {editingVision && (
-              <span className="text-xs text-white/50">Editing</span>
-            )}
-          </div>
-          {editingVision ? (
-            <InlineTextEditor
-              value={strategy.vision}
-              onSave={handleSaveVision}
-              onCancel={() => setEditingVision(false)}
-              placeholder="What is your aspirational future state?"
-              minRows={4}
-              coachingTip="Describe the world you're creating, not the product. Make it aspirational and future-focused (3+ years)."
-              darkMode
-            />
-          ) : (
-            <p
-              onClick={() => setEditingVision(true)}
-              className="text-lg font-medium text-white leading-relaxed cursor-pointer rounded-md p-2 -m-2"
-            >
-              {strategy.vision}
-            </p>
-          )}
-        </div>
-
-        {/* Strategy Card */}
-        <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
-              Strategy
-            </h3>
-            {editingStrategy && (
-              <span className="text-xs text-white/50">Editing</span>
-            )}
-          </div>
-          {editingStrategy ? (
-            <InlineTextEditor
-              value={strategy.strategy}
-              onSave={handleSaveStrategy}
-              onCancel={() => setEditingStrategy(false)}
-              placeholder="What are your coherent choices to achieve the vision?"
-              minRows={4}
-              coachingTip="Describe your coherent choices for achieving the vision. Focus on direction, not tactics (12-18 months)."
-              darkMode
-            />
-          ) : (
-            <p
-              onClick={() => setEditingStrategy(true)}
-              className="text-lg font-medium text-white leading-relaxed cursor-pointer rounded-md p-2 -m-2"
-            >
-              {strategy.strategy}
-            </p>
-          )}
-        </div>
-
-        {/* Objectives Grid */}
-        <div>
-          <div className="mb-4">
-            <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
-              Objectives
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {objectives.map((objective) => (
-              <div
-                key={objective.id}
-                className={editingObjectiveId === objective.id ? 'col-span-full px-8 lg:px-16' : ''}
-              >
-                {editingObjectiveId === objective.id ? (
-                  <ObjectiveInlineEditor
-                    objective={objective}
-                    onSave={handleSaveObjective}
-                    onCancel={() => setEditingObjectiveId(null)}
-                  />
-                ) : (
-                  <div
-                    onClick={() => setEditingObjectiveId(objective.id)}
-                    className="bg-ds-teal rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative cursor-pointer"
-                  >
-                    {/* Timeframe badge - top left */}
-                    {(objective.primaryMetric?.timeframe || objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe) && (
-                      <span className="absolute top-3 left-3 inline-block px-2 py-0.5 text-xs font-medium bg-ds-neon text-ds-teal rounded">
-                        {objective.primaryMetric?.timeframe || objective.keyResults?.[0]?.timeframe || objective.metric?.timeframe}
-                      </span>
-                    )}
-
-                    {/* Objective title */}
-                    <p className="text-xs font-semibold text-ds-neon uppercase tracking-wide mt-6 mb-1">
-                      {getObjectiveTitle(objective)}
-                    </p>
-                    {/* Objective text */}
-                    <p className="text-sm text-white mb-3">
-                      {objective.objective || objective.pithy}
-                    </p>
-
-                    {/* OMTM - simplified format (preferred) */}
-                    {objective.omtm ? (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-white">{objective.omtm}</span>
-                        {objective.aspiration && (
-                          <>
-                            <span className="text-white/50">·</span>
-                            <span className="text-ds-neon">{objective.aspiration}</span>
-                          </>
-                        )}
-                      </div>
-                    ) : objective.primaryMetric ? (
-                      /* Legacy: primaryMetric format */
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-ds-neon">
-                          {objective.primaryMetric.direction === 'increase' ? '↑' : '↓'}
-                        </span>
-                        <span className="font-medium text-white">
-                          {objective.primaryMetric.name}
-                        </span>
-                        <span className="text-white/50">|</span>
-                        <span className="text-ds-neon">
-                          {objective.primaryMetric.baseline || '?'} → {objective.primaryMetric.target}
-                        </span>
-                      </div>
-                    ) : objective.keyResults?.length ? (
-                      /* Legacy: keyResults format */
-                      <div className="text-xs">
-                        <span className="text-white">{objective.keyResults[0].signal}:</span>{' '}
-                        <span className="text-ds-neon">{objective.keyResults[0].baseline} → {objective.keyResults[0].target}</span>
-                      </div>
-                    ) : objective.metric?.direction && objective.metric?.metricName && (
-                      /* Legacy: metric format */
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-ds-neon">
-                          {objective.metric.direction === 'increase' ? '↑' : '↓'}
-                        </span>
-                        <span className="font-medium text-white">
-                          {objective.metric.metricName}
-                        </span>
-                        {objective.metric.metricValue && (
-                          <>
-                            <span className="text-white/50">|</span>
-                            <span className="text-ds-neon">
-                              {objective.metric.metricValue}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Add Objective */}
-            {newObjective ? (
-              <div className="col-span-full px-8 lg:px-16">
-                <ObjectiveInlineEditor
-                  objective={newObjective}
-                  onSave={handleAddObjective}
-                  onCancel={() => setNewObjective(null)}
-                />
-              </div>
-            ) : !editingObjectiveId && (
-              <div
-                onClick={() => setNewObjective({
-                  id: `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`,
-                  explanation: '',
-                  objective: '',
-                })}
-                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-muted-foreground/40 hover:bg-muted/50 transition-colors min-h-[120px]"
-              >
-                <div className="text-center">
-                  <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-                  <span className="text-sm text-muted-foreground/50">Add objective</span>
+    <div className="relative">
+      {/* Overlay when editing */}
+      {isEditing && (
+        <div
+          className="fixed inset-0 bg-black/20 z-40"
+          onClick={stopEditing}
+        />
+      )}
+      <div className="space-y-6">
+        {/* Strategy Output */}
+        <div className="space-y-4">
+          {/* Vision Card */}
+          <div className={cn(
+            editingCard?.type === 'vision' && 'relative z-50'
+          )}>
+            <FlipCard
+              front={
+                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
+                  <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-3">
+                    Vision
+                  </h3>
+                  <p className="text-lg font-medium text-white leading-relaxed">
+                    {strategy.vision}
+                  </p>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Opportunities Section */}
-        <OpportunitySection projectId={projectId} objectives={objectives} />
-
-        {/* Principles Section */}
-        <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide">
-              Principles
-            </h3>
-            <span className="text-xs text-white/50">("even over" statements)</span>
-          </div>
-          <PrinciplesSection
-            projectId={projectId}
-            initialPrinciples={strategy.principles}
-            onUpdate={(updated) => {
-              if (onUpdate) {
-                onUpdate({ ...strategy, principles: updated });
               }
-            }}
-          />
+              back={
+                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
+                  <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
+                    Explainer
+                  </div>
+                  <p className="text-sm text-white/70">No explainer yet</p>
+                </div>
+              }
+              isEditing={editingCard?.type === 'vision'}
+              onEditClick={() => startEditing('vision')}
+              editForm={
+                <div className="bg-white rounded-lg p-6 shadow-lg border">
+                  <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide mb-3">
+                    Edit Vision
+                  </h3>
+                  <InlineTextEditor
+                    value={strategy.vision}
+                    onSave={handleSaveVision}
+                    onCancel={stopEditing}
+                    placeholder="What is your aspirational future state?"
+                    minRows={3}
+                    coachingTip="Describe the world you're creating, not the product."
+                  />
+                </div>
+              }
+            />
+          </div>
+
+          {/* Strategy Card */}
+          <div className={cn(
+            editingCard?.type === 'strategy' && 'relative z-50'
+          )}>
+            <FlipCard
+              front={
+                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
+                  <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-3">
+                    Strategy
+                  </h3>
+                  <p className="text-lg font-medium text-white leading-relaxed">
+                    {strategy.strategy}
+                  </p>
+                </div>
+              }
+              back={
+                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
+                  <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
+                    Explainer
+                  </div>
+                  <p className="text-sm text-white/70">No explainer yet</p>
+                </div>
+              }
+              isEditing={editingCard?.type === 'strategy'}
+              onEditClick={() => startEditing('strategy')}
+              editForm={
+                <div className="bg-white rounded-lg p-6 shadow-lg border">
+                  <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide mb-3">
+                    Edit Strategy
+                  </h3>
+                  <InlineTextEditor
+                    value={strategy.strategy}
+                    onSave={handleSaveStrategy}
+                    onCancel={stopEditing}
+                    placeholder="What are your coherent choices to achieve the vision?"
+                    minRows={3}
+                    coachingTip="Describe your coherent choices for achieving the vision. Focus on direction, not tactics (12-18 months)."
+                  />
+                </div>
+              }
+            />
+          </div>
+
+          {/* Objectives Grid */}
+          <div>
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+                Objectives
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {objectives.map((objective, index) => {
+                const isEditingThis = editingCard?.type === 'objective' && editingCard.id === objective.id;
+                return (
+                  <div
+                    key={objective.id}
+                    className={cn(
+                      isEditingThis && 'col-span-full relative z-50'
+                    )}
+                  >
+                    <FlipCard
+                      front={
+                        <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
+                          {/* Numbered circle */}
+                          <div className="flex items-center justify-center w-7 h-7 rounded-full border-[1.5px] border-white/30 text-xs font-semibold text-white mx-auto mb-2">
+                            {index + 1}
+                          </div>
+                          {/* Title */}
+                          <p className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1 text-center">
+                            {getObjectiveTitle(objective)}
+                          </p>
+                          {/* OMTM */}
+                          {objective.omtm && (
+                            <div className="text-center text-xs">
+                              <span className="font-medium text-white">{objective.omtm}</span>
+                              {objective.aspiration && (
+                                <>
+                                  <span className="text-white/50"> · </span>
+                                  <span className="text-ds-neon">{objective.aspiration}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      }
+                      back={
+                        <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
+                          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-2">
+                            Explainer
+                          </div>
+                          {objective.objective && (
+                            <p className="text-sm text-white mb-2">{objective.objective}</p>
+                          )}
+                          {objective.explanation && (
+                            <p className="text-xs text-white/70 leading-relaxed">{objective.explanation}</p>
+                          )}
+                        </div>
+                      }
+                      isEditing={isEditingThis}
+                      onEditClick={() => startEditing('objective', objective.id)}
+                      editForm={
+                        <ObjectiveInlineEditor
+                          objective={objective}
+                          onSave={handleSaveObjective}
+                          onCancel={stopEditing}
+                        />
+                      }
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Add Objective */}
+              {editingCard?.type === 'objective' && editingCard.isNew ? (
+                <div className="col-span-full relative z-50">
+                  <ObjectiveInlineEditor
+                    objective={{
+                      id: editingCard.id || `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`,
+                      explanation: '',
+                      objective: '',
+                    }}
+                    onSave={handleAddObjective}
+                    onCancel={stopEditing}
+                  />
+                </div>
+              ) : !(editingCard?.type === 'objective') && (
+                <div
+                  onClick={() => {
+                    const newId = `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
+                    setEditingCard({ type: 'objective', id: newId, isNew: true });
+                  }}
+                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-muted-foreground/40 hover:bg-muted/50 transition-colors min-h-[120px]"
+                >
+                  <div className="text-center">
+                    <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
+                    <span className="text-sm text-muted-foreground/50">Add objective</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Opportunities Section */}
+          <div className={cn(
+            editingCard?.type === 'opportunity' && 'relative z-50'
+          )}>
+            <OpportunitySection
+              projectId={projectId}
+              objectives={objectives}
+              editingCard={editingCard}
+              onStartEditing={(id: string) => startEditing('opportunity', id)}
+              onStopEditing={stopEditing}
+            />
+          </div>
+
+          {/* Principles Section */}
+          <div className={cn(
+            editingCard?.type === 'principle' && 'relative z-50'
+          )}>
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+                Principles
+              </h3>
+              <span className="text-xs text-muted-foreground">("even over" statements)</span>
+            </div>
+            <PrinciplesSection
+              projectId={projectId}
+              initialPrinciples={strategy.principles}
+              editingCard={editingCard}
+              onStartEditing={(id: string) => startEditing('principle', id)}
+              onStopEditing={stopEditing}
+              onUpdate={(updated) => {
+                if (onUpdate) {
+                  onUpdate({ ...strategy, principles: updated });
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
-
-
     </div>
   );
 }
