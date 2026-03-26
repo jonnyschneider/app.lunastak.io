@@ -41,9 +41,9 @@ export function OpportunityCard({
   return (
     <FlipCard
       front={
-        <div className={`bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px] ${status === 'draft' ? 'border border-dashed border-white/30' : ''}`}>
+        <div className={`bg-ds-teal rounded-xl p-6 shadow-sm min-h-[120px] ${status === 'draft' ? 'border border-dashed border-white/30' : ''}`}>
           {/* Title */}
-          <p className="text-sm font-semibold text-ds-neon mb-2">{title}</p>
+          <p className="text-[15px] font-semibold text-ds-neon mb-3">{title}</p>
 
           {/* Success metrics */}
           {!compact && successMetrics.length > 0 && (
@@ -54,7 +54,7 @@ export function OpportunityCard({
               {successMetrics.map((metric) => (
                 <div key={metric.id} className="mb-2 last:mb-0">
                   {(metric.belief.action || metric.belief.outcome) && (
-                    <p className="text-xs text-white/85 leading-relaxed">
+                    <p className="text-[13px] text-white/90 leading-relaxed">
                       <span className="font-bold text-ds-neon">We believe</span>{' '}
                       {metric.belief.action}{' '}
                       <span className="font-bold text-ds-neon">will</span>{' '}
@@ -63,8 +63,8 @@ export function OpportunityCard({
                   )}
                   {metric.signal && (
                     <div className="mt-1">
-                      <p className="text-xs font-semibold text-white">{metric.signal}</p>
-                      <p className="text-xs text-white/70 mt-0.5">
+                      <p className="text-[13px] font-bold text-white">{metric.signal}</p>
+                      <p className="text-[13px] font-medium text-white mt-0.5">
                         ↳ {metric.baseline || '?'} → {metric.target}
                       </p>
                     </div>
@@ -100,7 +100,7 @@ export function OpportunityCard({
           {/* Draft badge */}
           {!compact && status === 'draft' && (
             <div className="mt-2">
-              <span className="text-xs px-2 py-0.5 bg-white/20 text-white rounded">
+              <span className="text-[13px] px-2 py-0.5 bg-white/20 text-white rounded">
                 Draft
               </span>
             </div>
@@ -108,12 +108,12 @@ export function OpportunityCard({
         </div>
       }
       back={
-        <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
-          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-2">
+        <div className="bg-ds-teal rounded-xl p-6 shadow-sm min-h-[120px]">
+          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
             Explainer
           </div>
           {description ? (
-            <p className="text-sm text-white/85 leading-relaxed">{description}</p>
+            <p className="text-sm text-white leading-relaxed">{description}</p>
           ) : (
             <p className="text-sm text-white/40 italic">No description yet</p>
           )}
@@ -125,7 +125,7 @@ export function OpportunityCard({
                 e.stopPropagation();
                 onDelete(id);
               }}
-              className="text-xs text-white/40 hover:text-red-400 transition-colors"
+              className="text-[13px] text-white/40 hover:text-red-400 transition-colors"
             >
               Delete
             </button>
