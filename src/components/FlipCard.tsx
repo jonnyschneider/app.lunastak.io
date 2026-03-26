@@ -51,46 +51,55 @@ export function FlipCard({
   }
 
   return (
-    <div
-      className={cn('cursor-pointer', className)}
-      onClick={handleCardClick}
-    >
-      <div className="relative">
-        {/* Front */}
-        <div
-          className={cn(
-            'transition-opacity duration-150 ease-in-out',
-            flipped ? 'opacity-0 absolute inset-0 pointer-events-none' : 'opacity-100',
-            cardClassName,
-          )}
-        >
-          {front}
-        </div>
+    <>
+      {/* Print: show both sides, no animation */}
+      <div className={cn('hidden print:block', className)}>
+        <div className={cardClassName}>{front}</div>
+        <div className={cn(cardClassName, 'mt-2 border-t pt-2')}>{back}</div>
+      </div>
 
-        {/* Back */}
-        <div
-          className={cn(
-            'transition-opacity duration-150 ease-in-out',
-            flipped ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none',
-            cardClassName,
-          )}
-        >
-          {back}
-          {!hideEditButton && onEditClick && (
-            <div className="flex justify-end mt-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleEditClick}
-                className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5"
-              >
-                <Pencil className="h-3 w-3" />
-                <span className="text-xs">Edit</span>
-              </Button>
-            </div>
-          )}
+      {/* Interactive version */}
+      <div
+        className={cn('cursor-pointer print:hidden', className)}
+        onClick={handleCardClick}
+      >
+        <div className="relative">
+          {/* Front */}
+          <div
+            className={cn(
+              'transition-opacity duration-150 ease-in-out',
+              flipped ? 'opacity-0 absolute inset-0 pointer-events-none' : 'opacity-100',
+              cardClassName,
+            )}
+          >
+            {front}
+          </div>
+
+          {/* Back */}
+          <div
+            className={cn(
+              'transition-opacity duration-150 ease-in-out',
+              flipped ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none',
+              cardClassName,
+            )}
+          >
+            {back}
+            {!hideEditButton && onEditClick && (
+              <div className="flex justify-end mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleEditClick}
+                  className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5"
+                >
+                  <Pencil className="h-3 w-3" />
+                  <span className="text-xs">Edit</span>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
