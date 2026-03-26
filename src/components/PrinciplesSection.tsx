@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -140,6 +140,38 @@ export function PrinciplesSection({
 }: PrinciplesSectionProps) {
   const [principles, setPrinciples] = useState<Principle[]>(initialPrinciples);
   const [saving, setSaving] = useState(false);
+
+  // Fetch principles from UserContent on mount (initialPrinciples may be empty)
+  const fetchPrinciples = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/project/${projectId}/content`);
+      if (res.ok) {
+        const data = await res.json();
+        const fetched = data.content
+          .filter((c: { type: string }) => c.type === 'principle')
+          .map((c: { id: string; content: string }) => {
+            try {
+              return { ...JSON.parse(c.content), id: c.id };
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean) as Principle[];
+        if (fetched.length > 0) {
+          setPrinciples(fetched);
+          onUpdate?.(fetched);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch principles:', error);
+    }
+  }, [projectId, onUpdate]);
+
+  useEffect(() => {
+    if (initialPrinciples.length === 0) {
+      fetchPrinciples();
+    }
+  }, [initialPrinciples.length, fetchPrinciples]);
 
   // Socratic input state
   const [step, setStep] = useState<InputStep>('priority');
