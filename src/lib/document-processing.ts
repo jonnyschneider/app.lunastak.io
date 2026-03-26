@@ -187,7 +187,7 @@ export async function processDocument(
 
     const extractionResponse = await createMessage({
       model: CLAUDE_MODEL,
-      max_tokens: 3000,
+      max_tokens: 7500,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
     }, 'document_extraction')

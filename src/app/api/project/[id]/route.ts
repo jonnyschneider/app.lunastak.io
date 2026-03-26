@@ -59,7 +59,10 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
           take: 20, // Fetch more to ensure we have enough after filtering
           include: {
-            messages: { select: { id: true } },
+            messages: {
+              select: { id: true, content: true, role: true },
+              orderBy: { stepNumber: 'asc' as const },
+            },
             fragments: { where: { status: 'active' }, select: { id: true } },
             traces: {
               where: { starred: true },
@@ -159,6 +162,8 @@ export async function GET(
     const conversations = project.conversations.map(conv => {
       // traces array will have 1 item if starred, 0 if not (due to where filter)
       const hasStarredTrace = conv.traces.length > 0
+      // First assistant message — used to match conversations to provocations/gaps
+      const firstMessage = conv.messages.find(m => m.role === 'assistant')
       return {
         id: conv.id,
         title: conv.title || null,
@@ -170,6 +175,7 @@ export async function GET(
         starredAt: hasStarredTrace ? conv.traces[0].starredAt?.toISOString() || null : null,
         deepDiveId: conv.deepDiveId || null,
         isInitialConversation: conv.isInitialConversation,
+        firstMessageContent: firstMessage?.content || null,
       }
     })
 

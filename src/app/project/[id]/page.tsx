@@ -81,6 +81,7 @@ interface ConversationSummary {
   starred: boolean
   starredAt: string | null
   deepDiveId: string | null
+  firstMessageContent: string | null
 }
 
 // Format date as "13 Jan '26"
@@ -715,10 +716,22 @@ export default function ProjectPage() {
                 const ddId = item.id.replace('dd-', '')
                 openDeepDiveSheet(ddId)
               } else if (item.type === 'provocation') {
-                setChatInitialQuestion(item.description)
+                // TECH DEBT: Client-side match — provocations should be tracked via
+                // a schema-level `originText` field on Conversation. This matching
+                // works because suggestedQuestion is used verbatim as the first
+                // assistant message, but it's fragile. See docs/luna-fix.md.
+                const existingConvo = projectData?.conversations.find(
+                  c => c.status === 'in_progress' && c.firstMessageContent === item.description
+                )
                 setChatDeepDiveId(undefined)
                 setChatGapExploration(undefined)
-                setChatResumeConversationId(undefined)
+                if (existingConvo) {
+                  setChatInitialQuestion(undefined)
+                  setChatResumeConversationId(existingConvo.id)
+                } else {
+                  setChatInitialQuestion(item.description)
+                  setChatResumeConversationId(undefined)
+                }
                 setChatViewOnly(false)
                 setChatSheetOpen(true)
               } else if (item.type === 'gap') {
@@ -856,6 +869,7 @@ export default function ProjectPage() {
             setChatGapExploration(undefined)
             setChatResumeConversationId(undefined)
             setChatViewOnly(false)
+            fetchProjectData()
           }
         }}
         initialQuestion={chatInitialQuestion}
