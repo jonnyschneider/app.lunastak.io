@@ -331,7 +331,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           </p>
                           {/* OMTM */}
                           {objective.omtm && (
-                            <div className="mb-3 flex items-center gap-2">
+                            <div className="mb-3 flex items-center gap-3">
                               <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
                               <div>
                                 <p className="text-sm font-bold text-white">{objective.omtm}</p>
