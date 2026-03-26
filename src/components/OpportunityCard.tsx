@@ -61,9 +61,6 @@ export function OpportunityCard({
                   )}
                 </div>
               ))}
-              <h4 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wider mt-3">
-                Success Indicator
-              </h4>
             </div>
           )}
 
@@ -89,7 +86,7 @@ export function OpportunityCard({
           {/* Related objectives — numbered circles */}
           {!compact && objectiveIds.length > 0 && (
             <div className="flex items-center gap-1.5 mt-3">
-              <span className="text-[13px] font-semibold uppercase tracking-wider text-ds-neon">
+              <span className="text-[13px] font-semibold uppercase tracking-wider text-white/80">
                 Related to
               </span>
               {objectiveIds.map(objId => {
@@ -99,7 +96,7 @@ export function OpportunityCard({
                 return (
                   <div
                     key={objId}
-                    className="flex items-center justify-center w-[18px] h-[18px] rounded-full border-[1.5px] border-white/25 text-[10px] font-semibold text-white/70"
+                    className="flex items-center justify-center w-[18px] h-[18px] rounded-full border-[1.5px] border-white/25 text-[10px] font-semibold text-white"
                     title={getObjectiveTitle(obj)}
                   >
                     {objIndex + 1}
