@@ -71,12 +71,9 @@ export function OpportunityCard({
               {successMetrics.map((metric) => metric.signal && (
                 <div key={metric.id} className="mb-2 last:mb-0">
                   <p className="text-[13px] text-white/90 mb-1">
-                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">Success is when...</span>
-                  </p>
-                  <p className="text-[13px] font-bold text-white flex items-center gap-1.5 mb-2">
-                    <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
-                    {metric.signal}
-                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)] font-normal">moves from...</span>
+                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">Success is when...</span>{' '}
+                    <span className="font-bold text-white">{metric.signal}</span>{' '}
+                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">moves from...</span>
                   </p>
                   {(metric.baseline || metric.target) && (<>
                     <div className="flex items-center gap-2">
