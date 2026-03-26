@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next'
-import { IBM_Plex_Sans, Inter } from 'next/font/google'
+import { IBM_Plex_Sans } from 'next/font/google'
 import '@/styles/globals.css'
 import { SessionProvider } from '@/components/SessionProvider'
 import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
@@ -15,12 +15,6 @@ import { authOptions } from '@/lib/auth'
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700']
-})
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-inter',
 })
 
 export const metadata: Metadata = {
@@ -38,7 +32,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexSans.className} ${inter.variable} bg-background`}
+      className={`${ibmPlexSans.className} bg-background`}
     >
       <body>
         <SessionProvider session={session}>
