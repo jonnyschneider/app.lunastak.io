@@ -96,7 +96,7 @@ export function OpportunityCard({
                 return (
                   <div
                     key={objId}
-                    className="flex items-center justify-center w-[18px] h-[18px] rounded-full border-[1.5px] border-white text-[10px] font-semibold text-white"
+                    className="flex items-center justify-center w-[18px] h-[18px] rounded-full border-[1.5px] border-white/80 text-[10px] font-semibold text-white"
                     title={getObjectiveTitle(obj)}
                   >
                     {objIndex + 1}
