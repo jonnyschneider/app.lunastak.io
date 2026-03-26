@@ -40,6 +40,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
   }, [])
 
   const isEditing = editingCard !== null
+  const [showAddPrincipleDialog, setShowAddPrincipleDialog] = useState(false)
 
   // Escape key handler
   useEffect(() => {
@@ -457,7 +458,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => startEditing('principle', 'new')}
+                onClick={() => setShowAddPrincipleDialog(true)}
                 className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -470,6 +471,8 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               editingCard={editingCard}
               onStartEditing={(id: string) => startEditing('principle', id)}
               onStopEditing={stopEditing}
+              showAddDialog={showAddPrincipleDialog}
+              onCloseAddDialog={() => setShowAddPrincipleDialog(false)}
               onUpdate={(updated) => {
                 if (onUpdate) {
                   onUpdate({ ...strategy, principles: updated });

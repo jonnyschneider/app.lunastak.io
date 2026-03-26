@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronDown, ChevronUp, ArrowUpDown, Trash2, Pencil } from 'lucide-react';
 import { FlipCard } from './FlipCard';
 import type { Principle } from '@/lib/types';
@@ -16,6 +17,8 @@ interface PrinciplesSectionProps {
   editingCard?: { type: string; id?: string } | null;
   onStartEditing?: (id: string) => void;
   onStopEditing?: () => void;
+  showAddDialog?: boolean;
+  onCloseAddDialog?: () => void;
 }
 
 type InputStep = 'priority' | 'loading' | 'confirm';
@@ -137,6 +140,8 @@ export function PrinciplesSection({
   editingCard,
   onStartEditing,
   onStopEditing,
+  showAddDialog = false,
+  onCloseAddDialog,
 }: PrinciplesSectionProps) {
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [saving, setSaving] = useState(false);
@@ -178,7 +183,6 @@ export function PrinciplesSection({
 
   const handlePrioritySubmit = async () => {
     if (!priorityInput.trim()) return;
-    onStartEditing?.('new');
     setStep('loading');
     const suggested = await fetchSuggestedOpposite(priorityInput);
     setDeprioritizedInput(suggested);
@@ -212,10 +216,11 @@ export function PrinciplesSection({
       setPrinciples(updated);
       onUpdate?.(updated);
 
-      // Reset for next principle
+      // Reset and close dialog
       setPriorityInput('');
       setDeprioritizedInput('');
       setStep('priority');
+      onCloseAddDialog?.();
       onStopEditing?.();
     } catch (error) {
       console.error('Failed to add principle:', error);
@@ -362,63 +367,70 @@ export function PrinciplesSection({
         </div>
       )}
 
-      {/* Socratic input */}
-      {!atMaxPrinciples && (
-        <div className="space-y-4">
-          {step === 'priority' && (
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                What matters most for success and is least negotiable right now?
-              </label>
-              <div className="flex gap-2">
+      {/* Socratic add dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        if (!open) {
+          onCloseAddDialog?.();
+          setStep('priority');
+          setPriorityInput('');
+          setDeprioritizedInput('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Principle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {step === 'priority' && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  What matters most for success and is least negotiable right now?
+                </label>
                 <Input
                   value={priorityInput}
                   onChange={(e) => setPriorityInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handlePrioritySubmit()}
                   placeholder="Type what matters most..."
-                  className="flex-1 bg-white"
+                  className="bg-white"
                   disabled={saving}
+                  autoFocus
                 />
-                <Button
-                  onClick={handlePrioritySubmit}
-                  disabled={!priorityInput.trim() || saving}
-                >
-                  Next
-                </Button>
+                <div>
+                  <button
+                    onClick={() => setShowHints(!showHints)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {showHints ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {showHints ? 'Hide examples' : 'Need inspiration?'}
+                  </button>
+                  {showHints && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Common trade-offs: {HINT_EXAMPLES.join(' · ')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handlePrioritySubmit}
+                    disabled={!priorityInput.trim() || saving}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
+            )}
 
-              {/* Collapsible hints */}
-              <div>
-                <button
-                  onClick={() => setShowHints(!showHints)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {showHints ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  {showHints ? 'Hide examples' : 'Need inspiration?'}
-                </button>
-                {showHints && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Common trade-offs: {HINT_EXAMPLES.join(' · ')}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step === 'loading' && (
-            <div className="p-4 bg-white rounded-lg border">
-              <div className="text-center space-y-2">
+            {step === 'loading' && (
+              <div className="p-4 text-center space-y-2">
                 <p className="text-sm font-semibold text-ds-teal">{priorityInput}</p>
                 <p className="text-xs text-ds-teal/50">even over</p>
                 <p className="text-sm text-ds-teal/50 animate-pulse">Thinking of the opposite...</p>
               </div>
-            </div>
-          )}
+            )}
 
-          {step === 'confirm' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-white rounded-lg border space-y-3">
-                <div className="text-center space-y-1">
+            {step === 'confirm' && (
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
                   <p className="text-sm font-semibold text-ds-teal">{priorityInput}</p>
                   <p className="text-xs text-ds-teal/50">even over</p>
                   <Input
@@ -427,6 +439,7 @@ export function PrinciplesSection({
                     placeholder="What's the trade-off? What gets deprioritized?"
                     className="text-center text-sm"
                     disabled={saving}
+                    autoFocus
                   />
                 </div>
                 {!deprioritizedInput && (
@@ -434,23 +447,22 @@ export function PrinciplesSection({
                     What's the mutually exclusive opposite? What might you sacrifice?
                   </p>
                 )}
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" onClick={handleBack} disabled={saving}>
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleConfirm}
+                    disabled={!deprioritizedInput.trim() || saving}
+                  >
+                    {saving ? 'Saving...' : 'Add Principle'}
+                  </Button>
+                </div>
               </div>
-
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" onClick={handleBack} disabled={saving}>
-                  Back
-                </Button>
-                <Button
-                  onClick={handleConfirm}
-                  disabled={!deprioritizedInput.trim() || saving}
-                >
-                  {saving ? 'Saving...' : 'Add Principle'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
