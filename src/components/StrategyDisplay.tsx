@@ -320,26 +320,31 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   >
                     <FlipCard
                       front={
-                        <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
+                        <div className="bg-ds-teal rounded-lg p-6 shadow-sm min-h-[120px]">
                           {/* Numbered circle */}
-                          <div className="flex items-center justify-center w-7 h-7 rounded-full border-[1.5px] border-white/30 text-xs font-semibold text-white mx-auto mb-2">
+                          <div className="flex items-center justify-center w-[26px] h-[26px] rounded-full border-[1.5px] border-white/30 text-xs font-semibold text-white mx-auto mb-3">
                             {index + 1}
                           </div>
                           {/* Title */}
-                          <p className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-1 text-center">
+                          <p className="text-[15px] font-semibold text-ds-neon mb-3 text-center">
                             {getObjectiveTitle(objective)}
                           </p>
                           {/* OMTM */}
                           {objective.omtm && (
-                            <div className="text-center text-xs">
-                              <span className="font-medium text-white">{objective.omtm}</span>
+                            <div className="mb-3">
+                              <p className="text-sm font-semibold text-white text-center">{objective.omtm}</p>
                               {objective.aspiration && (
-                                <>
-                                  <span className="text-white/50"> · </span>
-                                  <span className="text-ds-neon">{objective.aspiration}</span>
-                                </>
+                                <p className="text-xs text-white/85 text-center mt-0.5">
+                                  ↳ {objective.aspiration}
+                                </p>
                               )}
                             </div>
+                          )}
+                          {/* Objective statement */}
+                          {objective.objective && (
+                            <p className="text-[13px] text-white/85 leading-relaxed text-center">
+                              {objective.objective}
+                            </p>
                           )}
                         </div>
                       }

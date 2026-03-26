@@ -45,25 +45,32 @@ export function OpportunityCard({
           {/* Title */}
           <p className="text-sm font-semibold text-ds-neon mb-2">{title}</p>
 
-          {/* Success metric — belief format */}
-          {!compact && successMetrics?.[0] && (
+          {/* Success metrics */}
+          {!compact && successMetrics.length > 0 && (
             <div className="mb-3">
-              {(successMetrics[0].belief.action || successMetrics[0].belief.outcome) && (
-                <p className="text-xs text-white/85 leading-relaxed">
-                  <span className="font-bold text-ds-neon">We believe</span>{' '}
-                  {successMetrics[0].belief.action}{' '}
-                  <span className="font-bold text-ds-neon">will</span>{' '}
-                  {successMetrics[0].belief.outcome}
-                </p>
-              )}
-              {successMetrics[0].signal && (
-                <div className="mt-2">
-                  <p className="text-xs font-semibold text-white">{successMetrics[0].signal}</p>
-                  <p className="text-xs text-white/70 mt-0.5">
-                    {successMetrics[0].baseline || '?'} → {successMetrics[0].target}
-                  </p>
+              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1.5">
+                Success Indicator
+              </h4>
+              {successMetrics.map((metric) => (
+                <div key={metric.id} className="mb-2 last:mb-0">
+                  {(metric.belief.action || metric.belief.outcome) && (
+                    <p className="text-xs text-white/85 leading-relaxed">
+                      <span className="font-bold text-ds-neon">We believe</span>{' '}
+                      {metric.belief.action}{' '}
+                      <span className="font-bold text-ds-neon">will</span>{' '}
+                      {metric.belief.outcome}
+                    </p>
+                  )}
+                  {metric.signal && (
+                    <div className="mt-1">
+                      <p className="text-xs font-semibold text-white">{metric.signal}</p>
+                      <p className="text-xs text-white/70 mt-0.5">
+                        ↳ {metric.baseline || '?'} → {metric.target}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           )}
 
