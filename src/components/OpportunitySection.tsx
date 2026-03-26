@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { OpportunityEditor } from './OpportunityEditor';
 import { OpportunityCard } from './OpportunityCard';
 import { SuccessMetric } from '@/lib/types';
@@ -204,28 +206,22 @@ export function OpportunitySection({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-3 mb-4">
         <h3 className={`text-xs font-semibold uppercase tracking-wide ${readOnly ? 'text-ds-neon' : 'text-ds-teal'}`}>
           Opportunities
         </h3>
+        {!readOnly && !isAdding && !editingId && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleStartAdding}
+            className="border-ds-neon text-ds-neon hover:bg-ds-neon/10 gap-1 h-7 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add
+          </Button>
+        )}
       </div>
-
-      {/* Placeholder state */}
-      {showPlaceholder && (
-        <div className={`${readOnly ? '' : 'bg-ds-teal rounded-lg shadow-sm border border-dashed border-white/30 p-12'} text-center`}>
-          <p className="text-white/70 mb-4">
-            {readOnly ? 'No opportunities defined yet' : 'Define opportunities that support your objectives'}
-          </p>
-          {!readOnly && (
-            <button
-              onClick={handleStartAdding}
-              className="px-6 py-2 bg-ds-neon text-ds-teal font-medium rounded-lg hover:bg-ds-neon/90 transition-colors"
-            >
-              Create Opportunities
-            </button>
-          )}
-        </div>
-      )}
 
       {/* Cards grid */}
       {hasOpportunities && (
@@ -305,15 +301,6 @@ export function OpportunitySection({
         </div>
       )}
 
-      {/* Add button when has opportunities but not adding */}
-      {!readOnly && hasOpportunities && !isAdding && !editingId && (
-        <button
-          onClick={handleStartAdding}
-          className="w-full py-3 border border-dashed border-muted-foreground/50 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors"
-        >
-          + Add opportunity
-        </button>
-      )}
 
     </div>
   );

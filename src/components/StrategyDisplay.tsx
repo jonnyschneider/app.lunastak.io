@@ -318,10 +318,24 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
 
           {/* Objectives Grid */}
           <div>
-            <div className="mb-4">
+            <div className="flex items-center gap-3 mb-4">
               <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
                 Objectives
               </h3>
+              {!(editingCard?.type === 'objective') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newId = `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
+                    setEditingCard({ type: 'objective', id: newId, isNew: true });
+                  }}
+                  className="border-ds-neon text-ds-neon hover:bg-ds-neon/10 gap-1 h-7 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {objectives.map((objective, index) => {
@@ -400,7 +414,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               })}
 
               {/* Add Objective */}
-              {editingCard?.type === 'objective' && editingCard.isNew ? (
+              {editingCard?.type === 'objective' && editingCard.isNew && (
                 <div className="col-span-full relative z-50">
                   <ObjectiveInlineEditor
                     objective={{
@@ -411,19 +425,6 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     onSave={handleAddObjective}
                     onCancel={stopEditing}
                   />
-                </div>
-              ) : !(editingCard?.type === 'objective') && (
-                <div
-                  onClick={() => {
-                    const newId = `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
-                    setEditingCard({ type: 'objective', id: newId, isNew: true });
-                  }}
-                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-muted-foreground/40 hover:bg-muted/50 transition-colors min-h-[120px]"
-                >
-                  <div className="text-center">
-                    <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-                    <span className="text-[13px] text-muted-foreground/50">Add objective</span>
-                  </div>
                 </div>
               )}
             </div>
