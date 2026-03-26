@@ -332,9 +332,9 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           {/* OMTM */}
                           {objective.omtm && (
                             <div className="mb-3">
-                              <p className="text-sm font-semibold text-white">{objective.omtm}</p>
+                              <p className="text-sm font-bold text-white">{objective.omtm}</p>
                               {objective.aspiration && (
-                                <p className="text-xs text-white mt-0.5 pl-0.5">
+                                <p className="text-xs font-medium text-white mt-0.5 pl-0.5">
                                   ↳ {objective.aspiration}
                                 </p>
                               )}
