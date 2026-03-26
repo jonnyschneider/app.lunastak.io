@@ -75,7 +75,7 @@
 
     /* Decision Stack - Output content (teal + neon) */
     --ds-teal: 195 68% 12%;
-    --ds-neon: 71 100% 65%;
+    --ds-neon: 79 100% 65%;
     --ds-teal-light: 195 40% 95%;
     --ds-teal-200: 195 35% 90%;
   }
@@ -150,7 +150,7 @@
 
     /* Decision Stack - Output content (adjusted for dark) */
     --ds-teal: 195 50% 70%;
-    --ds-neon: 71 100% 65%;
+    --ds-neon: 79 100% 65%;
     --ds-teal-light: 195 40% 20%;
   }
 }

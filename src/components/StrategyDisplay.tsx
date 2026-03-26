@@ -320,21 +320,21 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   >
                     <FlipCard
                       front={
-                        <div className="bg-ds-teal rounded-lg p-6 shadow-sm min-h-[120px]">
+                        <div className="bg-ds-teal rounded-xl p-6 shadow-sm">
                           {/* Numbered circle */}
                           <div className="flex items-center justify-center w-[26px] h-[26px] rounded-full border-[1.5px] border-white/30 text-xs font-semibold text-white mx-auto mb-3">
                             {index + 1}
                           </div>
                           {/* Title */}
-                          <p className="text-[15px] font-semibold text-ds-neon mb-3 text-center">
+                          <p className="text-[15px] font-semibold text-ds-neon mb-3">
                             {getObjectiveTitle(objective)}
                           </p>
                           {/* OMTM */}
                           {objective.omtm && (
                             <div className="mb-3">
-                              <p className="text-sm font-semibold text-white text-center">{objective.omtm}</p>
+                              <p className="text-sm font-semibold text-white">{objective.omtm}</p>
                               {objective.aspiration && (
-                                <p className="text-xs text-white/85 text-center mt-0.5">
+                                <p className="text-xs text-white/85 mt-0.5 pl-0.5">
                                   ↳ {objective.aspiration}
                                 </p>
                               )}
@@ -342,22 +342,21 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           )}
                           {/* Objective statement */}
                           {objective.objective && (
-                            <p className="text-[13px] text-white/85 leading-relaxed text-center">
+                            <p className="text-[13px] text-white/85 leading-relaxed">
                               {objective.objective}
                             </p>
                           )}
                         </div>
                       }
                       back={
-                        <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
-                          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-2">
+                        <div className="bg-ds-teal rounded-xl p-6 shadow-sm">
+                          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                             Explainer
                           </div>
-                          {objective.objective && (
-                            <p className="text-sm text-white mb-2">{objective.objective}</p>
-                          )}
-                          {objective.explanation && (
-                            <p className="text-xs text-white/70 leading-relaxed">{objective.explanation}</p>
+                          {objective.explanation ? (
+                            <p className="text-sm text-white leading-relaxed">{objective.explanation}</p>
+                          ) : (
+                            <p className="text-sm text-white/40 italic">No explanation yet</p>
                           )}
                         </div>
                       }
