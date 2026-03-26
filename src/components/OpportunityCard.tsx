@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Pencil } from 'lucide-react';
 import { SuccessMetric } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
 import { FlipCard } from './FlipCard';
@@ -136,7 +136,7 @@ export function OpportunityCard({
             <p className="text-[13px] text-white/40 italic">No description yet</p>
           )}
 
-          {/* Delete button on back */}
+          {/* Actions */}
           <div className="flex justify-between items-center mt-3">
             <button
               onClick={(e) => {
@@ -147,10 +147,21 @@ export function OpportunityCard({
             >
               Delete
             </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(id);
+              }}
+              className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              <span className="text-[13px]">Edit</span>
+            </button>
           </div>
         </div>
       }
       onEditClick={() => onEdit(id)}
+      hideEditButton
     />
   );
 }
