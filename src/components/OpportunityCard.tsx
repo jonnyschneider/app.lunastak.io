@@ -73,7 +73,8 @@ export function OpportunityCard({
                   <p className="text-[13px] text-white/90 mb-1">
                     <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">Success is when...</span>
                   </p>
-                  <p className="text-[13px] font-bold text-white mb-2">
+                  <p className="text-[13px] font-bold text-white flex items-center gap-1.5 mb-2">
+                    <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
                     {metric.signal}
                   </p>
                   {(metric.baseline || metric.target) && (
