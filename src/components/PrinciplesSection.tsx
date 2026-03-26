@@ -141,7 +141,7 @@ export function PrinciplesSection({
   const [principles, setPrinciples] = useState<Principle[]>(initialPrinciples);
   const [saving, setSaving] = useState(false);
 
-  // Fetch principles from UserContent on mount (initialPrinciples may be empty)
+  // Fetch principles from UserContent on mount — always use UserContent as source of truth
   const fetchPrinciples = useCallback(async () => {
     try {
       const res = await fetch(`/api/project/${projectId}/content`);
@@ -157,21 +157,16 @@ export function PrinciplesSection({
             }
           })
           .filter(Boolean) as Principle[];
-        if (fetched.length > 0) {
-          setPrinciples(fetched);
-          onUpdate?.(fetched);
-        }
+        setPrinciples(fetched);
       }
     } catch (error) {
       console.error('Failed to fetch principles:', error);
     }
-  }, [projectId, onUpdate]);
+  }, [projectId]);
 
   useEffect(() => {
-    if (initialPrinciples.length === 0) {
-      fetchPrinciples();
-    }
-  }, [initialPrinciples.length, fetchPrinciples]);
+    fetchPrinciples();
+  }, [fetchPrinciples]);
 
   // Socratic input state
   const [step, setStep] = useState<InputStep>('priority');
