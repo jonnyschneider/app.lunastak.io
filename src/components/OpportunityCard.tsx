@@ -46,11 +46,10 @@ export function OpportunityCard({
           {/* Title */}
           <p className="text-[15px] font-semibold text-ds-neon mb-3">{title}</p>
 
-          {/* Success metrics */}
+          {/* Success metrics — belief statement */}
           {!compact && successMetrics.length > 0 && (
             <div className="mb-3">
-              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" />
+              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1.5">
                 Success Indicator
               </h4>
               {successMetrics.map((metric) => (
@@ -63,14 +62,25 @@ export function OpportunityCard({
                       {metric.belief.outcome}
                     </p>
                   )}
-                  {metric.signal && (
-                    <div className="mt-1">
-                      <p className="text-[13px] font-bold text-white">{metric.signal}</p>
-                      <p className="text-[13px] font-medium text-white mt-0.5">
-                        ↳ {metric.baseline || '?'} → {metric.target}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Goal metrics — same format as Objectives OMTM */}
+          {!compact && successMetrics.length > 0 && successMetrics.some(m => m.signal) && (
+            <div className="mb-3">
+              {successMetrics.map((metric) => metric.signal && (
+                <div key={metric.id} className="flex items-center gap-3 mb-2 last:mb-0">
+                  <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
+                  <div>
+                    <p className="text-sm font-bold text-white">{metric.signal}</p>
+                    {(metric.baseline || metric.target) && (
+                      <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)]">
+                        {metric.baseline || '?'} → {metric.target}
                       </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
