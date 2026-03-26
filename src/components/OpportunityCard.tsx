@@ -61,7 +61,7 @@ export function OpportunityCard({
                   )}
                 </div>
               ))}
-              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mt-3">
+              <h4 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wider mt-3">
                 Success Indicator
               </h4>
             </div>
@@ -74,7 +74,7 @@ export function OpportunityCard({
                 <div key={metric.id} className="flex items-center gap-3 mb-2 last:mb-0">
                   <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
                   <div>
-                    <p className="text-sm font-bold text-white">{metric.signal}</p>
+                    <p className="text-[13px] font-bold text-white">{metric.signal}</p>
                     {(metric.baseline || metric.target) && (
                       <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)]">
                         {metric.baseline || '?'} → {metric.target}
@@ -89,7 +89,7 @@ export function OpportunityCard({
           {/* Related objectives — numbered circles */}
           {!compact && objectiveIds.length > 0 && (
             <div className="flex items-center gap-1.5 mt-3">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-ds-neon">
+              <span className="text-[13px] font-semibold uppercase tracking-wider text-ds-neon">
                 Related to
               </span>
               {objectiveIds.map(objId => {
@@ -125,9 +125,9 @@ export function OpportunityCard({
             Explainer
           </div>
           {description ? (
-            <p className="text-sm text-white leading-relaxed">{description}</p>
+            <p className="text-[13px] text-white leading-relaxed">{description}</p>
           ) : (
-            <p className="text-sm text-white/40 italic">No description yet</p>
+            <p className="text-[13px] text-white/40 italic">No description yet</p>
           )}
 
           {/* Delete button on back */}

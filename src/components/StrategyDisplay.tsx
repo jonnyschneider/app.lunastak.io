@@ -222,7 +222,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             <FlipCard
               front={
                 <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-                  <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-3">
+                  <h3 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wide mb-3">
                     Vision
                   </h3>
                   <p className="text-lg font-medium text-white leading-relaxed">
@@ -235,7 +235,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                     Explainer
                   </div>
-                  <p className="text-sm text-white/70">No explainer yet</p>
+                  <p className="text-[13px] text-white/70">No explainer yet</p>
                 </div>
               }
               isEditing={editingCard?.type === 'vision'}
@@ -265,7 +265,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             <FlipCard
               front={
                 <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-                  <h3 className="text-xs font-semibold text-ds-neon uppercase tracking-wide mb-3">
+                  <h3 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wide mb-3">
                     Strategy
                   </h3>
                   <p className="text-lg font-medium text-white leading-relaxed">
@@ -278,7 +278,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                     Explainer
                   </div>
-                  <p className="text-sm text-white/70">No explainer yet</p>
+                  <p className="text-[13px] text-white/70">No explainer yet</p>
                 </div>
               }
               isEditing={editingCard?.type === 'strategy'}
@@ -334,7 +334,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                             <div className="mb-3 flex items-center gap-3">
                               <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
                               <div>
-                                <p className="text-sm font-bold text-white">{objective.omtm}</p>
+                                <p className="text-[13px] font-bold text-white">{objective.omtm}</p>
                                 {objective.aspiration && (
                                   <p className="text-[13px] italic text-white mt-0.5 font-[family-name:var(--font-ibm-plex-mono)]">
                                     {objective.aspiration}
@@ -357,9 +357,9 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                             Explainer
                           </div>
                           {objective.explanation ? (
-                            <p className="text-sm text-white leading-relaxed">{objective.explanation}</p>
+                            <p className="text-[13px] text-white leading-relaxed">{objective.explanation}</p>
                           ) : (
-                            <p className="text-sm text-white/40 italic">No explanation yet</p>
+                            <p className="text-[13px] text-white/40 italic">No explanation yet</p>
                           )}
                         </div>
                       }
@@ -400,7 +400,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 >
                   <div className="text-center">
                     <Plus className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-                    <span className="text-sm text-muted-foreground/50">Add objective</span>
+                    <span className="text-[13px] text-muted-foreground/50">Add objective</span>
                   </div>
                 </div>
               )}

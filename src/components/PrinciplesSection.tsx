@@ -296,9 +296,9 @@ export function PrinciplesSection({
                     front={
                       <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px] flex items-center justify-center">
                         <div className="text-center space-y-1.5">
-                          <p className="text-sm font-semibold text-ds-neon">{principle.priority}</p>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-white">even over</p>
-                          <p className="text-sm text-white/70">{principle.deprioritized}</p>
+                          <p className="text-[13px] font-semibold text-ds-neon">{principle.priority}</p>
+                          <p className="text-[13px] font-semibold uppercase tracking-wider text-white/50">even over</p>
+                          <p className="text-[13px] text-white/70">{principle.deprioritized}</p>
                         </div>
                       </div>
                     }
@@ -308,9 +308,9 @@ export function PrinciplesSection({
                           Explainer
                         </div>
                         {principle.context ? (
-                          <p className="text-xs text-white/70 leading-relaxed">{principle.context}</p>
+                          <p className="text-[13px] text-white/70 leading-relaxed">{principle.context}</p>
                         ) : (
-                          <p className="text-xs text-white/40 italic">No context yet</p>
+                          <p className="text-[13px] text-white/40 italic">No context yet</p>
                         )}
                       </div>
                     }
