@@ -215,7 +215,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
       )}
       <div className="space-y-6">
         {/* Strategy Output */}
-        <div className="space-y-4">
+        <div>
           {/* Vision Card */}
           <div className={cn(
             editingCard?.type === 'vision' && 'relative z-50'
@@ -268,6 +268,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
 
           {/* Strategy Card */}
           <div className={cn(
+            'mt-4',
             editingCard?.type === 'strategy' && 'relative z-50'
           )}>
             <FlipCard
@@ -317,7 +318,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           </div>
 
           {/* Objectives Grid */}
-          <div className="mt-8">
+          <div className="mt-12">
             <div className="flex items-center gap-3 mb-4">
               <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Objectives
@@ -432,7 +433,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
 
           {/* Opportunities Section */}
           <div className={cn(
-            'mt-8',
+            'mt-12',
             editingCard?.type === 'opportunity' && 'relative z-50'
           )}>
             <OpportunitySection
@@ -446,7 +447,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
 
           {/* Principles Section */}
           <div className={cn(
-            'mt-8',
+            'mt-12',
             editingCard?.type === 'principle' && 'relative z-50'
           )}>
             <div className="flex items-center gap-2 mb-4">
