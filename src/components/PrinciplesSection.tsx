@@ -307,13 +307,7 @@ export function PrinciplesSection({
     <div className="space-y-6">
       {/* Selected principles - grid layout */}
       {principles.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700">Your principles</h4>
-            <p className="text-xs text-muted-foreground">
-              {principles.length}/6
-            </p>
-          </div>
+        <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {principles.map((principle) => {
               const isEditingThis = editingPrincipleId === principle.id;
