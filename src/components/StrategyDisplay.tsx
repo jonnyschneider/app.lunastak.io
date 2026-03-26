@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Plus, TrendingUp, Pencil } from 'lucide-react';
+import { Plus, TrendingUp, Pencil, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { StrategyStatements, Objective } from '@/lib/types';
@@ -363,7 +363,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           {/* OMTM */}
                           {objective.omtm && (
                             <div className="mb-3 flex items-center gap-3">
-                              <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
+                              <Flag className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={2.5} />
                               <div>
                                 <p className="text-[13px] font-bold text-white">{objective.omtm}</p>
                                 {objective.aspiration && (
