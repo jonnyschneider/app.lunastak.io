@@ -336,7 +336,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                               <div>
                                 <p className="text-sm font-bold text-white">{objective.omtm}</p>
                                 {objective.aspiration && (
-                                  <p className="text-[13px] italic text-white/90 mt-0.5 font-[family-name:var(--font-ibm-plex-mono)]">
+                                  <p className="text-[13px] italic text-white mt-0.5 font-[family-name:var(--font-ibm-plex-mono)]">
                                     {objective.aspiration}
                                   </p>
                                 )}
