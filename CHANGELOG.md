@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-03-26
+
+**Decision Stack flip card UI, strategy card typography overhaul, and Socratic principle flow.**
+
+### Added
+
+- **FlipCard component** — Crossfade flip cards for all Decision Stack elements (vision, strategy, objectives, opportunities, principles) with front/back views, edit, and delete actions
+- **Opportunity flip cards** — Belief-driven metrics with boxes-and-arrow layout (From → To), numbered objective linking, and "Success is when..." label
+- **Principle flip cards** — "X even over Y" front display with context on back, restructured edit form
+- **Socratic principle add flow** — Moved into dialog behind Add button on Principles heading
+- **Outline Add buttons** — Replaced dashed placeholder boxes with styled Add buttons next to section headings
+
+### Changed
+
+- **Typography system** — IBM Plex Mono italic for OMTM aspirations, metric headings, and "We believe / will" labels; normalised all card body text to 13px baseline with weight/opacity differentiation
+- **Card back styling** — All text white/90, Edit as solid white button, Delete as ghost across all card backs
+- **Objective cards** — Statement + OMTM with Flag icon on front, TrendingUp icon on opportunity metric headings
+- **Principles styling** — Deprioritised text at /90 opacity, "even over" at /70, back context at /90
+- **Metric boxes** — Centre-aligned values, bold neon arrow with "to" label, no outlines
+- **Section spacing** — Explicit mt-12 between sections, Add buttons in lunastak-mid with ds-teal outline
+
+### Fixed
+
+- **Principles data fetch** — Always fetch from UserContent on mount, removing stale initialPrinciples fallback
+- **Card edit flow** — Return to front after edit save, show supporting metrics with "Related to" divider
+- **Provocation conversations** — Resume support and bumped doc extraction limits
+- **Print styles** — Cleaned up for strategy export
+- Removed unused Inter font import and PrincipleChip component
+
+### Infrastructure
+
+- Public repo readiness — removed hardcoded secrets, added architecture docs
+- Added `docs/backtest-sessions.md` to .gitignore
+
 ## [2.1.0] - 2026-02-25
 
 **Auth reliability, pipeline race condition fix, conversation coaching, and E2E regression suite.**
