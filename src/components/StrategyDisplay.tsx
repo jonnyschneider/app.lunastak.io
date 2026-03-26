@@ -237,7 +237,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                     Explainer
                   </div>
-                  <p className="text-[13px] text-white/70">No explainer yet</p>
+                  <p className="text-[13px] text-white/90">No explainer yet</p>
                   <div className="flex justify-end mt-3">
                     <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
                       <Pencil className="h-3 w-3" />
@@ -288,7 +288,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                     Explainer
                   </div>
-                  <p className="text-[13px] text-white/70">No explainer yet</p>
+                  <p className="text-[13px] text-white/90">No explainer yet</p>
                   <div className="flex justify-end mt-3">
                     <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
                       <Pencil className="h-3 w-3" />
@@ -401,7 +401,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                             Explainer
                           </div>
                           {objective.explanation ? (
-                            <p className="text-[13px] text-white leading-relaxed">{objective.explanation}</p>
+                            <p className="text-[13px] text-white/90 leading-relaxed">{objective.explanation}</p>
                           ) : (
                             <p className="text-[13px] text-white/40 italic">No explanation yet</p>
                           )}

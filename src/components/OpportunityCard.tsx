@@ -136,7 +136,7 @@ export function OpportunityCard({
             Explainer
           </div>
           {description ? (
-            <p className="text-[13px] text-white leading-relaxed">{description}</p>
+            <p className="text-[13px] text-white/90 leading-relaxed">{description}</p>
           ) : (
             <p className="text-[13px] text-white/40 italic">No description yet</p>
           )}
