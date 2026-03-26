@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,15 @@ export function FlipCard({
   hideEditButton = false,
 }: FlipCardProps) {
   const [flipped, setFlipped] = useState(false)
+  const prevIsEditing = useRef(isEditing)
+
+  // Return to front after exiting edit mode
+  useEffect(() => {
+    if (prevIsEditing.current && !isEditing) {
+      setFlipped(false)
+    }
+    prevIsEditing.current = isEditing
+  }, [isEditing])
 
   const handleCardClick = useCallback(() => {
     if (isEditing) return // Don't flip while editing

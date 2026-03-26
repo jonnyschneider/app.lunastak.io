@@ -97,7 +97,8 @@ export function OpportunityCard({
 
           {/* Related objectives — numbered circles */}
           {!compact && objectiveIds.length > 0 && (
-            <div className="flex items-center gap-1.5 mt-3">
+            <div className="mt-3 pt-3 border-t border-white/20">
+              <div className="flex items-center gap-1.5">
               <span className="text-[13px] font-semibold uppercase tracking-wider text-ds-neon/80">
                 Related to
               </span>
@@ -115,6 +116,7 @@ export function OpportunityCard({
                   </div>
                 );
               })}
+              </div>
             </div>
           )}
 

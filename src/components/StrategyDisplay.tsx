@@ -380,6 +380,19 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                               {objective.objective}
                             </p>
                           )}
+                          {/* Supporting metrics */}
+                          {objective.supportingMetrics && objective.supportingMetrics.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1">Secondary metrics</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {objective.supportingMetrics.map((metric, i) => (
+                                  <span key={i} className="text-[13px] text-white/70">
+                                    {metric}{i < objective.supportingMetrics!.length - 1 ? ' ·' : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       }
                       back={
