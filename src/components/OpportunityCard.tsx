@@ -1,5 +1,6 @@
 'use client';
 
+import { TrendingUp } from 'lucide-react';
 import { SuccessMetric } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
 import { FlipCard } from './FlipCard';
@@ -48,7 +49,8 @@ export function OpportunityCard({
           {/* Success metrics */}
           {!compact && successMetrics.length > 0 && (
             <div className="mb-3">
-              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1.5">
+              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" />
                 Success Indicator
               </h4>
               {successMetrics.map((metric) => (

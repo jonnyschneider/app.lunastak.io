@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
@@ -332,7 +332,10 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           {/* OMTM */}
                           {objective.omtm && (
                             <div className="mb-3">
-                              <p className="text-sm font-bold text-white">{objective.omtm}</p>
+                              <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <TrendingUp className="w-3.5 h-3.5 text-ds-neon shrink-0" />
+                                {objective.omtm}
+                              </p>
                               {objective.aspiration && (
                                 <p className="text-xs font-medium text-white mt-0.5 pl-0.5">
                                   ↳ {objective.aspiration}
