@@ -342,7 +342,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           )}
                           {/* Objective statement */}
                           {objective.objective && (
-                            <p className="text-[13px] text-white/85 leading-relaxed">
+                            <p className="text-[13px] font-medium text-white/85 leading-relaxed">
                               {objective.objective}
                             </p>
                           )}
