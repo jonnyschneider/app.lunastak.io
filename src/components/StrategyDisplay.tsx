@@ -454,7 +454,6 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Principles
               </h3>
-              <span className="text-xs text-muted-foreground">("even over" statements)</span>
               <Button
                 variant="outline"
                 size="sm"

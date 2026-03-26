@@ -138,7 +138,7 @@ export function PrinciplesSection({
   onStartEditing,
   onStopEditing,
 }: PrinciplesSectionProps) {
-  const [principles, setPrinciples] = useState<Principle[]>(initialPrinciples);
+  const [principles, setPrinciples] = useState<Principle[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Fetch principles from UserContent on mount — always use UserContent as source of truth
