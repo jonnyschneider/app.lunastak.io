@@ -450,11 +450,20 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             'mt-12',
             editingCard?.type === 'principle' && 'relative z-50'
           )}>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-3 mb-4">
               <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Principles
               </h3>
               <span className="text-xs text-muted-foreground">("even over" statements)</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => startEditing('principle', 'new')}
+                className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add
+              </Button>
             </div>
             <PrinciplesSection
               projectId={projectId}
