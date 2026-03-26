@@ -317,9 +317,9 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           </div>
 
           {/* Objectives Grid */}
-          <div>
+          <div className="mt-8">
             <div className="flex items-center gap-3 mb-4">
-              <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+              <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Objectives
               </h3>
               {!(editingCard?.type === 'objective') && (
@@ -330,7 +330,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     const newId = `obj_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
                     setEditingCard({ type: 'objective', id: newId, isNew: true });
                   }}
-                  className="border-ds-teal text-ds-teal hover:bg-ds-teal/10 gap-1 h-7 text-xs"
+                  className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Add
@@ -432,6 +432,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
 
           {/* Opportunities Section */}
           <div className={cn(
+            'mt-8',
             editingCard?.type === 'opportunity' && 'relative z-50'
           )}>
             <OpportunitySection
@@ -445,10 +446,11 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
 
           {/* Principles Section */}
           <div className={cn(
+            'mt-8',
             editingCard?.type === 'principle' && 'relative z-50'
           )}>
             <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+              <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Principles
               </h3>
               <span className="text-xs text-muted-foreground">("even over" statements)</span>
