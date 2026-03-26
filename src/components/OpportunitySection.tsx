@@ -215,7 +215,7 @@ export function OpportunitySection({
             variant="outline"
             size="sm"
             onClick={handleStartAdding}
-            className="bg-luna text-luna-foreground border-luna hover:bg-luna-dark gap-1 h-7 text-xs"
+            className="border-ds-teal text-ds-teal hover:bg-ds-teal/10 gap-1 h-7 text-xs"
           >
             <Plus className="h-3.5 w-3.5" />
             Add
