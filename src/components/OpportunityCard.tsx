@@ -76,14 +76,14 @@ export function OpportunityCard({
                   {(metric.baseline || metric.target) && (
                     <div className="flex items-center gap-2">
                       <div className="flex-1 rounded border border-white/20 px-2.5 py-1.5">
-                        <p className="text-[13px] text-white">{metric.baseline || '?'}</p>
+                        <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)]">{metric.baseline || '?'}</p>
                       </div>
                       <div className="flex flex-col items-center shrink-0">
-                        <span className="text-white font-bold text-[15px]">→</span>
-                        <span className="text-[10px] text-white/50 -mt-0.5">to</span>
+                        <span className="text-ds-neon font-bold text-[15px]">→</span>
+                        <span className="text-[10px] font-bold text-ds-neon uppercase -mt-0.5">to</span>
                       </div>
                       <div className="flex-1 rounded border border-white/20 px-2.5 py-1.5">
-                        <p className="text-[13px] text-white">{metric.target}</p>
+                        <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)]">{metric.target}</p>
                       </div>
                     </div>
                   )}
