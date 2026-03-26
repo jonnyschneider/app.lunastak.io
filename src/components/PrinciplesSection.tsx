@@ -1,16 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { PrincipleChip } from './PrincipleChip';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowUpDown, Trash2 } from 'lucide-react';
+import { FlipCard } from './FlipCard';
 import type { Principle } from '@/lib/types';
 
 interface PrinciplesSectionProps {
   projectId: string;
   initialPrinciples?: Principle[];
   onUpdate?: (principles: Principle[]) => void;
+  // Global edit state
+  editingCard?: { type: string; id?: string } | null;
+  onStartEditing?: (id: string) => void;
+  onStopEditing?: () => void;
 }
 
 type InputStep = 'priority' | 'loading' | 'confirm';
@@ -45,10 +50,93 @@ const HINT_EXAMPLES = [
   'Autonomy vs. alignment',
 ];
 
+// Inline edit form for a principle
+function PrincipleEditForm({
+  principle,
+  onSave,
+  onCancel,
+  onDelete,
+  onFlip,
+  saving,
+}: {
+  principle: Principle;
+  onSave: (updated: Principle) => void;
+  onCancel: () => void;
+  onDelete: () => void;
+  onFlip: () => void;
+  saving: boolean;
+}) {
+  const [priority, setPriority] = useState(principle.priority);
+  const [deprioritized, setDeprioritized] = useState(principle.deprioritized);
+  const [context, setContext] = useState(principle.context || '');
+
+  return (
+    <div className="bg-white rounded-lg p-6 shadow-lg border space-y-4">
+      <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide">
+        Edit Principle
+      </h3>
+      <div>
+        <label className="text-xs font-medium text-gray-700 mb-1 block">Priority</label>
+        <Input value={priority} onChange={(e) => setPriority(e.target.value)} />
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-xs text-gray-400 font-semibold uppercase">even over</span>
+        <button
+          onClick={onFlip}
+          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          title="Swap priority and deprioritized"
+        >
+          <ArrowUpDown className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-gray-700 mb-1 block">Deprioritized</label>
+        <Input value={deprioritized} onChange={(e) => setDeprioritized(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-gray-700 mb-1 block">Context (optional)</label>
+        <Textarea
+          value={context}
+          onChange={(e) => setContext(e.target.value)}
+          rows={3}
+          placeholder="Why this trade-off matters right now..."
+        />
+      </div>
+      <div className="flex justify-between items-center pt-2">
+        <button
+          onClick={onDelete}
+          disabled={saving}
+          className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1"
+        >
+          <Trash2 className="w-3 h-3" />
+          Delete
+        </button>
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
+          <Button
+            onClick={() => onSave({
+              ...principle,
+              priority: priority.trim(),
+              deprioritized: deprioritized.trim(),
+              context: context.trim() || undefined,
+            })}
+            disabled={!priority.trim() || !deprioritized.trim() || saving}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PrinciplesSection({
   projectId,
   initialPrinciples = [],
   onUpdate,
+  editingCard,
+  onStartEditing,
+  onStopEditing,
 }: PrinciplesSectionProps) {
   const [principles, setPrinciples] = useState<Principle[]>(initialPrinciples);
   const [saving, setSaving] = useState(false);
@@ -59,9 +147,11 @@ export function PrinciplesSection({
   const [deprioritizedInput, setDeprioritizedInput] = useState('');
   const [showHints, setShowHints] = useState(false);
 
+  const editingPrincipleId = editingCard?.type === 'principle' ? (editingCard.id ?? null) : null;
+
   const handlePrioritySubmit = async () => {
     if (!priorityInput.trim()) return;
-
+    onStartEditing?.('new');
     setStep('loading');
     const suggested = await fetchSuggestedOpposite(priorityInput);
     setDeprioritizedInput(suggested);
@@ -99,6 +189,7 @@ export function PrinciplesSection({
       setPriorityInput('');
       setDeprioritizedInput('');
       setStep('priority');
+      onStopEditing?.();
     } catch (error) {
       console.error('Failed to add principle:', error);
     } finally {
@@ -108,6 +199,7 @@ export function PrinciplesSection({
 
   const handleBack = () => {
     setStep('priority');
+    onStopEditing?.();
   };
 
   const handleRemove = async (id: string) => {
@@ -120,6 +212,7 @@ export function PrinciplesSection({
       const updated = principles.filter((p) => p.id !== id);
       setPrinciples(updated);
       onUpdate?.(updated);
+      onStopEditing?.();
     } catch (error) {
       console.error('Failed to remove principle:', error);
     } finally {
@@ -158,6 +251,29 @@ export function PrinciplesSection({
     }
   };
 
+  const handleSavePrinciple = async (updated: Principle) => {
+    setSaving(true);
+    try {
+      await fetch(`/api/project/${projectId}/content`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: updated.id,
+          content: JSON.stringify(updated),
+        }),
+      });
+
+      const updatedList = principles.map((p) => (p.id === updated.id ? updated : p));
+      setPrinciples(updatedList);
+      onUpdate?.(updatedList);
+      onStopEditing?.();
+    } catch (error) {
+      console.error('Failed to save principle:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const atMaxPrinciples = principles.length >= 6;
 
   return (
@@ -166,20 +282,54 @@ export function PrinciplesSection({
       {principles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-white">Your principles</h4>
-            <p className="text-xs text-white/50">
+            <h4 className="text-sm font-medium text-gray-700">Your principles</h4>
+            <p className="text-xs text-muted-foreground">
               {principles.length}/6
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {principles.map((principle) => (
-              <PrincipleChip
-                key={principle.id}
-                principle={principle}
-                onRemove={() => handleRemove(principle.id)}
-                onFlip={() => handleFlip(principle.id)}
-              />
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {principles.map((principle) => {
+              const isEditingThis = editingPrincipleId === principle.id;
+              return (
+                <div key={principle.id} className={isEditingThis ? 'col-span-full' : ''}>
+                  <FlipCard
+                    front={
+                      <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px] flex items-center justify-center">
+                        <div className="text-center space-y-1.5">
+                          <p className="text-sm font-semibold text-ds-neon">{principle.priority}</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-white">even over</p>
+                          <p className="text-sm text-white/70">{principle.deprioritized}</p>
+                        </div>
+                      </div>
+                    }
+                    back={
+                      <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
+                        <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-2">
+                          Explainer
+                        </div>
+                        {principle.context ? (
+                          <p className="text-xs text-white/70 leading-relaxed">{principle.context}</p>
+                        ) : (
+                          <p className="text-xs text-white/40 italic">No context yet</p>
+                        )}
+                      </div>
+                    }
+                    isEditing={isEditingThis}
+                    onEditClick={() => onStartEditing?.(principle.id)}
+                    editForm={
+                      <PrincipleEditForm
+                        principle={principle}
+                        onSave={handleSavePrinciple}
+                        onCancel={() => onStopEditing?.()}
+                        onDelete={() => handleRemove(principle.id)}
+                        onFlip={() => handleFlip(principle.id)}
+                        saving={saving}
+                      />
+                    }
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -189,7 +339,7 @@ export function PrinciplesSection({
         <div className="space-y-4">
           {step === 'priority' && (
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-white">
+              <label className="block text-sm font-medium text-gray-700">
                 What matters most for success and is least negotiable right now?
               </label>
               <div className="flex gap-2">
@@ -204,7 +354,6 @@ export function PrinciplesSection({
                 <Button
                   onClick={handlePrioritySubmit}
                   disabled={!priorityInput.trim() || saving}
-                  className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
                 >
                   Next
                 </Button>
@@ -214,13 +363,13 @@ export function PrinciplesSection({
               <div>
                 <button
                   onClick={() => setShowHints(!showHints)}
-                  className="flex items-center gap-1 text-xs text-white/50 hover:text-white/70"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 >
                   {showHints ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   {showHints ? 'Hide examples' : 'Need inspiration?'}
                 </button>
                 {showHints && (
-                  <p className="mt-2 text-xs text-white/50">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     Common trade-offs: {HINT_EXAMPLES.join(' · ')}
                   </p>
                 )}
@@ -229,7 +378,7 @@ export function PrinciplesSection({
           )}
 
           {step === 'loading' && (
-            <div className="p-4 bg-white rounded-lg">
+            <div className="p-4 bg-white rounded-lg border">
               <div className="text-center space-y-2">
                 <p className="text-sm font-semibold text-ds-teal">{priorityInput}</p>
                 <p className="text-xs text-ds-teal/50">even over</p>
@@ -240,7 +389,7 @@ export function PrinciplesSection({
 
           {step === 'confirm' && (
             <div className="space-y-4">
-              <div className="p-4 bg-white rounded-lg space-y-3">
+              <div className="p-4 bg-white rounded-lg border space-y-3">
                 <div className="text-center space-y-1">
                   <p className="text-sm font-semibold text-ds-teal">{priorityInput}</p>
                   <p className="text-xs text-ds-teal/50">even over</p>
@@ -260,13 +409,12 @@ export function PrinciplesSection({
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" onClick={handleBack} disabled={saving} className="text-white hover:bg-white/10 hover:text-white">
+                <Button variant="ghost" onClick={handleBack} disabled={saving}>
                   Back
                 </Button>
                 <Button
                   onClick={handleConfirm}
                   disabled={!deprioritizedInput.trim() || saving}
-                  className="bg-ds-neon text-ds-teal hover:bg-ds-neon/90"
                 >
                   {saving ? 'Saving...' : 'Add Principle'}
                 </Button>
