@@ -1,9 +1,10 @@
 'use client';
 
-import { TrendingUp, Pencil } from 'lucide-react';
+import { TrendingUp, Pencil, Trash2 } from 'lucide-react';
 import { SuccessMetric } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
 import { FlipCard } from './FlipCard';
+import { Button } from '@/components/ui/button';
 
 interface ObjectiveForLinking {
   id: string;
@@ -137,26 +138,15 @@ export function OpportunityCard({
           )}
 
           {/* Actions */}
-          <div className="flex justify-between items-center mt-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(id);
-              }}
-              className="text-[13px] text-white/40 hover:text-red-400 transition-colors"
-            >
-              Delete
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(id);
-              }}
-              className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors"
-            >
+          <div className="flex justify-end gap-1 mt-3">
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onDelete(id); }} className="text-white/40 hover:text-red-400 hover:bg-white/10 gap-1.5">
+              <Trash2 className="h-3 w-3" />
+              <span className="text-[13px]">Delete</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEdit(id); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
               <Pencil className="h-3 w-3" />
               <span className="text-[13px]">Edit</span>
-            </button>
+            </Button>
           </div>
         </div>
       }

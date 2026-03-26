@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Plus, TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { StrategyStatements, Objective } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
@@ -236,10 +237,17 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     Explainer
                   </div>
                   <p className="text-[13px] text-white/70">No explainer yet</p>
+                  <div className="flex justify-end mt-3">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                      <Pencil className="h-3 w-3" />
+                      <span className="text-[13px]">Edit</span>
+                    </Button>
+                  </div>
                 </div>
               }
               isEditing={editingCard?.type === 'vision'}
               onEditClick={() => startEditing('vision')}
+              hideEditButton
               editForm={
                 <div className="bg-white rounded-lg p-6 shadow-lg border">
                   <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide mb-3">
@@ -279,10 +287,17 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     Explainer
                   </div>
                   <p className="text-[13px] text-white/70">No explainer yet</p>
+                  <div className="flex justify-end mt-3">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                      <Pencil className="h-3 w-3" />
+                      <span className="text-[13px]">Edit</span>
+                    </Button>
+                  </div>
                 </div>
               }
               isEditing={editingCard?.type === 'strategy'}
               onEditClick={() => startEditing('strategy')}
+              hideEditButton
               editForm={
                 <div className="bg-white rounded-lg p-6 shadow-lg border">
                   <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide mb-3">
@@ -361,10 +376,17 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           ) : (
                             <p className="text-[13px] text-white/40 italic">No explanation yet</p>
                           )}
+                          <div className="flex justify-end mt-3">
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); startEditing('objective', objective.id); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                              <Pencil className="h-3 w-3" />
+                              <span className="text-[13px]">Edit</span>
+                            </Button>
+                          </div>
                         </div>
                       }
                       isEditing={isEditingThis}
                       onEditClick={() => startEditing('objective', objective.id)}
+                      hideEditButton
                       editForm={
                         <ObjectiveInlineEditor
                           objective={objective}

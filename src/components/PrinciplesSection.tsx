@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, ArrowUpDown, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowUpDown, Trash2, Pencil } from 'lucide-react';
 import { FlipCard } from './FlipCard';
 import type { Principle } from '@/lib/types';
 
@@ -312,10 +312,17 @@ export function PrinciplesSection({
                         ) : (
                           <p className="text-[13px] text-white/40 italic">No context yet</p>
                         )}
+                        <div className="flex justify-end mt-3">
+                          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onStartEditing?.(principle.id); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                            <Pencil className="h-3 w-3" />
+                            <span className="text-[13px]">Edit</span>
+                          </Button>
+                        </div>
                       </div>
                     }
                     isEditing={isEditingThis}
                     onEditClick={() => onStartEditing?.(principle.id)}
+                    hideEditButton
                     editForm={
                       <PrincipleEditForm
                         principle={principle}
