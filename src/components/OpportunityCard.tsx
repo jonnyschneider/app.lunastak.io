@@ -76,11 +76,9 @@ export function OpportunityCard({
                   <p className="text-[13px] font-bold text-white flex items-center gap-1.5 mb-2">
                     <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
                     {metric.signal}
+                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)] font-normal">moves from...</span>
                   </p>
                   {(metric.baseline || metric.target) && (<>
-                  <p className="text-[13px] mb-1">
-                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">moves from...</span>
-                  </p>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 rounded px-2.5 py-1.5">
                         <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)] text-center">{metric.baseline || '?'}</p>
