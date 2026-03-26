@@ -46,12 +46,9 @@ export function OpportunityCard({
           {/* Title */}
           <p className="text-[15px] font-semibold text-ds-neon mb-3">{title}</p>
 
-          {/* Success metrics — belief statement */}
+          {/* Belief statement + Success Indicator heading */}
           {!compact && successMetrics.length > 0 && (
             <div className="mb-3">
-              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mb-1.5">
-                Success Indicator
-              </h4>
               {successMetrics.map((metric) => (
                 <div key={metric.id} className="mb-2 last:mb-0">
                   {(metric.belief.action || metric.belief.outcome) && (
@@ -64,6 +61,9 @@ export function OpportunityCard({
                   )}
                 </div>
               ))}
+              <h4 className="text-[10px] font-semibold text-ds-neon uppercase tracking-wider mt-3">
+                Success Indicator
+              </h4>
             </div>
           )}
 
