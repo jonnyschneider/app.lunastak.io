@@ -64,25 +64,28 @@ export function OpportunityCard({
             </div>
           )}
 
-          {/* Goal metrics — same format as Objectives OMTM */}
+          {/* Goal metrics */}
           {!compact && successMetrics.length > 0 && successMetrics.some(m => m.signal) && (
             <div className="mb-3">
               {successMetrics.map((metric) => metric.signal && (
-                <div key={metric.id} className="flex items-center gap-3 mb-2 last:mb-0">
-                  <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
-                  <div>
-                    <p className="text-[13px] font-bold text-white">{metric.signal}</p>
-                    {metric.baseline && (
-                      <p className="text-[13px] text-white/80 mt-0.5">
-                        From: <span className="italic font-[family-name:var(--font-ibm-plex-mono)] text-white">{metric.baseline}</span>
-                      </p>
-                    )}
-                    {metric.target && (
-                      <p className="text-[13px] text-white/80">
-                        To: <span className="italic font-[family-name:var(--font-ibm-plex-mono)] text-white">{metric.target}</span>
-                      </p>
-                    )}
-                  </div>
+                <div key={metric.id} className="mb-2 last:mb-0">
+                  <p className="text-[13px] font-bold text-white flex items-center gap-1.5 mb-2">
+                    <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
+                    {metric.signal}
+                  </p>
+                  {(metric.baseline || metric.target) && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 rounded bg-white/10 px-2.5 py-1.5">
+                        <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-0.5">From</p>
+                        <p className="text-[13px] text-white">{metric.baseline || '?'}</p>
+                      </div>
+                      <span className="text-white/40 text-[13px] shrink-0">→</span>
+                      <div className="flex-1 rounded bg-ds-neon/10 px-2.5 py-1.5">
+                        <p className="text-[10px] font-semibold text-ds-neon/60 uppercase tracking-wider mb-0.5">To</p>
+                        <p className="text-[13px] text-white">{metric.target}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
