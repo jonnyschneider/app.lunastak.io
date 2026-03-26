@@ -238,7 +238,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   </div>
                   <p className="text-[13px] text-white/70">No explainer yet</p>
                   <div className="flex justify-end mt-3">
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                    <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
                       <Pencil className="h-3 w-3" />
                       <span className="text-[13px]">Edit</span>
                     </Button>
@@ -288,7 +288,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   </div>
                   <p className="text-[13px] text-white/70">No explainer yet</p>
                   <div className="flex justify-end mt-3">
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                    <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
                       <Pencil className="h-3 w-3" />
                       <span className="text-[13px]">Edit</span>
                     </Button>
@@ -377,7 +377,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                             <p className="text-[13px] text-white/40 italic">No explanation yet</p>
                           )}
                           <div className="flex justify-end mt-3">
-                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); startEditing('objective', objective.id); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('objective', objective.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
                               <Pencil className="h-3 w-3" />
                               <span className="text-[13px]">Edit</span>
                             </Button>

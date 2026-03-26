@@ -138,12 +138,12 @@ export function OpportunityCard({
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-1 mt-3">
+          <div className="flex justify-end gap-2 mt-3">
             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onDelete(id); }} className="text-white/40 hover:text-red-400 hover:bg-white/10 gap-1.5">
               <Trash2 className="h-3 w-3" />
               <span className="text-[13px]">Delete</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEdit(id); }} className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5">
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); onEdit(id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
               <Pencil className="h-3 w-3" />
               <span className="text-[13px]">Edit</span>
             </Button>
