@@ -176,6 +176,8 @@ export async function GET(
         deepDiveId: conv.deepDiveId || null,
         isInitialConversation: conv.isInitialConversation,
         firstMessageContent: firstMessage?.content || null,
+        originType: conv.originType || null,
+        originText: conv.originText || null,
       }
     })
 

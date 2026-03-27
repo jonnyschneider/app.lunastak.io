@@ -85,6 +85,8 @@ interface ConversationSummary {
   starredAt: string | null
   deepDiveId: string | null
   firstMessageContent: string | null
+  originType: string | null
+  originText: string | null
 }
 
 // Format date as "13 Jan '26"
@@ -841,8 +843,11 @@ export default function ProjectPage() {
                   const ddId = item.id.replace('dd-', '')
                   openDeepDiveSheet(ddId)
                 } else if (item.type === 'provocation') {
+                  // Prefer originText match (new conversations), fall back to firstMessageContent (legacy)
                   const existingConvo = projectData?.conversations.find(
-                    c => c.status === 'in_progress' && c.firstMessageContent === item.description
+                    c => c.status === 'in_progress' && (
+                      c.originText === item.description || c.firstMessageContent === item.description
+                    )
                   )
                   setChatDeepDiveId(undefined)
                   setChatGapExploration(undefined)
