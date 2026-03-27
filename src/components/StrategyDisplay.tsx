@@ -389,13 +389,14 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           {objective.supportingMetrics && objective.supportingMetrics.length > 0 && (
                             <div className="mt-3">
                               <p className="text-[13px] italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)] mb-1">Secondary metrics</p>
-                              <div className="flex flex-wrap gap-1.5">
+                              <ul className="space-y-0.5">
                                 {objective.supportingMetrics.map((metric, i) => (
-                                  <span key={i} className="text-[13px] text-white/90">
-                                    {metric}{i < objective.supportingMetrics!.length - 1 ? ' ·' : ''}
-                                  </span>
+                                  <li key={i} className="text-[13px] text-white/90 flex items-baseline gap-2">
+                                    <span className="text-white/50">–</span>
+                                    {metric}
+                                  </li>
                                 ))}
-                              </div>
+                              </ul>
                             </div>
                           )}
                         </div>
