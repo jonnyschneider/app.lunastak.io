@@ -184,6 +184,11 @@ export async function executePipeline(
       case 'opportunities': {
         const t = trigger as Extract<PipelineTrigger, { type: 'generate_opportunities' }>
         await runOpportunityGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
+        // Mark direction as settled after first opportunity generation
+        await prisma.project.update({
+          where: { id: t.projectId },
+          data: { directionStatus: 'settled' },
+        })
         break
       }
     }

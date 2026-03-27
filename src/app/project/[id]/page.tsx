@@ -190,6 +190,12 @@ export default function ProjectPage() {
     conversationId: string
     traceId: string
   } | null>(null)
+  // Opportunity generation state
+  const [isGeneratingOpportunities, setIsGeneratingOpportunities] = useState(false)
+  const [opportunityCoverageWarnings, setOpportunityCoverageWarnings] = useState<
+    { dimension: string; dimensionLabel: string; confidence: string; fragmentCount: number }[]
+  >([])
+  const [showCoverageWarning, setShowCoverageWarning] = useState(false)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
   // Track if current upload is first content (set when upload starts, cleared on completion)
@@ -511,6 +517,63 @@ export default function ProjectPage() {
     strategyIsStale: false,
     fragmentsSinceStrategy: 0,
     fragmentsSinceSummary: 0,
+  }
+
+  // Handle opportunity generation
+  const handleGenerateOpportunities = async (force = false) => {
+    if (!force) {
+      // Check coverage from existing syntheses
+      const thinDimensions = (projectData?.syntheses || [])
+        .filter(s => s.confidence === 'LOW' || s.fragmentCount < 3)
+        .map(s => ({
+          dimension: s.dimension,
+          dimensionLabel: s.dimension.replace(/_/g, ' ').toLowerCase(),
+          confidence: s.confidence,
+          fragmentCount: s.fragmentCount,
+        }))
+      if (thinDimensions.length > 0) {
+        setOpportunityCoverageWarnings(thinDimensions)
+        setShowCoverageWarning(true)
+        return
+      }
+    }
+
+    setShowCoverageWarning(false)
+    setIsGeneratingOpportunities(true)
+    try {
+      const res = await fetch(`/api/project/${projectId}/generate-opportunities`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // Poll for completion using existing generation status infrastructure
+        const pollInterval = setInterval(async () => {
+          const statusRes = await fetch(`/api/generation-status/${data.generationId}`)
+          if (statusRes.ok) {
+            const statusData = await statusRes.json()
+            if (statusData.status === 'complete' || statusData.status === 'failed') {
+              clearInterval(pollInterval)
+              setIsGeneratingOpportunities(false)
+              fetchProjectData()
+              // Re-fetch strategy data to get updated opportunities
+              const traceId = projectData?.strategyOutputs?.[0]?.id
+              if (traceId) {
+                const traceRes = await fetch(`/api/trace/${traceId}`)
+                if (traceRes.ok) {
+                  const traceData = await traceRes.json()
+                  if (traceData?.output) {
+                    setStrategyData(prev => prev ? { ...prev, strategy: traceData.output } : null)
+                  }
+                }
+              }
+            }
+          }
+        }, 3000)
+      }
+    } catch (err) {
+      console.error('Failed to generate opportunities:', err)
+      setIsGeneratingOpportunities(false)
+    }
   }
 
   // Helpers for conversation rendering (used in Knowledge tab)
@@ -938,12 +1001,7 @@ export default function ProjectPage() {
 
           {/* Action Tab */}
           <TabsContent value="action" className="space-y-6">
-            {hasStrategy && strategyData ? (
-              <OpportunitySection
-                projectId={projectId}
-                objectives={strategyData.strategy.objectives || []}
-              />
-            ) : (
+            {!hasStrategy ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <p className="text-muted-foreground mb-4">
@@ -954,6 +1012,58 @@ export default function ProjectPage() {
                   </Button>
                 </CardContent>
               </Card>
+            ) : (
+              <>
+                {strategyData && (
+                  <OpportunitySection
+                    projectId={projectId}
+                    objectives={strategyData.strategy.objectives || []}
+                  />
+                )}
+
+                {/* Coverage warning */}
+                {showCoverageWarning && opportunityCoverageWarnings.length > 0 && (
+                  <Card className="border-amber-200 bg-amber-50">
+                    <CardContent className="p-4">
+                      <p className="text-sm font-medium mb-3">
+                        Your direction could use more depth in these areas:
+                      </p>
+                      {opportunityCoverageWarnings.map(d => (
+                        <div key={d.dimension} className="flex items-center gap-2 text-sm mb-1">
+                          <span className="capitalize">{d.dimensionLabel}</span>
+                          <span className="text-muted-foreground">{d.fragmentCount} fragments</span>
+                        </div>
+                      ))}
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setShowCoverageWarning(false)
+                          setActiveTab('knowledge')
+                        }}>
+                          Explore gaps
+                        </Button>
+                        <Button size="sm" onClick={() => handleGenerateOpportunities(true)}>
+                          Generate anyway
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Generation progress */}
+                {isGeneratingOpportunities && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating opportunities...
+                  </div>
+                )}
+
+                {/* Generate button */}
+                {!isGeneratingOpportunities && !showCoverageWarning && (
+                  <Button onClick={() => handleGenerateOpportunities()}>
+                    Generate Opportunities
+                  </Button>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>
