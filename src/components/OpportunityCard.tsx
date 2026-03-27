@@ -143,15 +143,11 @@ export function OpportunityCard({
           <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
             Explainer
           </div>
-          {description && (
-            <p className="text-[13px] text-white/90 leading-relaxed">{description}</p>
-          )}
-
-          {/* Example hypothesis when no structured metrics */}
+          {/* When no structured metrics, show guidance instead of description */}
           {successMetrics.length === 0 && (
-            <div className="mt-4 pt-4 border-t border-white/15">
-              <p className="text-[13px] italic text-white/50 mb-3">
-                This opportunity doesn't have structured success metrics yet. A full hypothesis looks like:
+            <div>
+              <p className="text-[13px] text-white/90 leading-relaxed mb-4">
+                Define a testable hypothesis and success metric to turn this opportunity into an actionable experiment.
               </p>
               <div className="rounded bg-white/5 p-4 space-y-2">
                 <p className="text-[13px] text-white/70">
@@ -168,6 +164,11 @@ export function OpportunityCard({
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Description as explainer when metrics exist (description is on front only when no metrics) */}
+          {successMetrics.length > 0 && description && (
+            <p className="text-[13px] text-white/90 leading-relaxed">{description}</p>
           )}
 
           {/* Actions */}
