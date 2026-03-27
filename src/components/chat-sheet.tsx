@@ -72,6 +72,7 @@ interface ChatSheetProps {
   /** If true, allow new conversations even without strategy (e.g., document uploaded) */
   hasKnowledgebaseContent?: boolean
   viewOnly?: boolean
+  origin?: { type: string; text: string }
 }
 
 export function ChatSheet({
@@ -85,6 +86,7 @@ export function ChatSheet({
   hasExistingStrategy = false,
   hasKnowledgebaseContent = false,
   viewOnly = false,
+  origin,
 }: ChatSheetProps) {
   // Background generation context
   const { startGeneration, startTask } = useGenerationStatusContext()
@@ -234,6 +236,7 @@ export function ChatSheet({
           ...(question && { suggestedQuestion: question }),
           ...(deepDiveId && { deepDiveId }),
           ...(gapExploration && { gapExploration }),
+          ...(origin && { origin }),
         }),
       })
 

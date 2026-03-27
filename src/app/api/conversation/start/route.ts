@@ -90,12 +90,13 @@ export async function POST(req: Request) {
   console.log('[Start API] Request started');
 
   try {
-    const { variantOverride, suggestedQuestion, deepDiveId, gapExploration, projectId: requestedProjectId } = await req.json() as {
+    const { variantOverride, suggestedQuestion, deepDiveId, gapExploration, projectId: requestedProjectId, origin } = await req.json() as {
       variantOverride?: string;
       suggestedQuestion?: string;
       deepDiveId?: string;
       gapExploration?: GapExploration;
       projectId?: string;
+      origin?: { type: string; text: string };
     };
     console.log(`[Start API] Parsed body in ${Date.now() - startTime}ms, suggestedQuestion: ${!!suggestedQuestion}`);
 
@@ -168,6 +169,8 @@ export async function POST(req: Request) {
         status: 'in_progress',
         experimentVariant,
         isInitialConversation: !hasExistingStrategy,  // True if no strategy exists yet
+        originType: origin?.type || (gapExploration ? 'gap' : deepDive ? 'deep_dive' : 'organic'),
+        originText: origin?.text || gapExploration?.summary || null,
       },
     });
     console.log(`[Start API] Created conversation in ${Date.now() - startTime}ms`);

@@ -169,6 +169,7 @@ export default function ProjectPage() {
   const [chatGapExploration, setChatGapExploration] = useState<GapExploration | undefined>()
   const [chatResumeConversationId, setChatResumeConversationId] = useState<string | undefined>()
   const [chatViewOnly, setChatViewOnly] = useState(false)
+  const [chatOrigin, setChatOrigin] = useState<{ type: string; text: string } | undefined>()
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -836,6 +837,7 @@ export default function ProjectPage() {
                   )
                   setChatDeepDiveId(undefined)
                   setChatGapExploration(undefined)
+                  setChatOrigin({ type: 'provocation', text: item.description })
                   if (existingConvo) {
                     setChatInitialQuestion(undefined)
                     setChatResumeConversationId(existingConvo.id)
@@ -848,6 +850,7 @@ export default function ProjectPage() {
                 } else if (item.type === 'gap') {
                   setChatDeepDiveId(undefined)
                   setChatInitialQuestion(undefined)
+                  setChatOrigin({ type: 'gap', text: item.description })
                   setChatGapExploration({
                     dimension: item.dimension || '',
                     summary: item.description,
@@ -1090,6 +1093,7 @@ export default function ProjectPage() {
             setChatGapExploration(undefined)
             setChatResumeConversationId(undefined)
             setChatViewOnly(false)
+            setChatOrigin(undefined)
             fetchProjectData()
           }
         }}
@@ -1100,6 +1104,7 @@ export default function ProjectPage() {
         hasExistingStrategy={(projectData?.strategyOutputs?.length ?? 0) > 0}
         hasKnowledgebaseContent={(stats.fragmentCount ?? 0) > 0}
         viewOnly={chatViewOnly}
+        origin={chatOrigin}
       />
 
       {/* Add Deep Dive Dialog */}
