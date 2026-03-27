@@ -32,7 +32,14 @@ async function getUserId(): Promise<string | null> {
 
 async function verifyProjectAccess(projectId: string, userId: string): Promise<boolean> {
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId, status: 'active' },
+    where: {
+      id: projectId,
+      status: 'active',
+      OR: [
+        { userId },
+        { isDemo: true },
+      ],
+    },
     select: { id: true },
   })
   return !!project
