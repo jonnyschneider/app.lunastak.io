@@ -142,3 +142,44 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 | Synthesis race conditions | Sequential: synthesis → then knowledge summary | **Revisit:** parallel with coordination |
 | Guest-to-auth duplicate projects | Merge guest data, delete guest project | **Revisit:** proper session-to-user binding |
 | Cross-component state (project deletion) | Window events | **Revisit:** proper state management |
+
+---
+
+## Security & Access Control
+
+### Authentication Model
+
+- **Authenticated users:** NextAuth session → ownership check on all API routes
+- **Guest users:** `guestUserId` cookie → limited access to own guest project only
+- **Demo projects:** `isDemo` flag on Project model bypasses ownership checks
+
+### Demo Project Access (Decision: 2026-03-27)
+
+**Context:** Acquired podcast demo Decision Stacks (Costco, TSMC, Nike) need to be viewable by any user — guests, logged-in users, and unauthenticated visitors.
+
+**Decision:** Server-side `isDemo` boolean on the Project model controls access. When `isDemo=true`:
+- Trace API skips ownership check (any user can view)
+- Content API (`/api/project/[id]/content`) allows read access for any authenticated/guest user
+- UI renders in read-only mode (no edit/add affordances)
+
+**Why not a query param?** An earlier iteration used `?readonly=true` to bypass the trace API ownership check. This was a security hole — any user with a trace ID could bypass auth by appending the param. Reverted within the same session.
+
+**Why `isDemo` and not a public/sharing flag?** `isDemo` is deliberately limited:
+- Only settable via direct DB access (no API endpoint to set it)
+- Only used for showcase projects we control
+- A proper sharing/public access model (link sharing, viewer roles, public URLs) is a separate design concern for the product roadmap
+
+**Scaling considerations:**
+- If we add user-initiated sharing, it needs its own access model (viewer tokens, expiring links, or role-based access)
+- `isDemo` should remain admin-only — don't let users set their own projects to demo mode
+- The content API `OR: [{ userId }, { isDemo: true }]` pattern works for small numbers of demo projects but would need an index if demo count grows significantly
+
+### API Route Auth Summary
+
+| Route | Auth Model |
+|-------|-----------|
+| `GET /api/trace/[traceId]` | Owner OR guest-with-traceId OR `isDemo` project |
+| `GET /api/project/[id]/content` | Owner OR guest-owner OR `isDemo` project |
+| `POST/PUT/DELETE /api/project/[id]/content` | Owner only (strict) |
+| `POST /api/project/[id]/strategy-version` | Owner only (strict) |
+| `GET /api/project/[id]/strategy` | Owner OR guest-owner |
