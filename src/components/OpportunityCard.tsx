@@ -143,10 +143,31 @@ export function OpportunityCard({
           <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
             Explainer
           </div>
-          {description ? (
+          {description && (
             <p className="text-[13px] text-white/90 leading-relaxed">{description}</p>
-          ) : (
-            <p className="text-[13px] text-white/40 italic">No description yet</p>
+          )}
+
+          {/* Example hypothesis when no structured metrics */}
+          {successMetrics.length === 0 && (
+            <div className="mt-4 pt-4 border-t border-white/15">
+              <p className="text-[13px] italic text-white/50 mb-3">
+                This opportunity doesn't have structured success metrics yet. A full hypothesis looks like:
+              </p>
+              <div className="rounded bg-white/5 p-4 space-y-2">
+                <p className="text-[13px] text-white/70">
+                  <span className="italic font-medium text-ds-neon/70 font-[family-name:var(--font-ibm-plex-mono)]">We believe</span>{' '}
+                  <span className="text-white/50">[action]</span>{' '}
+                  <span className="italic font-medium text-ds-neon/70 font-[family-name:var(--font-ibm-plex-mono)]">will</span>{' '}
+                  <span className="text-white/50">[outcome]</span>
+                </p>
+                <p className="text-[13px] text-white/50">
+                  <span className="font-bold">📈 Signal name</span>
+                </p>
+                <p className="text-[13px] italic text-white/40 font-[family-name:var(--font-ibm-plex-mono)]">
+                  baseline → target
+                </p>
+              </div>
+            </div>
           )}
 
           {/* Actions */}
