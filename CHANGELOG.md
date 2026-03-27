@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-03-27
+
+**Read-only demo mode and Acquired Decision Stack showcases.**
+
+### Added
+
+- **Read-only mode** — `isDemo` flag on Project model suppresses all edit/add affordances; also available via `?readonly=true` query param
+- **Vision/strategy explainers** — Card backs now render elaboration text from generatedOutput when available
+- **Opportunity hypothesis template** — Card back shows example hypothesis format when no structured metrics exist
+- **Plain text content parsing** — PrinciplesSection handles "Prioritise X even over Y" format from bridge fixtures; OpportunityCard shows description on front when no structured metrics
+
+### Fixed
+
+- **Opportunity heading colour** — Always lunastak-mid regardless of readOnly state
+- **Secondary metrics** — Displayed as dashed list under italic Plex Mono heading on objective front
+
+### Infrastructure
+
+- Acquired demo fixtures (Costco, TSMC, Nike) hydrated into prod with `isDemo=true`
+- Production URLs: Costco `/strategy/cmn8dmqd8000212zat6shsdo6`, TSMC `/strategy/cmn8dnpii0002akzp235vpbkp`, Nike `/strategy/cmn8dodot0002j4emgjfhzoqc`
+
 ## [2.2.0] - 2026-03-26
 
 **Decision Stack flip card UI, strategy card typography overhaul, and Socratic principle flow.**
