@@ -30,6 +30,10 @@ model Conversation {
   deepDiveId String?
   deepDive   DeepDive? @relation(fields: [deepDiveId], references: [id], onDelete: SetNull)
 
+  // Origin tracking
+  originType String? // provocation | gap | deep_dive | organic
+  originText String? @db.Text
+
   user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages       Message[]
   traces         Trace[]
@@ -165,6 +169,8 @@ model Project {
   status      String  @default("active") // active | archived | deleted
   isDemo      Boolean @default(false)
 
+  directionStatus String @default("drafting") // drafting | settled
+
   // Luna Remembers: accumulated knowledge
   knowledgeSummary   String?   @db.Text // "What Luna Knows" - human-readable summary
   knowledgeUpdatedAt DateTime? // Last time knowledge was synthesized
@@ -215,6 +221,9 @@ model Fragment {
   capturedAt  DateTime @default(now())
   confidence  String? // HIGH | MEDIUM | LOW
 
+  sourceType    String @default("extraction") // extraction | import | manual
+  importBatchId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -230,6 +239,7 @@ model Fragment {
   @@index([documentId])
   @@index([status])
   @@index([capturedAt])
+  @@index([importBatchId])
 }
 
 model FragmentDimensionTag {
