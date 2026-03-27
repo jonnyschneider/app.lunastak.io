@@ -174,6 +174,10 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 - `isDemo` should remain admin-only — don't let users set their own projects to demo mode
 - The content API `OR: [{ userId }, { isDemo: true }]` pattern works for small numbers of demo projects but would need an index if demo count grows significantly
 
+### Related Documents
+
+- **Product & Tech Summary:** `My Drive (jonny@humventures.com.au)/05-Initiatives/Lunastak/2026 01 26 Product and Tech Summary.md` — broader product context, auth model rationale, and scaling roadmap
+
 ### API Route Auth Summary
 
 | Route | Auth Model |
