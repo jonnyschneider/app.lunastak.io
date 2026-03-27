@@ -46,7 +46,9 @@ import { useGenerationStatusContext } from '@/components/providers/BackgroundTas
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'
-import { StructuredProvocation } from '@/lib/types'
+import StrategyDisplay from '@/components/StrategyDisplay'
+import { OpportunitySection } from '@/components/OpportunitySection'
+import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -176,6 +178,14 @@ export default function ProjectPage() {
   const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
   const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
+  // Main tab state
+  const [activeTab, setActiveTab] = useState<string>('direction')
+  // Strategy data for Direction tab
+  const [strategyData, setStrategyData] = useState<{
+    strategy: StrategyStatements
+    conversationId: string
+    traceId: string
+  } | null>(null)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
   // Track if current upload is first content (set when upload starts, cleared on completion)
@@ -279,6 +289,27 @@ export default function ProjectPage() {
     fetchProjectData()
     fetchDismissals()
   }, [status, projectId])
+
+  // Fetch strategy data when strategyOutputs change
+  useEffect(() => {
+    const traceId = projectData?.strategyOutputs?.[0]?.id
+    if (!traceId) {
+      setStrategyData(null)
+      return
+    }
+    fetch(`/api/trace/${traceId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.output) {
+          setStrategyData({
+            strategy: data.output,
+            conversationId: data.conversationId,
+            traceId,
+          })
+        }
+      })
+      .catch(err => console.error('Failed to fetch strategy:', err))
+  }, [projectData?.strategyOutputs])
 
   // Listen for strategySaved event (fired after extraction starts generation)
   useEffect(() => {
@@ -478,147 +509,263 @@ export default function ProjectPage() {
     fragmentsSinceSummary: 0,
   }
 
+  // Helpers for conversation rendering (used in Knowledge tab)
+  const analysedConversations = projectData?.conversations?.filter(
+    c => c.status === 'extracted' || c.fragmentCount > 0
+  ) || []
+  const inProgressConversations = projectData?.conversations?.filter(
+    c => c.status === 'in_progress'
+  ) || []
+  const initialConversationId = projectData?.conversations
+    ?.filter(c => !c.deepDiveId && c.status === 'extracted')
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id
+
+  const renderConversationItem = (conv: ConversationSummary, index: number) => {
+    const isInitialConversation = conv.id === initialConversationId
+    const deepDive = conv.deepDiveId
+      ? projectData?.deepDives?.find(dd => dd.id === conv.deepDiveId)
+      : null
+    const handleClick = () => {
+      setChatInitialQuestion(undefined)
+      setChatDeepDiveId(undefined)
+      setChatGapExploration(undefined)
+      setChatResumeConversationId(conv.id)
+      setChatViewOnly(isInitialConversation)
+      setChatSheetOpen(true)
+    }
+
+    return (
+      <React.Fragment key={conv.id}>
+        {index > 0 && <ItemSeparator />}
+        <Item
+          size="sm"
+          className="cursor-pointer hover:bg-muted/50"
+          onClick={handleClick}
+        >
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              toggleConversationStar(conv.id, conv.starred)
+            }}
+            className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
+            title={conv.starred ? 'Unstar' : 'Star'}
+          >
+            <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
+          </button>
+          <ItemContent>
+            <ItemTitle className="text-xs truncate">
+              {conv.title || 'Untitled conversation'}
+            </ItemTitle>
+            <ItemDescription className="text-xs">
+              {formatShortDate(conv.createdAt)}
+            </ItemDescription>
+            {deepDive && (
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                <CornerDownRight className="h-2.5 w-2.5" />
+                <span>Part of:</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    openDeepDiveSheet(deepDive.id)
+                  }}
+                  className="bg-muted border border-border rounded-full px-1.5 py-0.5 transition-colors group-hover/item:bg-primary group-hover/item:text-white group-hover/item:border-primary"
+                >
+                  {deepDive.topic.length > 20 ? `${deepDive.topic.slice(0, 20)}…` : deepDive.topic}
+                </button>
+              </div>
+            )}
+          </ItemContent>
+        </Item>
+      </React.Fragment>
+    )
+  }
+
+  const hasStrategy = (projectData?.strategyOutputs?.length ?? 0) > 0
+  const opportunityCount = strategyData?.strategy?.opportunities?.length ?? 0
+
   return (
     <AppLayout>
-      <div className="container mx-auto px-6 py-8 space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Your Thinking
-          </h1>
-          <p className="text-muted-foreground">
-            Capture ideas, explore questions, and refine your thinking.
-          </p>
-        </div>
-
-        {/* Knowledgebase Header */}
-        <KnowledgebaseHeader
-          fragmentCount={stats.fragmentCount}
-          chatCount={stats.conversationCount}
-          documentCount={stats.documentCount}
-          strategyIsStale={stats.strategyIsStale}
-          fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
-          fragmentsSinceSummary={stats.fragmentsSinceSummary}
-          knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
-          knowledgeSummary={projectData?.knowledgeSummary || null}
-          dimensionalCoverage={stats.dimensionalCoverage}
-          syntheses={projectData?.syntheses || []}
-          latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
-          onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
-          onChatClick={() => triggerUpgrade('knowledge-chat')}
-          onEditClick={() => triggerUpgrade('knowledge-edit')}
-          onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
-          knowledgeBusyMessage={
-            isRunning(projectId, 'extraction') ? 'processing insights...'
-            : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
-            : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
-            : null
-          }
-          strategyBusyMessage={
-            isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
-            : isRunning(projectId, 'refresh') ? (getProgressLabel(projectId) || 'refreshing strategy...')
-            : null
-          }
-        />
-
-        {/* Row 1: Strategy + Chats */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Strategy CTA */}
-          <GoToStrategyCard
-            latestTraceId={projectData?.strategyOutputs?.[0]?.id ?? null}
-            projectId={projectId}
-          />
-
-          {/* Chats Column */}
-          <Card data-section="chats">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MessageSquare className="h-4 w-4" />
-                Chats
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Your conversations with Luna
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projectData?.conversations && projectData.conversations.length > 0 ? (
-                (() => {
-                  const analysedConversations = projectData.conversations.filter(
-                    c => c.status === 'extracted' || c.fragmentCount > 0
-                  )
-                  const inProgressConversations = projectData.conversations.filter(
-                    c => c.status === 'in_progress'
-                  )
-
-                  // Find the initial conversation (oldest extracted conversation without deepDiveId)
-                  // This is the original strategy-generating conversation - view only
-                  const initialConversationId = projectData.conversations
-                    .filter(c => !c.deepDiveId && c.status === 'extracted')
-                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id
-
-                  const renderConversationItem = (conv: ConversationSummary, index: number) => {
-                    const isInitialConversation = conv.id === initialConversationId
-                    const deepDive = conv.deepDiveId
-                      ? projectData?.deepDives?.find(dd => dd.id === conv.deepDiveId)
-                      : null
-                    const handleClick = () => {
-                      setChatInitialQuestion(undefined)
-                      setChatDeepDiveId(undefined)
-                      setChatGapExploration(undefined)
-                      setChatResumeConversationId(conv.id)
-                      setChatViewOnly(isInitialConversation)
-                      setChatSheetOpen(true)
-                    }
-
-                    return (
-                      <React.Fragment key={conv.id}>
-                        {index > 0 && <ItemSeparator />}
-                        <Item
-                          size="sm"
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={handleClick}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              toggleConversationStar(conv.id, conv.starred)
-                            }}
-                            className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
-                            title={conv.starred ? 'Unstar' : 'Star'}
-                          >
-                            <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
-                          </button>
-                          <ItemContent>
-                            <ItemTitle className="text-xs truncate">
-                              {conv.title || 'Untitled conversation'}
-                            </ItemTitle>
-                            <ItemDescription className="text-xs">
-                              {formatShortDate(conv.createdAt)}
-                            </ItemDescription>
-                            {deepDive && (
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
-                                <CornerDownRight className="h-2.5 w-2.5" />
-                                <span>Part of:</span>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    openDeepDiveSheet(deepDive.id)
-                                  }}
-                                  className="bg-muted border border-border rounded-full px-1.5 py-0.5 transition-colors group-hover/item:bg-primary group-hover/item:text-white group-hover/item:border-primary"
-                                >
-                                  {deepDive.topic.length > 20 ? `${deepDive.topic.slice(0, 20)}…` : deepDive.topic}
-                                </button>
-                              </div>
-                            )}
-                          </ItemContent>
-                        </Item>
-                      </React.Fragment>
-                    )
+      <div className="container mx-auto px-6 py-8 space-y-6">
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center justify-between mb-6">
+            <TabsList>
+              <TabsTrigger value="direction">Direction</TabsTrigger>
+              <TabsTrigger value="knowledge">
+                Knowledge
+                {stats.fragmentCount > 0 && (
+                  <span className="ml-1.5 text-xs text-muted-foreground">
+                    {stats.fragmentCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="action">
+                Action
+                {opportunityCount > 0 && (
+                  <span className="ml-1.5 text-xs text-muted-foreground">
+                    {opportunityCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  getStatsigClient()?.logEvent('cta_new_chat', 'project-page-header', { projectId })
+                  setChatInitialQuestion(undefined)
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Chat
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  getStatsigClient()?.logEvent('cta_upload_doc', 'project-page-header', { projectId })
+                  const isFirstContent =
+                    (stats.fragmentCount ?? 0) === 0 &&
+                    (stats.conversationCount ?? 0) === 0 &&
+                    (projectData?.strategyOutputs?.length ?? 0) === 0
+                  if (isFirstContent) {
+                    setPendingFirstContentUpload(true)
                   }
+                  setUploadDeepDiveId(undefined)
+                  setUploadDialogOpen(true)
+                }}
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                Upload
+              </Button>
+            </div>
+          </div>
 
-                  return (
+          {/* Direction Tab */}
+          <TabsContent value="direction" className="space-y-6">
+            {strategyData ? (
+              <StrategyDisplay
+                strategy={strategyData.strategy}
+                conversationId={strategyData.conversationId}
+                traceId={strategyData.traceId}
+                projectId={projectId}
+                onUpdate={(updated) => {
+                  setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
+                }}
+              />
+            ) : (
+              <GoToStrategyCard
+                latestTraceId={null}
+                projectId={projectId}
+              />
+            )}
+            {isRunning(projectId, 'generation') && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {getProgressLabel(projectId) || 'Drafting strategy...'}
+              </div>
+            )}
+            {isRunning(projectId, 'refresh') && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {getProgressLabel(projectId) || 'Refreshing strategy...'}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Knowledge Tab */}
+          <TabsContent value="knowledge" className="space-y-6">
+            {/* Dimensional Coverage */}
+            <KnowledgebaseHeader
+              fragmentCount={stats.fragmentCount}
+              chatCount={stats.conversationCount}
+              documentCount={stats.documentCount}
+              strategyIsStale={stats.strategyIsStale}
+              fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+              fragmentsSinceSummary={stats.fragmentsSinceSummary}
+              knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
+              knowledgeSummary={projectData?.knowledgeSummary || null}
+              dimensionalCoverage={stats.dimensionalCoverage}
+              syntheses={projectData?.syntheses || []}
+              latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
+              onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
+              onChatClick={() => triggerUpgrade('knowledge-chat')}
+              onEditClick={() => triggerUpgrade('knowledge-edit')}
+              onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
+              knowledgeBusyMessage={
+                isRunning(projectId, 'extraction') ? 'processing insights...'
+                : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
+                : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
+                : null
+              }
+              strategyBusyMessage={
+                isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
+                : isRunning(projectId, 'refresh') ? (getProgressLabel(projectId) || 'refreshing strategy...')
+                : null
+              }
+            />
+
+            {/* Explore Next */}
+            <ExploreNextSection
+              deepDives={projectData?.deepDives || []}
+              provocations={projectData?.suggestedQuestions || []}
+              syntheses={projectData?.syntheses || []}
+              isItemDismissed={isItemDismissed}
+              onDismissItem={dismissItem}
+              onItemClick={(item: ExploreItem) => {
+                if (item.type === 'deep-dive') {
+                  const ddId = item.id.replace('dd-', '')
+                  openDeepDiveSheet(ddId)
+                } else if (item.type === 'provocation') {
+                  const existingConvo = projectData?.conversations.find(
+                    c => c.status === 'in_progress' && c.firstMessageContent === item.description
+                  )
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  if (existingConvo) {
+                    setChatInitialQuestion(undefined)
+                    setChatResumeConversationId(existingConvo.id)
+                  } else {
+                    setChatInitialQuestion(item.description)
+                    setChatResumeConversationId(undefined)
+                  }
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                } else if (item.type === 'gap') {
+                  setChatDeepDiveId(undefined)
+                  setChatInitialQuestion(undefined)
+                  setChatGapExploration({
+                    dimension: item.dimension || '',
+                    summary: item.description,
+                  })
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }
+              }}
+              onAddDeepDive={() => setAddDeepDiveOpen(true)}
+            />
+
+            {/* Conversations & Documents side by side */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Conversations */}
+              <Card data-section="chats">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <MessageSquare className="h-4 w-4" />
+                    Chats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {projectData?.conversations && projectData.conversations.length > 0 ? (
                     <Tabs
                       value={chatsActiveTab ?? (inProgressConversations.length > 0 ? 'in-progress' : 'analysed')}
                       onValueChange={setChatsActiveTab}
@@ -673,179 +820,100 @@ export default function ProjectPage() {
                         )}
                       </TabsContent>
                     </Tabs>
-                  )
-                })()
-              ) : (
-                <div className="text-center py-4 px-6 text-muted-foreground">
-                  <MessageSquare className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                  <p className="text-xs">No conversations yet</p>
-                </div>
-              )}
-              <div className="p-4 pt-3 border-t">
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    getStatsigClient()?.logEvent('cta_new_chat', 'project-page', { projectId })
-                    setChatInitialQuestion(undefined)
-                    setChatDeepDiveId(undefined)
-                    setChatGapExploration(undefined)
-                    setChatResumeConversationId(undefined)
-                    setChatViewOnly(false)
-                    setChatSheetOpen(true)
-                  }}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  New Chat
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  ) : (
+                    <div className="text-center py-4 px-6 text-muted-foreground">
+                      <MessageSquare className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs">No conversations yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-        {/* Row 2: Explore Next + Documents */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <ExploreNextSection
-            deepDives={projectData?.deepDives || []}
-            provocations={projectData?.suggestedQuestions || []}
-            syntheses={projectData?.syntheses || []}
-            isItemDismissed={isItemDismissed}
-            onDismissItem={dismissItem}
-            onItemClick={(item: ExploreItem) => {
-              if (item.type === 'deep-dive') {
-                const ddId = item.id.replace('dd-', '')
-                openDeepDiveSheet(ddId)
-              } else if (item.type === 'provocation') {
-                // TECH DEBT: Client-side match — provocations should be tracked via
-                // a schema-level `originText` field on Conversation. This matching
-                // works because suggestedQuestion is used verbatim as the first
-                // assistant message, but it's fragile. See docs/luna-fix.md.
-                const existingConvo = projectData?.conversations.find(
-                  c => c.status === 'in_progress' && c.firstMessageContent === item.description
-                )
-                setChatDeepDiveId(undefined)
-                setChatGapExploration(undefined)
-                if (existingConvo) {
-                  setChatInitialQuestion(undefined)
-                  setChatResumeConversationId(existingConvo.id)
-                } else {
-                  setChatInitialQuestion(item.description)
-                  setChatResumeConversationId(undefined)
-                }
-                setChatViewOnly(false)
-                setChatSheetOpen(true)
-              } else if (item.type === 'gap') {
-                setChatDeepDiveId(undefined)
-                setChatInitialQuestion(undefined)
-                setChatGapExploration({
-                  dimension: item.dimension || '',
-                  summary: item.description,
-                })
-                setChatResumeConversationId(undefined)
-                setChatViewOnly(false)
-                setChatSheetOpen(true)
-              }
-            }}
-            onAddDeepDive={() => setAddDeepDiveOpen(true)}
-          />
+              {/* Documents */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="h-4 w-4" />
+                    Documents & Memos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {projectData?.documents && projectData.documents.length > 0 ? (
+                    (() => {
+                      const INPUT_LIMIT = 10
+                      const allDocs = projectData.documents
+                      const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
+                      const hasMore = allDocs.length > INPUT_LIMIT
 
-          {/* Documents & Memos */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Upload className="h-4 w-4" />
-                Documents & Memos
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Files and notes that inform your strategy
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projectData?.documents && projectData.documents.length > 0 ? (
-                (() => {
-                  const INPUT_LIMIT = 10
-                  const allDocs = projectData.documents
-                  const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
-                  const hasMore = allDocs.length > INPUT_LIMIT
+                      return (
+                        <ItemGroup>
+                          {visibleDocs.map((doc, index) => (
+                            <React.Fragment key={doc.id}>
+                              {index > 0 && <ItemSeparator />}
+                              <Item size="sm">
+                                <ItemContent>
+                                  <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
+                                  <ItemDescription className="text-xs">
+                                    {doc.status === 'complete'
+                                      ? `${doc.fragmentCount} fragments`
+                                      : doc.status === 'processing'
+                                        ? 'Processing...'
+                                        : doc.status}
+                                  </ItemDescription>
+                                </ItemContent>
+                              </Item>
+                            </React.Fragment>
+                          ))}
+                          {hasMore && (
+                            <>
+                              <ItemSeparator />
+                              <div className="px-4 py-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-muted-foreground"
+                                  onClick={() => setShowAllInputs(!showAllInputs)}
+                                >
+                                  {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </ItemGroup>
+                      )
+                    })()
+                  ) : (
+                    <div className="text-center py-4 px-6 text-muted-foreground">
+                      <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs">No documents yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-                  return (
-                    <ItemGroup>
-                      {visibleDocs.map((doc, index) => (
-                        <React.Fragment key={doc.id}>
-                          {index > 0 && <ItemSeparator />}
-                          <Item size="sm">
-                            <ItemContent>
-                              <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
-                              <ItemDescription className="text-xs">
-                                {doc.status === 'complete'
-                                  ? `${doc.fragmentCount} fragments`
-                                  : doc.status === 'processing'
-                                    ? 'Processing...'
-                                    : doc.status}
-                              </ItemDescription>
-                            </ItemContent>
-                          </Item>
-                        </React.Fragment>
-                      ))}
-                      {hasMore && (
-                        <>
-                          <ItemSeparator />
-                          <div className="px-4 py-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full text-muted-foreground"
-                              onClick={() => setShowAllInputs(!showAllInputs)}
-                            >
-                              {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </ItemGroup>
-                  )
-                })()
-              ) : (
-                <div className="text-center py-4 px-6 text-muted-foreground">
-                  <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                  <p className="text-xs">No documents yet</p>
-                </div>
-              )}
-              <div className="p-4 pt-3 border-t">
-                <div className="flex w-full">
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-r-none"
-                    onClick={() => {
-                      getStatsigClient()?.logEvent('cta_upload_doc', 'project-page', { projectId })
-                      const isFirstContent =
-                        (stats.fragmentCount ?? 0) === 0 &&
-                        (stats.conversationCount ?? 0) === 0 &&
-                        (projectData?.strategyOutputs?.length ?? 0) === 0
-                      if (isFirstContent) {
-                        setPendingFirstContentUpload(true)
-                      }
-                      setUploadDeepDiveId(undefined)
-                      setUploadDialogOpen(true)
-                    }}
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload Doc
+          {/* Action Tab */}
+          <TabsContent value="action" className="space-y-6">
+            {hasStrategy && strategyData ? (
+              <OpportunitySection
+                projectId={projectId}
+                objectives={strategyData.strategy.objectives || []}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    No opportunities yet. Build your Direction first, then generate opportunities.
+                  </p>
+                  <Button variant="outline" onClick={() => setActiveTab('direction')}>
+                    Go to Direction
                   </Button>
-                  <div className="w-px bg-primary-foreground/20" />
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-l-none"
-                    onClick={() => triggerUpgrade('audio-memo')}
-                  >
-                    <NotebookPen className="h-3 w-3 mr-1" />
-                    Add Memo
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Upload Dialog */}
