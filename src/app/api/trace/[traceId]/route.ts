@@ -19,7 +19,7 @@ export async function GET(
           select: { userId: true },
         },
         project: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, isDemo: true },
         },
       },
     })
@@ -57,6 +57,7 @@ export async function GET(
       timestamp: trace.timestamp,
       projectId: trace.projectId || null,
       projectName: trace.project?.name || null,
+      isDemo: trace.project?.isDemo || false,
     })
   } catch (error) {
     console.error('Failed to fetch trace:', error)

@@ -281,6 +281,7 @@ export function OpportunitySection({
                 onDelete={handleDelete}
                 onImproveWithAI={onImproveWithAI}
                 compact={compact}
+                readOnly={readOnly}
               />
             );
           })}

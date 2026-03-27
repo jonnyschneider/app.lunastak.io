@@ -20,6 +20,7 @@ interface StrategyDisplayProps {
   traceId: string;
   projectId: string;
   onUpdate?: (strategy: StrategyStatements) => void;
+  readOnly?: boolean;
 }
 
 type EditingCard = {
@@ -28,7 +29,7 @@ type EditingCard = {
   isNew?: boolean
 } | null
 
-export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate }: StrategyDisplayProps) {
+export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate, readOnly = false }: StrategyDisplayProps) {
   const [editingCard, setEditingCard] = useState<EditingCard>(null)
 
   const startEditing = useCallback((type: NonNullable<EditingCard>['type'], id?: string) => {
@@ -238,12 +239,14 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     Explainer
                   </div>
                   <p className="text-[13px] text-white/90">No explainer yet</p>
-                  <div className="flex justify-end mt-3">
-                    <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                      <Pencil className="h-3 w-3" />
-                      <span className="text-[13px]">Edit</span>
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex justify-end mt-3">
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
+                        <Pencil className="h-3 w-3" />
+                        <span className="text-[13px]">Edit</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               }
               isEditing={editingCard?.type === 'vision'}
@@ -289,12 +292,14 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     Explainer
                   </div>
                   <p className="text-[13px] text-white/90">No explainer yet</p>
-                  <div className="flex justify-end mt-3">
-                    <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                      <Pencil className="h-3 w-3" />
-                      <span className="text-[13px]">Edit</span>
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex justify-end mt-3">
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
+                        <Pencil className="h-3 w-3" />
+                        <span className="text-[13px]">Edit</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               }
               isEditing={editingCard?.type === 'strategy'}
@@ -324,7 +329,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Objectives
               </h3>
-              {!(editingCard?.type === 'objective') && (
+              {!readOnly && !(editingCard?.type === 'objective') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -405,12 +410,14 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           ) : (
                             <p className="text-[13px] text-white/40 italic">No explanation yet</p>
                           )}
-                          <div className="flex justify-end mt-3">
-                            <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('objective', objective.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                              <Pencil className="h-3 w-3" />
-                              <span className="text-[13px]">Edit</span>
-                            </Button>
-                          </div>
+                          {!readOnly && (
+                            <div className="flex justify-end mt-3">
+                              <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('objective', objective.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
+                                <Pencil className="h-3 w-3" />
+                                <span className="text-[13px]">Edit</span>
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       }
                       isEditing={isEditingThis}
@@ -456,6 +463,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               editingCard={editingCard}
               onStartEditing={(id: string) => startEditing('opportunity', id)}
               onStopEditing={stopEditing}
+              readOnly={readOnly}
             />
           </div>
 
@@ -468,15 +476,17 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               <h3 className="text-sm font-bold text-lunastak-mid uppercase tracking-wide">
                 Principles
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddPrincipleDialog(true)}
-                className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add
-              </Button>
+              {!readOnly && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddPrincipleDialog(true)}
+                  className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                </Button>
+              )}
             </div>
             <PrinciplesSection
               projectId={projectId}
@@ -486,6 +496,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               onStopEditing={stopEditing}
               showAddDialog={showAddPrincipleDialog}
               onCloseAddDialog={() => setShowAddPrincipleDialog(false)}
+              readOnly={readOnly}
               onUpdate={(updated) => {
                 if (onUpdate) {
                   onUpdate({ ...strategy, principles: updated });

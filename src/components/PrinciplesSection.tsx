@@ -19,6 +19,7 @@ interface PrinciplesSectionProps {
   onStopEditing?: () => void;
   showAddDialog?: boolean;
   onCloseAddDialog?: () => void;
+  readOnly?: boolean;
 }
 
 type InputStep = 'priority' | 'loading' | 'confirm';
@@ -142,6 +143,7 @@ export function PrinciplesSection({
   onStopEditing,
   showAddDialog = false,
   onCloseAddDialog,
+  readOnly = false,
 }: PrinciplesSectionProps) {
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [saving, setSaving] = useState(false);
@@ -338,12 +340,14 @@ export function PrinciplesSection({
                         ) : (
                           <p className="text-[13px] text-white/40 italic">No context yet</p>
                         )}
-                        <div className="flex justify-end mt-3">
-                          <Button size="sm" onClick={(e) => { e.stopPropagation(); onStartEditing?.(principle.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                            <Pencil className="h-3 w-3" />
-                            <span className="text-[13px]">Edit</span>
-                          </Button>
-                        </div>
+                        {!readOnly && (
+                          <div className="flex justify-end mt-3">
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); onStartEditing?.(principle.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
+                              <Pencil className="h-3 w-3" />
+                              <span className="text-[13px]">Edit</span>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     }
                     isEditing={isEditingThis}

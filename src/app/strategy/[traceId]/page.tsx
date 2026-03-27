@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { AppLayout } from '@/components/layout/app-layout'
 import StrategyDisplay from '@/components/StrategyDisplay'
@@ -13,15 +13,19 @@ import { KnowledgeSnapshot } from '@/components/KnowledgeSnapshot'
 export default function StrategyViewPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const traceId = params.traceId as string
 
   const [strategy, setStrategy] = useState<StrategyStatements | null>(null)
   const [extractedContext, setExtractedContext] = useState<Record<string, unknown> | null>(null)
   const [conversationId, setConversationId] = useState<string>('')
   const [projectId, setProjectId] = useState<string>('')
+  const [isDemo, setIsDemo] = useState(false)
   const [timestamp, setTimestamp] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const readOnly = isDemo || searchParams.get('readonly') === 'true'
 
   const { data: session } = useSession()
   const isGuest = !session
@@ -60,6 +64,7 @@ export default function StrategyViewPage() {
       setExtractedContext(data.extractedContext || null)
       setConversationId(data.conversationId)
       setProjectId(data.projectId || '')
+      setIsDemo(data.isDemo || false)
       setTimestamp(data.timestamp)
     } catch (error) {
       console.error('Failed to fetch strategy:', error)
@@ -147,6 +152,7 @@ export default function StrategyViewPage() {
                   traceId={traceId}
                   projectId={projectId}
                   onUpdate={setStrategy}
+                  readOnly={readOnly}
                 />
               )}
             </div>
