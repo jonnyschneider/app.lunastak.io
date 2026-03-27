@@ -48,6 +48,7 @@ import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection
 import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
+import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -180,6 +181,9 @@ export default function ProjectPage() {
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
   // Main tab state
   const [activeTab, setActiveTab] = useState<string>('direction')
+  // Fragment explorer state
+  const [fragmentExplorerOpen, setFragmentExplorerOpen] = useState(false)
+  const [fragmentExplorerDimension, setFragmentExplorerDimension] = useState<string | undefined>()
   // Strategy data for Direction tab
   const [strategyData, setStrategyData] = useState<{
     strategy: StrategyStatements
@@ -699,7 +703,10 @@ export default function ProjectPage() {
               onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
               onChatClick={() => triggerUpgrade('knowledge-chat')}
               onEditClick={() => triggerUpgrade('knowledge-edit')}
-              onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
+              onDimensionClick={(dimension?: string) => {
+                setFragmentExplorerDimension(dimension)
+                setFragmentExplorerOpen(true)
+              }}
               knowledgeBusyMessage={
                 isRunning(projectId, 'extraction') ? 'processing insights...'
                 : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
@@ -712,6 +719,42 @@ export default function ProjectPage() {
                 : null
               }
             />
+
+            {/* Fragment Explorer (inline, toggled by dimension click or "View all") */}
+            {fragmentExplorerOpen && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Fragments</h3>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setFragmentExplorerOpen(false)
+                      setFragmentExplorerDimension(undefined)
+                    }}
+                  >
+                    Close
+                  </Button>
+                </div>
+                <FragmentExplorer
+                  projectId={projectId}
+                  initialDimensionFilter={fragmentExplorerDimension}
+                />
+              </div>
+            )}
+            {!fragmentExplorerOpen && stats.fragmentCount > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-xs px-0"
+                onClick={() => {
+                  setFragmentExplorerDimension(undefined)
+                  setFragmentExplorerOpen(true)
+                }}
+              >
+                View all {stats.fragmentCount} fragments
+              </Button>
+            )}
 
             {/* Explore Next */}
             <ExploreNextSection
