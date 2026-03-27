@@ -130,7 +130,9 @@ export interface ObjectiveContent {
 
 export interface StrategyStatements {
   vision: string;
+  visionExplainer?: string;
   strategy: string;
+  strategyExplainer?: string;
   objectives: Objective[];
   opportunities: Opportunity[];
   principles: Principle[];

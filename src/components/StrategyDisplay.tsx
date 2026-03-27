@@ -238,7 +238,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                     Explainer
                   </div>
-                  <p className="text-[13px] text-white/90">No explainer yet</p>
+                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.visionExplainer || 'No explainer yet'}</p>
                   {!readOnly && (
                     <div className="flex justify-end mt-3">
                       <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
@@ -291,7 +291,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                   <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
                     Explainer
                   </div>
-                  <p className="text-[13px] text-white/90">No explainer yet</p>
+                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.strategyExplainer || 'No explainer yet'}</p>
                   {!readOnly && (
                     <div className="flex justify-end mt-3">
                       <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
