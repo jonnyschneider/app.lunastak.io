@@ -46,8 +46,7 @@ export default function StrategyViewPage() {
     setIsLoading(true)
     setError(null) // Clear previous error on retry
     try {
-      const queryReadOnly = searchParams.get('readonly') === 'true'
-      const response = await fetch(`/api/trace/${traceId}${queryReadOnly ? '?readonly=true' : ''}`)
+      const response = await fetch(`/api/trace/${traceId}`)
 
       if (!response.ok) {
         if (response.status === 404) {

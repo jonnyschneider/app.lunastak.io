@@ -10,7 +10,6 @@ export async function GET(
   try {
     const { traceId } = await params
     const session = await getServerSession(authOptions)
-    const isReadOnly = request.nextUrl.searchParams.get('readonly') === 'true'
 
     // Find the trace with project info (projectId denormalized directly on Trace)
     const trace = await prisma.trace.findUnique({
@@ -35,7 +34,7 @@ export async function GET(
     // Check access: user must own the trace or conversation
     // For guest users, we allow access if they have the trace ID (shared link scenario)
     // For authenticated users, verify ownership
-    if (session?.user?.id && !isReadOnly) {
+    if (session?.user?.id && !trace.project?.isDemo) {
       const isOwner = trace.userId === session.user.id ||
                       trace.conversation?.userId === session.user.id
 
