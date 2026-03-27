@@ -180,8 +180,17 @@ export default function ProjectPage() {
   const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
   const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
-  // Main tab state
-  const [activeTab, setActiveTab] = useState<string>('direction')
+  // Main tab state (persisted per project)
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`project-${projectId}-tab`) || 'direction'
+    }
+    return 'direction'
+  })
+
+  useEffect(() => {
+    localStorage.setItem(`project-${projectId}-tab`, activeTab)
+  }, [activeTab, projectId])
   // Fragment explorer state
   const [fragmentExplorerOpen, setFragmentExplorerOpen] = useState(false)
   const [fragmentExplorerDimension, setFragmentExplorerDimension] = useState<string | undefined>()
@@ -658,8 +667,8 @@ export default function ProjectPage() {
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between mb-6">
-            <TabsList>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <TabsList className="overflow-x-auto">
               <TabsTrigger value="direction">Direction</TabsTrigger>
               <TabsTrigger value="knowledge">
                 Knowledge
