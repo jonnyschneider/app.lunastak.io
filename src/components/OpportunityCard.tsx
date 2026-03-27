@@ -59,7 +59,7 @@ export function OpportunityCard({
             <div className="mb-3">
               {successMetrics.map((metric) => (
                 <div key={metric.id} className="mb-2 last:mb-0">
-                  {(metric.belief.action || metric.belief.outcome) && (
+                  {metric.belief && (metric.belief.action || metric.belief.outcome) && (
                     <p className="text-[13px] text-white/90 leading-relaxed">
                       <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">We believe</span>{' '}
                       {metric.belief.action}{' '}
