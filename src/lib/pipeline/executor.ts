@@ -5,7 +5,7 @@ import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
 import { runBackgroundTasks } from '@/lib/background-tasks'
 import type { StrategyStatements } from '@/lib/types'
 import type { PipelinePlan, PipelineTrigger, PipelineResult } from './types'
-import { runInitialGeneration, runRefreshGeneration } from './generation'
+import { runInitialGeneration, runRefreshGeneration, runOpportunityGeneration } from './generation'
 
 /**
  * Execute a pipeline plan.
@@ -179,6 +179,11 @@ export async function executePipeline(
           where: { id: t.projectId },
           data: { knowledgeUpdatedAt: new Date() },
         })
+        break
+      }
+      case 'opportunities': {
+        const t = trigger as Extract<PipelineTrigger, { type: 'generate_opportunities' }>
+        await runOpportunityGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
         break
       }
     }

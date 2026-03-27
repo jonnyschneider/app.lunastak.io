@@ -12,8 +12,9 @@ import {
   STRATEGY_GUIDELINES, STRATEGY_XML_FORMAT,
 } from '@/lib/prompts/shared/vision-strategy'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
-import type { StrategyStatements, Objective } from '@/lib/types'
+import type { StrategyStatements, Objective, Opportunity, SuccessMetric } from '@/lib/types'
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
+import type { OpportunityGenerationOutputContract } from '@/lib/contracts/opportunity-generation'
 import type { PipelineResult } from './types'
 
 // --- Shared helpers ---
@@ -654,4 +655,201 @@ export async function runInitialGeneration(
     version: 1,
     changeSummary: null,
   }
+}
+
+// --- Opportunity Generation ---
+
+const OPPORTUNITY_GENERATION_PROMPT = `You are Luna, a strategic AI coach. Generate actionable opportunities based on the user's strategic direction and accumulated knowledge.
+
+## Strategic Direction
+Vision: {vision}
+Strategy: {strategy}
+Objectives:
+{objectives}
+
+## Strategic Context (Dimensional Syntheses)
+{dimensional_summaries}
+
+## Knowledge Base (Active Fragments)
+{fragments_content}
+
+---
+
+Generate 3-5 strategic opportunities. Each opportunity must:
+- Map to one or more existing objectives (by ID)
+- Have a clear title and description
+- Include at least one success metric using the belief format
+
+Output format:
+<opportunities>
+  <opportunity>
+    <title>Short initiative name</title>
+    <description>What we're doing and why</description>
+    <objective_ids>obj-1, obj-2</objective_ids>
+    <metrics>
+      <metric>
+        <action>what we believe doing</action>
+        <outcome>what result we expect</outcome>
+        <signal>what we'll measure</signal>
+        <baseline>current state</baseline>
+        <target>desired state</target>
+      </metric>
+    </metrics>
+  </opportunity>
+</opportunities>`
+
+/**
+ * Generate opportunities from fragments + syntheses + decision stack.
+ */
+export async function runOpportunityGeneration(
+  projectId: string,
+  userId: string | null,
+  model: string,
+  generatedOutputId: string
+): Promise<void> {
+  // Load the latest full_decision_stack
+  const decisionStack = await prisma.generatedOutput.findFirst({
+    where: {
+      projectId,
+      outputType: 'full_decision_stack',
+      status: 'complete',
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  if (!decisionStack) {
+    throw new Error('No decision stack found — generate Direction first')
+  }
+
+  const statements = decisionStack.content as unknown as StrategyStatements
+
+  // Load dimensional syntheses
+  const syntheses = await prisma.dimensionalSynthesis.findMany({
+    where: { projectId, fragmentCount: { gt: 0 } },
+    orderBy: { fragmentCount: 'desc' },
+  })
+
+  // Load active fragments
+  const fragments = await prisma.fragment.findMany({
+    where: { projectId, status: 'active' },
+    select: { content: true, contentType: true },
+    orderBy: { capturedAt: 'desc' },
+    take: 100,
+  })
+
+  // Build prompt
+  const objectivesText = (statements.objectives || [])
+    .map((o, i) => `${i + 1}. [${o.id}] ${o.title || o.objective || o.pithy} — ${o.explanation || ''}`)
+    .join('\n')
+
+  const dimensionalSummaries = syntheses
+    .map(s => {
+      const context = DIMENSION_CONTEXT[s.dimension as Tier1Dimension]
+      const name = context?.name || s.dimension
+      return `### ${name}\n${s.summary || 'No summary yet'}`
+    })
+    .join('\n\n')
+
+  const fragmentsContent = fragments.length > 0
+    ? fragments.map(f => `- [${f.contentType}] ${f.content}`).join('\n')
+    : 'No fragments yet.'
+
+  const prompt = OPPORTUNITY_GENERATION_PROMPT
+    .replace('{vision}', statements.vision)
+    .replace('{strategy}', statements.strategy)
+    .replace('{objectives}', objectivesText)
+    .replace('{dimensional_summaries}', dimensionalSummaries)
+    .replace('{fragments_content}', fragmentsContent)
+
+  // Call Claude
+  const response = await createMessage({
+    model,
+    max_tokens: 3000,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+  }, 'opportunity_generation')
+
+  const content = response.content[0]?.type === 'text' ? response.content[0].text : ''
+
+  // Parse opportunities from XML
+  const opportunities = parseOpportunitiesXML(content)
+
+  // Store as UserContent records
+  if (opportunities.length > 0) {
+    await prisma.userContent.createMany({
+      data: opportunities.map(opp => ({
+        projectId,
+        type: 'opportunity',
+        content: JSON.stringify(opp),
+        status: 'draft',
+        metadata: { objectiveIds: opp.objectiveIds },
+      })),
+    })
+  }
+
+  // Update GeneratedOutput with result
+  const outputContent: OpportunityGenerationOutputContract = {
+    opportunities,
+    generatedFrom: {
+      fragmentCount: fragments.length,
+      synthesisCount: syntheses.length,
+      decisionStackVersion: decisionStack.version,
+    },
+  }
+
+  await prisma.generatedOutput.update({
+    where: { id: generatedOutputId },
+    data: {
+      status: 'complete',
+      content: outputContent as any,
+      modelUsed: model,
+      promptTokens: response.usage.input_tokens,
+      completionTokens: response.usage.output_tokens,
+    },
+  })
+
+  console.log(`[Pipeline] Opportunity generation complete: ${opportunities.length} opportunities for project ${projectId}`)
+}
+
+/**
+ * Parse opportunities from Claude's XML response.
+ */
+function parseOpportunitiesXML(content: string): Opportunity[] {
+  const opportunitiesXML = extractXML(content, 'opportunities')
+  if (!opportunitiesXML) return []
+
+  const opportunityBlocks = opportunitiesXML.split('<opportunity>').slice(1)
+
+  return opportunityBlocks.map((block, index) => {
+    const title = extractXML(block, 'title')
+    const description = extractXML(block, 'description')
+    const objectiveIdsRaw = extractXML(block, 'objective_ids')
+    const objectiveIds = objectiveIdsRaw
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean)
+
+    // Parse metrics
+    const metricsXML = extractXML(block, 'metrics')
+    const metricBlocks = metricsXML.split('<metric>').slice(1)
+    const successMetrics: SuccessMetric[] = metricBlocks.map((mb, mi) => ({
+      id: `opp-${index + 1}-metric-${mi + 1}`,
+      belief: {
+        action: extractXML(mb, 'action'),
+        outcome: extractXML(mb, 'outcome'),
+      },
+      signal: extractXML(mb, 'signal'),
+      baseline: extractXML(mb, 'baseline'),
+      target: extractXML(mb, 'target'),
+    }))
+
+    return {
+      id: `opp-${Date.now()}-${index + 1}`,
+      title,
+      description,
+      objectiveIds,
+      successMetrics,
+      status: 'draft' as const,
+    }
+  })
 }

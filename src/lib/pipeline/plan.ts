@@ -69,5 +69,17 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
         model: CLAUDE_MODEL,
         backgroundSteps: [],
       }
+
+    case 'generate_opportunities':
+      return {
+        trigger: 'generate_opportunities',
+        extraction: null,
+        persistFragments: false,
+        runSynthesis: true,
+        runKnowledgeSummary: false,
+        generation: { mode: 'opportunities', source: 'fragments_and_syntheses' },
+        model: CLAUDE_MODEL,
+        backgroundSteps: [],
+      }
   }
 }
