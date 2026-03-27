@@ -207,7 +207,7 @@ export function OpportunitySection({
     <div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <h3 className={`text-sm font-bold uppercase tracking-wide ${readOnly ? 'text-ds-neon' : 'text-lunastak-mid'}`}>
+        <h3 className="text-sm font-bold uppercase tracking-wide text-lunastak-mid">
           Opportunities
         </h3>
         {!readOnly && !isAdding && !editingId && (

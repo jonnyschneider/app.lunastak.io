@@ -49,6 +49,11 @@ export function OpportunityCard({
           {/* Title */}
           <p className="text-[15px] font-semibold text-ds-neon mb-3">{title}</p>
 
+          {/* Description — shown on front when no structured metrics */}
+          {!compact && successMetrics.length === 0 && description && (
+            <p className="text-[13px] text-white/90 leading-relaxed mb-3">{description}</p>
+          )}
+
           {/* Belief statement + Success Indicator heading */}
           {!compact && successMetrics.length > 0 && (
             <div className="mb-3">

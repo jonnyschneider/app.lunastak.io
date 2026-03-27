@@ -158,8 +158,21 @@ export function PrinciplesSection({
           .filter((c: { type: string }) => c.type === 'principle')
           .map((c: { id: string; content: string }) => {
             try {
-              return { ...JSON.parse(c.content), id: c.id };
+              const parsed = JSON.parse(c.content);
+              return { ...parsed, id: c.id };
             } catch {
+              // Plain text format: "Prioritise **X** even over Y.\n\nContext..."
+              const text = c.content;
+              const evenOverMatch = text.match(/(?:Prioritise\s+)?(?:\*\*)?(.+?)(?:\*\*)?\s+even\s+over\s+(?:\*\*)?(.+?)(?:\*\*)?(?:\.|$)/i);
+              if (evenOverMatch) {
+                const rest = text.substring(text.indexOf(evenOverMatch[0]) + evenOverMatch[0].length).trim();
+                return {
+                  id: c.id,
+                  priority: evenOverMatch[1].replace(/\*\*/g, '').trim(),
+                  deprioritized: evenOverMatch[2].replace(/\*\*/g, '').trim(),
+                  context: rest || undefined,
+                };
+              }
               return null;
             }
           })
