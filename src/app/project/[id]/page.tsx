@@ -759,11 +759,6 @@ export default function ProjectPage() {
                   }}
                   readOnly={isDemo}
                 />
-                <OpportunitySection
-                  projectId={projectId}
-                  objectives={strategyData.strategy.objectives || []}
-                  readOnly={isDemo}
-                />
                 <Button variant="outline" size="sm" disabled>
                   Export Strategic Brief
                 </Button>
