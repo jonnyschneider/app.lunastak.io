@@ -907,6 +907,10 @@ export default function ProjectPage() {
                 <FragmentExplorer
                   projectId={projectId}
                   initialDimensionFilter={fragmentExplorerDimension}
+                  onResumeConversation={(convId) => {
+                    setChatResumeConversationId(convId)
+                    setChatSheetOpen(true)
+                  }}
                 />
               </div>
             )}

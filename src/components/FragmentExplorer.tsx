@@ -23,6 +23,7 @@ interface FragmentData {
 interface FragmentExplorerProps {
   projectId: string
   initialDimensionFilter?: string
+  onResumeConversation?: (conversationId: string) => void
 }
 
 function getDimensionLabel(dimension: string): string {
@@ -37,7 +38,7 @@ function formatDate(dateString: string): string {
   return `${day} ${month}`
 }
 
-export function FragmentExplorer({ projectId, initialDimensionFilter }: FragmentExplorerProps) {
+export function FragmentExplorer({ projectId, initialDimensionFilter, onResumeConversation }: FragmentExplorerProps) {
   const [fragments, setFragments] = useState<FragmentData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeCount, setActiveCount] = useState(0)
@@ -248,9 +249,21 @@ export function FragmentExplorer({ projectId, initialDimensionFilter }: Fragment
                           </Badge>
                         ))}
                         {fragment.source && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {fragment.source.type === 'conversation' ? '💬' : '📄'} {fragment.source.name}
-                          </span>
+                          fragment.source.type === 'conversation' && onResumeConversation ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onResumeConversation(fragment.source!.id)
+                              }}
+                              className="text-[10px] text-primary hover:underline"
+                            >
+                              💬 {fragment.source.name}
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">
+                              {fragment.source.type === 'conversation' ? '💬' : '📄'} {fragment.source.name}
+                            </span>
+                          )
                         )}
                         <span className="text-[10px] text-muted-foreground ml-auto">
                           {formatDate(fragment.capturedAt)}
