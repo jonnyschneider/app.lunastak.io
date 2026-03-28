@@ -161,22 +161,32 @@ export async function executePipeline(
         break
       }
       case 'initial': {
-        const t = trigger as Extract<PipelineTrigger, { type: 'conversation_ended' }>
-        generation = await runInitialGeneration(
-          t.projectId,
-          t.conversationId,
-          t.userId,
-          t.experimentVariant,
-          t.generatedOutputId,
-          plan.model
-        )
+        if (trigger.type === 'generate_from_knowledge') {
+          // No conversation — generation from imported/uploaded fragments only
+          const t = trigger as Extract<PipelineTrigger, { type: 'generate_from_knowledge' }>
+          generation = await runInitialGeneration(
+            t.projectId,
+            null, // No conversation
+            t.userId,
+            null, // No experiment variant
+            t.generatedOutputId,
+            plan.model
+          )
+        } else {
+          // Standard conversation-ended initial generation
+          const t = trigger as Extract<PipelineTrigger, { type: 'conversation_ended' }>
+          generation = await runInitialGeneration(
+            t.projectId,
+            t.conversationId,
+            t.userId,
+            t.experimentVariant,
+            t.generatedOutputId,
+            plan.model
+          )
+        }
         // Mark fragments as accounted for so the KB summary countdown resets.
-        // Initial conversations typically create <15 fragments, so the threshold
-        // won't trigger synthesis/knowledge summary. Without this stamp,
-        // knowledgeUpdatedAt stays NULL and the UI shows all fragments as
-        // "since last update". Same pattern as the refresh path (line 96-99).
         await prisma.project.update({
-          where: { id: t.projectId },
+          where: { id: projectId },
           data: { knowledgeUpdatedAt: new Date() },
         })
         break

@@ -159,7 +159,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { hasActiveGeneration, isRunning, getProgressLabel } = useGenerationStatusContext()
+  const { hasActiveGeneration, isRunning, getProgressLabel, startGeneration } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -516,6 +516,24 @@ export default function ProjectPage() {
     fragmentsSinceSummary: 0,
   }
 
+  // Handle strategy generation from knowledge (no conversation required)
+  const handleGenerateStrategy = async () => {
+    try {
+      const res = await fetch(`/api/project/${projectId}/generate-strategy`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        startGeneration(projectId, data.generationId)
+      } else {
+        const err = await res.json()
+        console.error('[GenerateStrategy] Failed:', err.error)
+      }
+    } catch (error) {
+      console.error('[GenerateStrategy] Error:', error)
+    }
+  }
+
   // Handle opportunity generation
   const handleGenerateOpportunities = async (force = false) => {
     if (!force) {
@@ -763,7 +781,7 @@ export default function ProjectPage() {
                   setChatSheetOpen(true)
                 }}
                 onImportBundle={() => setImportDialogOpen(true)}
-                onGenerateNow={stats.fragmentCount > 0 ? () => setRefreshStrategyDialogOpen(true) : undefined}
+                onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
               />
             )}
             {isRunning(projectId, 'generation') && (
@@ -806,6 +824,18 @@ export default function ProjectPage() {
               </div>
             ) : (
             <>
+            {/* Generate initial strategy when fragments exist but no strategy yet */}
+            {!hasStrategy && !isDemo && stats.fragmentCount > 0 && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleGenerateStrategy}>
+                  Generate Strategy
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  from {stats.fragmentCount} fragments
+                </span>
+              </div>
+            )}
+
             {/* Generate actions bar */}
             {hasStrategy && !isDemo && (
               <div className="flex items-center gap-2">

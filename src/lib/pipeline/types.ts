@@ -53,6 +53,12 @@ export type PipelineTrigger =
       userId: string | null
       generatedOutputId: string
     }
+  | {
+      type: 'generate_from_knowledge'
+      projectId: string
+      userId: string | null
+      generatedOutputId: string
+    }
 
 /**
  * Pipeline Plan — what should we do?

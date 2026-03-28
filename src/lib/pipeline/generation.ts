@@ -426,7 +426,7 @@ export async function runRefreshGeneration(
  */
 export async function runInitialGeneration(
   projectId: string,
-  conversationId: string,
+  conversationId: string | null,
   userId: string | null,
   experimentVariant: string | null,
   generatedOutputId: string | undefined,
@@ -506,13 +506,28 @@ export async function runInitialGeneration(
   }
 
   // Save trace — store fragment content as extractedContext for audit trail
+  // When generating from knowledge (no conversation), create a synthetic conversation for the trace
+  let traceConversationId = conversationId
+  if (!traceConversationId) {
+    const syntheticConvo = await prisma.conversation.create({
+      data: {
+        projectId,
+        userId,
+        status: 'completed',
+        title: 'Generated from knowledgebase',
+        isInitialConversation: true,
+      },
+    })
+    traceConversationId = syntheticConvo.id
+  }
+
   const trace = await prisma.trace.create({
     data: {
-      conversationId,
+      conversationId: traceConversationId,
       projectId,
       userId,
       extractedContext: {
-        source: 'fragments',
+        source: conversationId ? 'fragments' : 'knowledge-import',
         fragments: fragments.map(f => ({ content: f.content, contentType: f.contentType })),
       } as any,
       output: statements as any,
@@ -610,7 +625,7 @@ export async function runInitialGeneration(
   // Create ExtractionRun (reuses fragments loaded at top of function)
   const extractionRun = await createExtractionRun({
     projectId,
-    conversationId,
+    conversationId: traceConversationId,
     experimentVariant: experimentVariant || undefined,
     fragmentIds: fragments.map(f => f.id),
     modelUsed: model,
@@ -626,11 +641,13 @@ export async function runInitialGeneration(
     console.error('[Pipeline] Failed to update extraction run with syntheses:', err)
   }
 
-  // Update conversation status
-  await prisma.conversation.update({
-    where: { id: conversationId },
-    data: { status: 'completed' },
-  })
+  // Update conversation status (skip if no real conversation)
+  if (conversationId) {
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: 'completed' },
+    })
+  }
 
   // Log to Statsig
   if (userId) {

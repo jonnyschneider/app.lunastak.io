@@ -81,5 +81,17 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
         model: CLAUDE_MODEL,
         backgroundSteps: [],
       }
+
+    case 'generate_from_knowledge':
+      return {
+        trigger: 'generate_from_knowledge',
+        extraction: null,
+        persistFragments: false,
+        runSynthesis: true,
+        runKnowledgeSummary: true,
+        generation: { mode: 'initial', source: 'extracted_context' },
+        model: CLAUDE_MODEL,
+        backgroundSteps: [],
+      }
   }
 }
