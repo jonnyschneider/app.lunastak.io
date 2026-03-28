@@ -29,6 +29,8 @@ graph TD
         I2["📄 Document Upload<br/>(PDF, DOC, TXT)"]:::user
         I3["✏️ Template Entry<br/>(user fills form)"]:::user
         I4["🔄 Refresh Strategy<br/>(dashboard button)"]:::user
+        I5["📦 Context Bundle Import<br/>(JSON from skill/external)"]:::user
+        I6["🎯 Generate Opportunities<br/>(from settled direction)"]:::user
     end
 
     %% ─── API ROUTES (thin) ───
@@ -38,6 +40,8 @@ graph TD
         R2["/api/documents/upload<br/>auth · file handling"]:::route
         R3["/api/project/.../template-entry<br/>auth · validation"]:::route
         R4["/api/project/.../refresh-strategy<br/>auth · streaming"]:::route
+        R5["/api/project/.../generate-strategy<br/>auth · polling"]:::route
+        R6["/api/project/.../generate-opportunities<br/>auth · polling"]:::route
     end
 
     %% ─── ORCHESTRATOR ───
@@ -87,11 +91,15 @@ graph TD
     I2 --> R2
     I3 --> R3
     I4 --> R4
+    I5 --> R5
+    I6 --> R6
 
     R1 -->|"trigger:<br/>conversation_ended"| P
     R2 -->|"trigger:<br/>document_uploaded"| P
     R3 -->|"trigger:<br/>template_submitted"| P
     R4 -->|"trigger:<br/>refresh_requested"| P
+    R5 -->|"trigger:<br/>generate_from_knowledge"| P
+    R6 -->|"trigger:<br/>generate_opportunities"| P
 
     E --> LAYERS
 ```
@@ -163,6 +171,28 @@ graph LR
         T5G["Generate ✓<br/>mode: refresh"]:::yes
         T5T --- T5E --- T5F --- T5S --- T5K --- T5G
     end
+
+    subgraph T6 ["generate_from_knowledge"]
+        direction TB
+        T6T["📦 From Knowledge"]:::trigger
+        T6E["Extract ✗"]:::no
+        T6F["Fragments ✗"]:::no
+        T6S["Synthesis ✓ fg"]:::yes
+        T6K["Summary ✓ fg"]:::yes
+        T6G["Generate ✓<br/>mode: initial"]:::yes
+        T6T --- T6E --- T6F --- T6S --- T6K --- T6G
+    end
+
+    subgraph T7 ["generate_opportunities"]
+        direction TB
+        T7T["🎯 Opportunities"]:::trigger
+        T7E["Extract ✗"]:::no
+        T7F["Fragments ✗"]:::no
+        T7S["Synthesis ✓ fg"]:::yes
+        T7K["Summary ✗"]:::no
+        T7G["Generate ✓<br/>mode: opportunities"]:::yes
+        T7T --- T7E --- T7F --- T7S --- T7K --- T7G
+    end
 ```
 
 ### Decision matrix (table form)
@@ -174,6 +204,8 @@ graph LR
 | `document_uploaded` | document | yes | no † | no † | no | — |
 | `template_submitted` | no | no | no | no | template | extractFromTemplate |
 | `refresh_requested` | no | no | **yes (fg)** | **yes (fg)** | refresh | — |
+| `generate_from_knowledge` | no | no | **yes (fg)** | **yes (fg)** | initial | — |
+| `generate_opportunities` | no | no | **yes (fg)** | no | opportunities | — |
 
 **† Fragment-count threshold:** The executor auto-triggers synthesis + knowledge summary in the background when accumulated fragments since last summary ≥ 15. No caller requests these directly — they fire based on fragment count, regardless of trigger type. This decouples summary freshness from individual callers and provides natural debouncing.
 
@@ -313,12 +345,14 @@ graph TD
 ### After (v2) — orchestrator + thin routes
 
 ```
-    /extract ──────┐
-    /doc-upload ───┤
-    /template ─────┤──── PipelineTrigger ──── planPipeline() ──── executePipeline()
-    /refresh ──────┤                              │                     │
-    /generate ─────┘                         PipelinePlan          calls existing
-                                          (pure function)          libraries
+    /extract ──────────────┐
+    /doc-upload ───────────┤
+    /template ─────────────┤
+    /refresh ──────────────┤──── PipelineTrigger ──── planPipeline() ──── executePipeline()
+    /generate ─────────────┤                              │                     │
+    /generate-strategy ────┤                         PipelinePlan          calls existing
+    /generate-opportunities┘                      (pure function)          libraries
+
     Routes handle HTTP only.              One decision matrix.     No duplication.
 ```
 
@@ -405,3 +439,17 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 **Result:** Natural debouncing — 3 documents (~5 frags each) = 15 = triggers summary. Single conversation (~5 frags) doesn't trigger alone. Eliminates redundant LLM calls. Fragment count is intuitive, gamifiable, and decoupled from caller type.
 
 **Architecture impact:** Layer 2 (Meaning-Making). Decision matrix updated — all triggers except refresh now show synthesis/summary as "no †" with threshold footnote. New `fragmentsSinceSummary` field in project API response.
+
+### 2026-03-28: Generate from knowledge + opportunity generation triggers
+
+**Context:** Two new entry points needed: (1) generating a strategy from imported fragments (context bundle import via thin skill) without requiring a conversation, and (2) generating opportunities separately from a settled direction. Neither existing trigger supported these — `conversation_ended` requires a conversationId, `refresh_requested` requires a previous strategy.
+
+**Change:** Added two new trigger types to the pipeline orchestrator:
+- `generate_from_knowledge`: runs synthesis (fg) + knowledge summary (fg) + initial generation. No extraction, no fragment persistence (fragments already exist from import). `runInitialGeneration` now accepts nullable `conversationId` — creates a synthetic conversation for the trace when null.
+- `generate_opportunities`: runs synthesis (fg) + opportunity generation. Requires existing `full_decision_stack` output. Produces `UserContent` records (type: 'opportunity').
+
+Two thin API routes: `/api/project/[id]/generate-strategy` and `/api/project/[id]/generate-opportunities`. Both follow fire-and-forget pattern (pre-create GeneratedOutput, `waitUntil`, return generationId for polling).
+
+**Result:** Context bundle import → generate works end-to-end. Opportunity generation decoupled from initial strategy generation. Both routes are thin (auth + validation + trigger) with all logic in the orchestrator.
+
+**Architecture impact:** Decision matrix expanded from 5 to 7 triggers. System blueprint updated with new inputs and routes. Layer 3 (Output) now has three generation modes: initial, refresh, opportunities.
