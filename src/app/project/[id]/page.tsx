@@ -135,6 +135,7 @@ interface DeepDiveSummary {
 interface ProjectData {
   id: string
   name: string
+  isDemo?: boolean
   stats: ProjectStats
   conversations: ConversationSummary[]
   documents: DocumentSummary[]
@@ -649,8 +650,30 @@ export default function ProjectPage() {
   const hasStrategy = (projectData?.strategyOutputs?.length ?? 0) > 0
   const opportunityCount = strategyData?.strategy?.opportunities?.length ?? 0
 
+  const isDemo = projectData?.isDemo === true
+
   return (
     <AppLayout>
+      {/* Demo header tint */}
+      {isDemo && (
+        <div className="bg-primary/5 border-b border-primary/10 px-6 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Example
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {projectData?.name}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/')}
+          >
+            &larr; Back to my project
+          </Button>
+        </div>
+      )}
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -666,7 +689,7 @@ export default function ProjectPage() {
                 )}
               </TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-2">
+            {!isDemo && <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -702,7 +725,7 @@ export default function ProjectPage() {
                 <Upload className="h-3 w-3 mr-1" />
                 Upload
               </Button>
-            </div>
+            </div>}
           </div>
 
           {/* Decision Stack Tab */}
@@ -714,13 +737,15 @@ export default function ProjectPage() {
                   conversationId={strategyData.conversationId}
                   traceId={strategyData.traceId}
                   projectId={projectId}
-                  onUpdate={(updated) => {
+                  onUpdate={isDemo ? undefined : (updated) => {
                     setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
                   }}
+                  readOnly={isDemo}
                 />
                 <OpportunitySection
                   projectId={projectId}
                   objectives={strategyData.strategy.objectives || []}
+                  readOnly={isDemo}
                 />
                 <Button variant="outline" size="sm" disabled>
                   Export Strategic Brief
@@ -783,7 +808,7 @@ export default function ProjectPage() {
             ) : (
             <>
             {/* Generate actions bar */}
-            {hasStrategy && (
+            {hasStrategy && !isDemo && (
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
