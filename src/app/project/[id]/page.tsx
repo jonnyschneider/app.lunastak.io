@@ -524,7 +524,7 @@ export default function ProjectPage() {
       })
       if (res.ok) {
         const data = await res.json()
-        startGeneration(projectId, data.generationId)
+        startGeneration(data.generationId, projectId)
       } else {
         const err = await res.json()
         console.error('[GenerateStrategy] Failed:', err.error)
