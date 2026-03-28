@@ -48,6 +48,7 @@ import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { Launchpad } from '@/components/Launchpad'
+import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -1156,6 +1157,14 @@ export default function ProjectPage() {
         open={synthesisDialogOpen}
         onOpenChange={setSynthesisDialogOpen}
         onComplete={fetchProjectData}
+      />
+
+      {/* Import Bundle Dialog */}
+      <ImportBundleDialog
+        projectId={projectId}
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImported={() => fetchProjectData()}
       />
 
       {/* Refresh Strategy Dialog */}
