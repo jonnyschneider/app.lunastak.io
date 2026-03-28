@@ -185,9 +185,13 @@ export default function ProjectPage() {
   // Main tab state (persisted per project)
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(`project-${projectId}-tab`) || 'direction'
+      const stored = localStorage.getItem(`project-${projectId}-tab`)
+      // Migrate old three-tab values
+      if (stored === 'direction' || stored === 'action') return 'decision-stack'
+      if (stored === 'knowledge') return 'knowledgebase'
+      return stored || 'decision-stack'
     }
-    return 'direction'
+    return 'decision-stack'
   })
 
   useEffect(() => {
@@ -671,20 +675,12 @@ export default function ProjectPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <TabsList className="overflow-x-auto">
-              <TabsTrigger value="direction">Direction</TabsTrigger>
-              <TabsTrigger value="knowledge">
-                Knowledge
+              <TabsTrigger value="decision-stack">Decision Stack</TabsTrigger>
+              <TabsTrigger value="knowledgebase">
+                Knowledgebase
                 {stats.fragmentCount > 0 && (
                   <span className="ml-1.5 text-xs text-muted-foreground">
                     {stats.fragmentCount}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="action">
-                Action
-                {opportunityCount > 0 && (
-                  <span className="ml-1.5 text-xs text-muted-foreground">
-                    {opportunityCount}
                   </span>
                 )}
               </TabsTrigger>
@@ -728,18 +724,27 @@ export default function ProjectPage() {
             </div>
           </div>
 
-          {/* Direction Tab */}
-          <TabsContent value="direction" className="space-y-6">
+          {/* Decision Stack Tab */}
+          <TabsContent value="decision-stack" className="space-y-6">
             {strategyData ? (
-              <StrategyDisplay
-                strategy={strategyData.strategy}
-                conversationId={strategyData.conversationId}
-                traceId={strategyData.traceId}
-                projectId={projectId}
-                onUpdate={(updated) => {
-                  setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
-                }}
-              />
+              <>
+                <StrategyDisplay
+                  strategy={strategyData.strategy}
+                  conversationId={strategyData.conversationId}
+                  traceId={strategyData.traceId}
+                  projectId={projectId}
+                  onUpdate={(updated) => {
+                    setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
+                  }}
+                />
+                <OpportunitySection
+                  projectId={projectId}
+                  objectives={strategyData.strategy.objectives || []}
+                />
+                <Button variant="outline" size="sm" disabled>
+                  Export Strategic Brief
+                </Button>
+              </>
             ) : (
               <GoToStrategyCard
                 latestTraceId={null}
@@ -760,8 +765,56 @@ export default function ProjectPage() {
             )}
           </TabsContent>
 
-          {/* Knowledge Tab */}
-          <TabsContent value="knowledge" className="space-y-6">
+          {/* Knowledgebase Tab */}
+          <TabsContent value="knowledgebase" className="space-y-6">
+            {/* Generate actions bar */}
+            {hasStrategy && (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setRefreshStrategyDialogOpen(true)}
+                >
+                  Regenerate Direction
+                </Button>
+                {!isGeneratingOpportunities && !showCoverageWarning && (
+                  <Button size="sm" variant="outline" onClick={() => handleGenerateOpportunities()}>
+                    Generate Opportunities
+                  </Button>
+                )}
+                {isGeneratingOpportunities && (
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Generating opportunities...
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Coverage warning (from opportunity generation) */}
+            {showCoverageWarning && opportunityCoverageWarnings.length > 0 && (
+              <Card className="border-amber-200 bg-amber-50">
+                <CardContent className="p-4">
+                  <p className="text-sm font-medium mb-3">
+                    Your direction could use more depth in these areas:
+                  </p>
+                  {opportunityCoverageWarnings.map(d => (
+                    <div key={d.dimension} className="flex items-center gap-2 text-sm mb-1">
+                      <span className="capitalize">{d.dimensionLabel}</span>
+                      <span className="text-muted-foreground">{d.fragmentCount} fragments</span>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 mt-4">
+                    <Button variant="outline" size="sm" onClick={() => setShowCoverageWarning(false)}>
+                      Dismiss
+                    </Button>
+                    <Button size="sm" onClick={() => handleGenerateOpportunities(true)}>
+                      Generate anyway
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Dimensional Coverage */}
             <KnowledgebaseHeader
               fragmentCount={stats.fragmentCount}
@@ -1016,73 +1069,6 @@ export default function ProjectPage() {
             </div>
           </TabsContent>
 
-          {/* Action Tab */}
-          <TabsContent value="action" className="space-y-6">
-            {!hasStrategy ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground mb-4">
-                    No opportunities yet. Build your Direction first, then generate opportunities.
-                  </p>
-                  <Button variant="outline" onClick={() => setActiveTab('direction')}>
-                    Go to Direction
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {strategyData && (
-                  <OpportunitySection
-                    projectId={projectId}
-                    objectives={strategyData.strategy.objectives || []}
-                  />
-                )}
-
-                {/* Coverage warning */}
-                {showCoverageWarning && opportunityCoverageWarnings.length > 0 && (
-                  <Card className="border-amber-200 bg-amber-50">
-                    <CardContent className="p-4">
-                      <p className="text-sm font-medium mb-3">
-                        Your direction could use more depth in these areas:
-                      </p>
-                      {opportunityCoverageWarnings.map(d => (
-                        <div key={d.dimension} className="flex items-center gap-2 text-sm mb-1">
-                          <span className="capitalize">{d.dimensionLabel}</span>
-                          <span className="text-muted-foreground">{d.fragmentCount} fragments</span>
-                        </div>
-                      ))}
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" onClick={() => {
-                          setShowCoverageWarning(false)
-                          setActiveTab('knowledge')
-                        }}>
-                          Explore gaps
-                        </Button>
-                        <Button size="sm" onClick={() => handleGenerateOpportunities(true)}>
-                          Generate anyway
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Generation progress */}
-                {isGeneratingOpportunities && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating opportunities...
-                  </div>
-                )}
-
-                {/* Generate button */}
-                {!isGeneratingOpportunities && !showCoverageWarning && (
-                  <Button onClick={() => handleGenerateOpportunities()}>
-                    Generate Opportunities
-                  </Button>
-                )}
-              </>
-            )}
-          </TabsContent>
         </Tabs>
       </div>
 
