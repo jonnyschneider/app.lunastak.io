@@ -4,7 +4,7 @@ import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
-import { notifySlackNewUser } from "@/lib/notifications"
+import { notifySlackNewUser, notifySlackUserSignIn } from "@/lib/notifications"
 import { transferGuestToUser } from "@/lib/transfer-session"
 
 export const authOptions: NextAuthOptions = {
@@ -55,7 +55,11 @@ export const authOptions: NextAuthOptions = {
       // Note: We no longer seed demo projects on signup.
       // New users get an empty project, with "See an example" available on-demand.
     },
-    signIn: async ({ user }) => {
+    signIn: async ({ user, isNewUser }) => {
+      // Notify Slack of returning user login
+      if (user.email) {
+        notifySlackUserSignIn(user.email, !!isNewUser)
+      }
       // Server-side fallback: check for pending guest transfer
       // This handles cross-browser magic link flows where the cookie is lost.
       // Must be in events.signIn (not callbacks.signIn) because for new users

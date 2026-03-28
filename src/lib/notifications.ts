@@ -20,3 +20,8 @@ export function notifySlackNewUser(email: string) {
 export function notifySlackStrategyGenerated(email: string, mode: 'initial' | 'refresh') {
   notifySlack(`🚀 Strategy generated (${mode}): ${email}`)
 }
+
+export function notifySlackUserSignIn(email: string, isNewUser: boolean) {
+  if (isNewUser) return // Already covered by notifySlackNewUser
+  notifySlack(`👋 User signed in: ${email}`)
+}
