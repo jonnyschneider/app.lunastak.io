@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { getStatsigClient } from '@/components/StatsigProvider'
 import { AppLayout } from '@/components/layout/app-layout'
-import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -45,10 +44,10 @@ import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
-import { GoToStrategyCard } from '@/components/GoToStrategyCard'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
+import { Launchpad } from '@/components/Launchpad'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -503,27 +502,8 @@ export default function ProjectPage() {
     )
   }
 
-  // Show empty state when project has no content
-  const isEmpty =
-    (projectData?.stats?.fragmentCount ?? 0) === 0 &&
-    (projectData?.conversations?.length ?? 0) === 0
-
-  // Check for incomplete initial conversation (started first-time flow but didn't finish)
-  const incompleteInitialConvo = projectData?.conversations?.find(
-    (c: { isInitialConversation?: boolean; status: string }) => c.isInitialConversation && c.status === 'in_progress'
-  )
-
-  if ((isEmpty || incompleteInitialConvo) && projectData) {
-    return (
-      <AppLayout>
-        <FirstTimeEmptyState
-          projectId={projectId}
-          resumeConversationId={incompleteInitialConvo?.id}
-          onUploadComplete={() => fetchProjectData()}
-        />
-      </AppLayout>
-    )
-  }
+  // Import dialog state
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   const stats = projectData?.stats || {
     fragmentCount: 0,
@@ -746,9 +726,19 @@ export default function ProjectPage() {
                 </Button>
               </>
             ) : (
-              <GoToStrategyCard
-                latestTraceId={null}
+              <Launchpad
                 projectId={projectId}
+                fragmentCount={stats.fragmentCount ?? 0}
+                onStartChat={() => {
+                  setChatInitialQuestion(undefined)
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }}
+                onImportBundle={() => setImportDialogOpen(true)}
+                onGenerateNow={stats.fragmentCount > 0 ? () => setRefreshStrategyDialogOpen(true) : undefined}
               />
             )}
             {isRunning(projectId, 'generation') && (
@@ -767,6 +757,30 @@ export default function ProjectPage() {
 
           {/* Knowledgebase Tab */}
           <TabsContent value="knowledgebase" className="space-y-6">
+            {/* Empty state when no content at all */}
+            {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">Your knowledgebase is empty.</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Upload documents, have a conversation, or import a context bundle.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button variant="outline" onClick={() => {
+                    setUploadDeepDiveId(undefined)
+                    setUploadDialogOpen(true)
+                  }}>Upload docs</Button>
+                  <Button variant="outline" onClick={() => {
+                    setChatInitialQuestion(undefined)
+                    setChatDeepDiveId(undefined)
+                    setChatGapExploration(undefined)
+                    setChatResumeConversationId(undefined)
+                    setChatViewOnly(false)
+                    setChatSheetOpen(true)
+                  }}>Start a conversation</Button>
+                </div>
+              </div>
+            ) : (
+            <>
             {/* Generate actions bar */}
             {hasStrategy && (
               <div className="flex items-center gap-2">
@@ -1067,6 +1081,8 @@ export default function ProjectPage() {
                 </CardContent>
               </Card>
             </div>
+            </>
+            )}
           </TabsContent>
 
         </Tabs>
