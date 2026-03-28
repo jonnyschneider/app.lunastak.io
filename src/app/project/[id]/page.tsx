@@ -271,6 +271,7 @@ export default function ProjectPage() {
 
   // Check if an item is dismissed
   const isItemDismissed = (itemType: string, itemContent: string): boolean => {
+    if (!itemContent) return false
     const key = itemContent.slice(0, 255)
     return dismissedItems.has(`${itemType}:${key}`)
   }
