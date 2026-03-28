@@ -173,6 +173,7 @@ export default function ProjectPage() {
   const [chatResumeConversationId, setChatResumeConversationId] = useState<string | undefined>()
   const [chatViewOnly, setChatViewOnly] = useState(false)
   const [chatOrigin, setChatOrigin] = useState<{ type: string; text: string } | undefined>()
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -503,9 +504,6 @@ export default function ProjectPage() {
       </AppLayout>
     )
   }
-
-  // Import dialog state
-  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   const stats = projectData?.stats || {
     fragmentCount: 0,
