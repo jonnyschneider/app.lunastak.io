@@ -72,13 +72,19 @@ export async function POST(
     )
   }
 
+  // Check for previous strategy to get correct version
+  const previousOutput = await prisma.generatedOutput.findFirst({
+    where: { projectId, outputType: 'full_decision_stack' },
+    orderBy: { createdAt: 'desc' },
+  })
+
   // Pre-create GeneratedOutput for polling
   const generatedOutput = await prisma.generatedOutput.create({
     data: {
       projectId,
       userId,
       outputType: 'full_decision_stack',
-      version: 1,
+      version: (previousOutput?.version ?? 0) + 1,
       status: 'generating',
       startedAt: new Date(),
       content: {},
