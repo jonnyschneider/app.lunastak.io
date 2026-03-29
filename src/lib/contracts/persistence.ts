@@ -55,6 +55,7 @@ export interface FragmentContract {
   projectId: string;
   conversationId?: string; // Optional - null for document-sourced fragments
   documentId?: string;     // Optional - null for conversation-sourced fragments
+  title?: string;          // Short theme/insight name for display
   content: string;
   contentType: 'theme'; // Currently only themes
   status: 'active';
