@@ -767,6 +767,12 @@ export default function ProjectPage() {
                       <Package className="h-4 w-4 mr-2" />
                       Import Context Bundle
                     </DropdownMenuItem>
+                    {stats.fragmentCount > 0 && (
+                      <DropdownMenuItem onClick={() => router.push(`/project/${projectId}/fragments`)}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        View all {stats.fragmentCount} fragments
+                      </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
