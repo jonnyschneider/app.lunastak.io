@@ -22,6 +22,11 @@ const AREA_TO_DIMENSION: Record<string, string> = {
 /**
  * Direct transform: map BundleTheme[] to EmergentThemeContract[]
  * using the area-to-dimension mapping. No LLM call.
+ *
+ * @deprecated Superseded by transformContextBundle (LLM tagging).
+ * Kept for backwards compat with v1 theme-based bundles.
+ * Only triggered via explicit ?mode=direct query param.
+ * Safe to remove when v1 bundles are no longer in circulation.
  */
 export function transformContextBundleDirect(bundle: ContextBundle): EmergentThemeContract[] {
   const themes: EmergentThemeContract[] = []
