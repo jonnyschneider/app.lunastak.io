@@ -692,7 +692,7 @@ export default function ProjectPage() {
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
             <TabsList className="overflow-x-auto">
               <TabsTrigger value="decision-stack">Decision Stack</TabsTrigger>
               <TabsTrigger value="knowledgebase">
