@@ -454,7 +454,43 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         )}
       </SidebarHeader>
       <SidebarContent>
-
+        {/* Spacer pushes helper links to bottom of content area */}
+        <div className="flex-1" />
+        <div className="px-3 py-4 flex flex-col gap-2">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <a href="https://www.humventures.com.au/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Privacy</a>
+            <span>·</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="hover:text-foreground transition-colors">About</button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="start" className="w-72 text-sm space-y-4">
+                <div className="flex items-center gap-3">
+                  <img src="/lunastak-logo.svg" alt="Lunastak" className="h-7" />
+                  <div>
+                    <p className="font-semibold text-foreground">Lunastak</p>
+                    <p className="text-[10px] text-muted-foreground">Your second brain for strategic clarity.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 pt-1">
+                  <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="block shrink-0">
+                    <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-7 opacity-70 hover:opacity-100 transition-opacity" />
+                  </a>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Built by <a href="https://www.humventures.com.au" target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">Jonny Schneider</a> / <a href="https://www.humventures.com.au" target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">Humble Ventures</a></p>
+                  <p><a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">The Decision Stack</a> by <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">Martin Eriksson</a>. Used with permission.</p>
+                </div>
+                <p className="text-[10px] text-muted-foreground/60">© {new Date().getFullYear()} Humble Ventures Pty Ltd</p>
+              </PopoverContent>
+            </Popover>
+            <span>·</span>
+            <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Help</a>
+          </div>
+          <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+            Your data is processed by Anthropic&apos;s Claude AI and is not used to train AI models. Uploaded documents are not stored — only the strategic insights extracted from them. Conversations and generated artefacts are retained to build your Decision Stack.
+          </p>
+        </div>
       </SidebarContent>
 
       <SidebarFooter className="border-t py-2">
