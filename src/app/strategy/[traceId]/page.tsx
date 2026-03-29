@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { GuestSaveBanner } from '@/components/GuestSaveBanner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { StrategyStatements } from '@/lib/types'
 import { KnowledgeSnapshot } from '@/components/KnowledgeSnapshot'
 
@@ -104,6 +105,21 @@ export default function StrategyViewPage() {
 
   return (
     <AppLayout>
+      {/* Context header */}
+      {projectId && (
+        <div className="bg-primary/5 border-b border-primary/10 px-6 py-2 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/project/${projectId}`)}
+          >
+            &larr; Back to Decision Stack
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {timestamp && new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
+      )}
       <div className="container mx-auto px-6 py-6">
         {/* Guest Save Banner - above tabs */}
         {isGuest && <GuestSaveBanner />}
