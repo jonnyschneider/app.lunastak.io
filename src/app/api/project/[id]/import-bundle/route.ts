@@ -74,11 +74,20 @@ export async function POST(
   }
 
   const plan = planImport(trigger)
-  const result = await executeImport(plan, trigger)
 
-  return NextResponse.json({
-    fragmentsCreated: result.fragmentsCreated,
-    questionsAdded: result.questionsAdded,
-    importBatchId: result.importBatchId,
-  })
+  try {
+    const result = await executeImport(plan, trigger)
+
+    return NextResponse.json({
+      fragmentsCreated: result.fragmentsCreated,
+      questionsAdded: result.questionsAdded,
+      importBatchId: result.importBatchId,
+    })
+  } catch (error) {
+    console.error('[ImportBundle] Error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Import failed' },
+      { status: 500 }
+    )
+  }
 }
