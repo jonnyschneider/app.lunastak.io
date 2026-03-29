@@ -193,10 +193,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
 
   const {
     createProject,
-    restoreDemo,
     deleteProject,
     isCreating: isCreatingProject,
-    isRestoring: isRestoringDemo,
     isDeleting,
   } = useProjectActions({ triggerPaywall: triggerProjectPaywall })
 
@@ -293,21 +291,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       console.error('Failed to rename project:', error)
     } finally {
       setIsRenaming(false)
-    }
-  }
-
-  const handleRestoreDemo = async () => {
-    getStatsigClient()?.logEvent('cta_restore_demo', 'sidebar')
-    const result = await restoreDemo()
-    if (result) {
-      await fetchProjects()
-      setProjectSwitcherOpen(false)
-      // Navigate to strategy view so users see the output, not just inputs
-      if (result.latestTraceId) {
-        router.push(`/strategy/${result.latestTraceId}`)
-      } else {
-        router.push(`/project/${result.projectId}/strategy`)
-      }
     }
   }
 

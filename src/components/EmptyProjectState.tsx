@@ -3,27 +3,15 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Plus, RotateCcw } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getStatsigClient } from '@/components/StatsigProvider';
 
 interface EmptyProjectStateProps {
   onCreateProject: () => void;
-  onRestoreDemo: () => void;
 }
 
-export function EmptyProjectState({ onCreateProject, onRestoreDemo }: EmptyProjectStateProps) {
-  const [isRestoring, setIsRestoring] = useState(false);
+export function EmptyProjectState({ onCreateProject }: EmptyProjectStateProps) {
   const [isCreating, setIsCreating] = useState(false);
-
-  const handleRestoreDemo = async () => {
-    getStatsigClient()?.logEvent('cta_restore_demo', 'empty-state');
-    setIsRestoring(true);
-    try {
-      await onRestoreDemo();
-    } finally {
-      setIsRestoring(false);
-    }
-  };
 
   const handleCreateProject = async () => {
     getStatsigClient()?.logEvent('cta_create_project', 'empty-state');
@@ -51,30 +39,18 @@ export function EmptyProjectState({ onCreateProject, onRestoreDemo }: EmptyProje
             No projects yet
           </h2>
           <p className="text-muted-foreground max-w-md">
-            Create your first project to start building your strategy, or restore the demo project to explore how Luna works.
+            Create your first project to start building your Decision Stack.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            onClick={handleCreateProject}
-            disabled={isCreating || isRestoring}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            {isCreating ? 'Creating...' : 'Create Project'}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleRestoreDemo}
-            disabled={isRestoring || isCreating}
-            className="gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            {isRestoring ? 'Restoring...' : 'Restore Demo'}
-          </Button>
-        </div>
+        <Button
+          onClick={handleCreateProject}
+          disabled={isCreating}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          {isCreating ? 'Creating...' : 'Create Project'}
+        </Button>
       </div>
     </div>
   );
