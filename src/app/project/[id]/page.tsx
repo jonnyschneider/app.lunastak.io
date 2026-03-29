@@ -843,7 +843,7 @@ export default function ProjectPage() {
                   </span>
                   <button
                     onClick={() => setVersionHistoryOpen(true)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     view past revisions &rarr;
                   </button>
