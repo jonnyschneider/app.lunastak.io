@@ -10,13 +10,25 @@ import { Button } from '@/components/ui/button'
 import {
   FileText,
   MessageSquare,
-  Plus,
   Upload,
   Loader2,
   Star,
-  NotebookPen,
   CornerDownRight,
+  MoreHorizontal,
+  RefreshCw,
+  Target,
+  Download,
+  Clock,
+  Package,
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
@@ -692,55 +704,118 @@ export default function ProjectPage() {
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-            <TabsList className="overflow-x-auto">
-              <TabsTrigger value="decision-stack">Decision Stack</TabsTrigger>
-              <TabsTrigger value="knowledgebase">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 mb-2">
+            {/* Button group: DS | KB | ⋯ */}
+            <div className="inline-flex rounded-lg border border-input">
+              <TabsTrigger
+                value="decision-stack"
+                className="rounded-none rounded-l-lg border-0 px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
+              >
+                Decision Stack
+              </TabsTrigger>
+              <TabsTrigger
+                value="knowledgebase"
+                className="rounded-none border-0 border-l border-input px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
+              >
                 Knowledgebase
                 {stats.fragmentCount > 0 && (
-                  <span className="ml-1.5 text-xs text-muted-foreground">
+                  <span className="ml-1.5 text-xs opacity-70">
                     {stats.fragmentCount}
                   </span>
                 )}
               </TabsTrigger>
-            </TabsList>
-            {!isDemo && <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  getStatsigClient()?.logEvent('cta_new_chat', 'project-page-header', { projectId })
-                  setChatInitialQuestion(undefined)
-                  setChatDeepDiveId(undefined)
-                  setChatGapExploration(undefined)
-                  setChatResumeConversationId(undefined)
-                  setChatViewOnly(false)
-                  setChatSheetOpen(true)
-                }}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Chat
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  getStatsigClient()?.logEvent('cta_upload_doc', 'project-page-header', { projectId })
-                  const isFirstContent =
-                    (stats.fragmentCount ?? 0) === 0 &&
-                    (stats.conversationCount ?? 0) === 0 &&
-                    (projectData?.strategyOutputs?.length ?? 0) === 0
-                  if (isFirstContent) {
-                    setPendingFirstContentUpload(true)
-                  }
-                  setUploadDeepDiveId(undefined)
-                  setUploadDialogOpen(true)
-                }}
-              >
-                <Upload className="h-3 w-3 mr-1" />
-                Upload
-              </Button>
-            </div>}
+              {!isDemo && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="rounded-none rounded-r-lg border-0 border-l border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
+                      onClick={() => getStatsigClient()?.logEvent('overflow_menu_open', 'project-page', { projectId })}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_new_chat', 'overflow-menu', { projectId })
+                      setChatInitialQuestion(undefined)
+                      setChatDeepDiveId(undefined)
+                      setChatGapExploration(undefined)
+                      setChatResumeConversationId(undefined)
+                      setChatViewOnly(false)
+                      setChatSheetOpen(true)
+                    }}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      New Chat
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_upload_doc', 'overflow-menu', { projectId })
+                      setUploadDeepDiveId(undefined)
+                      setUploadDialogOpen(true)
+                    }}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Document
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_import_bundle', 'overflow-menu', { projectId })
+                      setImportDialogOpen(true)
+                    }}>
+                      <Package className="h-4 w-4 mr-2" />
+                      Import Context Bundle
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
+                      setRefreshStrategyDialogOpen(true)
+                    }}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <div>
+                        <div>Update Direction</div>
+                        <div className="text-[10px] text-muted-foreground">Update V/S/O from latest context</div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
+                      handleGenerateOpportunities()
+                    }}>
+                      <Target className="h-4 w-4 mr-2" />
+                      <div>
+                        <div>Draft Opportunities</div>
+                        <div className="text-[10px] text-muted-foreground">Create initiatives for your objectives</div>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={async () => {
+                      getStatsigClient()?.logEvent('cta_export_brief', 'overflow-menu', { projectId })
+                      const res = await fetch(`/api/project/${projectId}/export-brief`)
+                      if (res.ok) {
+                        const blob = await res.blob()
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = 'strategic-brief.md'
+                        a.click()
+                        URL.revokeObjectURL(url)
+                      }
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Strategic Brief
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_version_history', 'overflow-menu', { projectId })
+                      setVersionHistoryOpen(true)
+                    }}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Version History
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           {/* Decision Stack Tab */}
