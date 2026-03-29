@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-03-29
+
+**Interaction architecture overhaul: two-tab layout, Import Service, fragment explorer, Strategic Brief export.**
+
+### Added
+
+- **Two-tab layout** — Decision Stack + Knowledgebase replace the old vertical scroll project page
+- **Launchpad** — Three onboarding paths (Start conversation, Import bundle, See examples) when no strategy exists
+- **Import Service** — `planImport()` / `executeImport()` orchestration with LLM dimensional tagging for context bundles from Decision Stack skill
+- **Fragment explorer** — Full-page datagrid at `/project/[id]/fragments` with dimension filtering, search, archive/restore, conversation source links
+- **Fragment title field** — Structured `title` on Fragment model; migration script backfills from legacy `**bold**` markdown format
+- **Strategic Brief export** — Markdown export of full Decision Stack via `/api/project/[id]/export-brief`
+- **Version history sheet** — View + export past strategy versions from Decision Stack tab
+- **Opportunity generation pipeline** — Separate `generate_opportunities` trigger with coverage check UI
+- **Generate from knowledge** — `generate_from_knowledge` pipeline trigger for import-then-generate flow
+- **Context bundle import** — `/api/project/[id]/import-bundle` with direct (v1) and transform (v2/LLM tagging) modes
+- **Conversation origin tracking** — `originType`/`originText` fields on Conversation for reliable provocation resume matching
+- **Login telemetry** — Slack notification on user sign-in
+- **Demo mode redesign** — Header tint, readOnly threading, persistent example projects (Lunastak, Nike, Costco, TSMC)
+- **Button group + overflow menu** — Unified navigation replacing tabs, consolidating all actions (chat, upload, import, generate, export, history)
+- **Import CTA** — Knowledgebase tab promotes Decision Stack skill import alongside documents
+
+### Changed
+
+- **Sidebar** — Stripped to account-level (project picker + settings), collapsed by default
+- **Knowledgebase layout** — Coverage hero, Explore Next + Conversations side-by-side, Documents + Import CTA side-by-side
+- **Fragment extraction** — Writes `title` separately instead of embedding `**bold**` markdown in content
+- **Chat sheet** — Simplified guards, removed isInitialConversation blocking
+- **Project API** — Returns `isDemo`, `originType`, `originText`; demo projects accessible to any authenticated user
+
+### Schema
+
+- `Fragment.title` (String?) — short display name
+- `Fragment.sourceType` (String, default "extraction") — extraction | import | manual
+- `Fragment.importBatchId` (String?) — groups fragments from a single import
+- `Project.directionStatus` (String, default "drafting") — drafting | settled
+- `Conversation.originType` (String?) — provocation | gap | deep_dive | organic
+- `Conversation.originText` (String?) — source text for origin matching
+
+### Infrastructure
+
+- Import Service at `src/lib/import/` — types, planner, transforms, executor
+- Fragment title migration: `scripts/migrate-fragment-titles.ts` (dry-run + apply)
+- Opportunity generation contract: `src/lib/contracts/opportunity-generation.ts`
+- Strategic Brief template: `src/lib/strategic-brief.ts`
+
 ## [2.2.1] - 2026-03-27
 
 **Read-only demo mode and Acquired Decision Stack showcases.**
