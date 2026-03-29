@@ -43,12 +43,14 @@ export function ImportBundleDialog({
 
     try {
       const bundle = JSON.parse(text)
-      if (!bundle.themes || !Array.isArray(bundle.themes)) {
-        setError('Bundle must contain a "themes" array')
+      const hasChunks = bundle.chunks && Array.isArray(bundle.chunks) && bundle.chunks.length > 0
+      const hasThemes = bundle.themes && Array.isArray(bundle.themes) && bundle.themes.length > 0
+      if (!hasChunks && !hasThemes) {
+        setError('Bundle must contain a "chunks" or "themes" array')
         return
       }
       setPreview({
-        themes: bundle.themes.length,
+        themes: (bundle.chunks?.length || 0) + (bundle.themes?.length || 0),
         questions: bundle.openQuestions?.length || 0,
         tensions: bundle.tensions?.length || 0,
       })
