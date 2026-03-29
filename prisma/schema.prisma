@@ -208,6 +208,7 @@ model Fragment {
   documentId     String? // For fragments extracted from documents
 
   // Content
+  title       String? // Short theme/insight name for display
   content     String @db.Text
   contentType String @default("theme") // theme | insight | quote | stat | principle
 
