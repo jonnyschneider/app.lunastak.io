@@ -8,6 +8,8 @@ import { isGuestUser } from '@/lib/projects'
 import { planImport, executeImport } from '@/lib/import'
 import type { ImportTrigger, ContextBundle } from '@/lib/import'
 
+export const maxDuration = 120 // LLM dimensional tagging can take time
+
 const GUEST_COOKIE_NAME = 'guestUserId'
 
 export async function POST(
