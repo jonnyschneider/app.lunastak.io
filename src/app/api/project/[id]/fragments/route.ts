@@ -103,6 +103,7 @@ export async function GET(
   const result = {
     fragments: fragments.map(f => ({
       id: f.id,
+      title: f.title,
       content: f.content,
       contentType: f.contentType,
       status: f.status,

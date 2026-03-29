@@ -11,6 +11,7 @@ export interface FragmentInput {
   conversationId?: string
   documentId?: string
   messageId?: string
+  title?: string
   content: string
   contentType: 'theme' | 'insight' | 'quote' | 'stat' | 'principle'
   confidence?: 'HIGH' | 'MEDIUM' | 'LOW'
@@ -35,6 +36,7 @@ export async function createFragment(
       conversationId: input.conversationId,
       documentId: input.documentId,
       messageId: input.messageId,
+      title: input.title,
       content: input.content,
       contentType: input.contentType,
       confidence: input.confidence,
@@ -108,7 +110,8 @@ export async function createFragmentsFromThemes(
       const fragment = await createFragment({
         projectId,
         conversationId,
-        content: `**${theme.theme_name}**\n\n${theme.content}`,
+        title: theme.theme_name,
+        content: theme.content,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
       }, tags)
@@ -151,7 +154,8 @@ export async function createFragmentsFromDocument(
       return createFragment({
         projectId,
         documentId,
-        content: `**${theme.theme_name}**\n\n${theme.content}`,
+        title: theme.theme_name,
+        content: theme.content,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
       }, tags)
