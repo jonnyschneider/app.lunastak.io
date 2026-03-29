@@ -709,7 +709,7 @@ export default function ProjectPage() {
         }} className="w-full">
           <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 mb-2">
             {/* Button group: DS | KB | ⋯ */}
-            <div className="inline-flex rounded-lg border border-input">
+            <TabsList className="inline-flex h-auto p-0 rounded-lg border border-input bg-transparent">
               <TabsTrigger
                 value="decision-stack"
                 className="rounded-none rounded-l-lg border-0 px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
@@ -818,7 +818,7 @@ export default function ProjectPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-            </div>
+            </TabsList>
           </div>
 
           {/* Decision Stack Tab */}
