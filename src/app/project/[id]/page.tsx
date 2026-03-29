@@ -832,34 +832,6 @@ export default function ProjectPage() {
                   }}
                   readOnly={isDemo}
                 />
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      const res = await fetch(`/api/project/${projectId}/export-brief`)
-                      if (res.ok) {
-                        const blob = await res.blob()
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = 'strategic-brief.md'
-                        a.click()
-                        URL.revokeObjectURL(url)
-                      }
-                    }}
-                  >
-                    Export Strategic Brief
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setVersionHistoryOpen(true)}
-                    title="Version history"
-                  >
-                    History
-                  </Button>
-                </div>
               </>
             ) : (
               <Launchpad
