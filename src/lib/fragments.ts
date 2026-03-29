@@ -166,6 +166,50 @@ export async function createFragmentsFromDocument(
 }
 
 /**
+ * Create multiple fragments from imported themes (context bundles)
+ */
+export async function createFragmentsFromImport(
+  projectId: string,
+  importBatchId: string,
+  themes: ThemeWithDimensions[]
+) {
+  const fragments = await Promise.all(
+    themes.map(theme => {
+      const tags: DimensionTagInput[] = (theme.dimensions || [])
+        .map(dim => {
+          const tier1Dimension = EXTRACTION_DIMENSION_MAP[dim.name]
+          if (!tier1Dimension) {
+            console.log(`[Fragments] Unknown dimension key: ${dim.name}`)
+            return null
+          }
+          return {
+            dimension: tier1Dimension,
+            confidence: dim.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
+            reasoning: 'Tagged during import',
+          } as DimensionTagInput
+        })
+        .filter((tag): tag is DimensionTagInput => tag !== null)
+
+      return createFragment({
+        projectId,
+        title: theme.theme_name,
+        content: theme.content,
+        contentType: 'insight',
+        confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
+      }, tags)
+    })
+  )
+
+  // Set sourceType and importBatchId on all created fragments
+  await prisma.fragment.updateMany({
+    where: { id: { in: fragments.map(f => f.id) } },
+    data: { sourceType: 'import', importBatchId },
+  })
+
+  return fragments
+}
+
+/**
  * Get active fragments for a project and dimension
  */
 export async function getActiveFragments(
