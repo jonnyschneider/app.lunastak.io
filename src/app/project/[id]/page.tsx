@@ -44,6 +44,7 @@ import {
   ItemSeparator,
 } from '@/components/ui/item'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   useProUpgradeFlow,
   ProFeatureInterstitial,
@@ -832,8 +833,9 @@ export default function ProjectPage() {
           <TabsContent value="decision-stack" className="space-y-6">
             {strategyData ? (
               <>
-                {/* Version stamp */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {/* Version stamp + Decision Stack branding */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
                   <span>
                     v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
                       projectData?.strategyOutputs?.[0]?.createdAt
@@ -847,6 +849,19 @@ export default function ProjectPage() {
                   >
                     view past revisions &rarr;
                   </button>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button>
+                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-7" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="end" className="w-64 text-xs space-y-2">
+                    <p className="text-muted-foreground">
+                      <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">The Decision Stack</a> by <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Martin Eriksson</a>. Used with permission.
+                    </p>
+                  </PopoverContent>
+                </Popover>
                 </div>
                 <StrategyDisplay
                   strategy={strategyData.strategy}
