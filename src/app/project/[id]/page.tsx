@@ -703,7 +703,10 @@ export default function ProjectPage() {
       )}
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => {
+          setActiveTab(v)
+          getStatsigClient()?.logEvent('tab_switch', v, { projectId })
+        }} className="w-full">
           <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 mb-2">
             {/* Button group: DS | KB | ⋯ */}
             <div className="inline-flex rounded-lg border border-input">
