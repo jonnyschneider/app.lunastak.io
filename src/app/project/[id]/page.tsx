@@ -832,8 +832,8 @@ export default function ProjectPage() {
           <TabsContent value="decision-stack" className="space-y-6">
             {strategyData ? (
               <>
-                {/* Version date + history link */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                {/* Version stamp */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>
                     v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
                       projectData?.strategyOutputs?.[0]?.createdAt
@@ -843,9 +843,9 @@ export default function ProjectPage() {
                   </span>
                   <button
                     onClick={() => setVersionHistoryOpen(true)}
-                    className="text-primary hover:underline"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    View versions
+                    view past revisions &rarr;
                   </button>
                 </div>
                 <StrategyDisplay
