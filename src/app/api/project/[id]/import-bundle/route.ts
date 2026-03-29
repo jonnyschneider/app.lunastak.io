@@ -5,53 +5,10 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isGuestUser } from '@/lib/projects'
-import { TIER_1_DIMENSIONS, type Tier1Dimension } from '@/lib/constants/dimensions'
-import { randomUUID } from 'crypto'
+import { planImport, executeImport } from '@/lib/import'
+import type { ImportTrigger, ContextBundle } from '@/lib/import'
 
 const GUEST_COOKIE_NAME = 'guestUserId'
-
-// Map context bundle area keys to dimension enum values
-const AREA_TO_DIMENSION: Record<string, Tier1Dimension> = {
-  'CUSTOMER_MARKET': 'CUSTOMER_MARKET',
-  'PROBLEM_OPPORTUNITY': 'PROBLEM_OPPORTUNITY',
-  'VALUE_PROPOSITION': 'VALUE_PROPOSITION',
-  'DIFFERENTIATION_ADVANTAGE': 'DIFFERENTIATION_ADVANTAGE',
-  'COMPETITIVE_LANDSCAPE': 'COMPETITIVE_LANDSCAPE',
-  'BUSINESS_MODEL_ECONOMICS': 'BUSINESS_MODEL_ECONOMICS',
-  'GO_TO_MARKET': 'GO_TO_MARKET',
-  'PRODUCT_EXPERIENCE': 'PRODUCT_EXPERIENCE',
-  'CAPABILITIES_ASSETS': 'CAPABILITIES_ASSETS',
-  'RISKS_CONSTRAINTS': 'RISKS_CONSTRAINTS',
-  'STRATEGIC_INTENT': 'STRATEGIC_INTENT',
-}
-
-interface BundleTheme {
-  area: string
-  theme: string
-  evidence: string[]
-  confidence: string
-}
-
-interface BundleQuestion {
-  question: string
-  area?: string
-  why?: string
-}
-
-interface BundleTension {
-  tension: string
-  areas: string[]
-}
-
-interface ContextBundle {
-  version: string
-  framework: string
-  themes: BundleTheme[]
-  openQuestions?: BundleQuestion[]
-  tensions?: BundleTension[]
-  coverage?: Record<string, unknown>
-  rawSummary?: string
-}
 
 export async function POST(
   request: NextRequest,
@@ -81,7 +38,7 @@ export async function POST(
 
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId, status: 'active' },
-    select: { id: true, suggestedQuestions: true },
+    select: { id: true },
   })
 
   if (!project) {
@@ -95,104 +52,31 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!bundle.themes || !Array.isArray(bundle.themes) || bundle.themes.length === 0) {
-    return NextResponse.json({ error: 'Bundle must contain at least one theme' }, { status: 400 })
+  // Validate: must have either chunks (transform mode) or themes (direct mode)
+  const hasChunks = bundle.chunks && Array.isArray(bundle.chunks) && bundle.chunks.length > 0
+  const hasThemes = bundle.themes && Array.isArray(bundle.themes) && bundle.themes.length > 0
+
+  if (!hasChunks && !hasThemes) {
+    return NextResponse.json({ error: 'Bundle must contain chunks or themes' }, { status: 400 })
   }
 
-  const importBatchId = randomUUID()
-  let fragmentsCreated = 0
-  let questionsAdded = 0
+  // Determine mode: explicit param, or infer from bundle content
+  const modeParam = request.nextUrl.searchParams.get('mode') as 'transform' | 'direct' | null
+  const mode = modeParam || (hasChunks ? 'transform' : 'direct')
 
-  // Create fragments from themes
-  for (const theme of bundle.themes) {
-    const dimension = AREA_TO_DIMENSION[theme.area]
-    if (!dimension && !TIER_1_DIMENSIONS.includes(theme.area as Tier1Dimension)) {
-      continue // Skip unknown dimensions
-    }
-    const targetDimension = dimension || (theme.area as Tier1Dimension)
-
-    const content = theme.evidence?.length > 0
-      ? `${theme.theme}\n\nEvidence:\n${theme.evidence.map(e => `- ${e}`).join('\n')}`
-      : theme.theme
-
-    const fragment = await prisma.fragment.create({
-      data: {
-        projectId,
-        content,
-        contentType: 'insight',
-        status: 'active',
-        confidence: theme.confidence?.toUpperCase() || 'MEDIUM',
-        sourceType: 'import',
-        importBatchId,
-        capturedAt: new Date(),
-      },
-    })
-
-    await prisma.fragmentDimensionTag.create({
-      data: {
-        fragmentId: fragment.id,
-        dimension: targetDimension,
-        confidence: theme.confidence?.toUpperCase() || 'MEDIUM',
-      },
-    })
-
-    fragmentsCreated++
+  const trigger: ImportTrigger = {
+    type: 'context_bundle',
+    projectId,
+    mode,
+    bundle,
   }
 
-  // Create fragments from tensions
-  if (bundle.tensions) {
-    for (const tension of bundle.tensions) {
-      const fragment = await prisma.fragment.create({
-        data: {
-          projectId,
-          content: tension.tension,
-          contentType: 'insight',
-          status: 'active',
-          confidence: 'MEDIUM',
-          sourceType: 'import',
-          importBatchId,
-          capturedAt: new Date(),
-        },
-      })
-
-      // Tag with all relevant dimensions
-      for (const area of tension.areas) {
-        const dim = AREA_TO_DIMENSION[area]
-        if (dim) {
-          await prisma.fragmentDimensionTag.create({
-            data: {
-              fragmentId: fragment.id,
-              dimension: dim,
-              confidence: 'MEDIUM',
-            },
-          })
-        }
-      }
-
-      fragmentsCreated++
-    }
-  }
-
-  // Add open questions to project's suggestedQuestions
-  if (bundle.openQuestions && bundle.openQuestions.length > 0) {
-    const existing = (project.suggestedQuestions as string[] | null) || []
-    const newQuestions = bundle.openQuestions.map(q => q.question)
-    const merged = [...existing, ...newQuestions]
-
-    await prisma.project.update({
-      where: { id: projectId },
-      data: { suggestedQuestions: merged },
-    })
-
-    questionsAdded = newQuestions.length
-  }
-
-  console.log(`[ImportBundle] Imported ${fragmentsCreated} fragments, ${questionsAdded} questions for project ${projectId} (batch: ${importBatchId})`)
+  const plan = planImport(trigger)
+  const result = await executeImport(plan, trigger)
 
   return NextResponse.json({
-    fragmentsCreated,
-    questionsAdded,
-    importBatchId,
-    coverage: bundle.coverage || null,
+    fragmentsCreated: result.fragmentsCreated,
+    questionsAdded: result.questionsAdded,
+    importBatchId: result.importBatchId,
   })
 }
