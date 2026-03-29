@@ -365,19 +365,17 @@ export function KnowledgebaseHeader({
             </div>
           )}
 
-          {/* Ghost link to strategy when in sync */}
-          {!isBusy && !strategyIsStale && latestStrategyTraceId && (
+          {/* View all fragments link */}
+          {fragmentCount > 0 && (
             <div className="flex justify-end">
               <Button
                 variant="ghost"
                 size="sm"
-                asChild
+                onClick={() => onDimensionClick('')}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Link href={`/strategy/${latestStrategyTraceId}`}>
-                  Your Strategy
-                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Link>
+                View all {fragmentCount} fragments
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </div>
           )}

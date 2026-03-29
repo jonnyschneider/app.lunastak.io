@@ -122,6 +122,7 @@ interface DocumentSummary {
 interface StrategyOutputSummary {
   id: string
   createdAt: string
+  version?: number
 }
 
 interface DimensionalSynthesis {
@@ -825,6 +826,22 @@ export default function ProjectPage() {
           <TabsContent value="decision-stack" className="space-y-6">
             {strategyData ? (
               <>
+                {/* Version date + history link */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
+                      projectData?.strategyOutputs?.[0]?.createdAt
+                        ? new Date(projectData.strategyOutputs[0].createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                        : ''
+                    }
+                  </span>
+                  <button
+                    onClick={() => setVersionHistoryOpen(true)}
+                    className="text-primary hover:underline"
+                  >
+                    View versions
+                  </button>
+                </div>
                 <StrategyDisplay
                   strategy={strategyData.strategy}
                   conversationId={strategyData.conversationId}
@@ -923,20 +940,6 @@ export default function ProjectPage() {
                 : null
               }
             />
-
-            {/* View fragments link */}
-            {stats.fragmentCount > 0 && (
-              <div className="flex justify-end -mt-4">
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-xs px-0"
-                  onClick={() => router.push(`/project/${projectId}/fragments`)}
-                >
-                  View all {stats.fragmentCount} fragments &rarr;
-                </Button>
-              </div>
-            )}
 
             {/* Explore Next + Conversations side by side */}
             <div className="grid gap-6 md:grid-cols-2">
