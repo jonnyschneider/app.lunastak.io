@@ -917,67 +917,7 @@ export default function ProjectPage() {
               </div>
             ) : (
             <>
-            {/* Generate initial strategy when fragments exist but no strategy yet */}
-            {!hasStrategy && !isDemo && stats.fragmentCount > 0 && (
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={handleGenerateStrategy}>
-                  Generate Strategy
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  from {stats.fragmentCount} fragments
-                </span>
-              </div>
-            )}
-
-            {/* Generate actions bar */}
-            {hasStrategy && !isDemo && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setRefreshStrategyDialogOpen(true)}
-                >
-                  Regenerate Direction
-                </Button>
-                {!isGeneratingOpportunities && !showCoverageWarning && (
-                  <Button size="sm" variant="outline" onClick={() => handleGenerateOpportunities()}>
-                    Generate Opportunities
-                  </Button>
-                )}
-                {isGeneratingOpportunities && (
-                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Generating opportunities...
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Coverage warning (from opportunity generation) */}
-            {showCoverageWarning && opportunityCoverageWarnings.length > 0 && (
-              <Card className="border-amber-200 bg-amber-50">
-                <CardContent className="p-4">
-                  <p className="text-sm font-medium mb-3">
-                    Your direction could use more depth in these areas:
-                  </p>
-                  {opportunityCoverageWarnings.map(d => (
-                    <div key={d.dimension} className="flex items-center gap-2 text-sm mb-1">
-                      <span className="capitalize">{d.dimensionLabel}</span>
-                      <span className="text-muted-foreground">{d.fragmentCount} fragments</span>
-                    </div>
-                  ))}
-                  <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm" onClick={() => setShowCoverageWarning(false)}>
-                      Dismiss
-                    </Button>
-                    <Button size="sm" onClick={() => handleGenerateOpportunities(true)}>
-                      Generate anyway
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {/* Dimensional Coverage */}
+            {/* Coverage hero */}
             <KnowledgebaseHeader
               fragmentCount={stats.fragmentCount}
               chatCount={stats.conversationCount}
@@ -1009,20 +949,23 @@ export default function ProjectPage() {
               }
             />
 
-            {/* Fragment browser link */}
+            {/* View fragments link */}
             {stats.fragmentCount > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="text-xs px-0"
-                onClick={() => router.push(`/project/${projectId}/fragments`)}
-              >
-                View all {stats.fragmentCount} fragments
-              </Button>
+              <div className="flex justify-end -mt-4">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs px-0"
+                  onClick={() => router.push(`/project/${projectId}/fragments`)}
+                >
+                  View all {stats.fragmentCount} fragments &rarr;
+                </Button>
+              </div>
             )}
 
-            {/* Explore Next */}
-            <ExploreNextSection
+            {/* Explore Next + Conversations side by side */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <ExploreNextSection
               deepDives={projectData?.deepDives || []}
               provocations={projectData?.suggestedQuestions || []}
               syntheses={projectData?.syntheses || []}
@@ -1067,8 +1010,6 @@ export default function ProjectPage() {
               onAddDeepDive={() => setAddDeepDiveOpen(true)}
             />
 
-            {/* Conversations & Documents side by side */}
-            <div className="grid gap-6 md:grid-cols-2">
               {/* Conversations */}
               <Card data-section="chats">
                 <CardHeader className="pb-3">
@@ -1142,12 +1083,16 @@ export default function ProjectPage() {
                 </CardContent>
               </Card>
 
+            </div>
+
+            {/* Documents + Import CTA side by side */}
+            <div className="grid gap-6 md:grid-cols-2">
               {/* Documents */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <FileText className="h-4 w-4" />
-                    Documents & Memos
+                    Documents
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -1203,6 +1148,26 @@ export default function ProjectPage() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Import CTA */}
+              {!isDemo && (
+                <Card className="border-dashed">
+                  <CardContent className="p-6 flex flex-col justify-center h-full">
+                    <Package className="h-6 w-6 text-muted-foreground mb-3" />
+                    <h3 className="font-semibold text-sm mb-1">Import context from AI</h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Use the Decision Stack skill in Claude, ChatGPT, or Gemini to prepare your strategic context, then import it here.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setImportDialogOpen(true)}
+                    >
+                      Import Context Bundle
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             </>
             )}
