@@ -48,6 +48,7 @@ import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
 import { Launchpad } from '@/components/Launchpad'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
+import { VersionHistorySheet } from '@/components/VersionHistorySheet'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -173,6 +174,7 @@ export default function ProjectPage() {
   const [chatViewOnly, setChatViewOnly] = useState(false)
   const [chatOrigin, setChatOrigin] = useState<{ type: string; text: string } | undefined>()
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -755,9 +757,34 @@ export default function ProjectPage() {
                   }}
                   readOnly={isDemo}
                 />
-                <Button variant="outline" size="sm" disabled>
-                  Export Strategic Brief
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const res = await fetch(`/api/project/${projectId}/export-brief`)
+                      if (res.ok) {
+                        const blob = await res.blob()
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = 'strategic-brief.md'
+                        a.click()
+                        URL.revokeObjectURL(url)
+                      }
+                    }}
+                  >
+                    Export Strategic Brief
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setVersionHistoryOpen(true)}
+                    title="Version history"
+                  >
+                    History
+                  </Button>
+                </div>
               </>
             ) : (
               <Launchpad
@@ -1177,6 +1204,25 @@ export default function ProjectPage() {
         open={synthesisDialogOpen}
         onOpenChange={setSynthesisDialogOpen}
         onComplete={fetchProjectData}
+      />
+
+      {/* Version History Sheet */}
+      <VersionHistorySheet
+        projectId={projectId}
+        open={versionHistoryOpen}
+        onOpenChange={setVersionHistoryOpen}
+        onExportBrief={async (outputId, version) => {
+          const res = await fetch(`/api/project/${projectId}/export-brief?outputId=${outputId}`)
+          if (res.ok) {
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `strategic-brief-v${version}.md`
+            a.click()
+            URL.revokeObjectURL(url)
+          }
+        }}
       />
 
       {/* Import Bundle Dialog */}
