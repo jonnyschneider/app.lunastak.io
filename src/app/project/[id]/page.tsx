@@ -46,7 +46,6 @@ import { useDocumentProcessingContext } from '@/components/providers/DocumentPro
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
-import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { Launchpad } from '@/components/Launchpad'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
@@ -199,9 +198,6 @@ export default function ProjectPage() {
   useEffect(() => {
     localStorage.setItem(`project-${projectId}-tab`, activeTab)
   }, [activeTab, projectId])
-  // Fragment explorer state
-  const [fragmentExplorerOpen, setFragmentExplorerOpen] = useState(false)
-  const [fragmentExplorerDimension, setFragmentExplorerDimension] = useState<string | undefined>()
   // Strategy data for Direction tab
   const [strategyData, setStrategyData] = useState<{
     strategy: StrategyStatements
@@ -896,8 +892,7 @@ export default function ProjectPage() {
               onChatClick={() => triggerUpgrade('knowledge-chat')}
               onEditClick={() => triggerUpgrade('knowledge-edit')}
               onDimensionClick={(dimension?: string) => {
-                setFragmentExplorerDimension(dimension)
-                setFragmentExplorerOpen(true)
+                router.push(`/project/${projectId}/fragments${dimension ? `?dimension=${dimension}` : ''}`)
               }}
               knowledgeBusyMessage={
                 isRunning(projectId, 'extraction') ? 'processing insights...'
@@ -912,41 +907,13 @@ export default function ProjectPage() {
               }
             />
 
-            {/* Fragment Explorer (inline, toggled by dimension click or "View all") */}
-            {fragmentExplorerOpen && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">Fragments</h3>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setFragmentExplorerOpen(false)
-                      setFragmentExplorerDimension(undefined)
-                    }}
-                  >
-                    Close
-                  </Button>
-                </div>
-                <FragmentExplorer
-                  projectId={projectId}
-                  initialDimensionFilter={fragmentExplorerDimension}
-                  onResumeConversation={(convId) => {
-                    setChatResumeConversationId(convId)
-                    setChatSheetOpen(true)
-                  }}
-                />
-              </div>
-            )}
-            {!fragmentExplorerOpen && stats.fragmentCount > 0 && (
+            {/* Fragment browser link */}
+            {stats.fragmentCount > 0 && (
               <Button
                 variant="link"
                 size="sm"
                 className="text-xs px-0"
-                onClick={() => {
-                  setFragmentExplorerDimension(undefined)
-                  setFragmentExplorerOpen(true)
-                }}
+                onClick={() => router.push(`/project/${projectId}/fragments`)}
               >
                 View all {stats.fragmentCount} fragments
               </Button>
