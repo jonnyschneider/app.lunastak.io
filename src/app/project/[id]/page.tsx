@@ -44,7 +44,9 @@ import {
   ItemActions,
   ItemSeparator,
 } from '@/components/ui/item'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { useHeaderTabNav } from '@/components/HeaderContext'
+import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   useProUpgradeFlow,
@@ -216,6 +218,38 @@ export default function ProjectPage() {
   useEffect(() => {
     localStorage.setItem(`project-${projectId}-tab`, activeTab)
   }, [activeTab, projectId])
+
+  // Inject tab nav into header
+  const { setTabNav } = useHeaderTabNav()
+  useEffect(() => {
+    setTabNav(
+      <div className="inline-flex rounded-lg border border-input">
+        <button
+          onClick={() => { setActiveTab('decision-stack'); getStatsigClient()?.logEvent('tab_switch', 'decision-stack', { projectId }) }}
+          className={cn(
+            'rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
+            activeTab === 'decision-stack' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          )}
+        >
+          Decision Stack
+        </button>
+        <button
+          onClick={() => { setActiveTab('knowledgebase'); getStatsigClient()?.logEvent('tab_switch', 'knowledgebase', { projectId }) }}
+          className={cn(
+            'rounded-r-lg border-l border-input px-4 py-1.5 text-sm font-medium transition-colors',
+            activeTab === 'knowledgebase' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          )}
+        >
+          Knowledgebase
+          {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
+            <span className="ml-1.5 text-xs opacity-70">{projectData?.stats?.fragmentCount}</span>
+          )}
+        </button>
+      </div>
+    )
+    return () => setTabNav(null)
+  }, [activeTab, projectId, projectData?.stats?.fragmentCount, setTabNav])
+
   // Strategy data for Direction tab
   const [strategyData, setStrategyData] = useState<{
     strategy: StrategyStatements
@@ -694,33 +728,11 @@ export default function ProjectPage() {
         )
       })()}
       <div className="container mx-auto px-6 py-8 space-y-6">
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => {
-          setActiveTab(v)
-          getStatsigClient()?.logEvent('tab_switch', v, { projectId })
-        }} className="w-full">
-          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 mb-2">
-            {/* Button group: DS | KB | ⋯ */}
-            <TabsList className="inline-flex h-auto p-0 rounded-lg border border-input bg-transparent">
-              <TabsTrigger
-                value="decision-stack"
-                className="rounded-none rounded-l-lg border-0 px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
-              >
-                Decision Stack
-              </TabsTrigger>
-              <TabsTrigger
-                value="knowledgebase"
-                className="rounded-none border-0 border-l border-input px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
-              >
-                Knowledgebase
-                {stats.fragmentCount > 0 && (
-                  <span className="ml-1.5 text-xs opacity-70">
-                    {stats.fragmentCount}
-                  </span>
-                )}
-              </TabsTrigger>
-              {!isDemo && (
-                <DropdownMenu>
+        {/* Content — switched by activeTab (tabs are in header via HeaderContext) */}
+        <div className="w-full">
+          {!isDemo && (
+            <div className="flex justify-end mb-4">
+              <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       className="rounded-none rounded-r-lg border-0 border-l border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
@@ -840,12 +852,11 @@ export default function ProjectPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
-            </TabsList>
-          </div>
+            </div>
+          )}
 
-          {/* Decision Stack Tab */}
-          <TabsContent value="decision-stack" className="space-y-6">
+          {/* Decision Stack */}
+          {activeTab === 'decision-stack' && <div className="space-y-6">
             {strategyData ? (
               <>
                 {/* Version stamp + Decision Stack branding */}
@@ -927,10 +938,10 @@ export default function ProjectPage() {
                 {getProgressLabel(projectId) || 'Refreshing strategy...'}
               </div>
             )}
-          </TabsContent>
+          </div>}
 
-          {/* Knowledgebase Tab */}
-          <TabsContent value="knowledgebase" className="space-y-6">
+          {/* Knowledgebase */}
+          {activeTab === 'knowledgebase' && <div className="space-y-6">
             {isDemo ? (
             <>
             {/* Demo: simplified KB — coverage grid + inline fragments */}
@@ -1296,9 +1307,9 @@ export default function ProjectPage() {
             )}
             </>
             )}
-          </TabsContent>
+          </div>}
 
-        </Tabs>
+        </div>
       </div>
 
       {/* Upload Dialog */}
