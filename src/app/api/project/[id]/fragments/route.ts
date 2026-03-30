@@ -49,9 +49,9 @@ export async function GET(
   const statusFilter = searchParams.get('status') || 'active'
   const sourceFilter = searchParams.get('source') // 'conversation' | 'document'
 
-  // Verify project access
+  // Verify project access (own projects + demos)
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId, status: 'active' },
+    where: { id: projectId, status: 'active', OR: [{ userId }, { isDemo: true }] },
     select: { id: true },
   })
 

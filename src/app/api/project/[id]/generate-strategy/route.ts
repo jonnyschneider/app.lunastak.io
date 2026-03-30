@@ -93,15 +93,15 @@ export async function POST(
 
   console.log('[GenerateStrategy] Created GeneratedOutput:', generatedOutput.id, 'from', fragmentCount, 'fragments')
 
-  // Fire-and-forget via pipeline orchestrator
-  waitUntil((async () => {
+  const trigger = {
+    type: 'generate_from_knowledge' as const,
+    projectId,
+    userId,
+    generatedOutputId: generatedOutput.id,
+  }
+
+  const generationWork = (async () => {
     try {
-      const trigger = {
-        type: 'generate_from_knowledge' as const,
-        projectId,
-        userId,
-        generatedOutputId: generatedOutput.id,
-      }
       const plan = planPipeline(trigger)
       await executePipeline(plan, trigger)
     } catch (error) {
@@ -114,7 +114,13 @@ export async function POST(
         },
       })
     }
-  })())
+  })()
+
+  if (process.env.VERCEL) {
+    waitUntil(generationWork)
+  } else {
+    await generationWork
+  }
 
   const response: GenerationStartedContract = {
     status: 'started',

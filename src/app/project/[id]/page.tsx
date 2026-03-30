@@ -63,6 +63,7 @@ import { OpportunitySection } from '@/components/OpportunitySection'
 import { Launchpad } from '@/components/Launchpad'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
+import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -653,26 +654,45 @@ export default function ProjectPage() {
 
   return (
     <AppLayout>
-      {/* Demo header tint */}
-      {isDemo && (
-        <div className="bg-primary/5 border-b border-primary/10 px-6 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              Example
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {projectData?.name}
-            </span>
+      {/* Demo banner */}
+      {isDemo && (() => {
+        const episodeUrls: Record<string, string> = {
+          'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
+          'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
+          'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
+        }
+        const episodeUrl = episodeUrls[projectId]
+        return (
+          <div className="bg-[hsl(307,17%,31%)] border-b border-[hsl(307,17%,40%)] px-6 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-white">
+                Example
+              </span>
+              <span className="text-sm text-white/70">
+                {projectData?.name}
+              </span>
+              {episodeUrl && (
+                <a
+                  href={episodeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-white/50 hover:text-white/80 underline underline-offset-2 transition-colors"
+                >
+                  Listen on Acquired.fm &rarr;
+                </a>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/70 hover:text-white hover:bg-white/10"
+              onClick={() => router.push('/')}
+            >
+              &larr; Back to my project
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/')}
-          >
-            &larr; Back to my project
-          </Button>
-        </div>
-      )}
+        )
+      })()}
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => {
@@ -747,14 +767,16 @@ export default function ProjectPage() {
 
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => {
-                      getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
-                      if (hasStrategy) {
-                        setRefreshStrategyDialogOpen(true)
-                      } else {
-                        handleGenerateStrategy()
-                      }
-                    }}>
+                    <DropdownMenuItem
+                      disabled={!hasStrategy && (stats.fragmentCount ?? 0) === 0}
+                      onClick={() => {
+                        getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
+                        if (hasStrategy) {
+                          setRefreshStrategyDialogOpen(true)
+                        } else {
+                          handleGenerateStrategy()
+                        }
+                      }}>
                       <RefreshCw className="h-4 w-4 mr-2" />
                       <div>
                         <div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
@@ -817,19 +839,27 @@ export default function ProjectPage() {
                 {/* Version stamp + Decision Stack branding */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span>
-                    v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
-                      projectData?.strategyOutputs?.[0]?.createdAt
-                        ? new Date(projectData.strategyOutputs[0].createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                        : ''
-                    }
-                  </span>
-                  <button
-                    onClick={() => setVersionHistoryOpen(true)}
-                    className="font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    view past revisions &rarr;
-                  </button>
+                  {isDemo ? (
+                    <span className="italic text-muted-foreground">
+                      Extracted and generated by Luna from podcast transcript
+                    </span>
+                  ) : (
+                    <>
+                      <span>
+                        v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
+                          projectData?.strategyOutputs?.[0]?.createdAt
+                            ? new Date(projectData.strategyOutputs[0].createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                            : ''
+                        }
+                      </span>
+                      <button
+                        onClick={() => setVersionHistoryOpen(true)}
+                        className="font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        view past revisions &rarr;
+                      </button>
+                    </>
+                  )}
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -889,26 +919,79 @@ export default function ProjectPage() {
 
           {/* Knowledgebase Tab */}
           <TabsContent value="knowledgebase" className="space-y-6">
+            {isDemo ? (
+            <>
+            {/* Demo: simplified KB — coverage grid + inline fragments */}
+            <KnowledgebaseHeader
+              fragmentCount={stats.fragmentCount}
+              chatCount={0}
+              documentCount={0}
+              strategyIsStale={false}
+              fragmentsSinceStrategy={0}
+              fragmentsSinceSummary={0}
+              knowledgeUpdatedAt={null}
+              knowledgeSummary={projectData?.knowledgeSummary || null}
+              dimensionalCoverage={stats.dimensionalCoverage}
+              syntheses={projectData?.syntheses || []}
+              latestStrategyTraceId={null}
+              onRefreshClick={() => {}}
+              onChatClick={() => {}}
+              onEditClick={() => {}}
+              onDimensionClick={() => {}}
+              knowledgeBusyMessage={null}
+              strategyBusyMessage={null}
+              readOnly
+            />
+            <FragmentExplorer
+              projectId={projectId}
+            />
+            </>
+            ) : (
+            <>
             {/* Empty state when no content at all */}
             {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">Your knowledgebase is empty.</p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Upload documents, have a conversation, or import a context bundle.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => {
-                    setUploadDeepDiveId(undefined)
-                    setUploadDialogOpen(true)
-                  }}>Upload docs</Button>
-                  <Button variant="outline" onClick={() => {
-                    setChatInitialQuestion(undefined)
-                    setChatDeepDiveId(undefined)
-                    setChatGapExploration(undefined)
-                    setChatResumeConversationId(undefined)
-                    setChatViewOnly(false)
-                    setChatSheetOpen(true)
-                  }}>Start a conversation</Button>
+              <div className="py-8">
+                <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
+                <p className="text-sm text-muted-foreground text-center mb-6">Start a conversation with Luna, or import a context bundle to get started.</p>
+                <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+                  {/* Talk to Luna */}
+                  <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+                    <h3 className="text-sm font-bold uppercase tracking-wide">
+                      <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
+                      <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Tell Luna about your business.<br />
+                      In ~10 minutes, get your first draft strategy.
+                    </p>
+                    <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={() => {
+                      setChatInitialQuestion(undefined)
+                      setChatDeepDiveId(undefined)
+                      setChatGapExploration(undefined)
+                      setChatResumeConversationId(undefined)
+                      setChatViewOnly(false)
+                      setChatSheetOpen(true)
+                    }}>
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      Start
+                    </Button>
+                  </div>
+
+                  {/* Import a context bundle */}
+                  <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+                    <h3 className="text-sm font-bold uppercase tracking-wide">
+                      <span className="bg-[hsl(var(--ds-teal))] text-white px-2 py-0.5">Import</span>{' '}
+                      <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Prepared context in Claude, ChatGPT, or Gemini?<br />
+                      Import it and generate a Decision Stack instantly.
+                    </p>
+                    <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={() => setImportDialogOpen(true)}>
+                      <Upload className="h-3.5 w-3.5" />
+                      Import
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1184,11 +1267,11 @@ export default function ProjectPage() {
                     </p>
                     <div className="flex items-center gap-4 opacity-60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-claude.svg" alt="Claude" className="h-4" />
+                      <img src="/logo-claude.svg" alt="Claude" className="h-8" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-gemini.svg" alt="Gemini" className="h-4" />
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-8" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-openai.svg" alt="OpenAI" className="h-4" />
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-8" />
                     </div>
                     <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
                       Learn more &rarr;
@@ -1197,6 +1280,8 @@ export default function ProjectPage() {
                 </Card>
               )}
             </div>
+            </>
+            )}
             </>
             )}
           </TabsContent>

@@ -104,15 +104,15 @@ export async function POST(
 
   console.log('[GenerateOpportunities] Created GeneratedOutput:', generatedOutput.id, 'status: generating')
 
-  // Fire-and-forget
-  waitUntil((async () => {
+  const trigger = {
+    type: 'generate_opportunities' as const,
+    projectId,
+    userId,
+    generatedOutputId: generatedOutput.id,
+  }
+
+  const generationWork = (async () => {
     try {
-      const trigger = {
-        type: 'generate_opportunities' as const,
-        projectId,
-        userId,
-        generatedOutputId: generatedOutput.id,
-      }
       const plan = planPipeline(trigger)
       await executePipeline(plan, trigger)
     } catch (error) {
@@ -125,7 +125,14 @@ export async function POST(
         },
       })
     }
-  })())
+  })()
+
+  // On Vercel: fire-and-forget. Locally: await inline (waitUntil is a no-op outside Vercel).
+  if (process.env.VERCEL) {
+    waitUntil(generationWork)
+  } else {
+    await generationWork
+  }
 
   const response: OpportunityGenerationStartedContract = {
     status: 'started',
@@ -133,6 +140,6 @@ export async function POST(
     ...(coverageWarnings.length > 0 ? { coverageWarnings } : {}),
   }
 
-  console.log('[GenerateOpportunities] Returning immediately, generation running in background')
+  console.log('[GenerateOpportunities] Returning, generation', process.env.VERCEL ? 'running in background' : 'complete')
   return NextResponse.json(response)
 }

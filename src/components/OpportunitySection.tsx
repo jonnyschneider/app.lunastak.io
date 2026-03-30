@@ -53,6 +53,8 @@ interface OpportunitySectionProps {
   onStartEditing?: (id: string) => void;
   onStopEditing?: () => void;
   onDraftWithLuna?: () => void;
+  /** Bump to trigger re-fetch (e.g. after generation completes) */
+  refreshKey?: number;
 }
 
 export function OpportunitySection({
@@ -65,6 +67,7 @@ export function OpportunitySection({
   onStartEditing,
   onDraftWithLuna,
   onStopEditing,
+  refreshKey,
 }: OpportunitySectionProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +96,7 @@ export function OpportunitySection({
 
   useEffect(() => {
     fetchOpportunities();
-  }, [fetchOpportunities]);
+  }, [fetchOpportunities, refreshKey]);
 
   const handleCreate = async (
     content: string,

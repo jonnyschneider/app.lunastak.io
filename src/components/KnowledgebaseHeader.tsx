@@ -139,6 +139,8 @@ interface KnowledgebaseHeaderProps {
   knowledgeBusyMessage?: string | null
   /** Strategy-side busy message (generation, refresh) — shown on RHS */
   strategyBusyMessage?: string | null
+  /** Hide action links (e.g. demo mode) */
+  readOnly?: boolean
 }
 
 export function KnowledgebaseHeader({
@@ -159,6 +161,7 @@ export function KnowledgebaseHeader({
   onDimensionClick,
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
+  readOnly = false,
 }: KnowledgebaseHeaderProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
@@ -366,7 +369,7 @@ export function KnowledgebaseHeader({
           )}
 
           {/* View all fragments link */}
-          {fragmentCount > 0 && (
+          {fragmentCount > 0 && !readOnly && (
             <div className="flex justify-end">
               <Button
                 variant="ghost"

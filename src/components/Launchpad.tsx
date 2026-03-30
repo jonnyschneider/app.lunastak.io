@@ -3,14 +3,19 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, BarChart3 } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 // Demo project IDs — persistent read-only instances
 const DEMO_PROJECTS = [
-  { id: 'cmn8on3qq3i15by9k', name: 'Lunastak', description: 'Our own strategy — see how we use the Decision Stack' },
-  { id: 'cmn8anetr5kwlmbmq', name: 'Nike', description: 'From Acquired podcast — scale economies and brand power' },
-  { id: 'cmn8an6ivpa0xoehj', name: 'Costco', description: 'From Acquired podcast — scale economies shared' },
-  { id: 'cmn8anbaapaww1709', name: 'TSMC', description: 'From Acquired podcast — process power and counter-positioning' },
+  { id: 'cmn8anetr5kwlmbmq', name: 'Nike', logo: '/logo-nike.svg', logoHeight: 'h-14', description: 'Scale economies and brand power', episodeUrl: 'https://www.acquired.fm/episodes/nike' },
+  { id: 'cmn8an6ivpa0xoehj', name: 'Costco', logo: '/logo-costco.svg', logoHeight: 'h-14', description: 'Scale economies shared', episodeUrl: 'https://www.acquired.fm/episodes/costco' },
+  { id: 'cmn8anbaapaww1709', name: 'TSMC', logo: '/logo-tsmc.svg', logoHeight: 'h-14', description: 'Process power and counter-positioning', episodeUrl: 'https://www.acquired.fm/episodes/tsmc' },
 ]
 
 interface LaunchpadProps {
@@ -47,62 +52,90 @@ export function Launchpad({
       )}
 
       {/* Two onboarding paths */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Start a conversation */}
-        <Card className="group cursor-pointer hover:border-primary/40 transition-colors" onClick={onStartChat}>
-          <CardContent className="p-6 space-y-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-sm">Start a conversation</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Tell Luna about your business. In ~10 minutes, get your first draft strategy.
-            </p>
-            <Button size="sm" variant="ghost" className="px-0 text-primary group-hover:underline">
-              Start &rarr;
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+        {/* Talk to Luna */}
+        <div className="cursor-pointer rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors" onClick={onStartChat}>
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
+            <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Tell Luna about your business.<br />
+            In ~10 minutes, get your first draft strategy.
+          </p>
+          <span className="inline-flex items-center gap-1.5 text-sm text-primary">
+            <MessageSquare className="h-3.5 w-3.5" />
+            Start
+          </span>
+        </div>
 
         {/* Import a context bundle */}
-        <Card className="group cursor-pointer hover:border-primary/40 transition-colors" onClick={onImportBundle}>
-          <CardContent className="p-6 space-y-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Upload className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-sm">Import a context bundle</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Already prepared your strategic context in Claude, ChatGPT, or another tool? Import it.
-            </p>
-            <Button size="sm" variant="ghost" className="px-0 text-primary group-hover:underline">
-              Import &rarr;
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            <span className="bg-[hsl(var(--ds-teal))] text-white px-2 py-0.5">Import</span>{' '}
+            <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Prepared context in Claude, ChatGPT, or Gemini?<br />
+            Import it and generate a Decision Stack instantly.
+          </p>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="gap-1.5 text-primary">
+                <Upload className="h-3.5 w-3.5" />
+                Import
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={onImportBundle}>
+                <Upload className="h-3.5 w-3.5 mr-2" />
+                Import a bundle
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.open('https://lunastak.io/integrations', '_blank')}>
+                <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                Get the Decision Stack skill
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {/* Examples */}
-      <div>
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          See what&apos;s possible
-        </h3>
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+      {/* Acquired × Lunastak */}
+      <div className="text-center space-y-5">
+        {/* Banner */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg" />
+
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
+              Because every company has a <span className="font-semibold">story</span>.
+            </p>
+            <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
+              And every <span className="font-semibold">strategy</span> is a Decision Stack.
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Decision Stacks extracted from Acquired podcast episodes by Luna
+          </p>
+        </div>
+
+        <div className="grid gap-3 grid-cols-3 max-w-md mx-auto">
           {DEMO_PROJECTS.map((demo) => (
-            <Card
+            <div
               key={demo.id}
-              className="group cursor-pointer hover:border-primary/40 transition-colors"
+              className="group cursor-pointer rounded-lg px-4 py-2 space-y-1 hover:bg-muted/50 transition-colors"
               onClick={() => router.push(`/project/${demo.id}`)}
             >
-              <CardContent className="p-4 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-3.5 w-3.5 text-primary" />
-                  <h4 className="font-semibold text-sm">{demo.name}</h4>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {demo.description}
-                </p>
-              </CardContent>
-            </Card>
+              <div className="flex justify-center py-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={demo.logo} alt={demo.name} className={demo.logoHeight} />
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed text-center">
+                {demo.description}
+              </p>
+            </div>
           ))}
         </div>
       </div>

@@ -695,16 +695,21 @@ Objectives:
 Generate 3-5 strategic opportunities. Each opportunity must:
 - Map to one or more existing objectives (by ID)
 - Have a clear title and description (2-3 sentences)
-- Include ONE belief statement (what we think will happen)
-- Include 1-3 success indicators (how we'll know it's working)
+- Include exactly ONE success metric with a belief hypothesis
 
-IMPORTANT: Each success indicator must be concise — communicating intent, not forensic precision.
+The UI renders the belief as: "We believe [action] will [outcome]"
+So action and outcome must read naturally after those lead-in words. Keep each to 8-20 words.
+
+BAD action: "We believe systematizing cultural transmission through structured onboarding and manager development will preserve pricing discipline"
+GOOD action: "codifying the cultural playbook into manager onboarding"
+
+BAD outcome: "Store managers demonstrate consistent cultural fluency in member-first trade-offs, independent of direct mentorship"
+GOOD outcome: "preserve pricing discipline as the org scales beyond founder reach"
+
+Success metric fields must be concise — communicating intent, not forensic precision.
 - signal: ONE metric name (5-15 words). NOT a comma-separated list.
 - baseline: Current state in 5-15 words
 - target: Desired state in 5-15 words
-
-BAD signal: "Yield parity ratio, local talent retention rates, and supplier response time parity"
-GOOD signal: "Leading-edge yield at non-Taiwan fabs"
 
 Output format:
 <opportunities>
@@ -714,13 +719,12 @@ Output format:
     <objective_ids>obj-1, obj-2</objective_ids>
     <metrics>
       <metric>
-        <action>what we believe doing (one sentence)</action>
-        <outcome>what result we expect (one sentence)</outcome>
+        <action>completing phrase after "We believe" (8-20 words, no leading "We believe")</action>
+        <outcome>completing phrase after "will" (8-20 words, no leading "will")</outcome>
         <signal>one metric name</signal>
         <baseline>current state</baseline>
         <target>desired state</target>
       </metric>
-      <!-- 1-3 metrics per opportunity. Each metric is ONE signal, not a list. -->
     </metrics>
   </opportunity>
 </opportunities>`
