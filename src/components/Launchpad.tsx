@@ -72,7 +72,7 @@ export function Launchpad({
         {/* Import a context bundle */}
         <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
           <h3 className="text-sm font-bold uppercase tracking-wide">
-            <span className="bg-[hsl(var(--ds-teal))] text-white px-2 py-0.5">Import</span>{' '}
+            <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
             <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
