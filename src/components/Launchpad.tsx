@@ -63,10 +63,10 @@ export function Launchpad({
             Tell Luna about your business.<br />
             In ~10 minutes, get your first draft strategy.
           </p>
-          <span className="inline-flex items-center gap-1.5 text-sm text-primary">
+          <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={onStartChat}>
             <MessageSquare className="h-3.5 w-3.5" />
             Start
-          </span>
+          </Button>
         </div>
 
         {/* Import a context bundle */}
@@ -107,19 +107,17 @@ export function Launchpad({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg" />
 
-        <div className="space-y-2">
-          <div className="space-y-1">
-            <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
-              Because every company has a <span className="font-semibold">story</span>.
-            </p>
-            <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
-              And every <span className="font-semibold">strategy</span> is a Decision Stack.
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Decision Stacks extracted from Acquired podcast episodes by Luna
+        <div className="space-y-1">
+          <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
+            Because every company has a <span className="font-semibold">story</span>.
+          </p>
+          <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
+            And every <span className="font-semibold">strategy</span> is a Decision Stack.
           </p>
         </div>
+        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+          See how Luna extracts insight and creates a Decision Stack from <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Acquired podcast</a> transcripts by Ben Gilbert and David Rosenthal
+        </p>
 
         <div className="grid gap-3 grid-cols-3 max-w-md mx-auto">
           {DEMO_PROJECTS.map((demo) => (

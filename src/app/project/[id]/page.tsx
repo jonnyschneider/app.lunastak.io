@@ -826,6 +826,18 @@ export default function ProjectPage() {
                       <Clock className="h-4 w-4 mr-2" />
                       Version History
                     </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Acquired × Lunastak Examples</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => router.push('/project/cmn8anetr5kwlmbmq')}>
+                      Nike
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/project/cmn8an6ivpa0xoehj')}>
+                      Costco
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/project/cmn8anbaapaww1709')}>
+                      TSMC
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -1248,7 +1260,7 @@ export default function ProjectPage() {
 
               {/* Import CTA */}
               {!isDemo && (
-                <Card className="border-dashed">
+                <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-base">
@@ -1265,13 +1277,13 @@ export default function ProjectPage() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Prepare context in your favourite tool &rarr; Import a complete bundle into Luna. CLI skills and Agent tools available for major AI platforms.
                     </p>
-                    <div className="flex items-center gap-4 opacity-60">
+                    <div className="flex items-center gap-4">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-claude.svg" alt="Claude" className="h-8" />
+                      <img src="/logo-claude.svg" alt="Claude" className="h-16" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-gemini.svg" alt="Gemini" className="h-8" />
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-16" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-openai.svg" alt="OpenAI" className="h-8" />
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-16" />
                     </div>
                     <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
                       Learn more &rarr;
