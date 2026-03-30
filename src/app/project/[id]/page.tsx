@@ -64,6 +64,7 @@ import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
 import { Launchpad, TalkToLunaCard, ImportBundleCard } from '@/components/Launchpad'
+import { StatusBanner } from '@/components/StatusBanner'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
@@ -793,6 +794,8 @@ export default function ProjectPage() {
           <div className="w-6 shrink-0" />
         </div>
       )}
+      {/* Status banner for background tasks (non-demo) */}
+      {!isDemo && <StatusBanner projectId={projectId} />}
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Content — switched by activeTab (tabs + overflow are in header via HeaderContext) */}
         <div className="w-full">
@@ -882,18 +885,6 @@ export default function ProjectPage() {
                 onImportBundle={() => setImportDialogOpen(true)}
                 onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
               />
-            )}
-            {isRunning(projectId, 'generation') && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {getProgressLabel(projectId) || 'Drafting strategy...'}
-              </div>
-            )}
-            {isRunning(projectId, 'refresh') && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {getProgressLabel(projectId) || 'Refreshing strategy...'}
-              </div>
             )}
           </div>}
 
