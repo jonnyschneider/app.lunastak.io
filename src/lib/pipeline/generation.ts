@@ -781,7 +781,7 @@ export async function runOpportunityGeneration(
   // Call Claude
   const response = await createMessage({
     model,
-    max_tokens: 3000,
+    max_tokens: 6000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
   }, 'opportunity_generation')
