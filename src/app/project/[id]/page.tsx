@@ -1165,27 +1165,27 @@ export default function ProjectPage() {
                 <Card className="border-dashed">
                   <CardContent className="p-6 flex flex-col justify-center h-full">
                     <Package className="h-6 w-6 text-muted-foreground mb-3" />
-                    <h3 className="font-semibold text-sm mb-1">Connect your AI tools</h3>
-                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                      Connectors available for your favourite CLI (Claude Code, Codex) or Desktop Agent (Claude Desktop, Gemini, OpenAI).
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-1">
+                      Prepare context in your favourite tool &rarr; Import a complete bundle into Luna.
                     </p>
-                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                      Prepare your strategic context in any AI tool, export it, and bring it here.
+                    <p className="text-[10px] text-muted-foreground/70 mb-4">
+                      CLI skills and Agent tools available for major AI platforms.
                     </p>
-                    <div className="flex flex-col gap-2">
-                      <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="w-full">
-                          Learn more &rarr;
-                        </Button>
+                    <div className="flex items-center gap-3 mb-4 text-muted-foreground/50">
+                      <span className="text-xs font-semibold tracking-tight">Claude</span>
+                      <span className="text-xs font-semibold tracking-tight">Gemini</span>
+                      <span className="text-xs font-semibold tracking-tight">OpenAI</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                        Learn more &rarr;
                       </a>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-muted-foreground"
+                      <button
+                        className="text-xs text-muted-foreground hover:text-foreground"
                         onClick={() => setImportDialogOpen(true)}
                       >
                         Import a bundle
-                      </Button>
+                      </button>
                     </div>
                   </CardContent>
                 </Card>
