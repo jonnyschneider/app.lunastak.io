@@ -718,15 +718,14 @@ export default function ProjectPage() {
         {/* Content — switched by activeTab (tabs are in header via HeaderContext) */}
         <div className="w-full">
           {!isDemo && (
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end mb-2">
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button
-                      className="rounded-none rounded-r-lg border-0 border-l border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    <Button variant="outline" size="sm" className="h-8"
                       onClick={() => getStatsigClient()?.logEvent('overflow_menu_open', 'project-page', { projectId })}
                     >
                       <MoreHorizontal className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
                     <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
