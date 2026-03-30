@@ -234,7 +234,7 @@ export function AppLayout({
           {/* Logo */}
           <Link href={selectedProjectId ? `/project/${selectedProjectId}` : '/'} className="shrink-0 mr-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/lunastak-logo.svg" alt="Lunastak" className="h-9 w-auto" />
+            <img src="/lunastak-logo-mulberry.svg" alt="Lunastak" className="h-9 w-auto" />
           </Link>
 
           {/* Tab navigation slot (injected by pages via HeaderContext) */}
