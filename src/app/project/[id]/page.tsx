@@ -222,10 +222,7 @@ export default function ProjectPage() {
   } | null>(null)
   // Opportunity generation state
   const [isGeneratingOpportunities, setIsGeneratingOpportunities] = useState(false)
-  const [opportunityCoverageWarnings, setOpportunityCoverageWarnings] = useState<
-    { dimension: string; dimensionLabel: string; confidence: string; fragmentCount: number }[]
-  >([])
-  const [showCoverageWarning, setShowCoverageWarning] = useState(false)
+  const [opportunityRefreshKey, setOpportunityRefreshKey] = useState(0)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
   // Track if current upload is first content (set when upload starts, cleared on completion)
@@ -547,25 +544,7 @@ export default function ProjectPage() {
   }
 
   // Handle opportunity generation
-  const handleGenerateOpportunities = async (force = false) => {
-    if (!force) {
-      // Check coverage from existing syntheses
-      const thinDimensions = (projectData?.syntheses || [])
-        .filter(s => s.confidence === 'LOW' || s.fragmentCount < 3)
-        .map(s => ({
-          dimension: s.dimension,
-          dimensionLabel: s.dimension.replace(/_/g, ' ').toLowerCase(),
-          confidence: s.confidence,
-          fragmentCount: s.fragmentCount,
-        }))
-      if (thinDimensions.length > 0) {
-        setOpportunityCoverageWarnings(thinDimensions)
-        setShowCoverageWarning(true)
-        return
-      }
-    }
-
-    setShowCoverageWarning(false)
+  const handleGenerateOpportunities = async () => {
     setIsGeneratingOpportunities(true)
     try {
       const res = await fetch(`/api/project/${projectId}/generate-opportunities`, {
@@ -582,17 +561,7 @@ export default function ProjectPage() {
               clearInterval(pollInterval)
               setIsGeneratingOpportunities(false)
               fetchProjectData()
-              // Re-fetch strategy data to get updated opportunities
-              const traceId = projectData?.strategyOutputs?.[0]?.id
-              if (traceId) {
-                const traceRes = await fetch(`/api/trace/${traceId}`)
-                if (traceRes.ok) {
-                  const traceData = await traceRes.json()
-                  if (traceData?.output) {
-                    setStrategyData(prev => prev ? { ...prev, strategy: traceData.output } : null)
-                  }
-                }
-              }
+              setOpportunityRefreshKey(k => k + 1)
             }
           }
         }, 3000)
@@ -884,6 +853,7 @@ export default function ProjectPage() {
                   }}
                   readOnly={isDemo}
                   onDraftOpportunities={!isDemo ? () => handleGenerateOpportunities() : undefined}
+                  opportunityRefreshKey={opportunityRefreshKey}
                 />
               </>
             ) : (
@@ -1036,7 +1006,7 @@ export default function ProjectPage() {
                       Chats
                     </CardTitle>
                     {!isDemo && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
                         setChatInitialQuestion(undefined)
                         setChatDeepDiveId(undefined)
                         setChatGapExploration(undefined)
@@ -1127,7 +1097,7 @@ export default function ProjectPage() {
                       Documents
                     </CardTitle>
                     {!isDemo && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
                         setUploadDeepDiveId(undefined)
                         setUploadDialogOpen(true)
                       }}>
