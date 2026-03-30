@@ -779,28 +779,39 @@ export default function ProjectPage() {
                     <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => {
                       getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
-                      setRefreshStrategyDialogOpen(true)
+                      if (hasStrategy) {
+                        setRefreshStrategyDialogOpen(true)
+                      } else {
+                        handleGenerateStrategy()
+                      }
                     }}>
                       <RefreshCw className="h-4 w-4 mr-2" />
                       <div>
-                        <div>Update Direction</div>
-                        <div className="text-[10px] text-muted-foreground">Update V/S/O from latest context</div>
+                        <div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {hasStrategy ? 'Update V/S/O from latest context' : 'Create your first Decision Stack'}
+                        </div>
                       </div>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
-                      handleGenerateOpportunities()
-                    }}>
+                    <DropdownMenuItem
+                      disabled={!hasStrategy}
+                      onClick={() => {
+                        getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
+                        handleGenerateOpportunities()
+                      }}
+                    >
                       <Target className="h-4 w-4 mr-2" />
                       <div>
                         <div>Draft Opportunities</div>
-                        <div className="text-[10px] text-muted-foreground">Create initiatives for your objectives</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {hasStrategy ? 'Create initiatives for your objectives' : 'Generate strategy first'}
+                        </div>
                       </div>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={async () => {
+                    <DropdownMenuItem disabled={!hasStrategy} onClick={async () => {
                       getStatsigClient()?.logEvent('cta_export_brief', 'overflow-menu', { projectId })
                       const res = await fetch(`/api/project/${projectId}/export-brief`)
                       if (res.ok) {
