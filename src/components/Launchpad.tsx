@@ -59,7 +59,7 @@ export function Launchpad({
             <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
             <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
           </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-[13px] text-foreground/70 leading-relaxed">
             Tell Luna about your business.<br />
             In ~10 minutes, get your first draft strategy.
           </p>
@@ -75,7 +75,7 @@ export function Launchpad({
             <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
             <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
           </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-[13px] text-foreground/70 leading-relaxed">
             Prepared context in Claude, ChatGPT, or Gemini?<br />
             Import it and generate a Decision Stack instantly.
           </p>
@@ -127,7 +127,7 @@ export function Launchpad({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={demo.logo} alt={demo.name} className={demo.logoHeight} />
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed text-center">
+              <p className="text-[13px] text-foreground/70 leading-relaxed text-center">
                 {demo.description}
               </p>
             </div>
