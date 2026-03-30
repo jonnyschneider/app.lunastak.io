@@ -21,6 +21,8 @@ interface StrategyDisplayProps {
   projectId: string;
   onUpdate?: (strategy: StrategyStatements) => void;
   readOnly?: boolean;
+  onDraftOpportunities?: () => void;
+  opportunityRefreshKey?: number;
 }
 
 type EditingCard = {
@@ -29,7 +31,7 @@ type EditingCard = {
   isNew?: boolean
 } | null
 
-export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate, readOnly = false }: StrategyDisplayProps) {
+export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate, readOnly = false, onDraftOpportunities, opportunityRefreshKey }: StrategyDisplayProps) {
   const [editingCard, setEditingCard] = useState<EditingCard>(null)
 
   const startEditing = useCallback((type: NonNullable<EditingCard>['type'], id?: string) => {
@@ -465,6 +467,8 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               onStartEditing={(id: string) => startEditing('opportunity', id)}
               onStopEditing={stopEditing}
               readOnly={readOnly}
+              onDraftWithLuna={!readOnly ? onDraftOpportunities : undefined}
+              refreshKey={opportunityRefreshKey}
             />
           </div>
 

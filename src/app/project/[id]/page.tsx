@@ -5,19 +5,31 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { getStatsigClient } from '@/components/StatsigProvider'
 import { AppLayout } from '@/components/layout/app-layout'
-import { FirstTimeEmptyState } from '@/components/FirstTimeEmptyState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   FileText,
   MessageSquare,
-  Plus,
   Upload,
   Loader2,
   Star,
-  NotebookPen,
   CornerDownRight,
+  MoreHorizontal,
+  RefreshCw,
+  Target,
+  Download,
+  Clock,
+  Package,
+  Plus,
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
@@ -33,6 +45,7 @@ import {
   ItemSeparator,
 } from '@/components/ui/item'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   useProUpgradeFlow,
   ProFeatureInterstitial,
@@ -45,8 +58,13 @@ import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
-import { GoToStrategyCard } from '@/components/GoToStrategyCard'
-import { StructuredProvocation } from '@/lib/types'
+import StrategyDisplay from '@/components/StrategyDisplay'
+import { OpportunitySection } from '@/components/OpportunitySection'
+import { Launchpad } from '@/components/Launchpad'
+import { ImportBundleDialog } from '@/components/ImportBundleDialog'
+import { VersionHistorySheet } from '@/components/VersionHistorySheet'
+import { FragmentExplorer } from '@/components/FragmentExplorer'
+import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -82,6 +100,8 @@ interface ConversationSummary {
   starredAt: string | null
   deepDiveId: string | null
   firstMessageContent: string | null
+  originType: string | null
+  originText: string | null
 }
 
 // Format date as "13 Jan '26"
@@ -105,6 +125,7 @@ interface DocumentSummary {
 interface StrategyOutputSummary {
   id: string
   createdAt: string
+  version?: number
 }
 
 interface DimensionalSynthesis {
@@ -130,6 +151,7 @@ interface DeepDiveSummary {
 interface ProjectData {
   id: string
   name: string
+  isDemo?: boolean
   stats: ProjectStats
   conversations: ConversationSummary[]
   documents: DocumentSummary[]
@@ -153,7 +175,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { hasActiveGeneration, isRunning, getProgressLabel } = useGenerationStatusContext()
+  const { hasActiveGeneration, isRunning, getProgressLabel, startGeneration } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -166,6 +188,9 @@ export default function ProjectPage() {
   const [chatGapExploration, setChatGapExploration] = useState<GapExploration | undefined>()
   const [chatResumeConversationId, setChatResumeConversationId] = useState<string | undefined>()
   const [chatViewOnly, setChatViewOnly] = useState(false)
+  const [chatOrigin, setChatOrigin] = useState<{ type: string; text: string } | undefined>()
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
 
   // Expand/collapse state for sections
@@ -176,6 +201,30 @@ export default function ProjectPage() {
   const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
   const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
+  // Main tab state (persisted per project)
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`project-${projectId}-tab`)
+      // Migrate old three-tab values
+      if (stored === 'direction' || stored === 'action') return 'decision-stack'
+      if (stored === 'knowledge') return 'knowledgebase'
+      return stored || 'decision-stack'
+    }
+    return 'decision-stack'
+  })
+
+  useEffect(() => {
+    localStorage.setItem(`project-${projectId}-tab`, activeTab)
+  }, [activeTab, projectId])
+  // Strategy data for Direction tab
+  const [strategyData, setStrategyData] = useState<{
+    strategy: StrategyStatements
+    conversationId: string
+    traceId: string
+  } | null>(null)
+  // Opportunity generation state
+  const [isGeneratingOpportunities, setIsGeneratingOpportunities] = useState(false)
+  const [opportunityRefreshKey, setOpportunityRefreshKey] = useState(0)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
   // Track if current upload is first content (set when upload starts, cleared on completion)
@@ -233,6 +282,7 @@ export default function ProjectPage() {
 
   // Check if an item is dismissed
   const isItemDismissed = (itemType: string, itemContent: string): boolean => {
+    if (!itemContent) return false
     const key = itemContent.slice(0, 255)
     return dismissedItems.has(`${itemType}:${key}`)
   }
@@ -279,6 +329,27 @@ export default function ProjectPage() {
     fetchProjectData()
     fetchDismissals()
   }, [status, projectId])
+
+  // Fetch strategy data when strategyOutputs change
+  useEffect(() => {
+    const traceId = projectData?.strategyOutputs?.[0]?.id
+    if (!traceId) {
+      setStrategyData(null)
+      return
+    }
+    fetch(`/api/trace/${traceId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.output) {
+          setStrategyData({
+            strategy: data.output,
+            conversationId: data.conversationId,
+            traceId,
+          })
+        }
+      })
+      .catch(err => console.error('Failed to fetch strategy:', err))
+  }, [projectData?.strategyOutputs])
 
   // Listen for strategySaved event (fired after extraction starts generation)
   useEffect(() => {
@@ -446,28 +517,6 @@ export default function ProjectPage() {
     )
   }
 
-  // Show empty state when project has no content
-  const isEmpty =
-    (projectData?.stats?.fragmentCount ?? 0) === 0 &&
-    (projectData?.conversations?.length ?? 0) === 0
-
-  // Check for incomplete initial conversation (started first-time flow but didn't finish)
-  const incompleteInitialConvo = projectData?.conversations?.find(
-    (c: { isInitialConversation?: boolean; status: string }) => c.isInitialConversation && c.status === 'in_progress'
-  )
-
-  if ((isEmpty || incompleteInitialConvo) && projectData) {
-    return (
-      <AppLayout>
-        <FirstTimeEmptyState
-          projectId={projectId}
-          resumeConversationId={incompleteInitialConvo?.id}
-          onUploadComplete={() => fetchProjectData()}
-        />
-      </AppLayout>
-    )
-  }
-
   const stats = projectData?.stats || {
     fragmentCount: 0,
     conversationCount: 0,
@@ -478,147 +527,585 @@ export default function ProjectPage() {
     fragmentsSinceSummary: 0,
   }
 
+  // Handle strategy generation from knowledge (no conversation required)
+  const handleGenerateStrategy = async () => {
+    try {
+      const res = await fetch(`/api/project/${projectId}/generate-strategy`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        startGeneration(data.generationId, projectId)
+      } else {
+        const err = await res.json()
+        console.error('[GenerateStrategy] Failed:', err.error)
+      }
+    } catch (error) {
+      console.error('[GenerateStrategy] Error:', error)
+    }
+  }
+
+  // Handle opportunity generation
+  const handleGenerateOpportunities = async () => {
+    setIsGeneratingOpportunities(true)
+    try {
+      const res = await fetch(`/api/project/${projectId}/generate-opportunities`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // Poll for completion using existing generation status infrastructure
+        const pollInterval = setInterval(async () => {
+          const statusRes = await fetch(`/api/generation-status/${data.generationId}`)
+          if (statusRes.ok) {
+            const statusData = await statusRes.json()
+            if (statusData.status === 'complete' || statusData.status === 'failed') {
+              clearInterval(pollInterval)
+              setIsGeneratingOpportunities(false)
+              fetchProjectData()
+              setOpportunityRefreshKey(k => k + 1)
+            }
+          }
+        }, 3000)
+      }
+    } catch (err) {
+      console.error('Failed to generate opportunities:', err)
+      setIsGeneratingOpportunities(false)
+    }
+  }
+
+  // Helpers for conversation rendering (used in Knowledge tab)
+  const analysedConversations = projectData?.conversations?.filter(
+    c => c.status === 'extracted' || c.fragmentCount > 0
+  ) || []
+  const inProgressConversations = projectData?.conversations?.filter(
+    c => c.status === 'in_progress'
+  ) || []
+  const initialConversationId = projectData?.conversations
+    ?.filter(c => !c.deepDiveId && c.status === 'extracted')
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id
+
+  const renderConversationItem = (conv: ConversationSummary, index: number) => {
+    const isInitialConversation = conv.id === initialConversationId
+    const deepDive = conv.deepDiveId
+      ? projectData?.deepDives?.find(dd => dd.id === conv.deepDiveId)
+      : null
+    const handleClick = () => {
+      setChatInitialQuestion(undefined)
+      setChatDeepDiveId(undefined)
+      setChatGapExploration(undefined)
+      setChatResumeConversationId(conv.id)
+      setChatViewOnly(isInitialConversation)
+      setChatSheetOpen(true)
+    }
+
+    return (
+      <React.Fragment key={conv.id}>
+        {index > 0 && <ItemSeparator />}
+        <Item
+          size="sm"
+          className="cursor-pointer hover:bg-muted/50"
+          onClick={handleClick}
+        >
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              toggleConversationStar(conv.id, conv.starred)
+            }}
+            className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
+            title={conv.starred ? 'Unstar' : 'Star'}
+          >
+            <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
+          </button>
+          <ItemContent>
+            <ItemTitle className="text-xs truncate">
+              {conv.title || 'Untitled conversation'}
+            </ItemTitle>
+            <ItemDescription className="text-xs">
+              {formatShortDate(conv.createdAt)}
+            </ItemDescription>
+            {deepDive && (
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                <CornerDownRight className="h-2.5 w-2.5" />
+                <span>Part of:</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    openDeepDiveSheet(deepDive.id)
+                  }}
+                  className="bg-muted border border-border rounded-full px-1.5 py-0.5 transition-colors group-hover/item:bg-primary group-hover/item:text-white group-hover/item:border-primary"
+                >
+                  {deepDive.topic.length > 20 ? `${deepDive.topic.slice(0, 20)}…` : deepDive.topic}
+                </button>
+              </div>
+            )}
+          </ItemContent>
+        </Item>
+      </React.Fragment>
+    )
+  }
+
+  const hasStrategy = (projectData?.strategyOutputs?.length ?? 0) > 0
+  const opportunityCount = strategyData?.strategy?.opportunities?.length ?? 0
+
+  const isDemo = projectData?.isDemo === true
+
   return (
     <AppLayout>
-      <div className="container mx-auto px-6 py-8 space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Your Thinking
-          </h1>
-          <p className="text-muted-foreground">
-            Capture ideas, explore questions, and refine your thinking.
-          </p>
-        </div>
-
-        {/* Knowledgebase Header */}
-        <KnowledgebaseHeader
-          fragmentCount={stats.fragmentCount}
-          chatCount={stats.conversationCount}
-          documentCount={stats.documentCount}
-          strategyIsStale={stats.strategyIsStale}
-          fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
-          fragmentsSinceSummary={stats.fragmentsSinceSummary}
-          knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
-          knowledgeSummary={projectData?.knowledgeSummary || null}
-          dimensionalCoverage={stats.dimensionalCoverage}
-          syntheses={projectData?.syntheses || []}
-          latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
-          onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
-          onChatClick={() => triggerUpgrade('knowledge-chat')}
-          onEditClick={() => triggerUpgrade('knowledge-edit')}
-          onDimensionClick={() => { /* dimension clicks tracked via analytics in component */ }}
-          knowledgeBusyMessage={
-            isRunning(projectId, 'extraction') ? 'processing insights...'
-            : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
-            : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
-            : null
-          }
-          strategyBusyMessage={
-            isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
-            : isRunning(projectId, 'refresh') ? (getProgressLabel(projectId) || 'refreshing strategy...')
-            : null
-          }
-        />
-
-        {/* Row 1: Strategy + Chats */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Strategy CTA */}
-          <GoToStrategyCard
-            latestTraceId={projectData?.strategyOutputs?.[0]?.id ?? null}
-            projectId={projectId}
-          />
-
-          {/* Chats Column */}
-          <Card data-section="chats">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MessageSquare className="h-4 w-4" />
-                Chats
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Your conversations with Luna
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projectData?.conversations && projectData.conversations.length > 0 ? (
-                (() => {
-                  const analysedConversations = projectData.conversations.filter(
-                    c => c.status === 'extracted' || c.fragmentCount > 0
-                  )
-                  const inProgressConversations = projectData.conversations.filter(
-                    c => c.status === 'in_progress'
-                  )
-
-                  // Find the initial conversation (oldest extracted conversation without deepDiveId)
-                  // This is the original strategy-generating conversation - view only
-                  const initialConversationId = projectData.conversations
-                    .filter(c => !c.deepDiveId && c.status === 'extracted')
-                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.id
-
-                  const renderConversationItem = (conv: ConversationSummary, index: number) => {
-                    const isInitialConversation = conv.id === initialConversationId
-                    const deepDive = conv.deepDiveId
-                      ? projectData?.deepDives?.find(dd => dd.id === conv.deepDiveId)
-                      : null
-                    const handleClick = () => {
+      {/* Demo banner */}
+      {isDemo && (() => {
+        const episodeUrls: Record<string, string> = {
+          'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
+          'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
+          'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
+        }
+        const episodeUrl = episodeUrls[projectId]
+        return (
+          <div className="bg-[hsl(307,17%,31%)] border-b border-[hsl(307,17%,40%)] px-6 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-white">
+                Example
+              </span>
+              <span className="text-sm text-white/70">
+                {projectData?.name}
+              </span>
+              {episodeUrl && (
+                <a
+                  href={episodeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-white/50 hover:text-white/80 underline underline-offset-2 transition-colors"
+                >
+                  Listen on Acquired.fm &rarr;
+                </a>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white/70 hover:text-white hover:bg-white/10"
+              onClick={() => router.push('/')}
+            >
+              &larr; Back to my project
+            </Button>
+          </div>
+        )
+      })()}
+      <div className="container mx-auto px-6 py-8 space-y-6">
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => {
+          setActiveTab(v)
+          getStatsigClient()?.logEvent('tab_switch', v, { projectId })
+        }} className="w-full">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 -mt-2 mb-2">
+            {/* Button group: DS | KB | ⋯ */}
+            <TabsList className="inline-flex h-auto p-0 rounded-lg border border-input bg-transparent">
+              <TabsTrigger
+                value="decision-stack"
+                className="rounded-none rounded-l-lg border-0 px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
+              >
+                Decision Stack
+              </TabsTrigger>
+              <TabsTrigger
+                value="knowledgebase"
+                className="rounded-none border-0 border-l border-input px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:hover:bg-muted transition-colors"
+              >
+                Knowledgebase
+                {stats.fragmentCount > 0 && (
+                  <span className="ml-1.5 text-xs opacity-70">
+                    {stats.fragmentCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              {!isDemo && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="rounded-none rounded-r-lg border-0 border-l border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
+                      onClick={() => getStatsigClient()?.logEvent('overflow_menu_open', 'project-page', { projectId })}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_new_chat', 'overflow-menu', { projectId })
                       setChatInitialQuestion(undefined)
                       setChatDeepDiveId(undefined)
                       setChatGapExploration(undefined)
-                      setChatResumeConversationId(conv.id)
-                      setChatViewOnly(isInitialConversation)
+                      setChatResumeConversationId(undefined)
+                      setChatViewOnly(false)
                       setChatSheetOpen(true)
-                    }
+                    }}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      New Chat
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_upload_doc', 'overflow-menu', { projectId })
+                      setUploadDeepDiveId(undefined)
+                      setUploadDialogOpen(true)
+                    }}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Document
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_import_bundle', 'overflow-menu', { projectId })
+                      setImportDialogOpen(true)
+                    }}>
+                      <Package className="h-4 w-4 mr-2" />
+                      Import Context Bundle
+                    </DropdownMenuItem>
+                    {stats.fragmentCount > 0 && (
+                      <DropdownMenuItem onClick={() => router.push(`/project/${projectId}/fragments`)}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        View all {stats.fragmentCount} fragments
+                      </DropdownMenuItem>
+                    )}
 
-                    return (
-                      <React.Fragment key={conv.id}>
-                        {index > 0 && <ItemSeparator />}
-                        <Item
-                          size="sm"
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={handleClick}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              toggleConversationStar(conv.id, conv.starred)
-                            }}
-                            className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
-                            title={conv.starred ? 'Unstar' : 'Star'}
-                          >
-                            <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
-                          </button>
-                          <ItemContent>
-                            <ItemTitle className="text-xs truncate">
-                              {conv.title || 'Untitled conversation'}
-                            </ItemTitle>
-                            <ItemDescription className="text-xs">
-                              {formatShortDate(conv.createdAt)}
-                            </ItemDescription>
-                            {deepDive && (
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
-                                <CornerDownRight className="h-2.5 w-2.5" />
-                                <span>Part of:</span>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    openDeepDiveSheet(deepDive.id)
-                                  }}
-                                  className="bg-muted border border-border rounded-full px-1.5 py-0.5 transition-colors group-hover/item:bg-primary group-hover/item:text-white group-hover/item:border-primary"
-                                >
-                                  {deepDive.topic.length > 20 ? `${deepDive.topic.slice(0, 20)}…` : deepDive.topic}
-                                </button>
-                              </div>
-                            )}
-                          </ItemContent>
-                        </Item>
-                      </React.Fragment>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      disabled={!hasStrategy && (stats.fragmentCount ?? 0) === 0}
+                      onClick={() => {
+                        getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
+                        if (hasStrategy) {
+                          setRefreshStrategyDialogOpen(true)
+                        } else {
+                          handleGenerateStrategy()
+                        }
+                      }}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <div>
+                        <div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {hasStrategy ? 'Update V/S/O from latest context' : 'Create your first Decision Stack'}
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!hasStrategy}
+                      onClick={() => {
+                        getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
+                        handleGenerateOpportunities()
+                      }}
+                    >
+                      <Target className="h-4 w-4 mr-2" />
+                      <div>
+                        <div>Draft Opportunities</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {hasStrategy ? 'Create initiatives for your objectives' : 'Generate strategy first'}
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
+                    <DropdownMenuItem disabled={!hasStrategy} onClick={async () => {
+                      getStatsigClient()?.logEvent('cta_export_brief', 'overflow-menu', { projectId })
+                      const res = await fetch(`/api/project/${projectId}/export-brief`)
+                      if (res.ok) {
+                        const blob = await res.blob()
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = 'strategic-brief.md'
+                        a.click()
+                        URL.revokeObjectURL(url)
+                      }
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Strategic Brief
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      getStatsigClient()?.logEvent('cta_version_history', 'overflow-menu', { projectId })
+                      setVersionHistoryOpen(true)
+                    }}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Version History
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </TabsList>
+          </div>
+
+          {/* Decision Stack Tab */}
+          <TabsContent value="decision-stack" className="space-y-6">
+            {strategyData ? (
+              <>
+                {/* Version stamp + Decision Stack branding */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  {isDemo ? (
+                    <span className="italic text-muted-foreground">
+                      Extracted and generated by Luna from podcast transcript
+                    </span>
+                  ) : (
+                    <>
+                      <span>
+                        v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
+                          projectData?.strategyOutputs?.[0]?.createdAt
+                            ? new Date(projectData.strategyOutputs[0].createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                            : ''
+                        }
+                      </span>
+                      <button
+                        onClick={() => setVersionHistoryOpen(true)}
+                        className="font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        view past revisions &rarr;
+                      </button>
+                    </>
+                  )}
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button>
+                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-7" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="end" className="w-64 text-xs space-y-2">
+                    <p className="text-muted-foreground">
+                      <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">The Decision Stack</a> by <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Martin Eriksson</a>. Used with permission.
+                    </p>
+                  </PopoverContent>
+                </Popover>
+                </div>
+                <StrategyDisplay
+                  strategy={strategyData.strategy}
+                  conversationId={strategyData.conversationId}
+                  traceId={strategyData.traceId}
+                  projectId={projectId}
+                  onUpdate={isDemo ? undefined : (updated) => {
+                    setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
+                  }}
+                  readOnly={isDemo}
+                  onDraftOpportunities={!isDemo ? () => handleGenerateOpportunities() : undefined}
+                  opportunityRefreshKey={opportunityRefreshKey}
+                />
+              </>
+            ) : (
+              <Launchpad
+                projectId={projectId}
+                fragmentCount={stats.fragmentCount ?? 0}
+                onStartChat={() => {
+                  setChatInitialQuestion(undefined)
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }}
+                onImportBundle={() => setImportDialogOpen(true)}
+                onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
+              />
+            )}
+            {isRunning(projectId, 'generation') && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {getProgressLabel(projectId) || 'Drafting strategy...'}
+              </div>
+            )}
+            {isRunning(projectId, 'refresh') && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {getProgressLabel(projectId) || 'Refreshing strategy...'}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Knowledgebase Tab */}
+          <TabsContent value="knowledgebase" className="space-y-6">
+            {isDemo ? (
+            <>
+            {/* Demo: simplified KB — coverage grid + inline fragments */}
+            <KnowledgebaseHeader
+              fragmentCount={stats.fragmentCount}
+              chatCount={0}
+              documentCount={0}
+              strategyIsStale={false}
+              fragmentsSinceStrategy={0}
+              fragmentsSinceSummary={0}
+              knowledgeUpdatedAt={null}
+              knowledgeSummary={projectData?.knowledgeSummary || null}
+              dimensionalCoverage={stats.dimensionalCoverage}
+              syntheses={projectData?.syntheses || []}
+              latestStrategyTraceId={null}
+              onRefreshClick={() => {}}
+              onChatClick={() => {}}
+              onEditClick={() => {}}
+              onDimensionClick={() => {}}
+              knowledgeBusyMessage={null}
+              strategyBusyMessage={null}
+              readOnly
+            />
+            <FragmentExplorer
+              projectId={projectId}
+            />
+            </>
+            ) : (
+            <>
+            {/* Empty state when no content at all */}
+            {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
+              <div className="py-8">
+                <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
+                <p className="text-sm text-muted-foreground text-center mb-6">Start a conversation with Luna, or import a context bundle to get started.</p>
+                <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+                  {/* Talk to Luna */}
+                  <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+                    <h3 className="text-sm font-bold uppercase tracking-wide">
+                      <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
+                      <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Tell Luna about your business.<br />
+                      In ~10 minutes, get your first draft strategy.
+                    </p>
+                    <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={() => {
+                      setChatInitialQuestion(undefined)
+                      setChatDeepDiveId(undefined)
+                      setChatGapExploration(undefined)
+                      setChatResumeConversationId(undefined)
+                      setChatViewOnly(false)
+                      setChatSheetOpen(true)
+                    }}>
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      Start
+                    </Button>
+                  </div>
+
+                  {/* Import a context bundle */}
+                  <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+                    <h3 className="text-sm font-bold uppercase tracking-wide">
+                      <span className="bg-[hsl(var(--ds-teal))] text-white px-2 py-0.5">Import</span>{' '}
+                      <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Prepared context in Claude, ChatGPT, or Gemini?<br />
+                      Import it and generate a Decision Stack instantly.
+                    </p>
+                    <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={() => setImportDialogOpen(true)}>
+                      <Upload className="h-3.5 w-3.5" />
+                      Import
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+            <>
+            {/* Coverage hero */}
+            <KnowledgebaseHeader
+              fragmentCount={stats.fragmentCount}
+              chatCount={stats.conversationCount}
+              documentCount={stats.documentCount}
+              strategyIsStale={stats.strategyIsStale}
+              fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+              fragmentsSinceSummary={stats.fragmentsSinceSummary}
+              knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
+              knowledgeSummary={projectData?.knowledgeSummary || null}
+              dimensionalCoverage={stats.dimensionalCoverage}
+              syntheses={projectData?.syntheses || []}
+              latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
+              onRefreshClick={() => {
+                if (hasStrategy) {
+                  setRefreshStrategyDialogOpen(true)
+                } else {
+                  handleGenerateStrategy()
+                }
+              }}
+              onChatClick={() => triggerUpgrade('knowledge-chat')}
+              onEditClick={() => triggerUpgrade('knowledge-edit')}
+              onDimensionClick={(dimension?: string) => {
+                router.push(`/project/${projectId}/fragments${dimension ? `?dimension=${dimension}` : ''}`)
+              }}
+              knowledgeBusyMessage={
+                isRunning(projectId, 'extraction') ? 'processing insights...'
+                : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
+                : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
+                : null
+              }
+              strategyBusyMessage={
+                isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
+                : isRunning(projectId, 'refresh') ? (getProgressLabel(projectId) || 'refreshing strategy...')
+                : null
+              }
+            />
+
+            {/* Explore Next + Conversations side by side */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <ExploreNextSection
+              deepDives={projectData?.deepDives || []}
+              provocations={projectData?.suggestedQuestions || []}
+              syntheses={projectData?.syntheses || []}
+              isItemDismissed={isItemDismissed}
+              onDismissItem={dismissItem}
+              onItemClick={(item: ExploreItem) => {
+                if (item.type === 'deep-dive') {
+                  const ddId = item.id.replace('dd-', '')
+                  openDeepDiveSheet(ddId)
+                } else if (item.type === 'provocation') {
+                  // Prefer originText match (new conversations), fall back to firstMessageContent (legacy)
+                  const existingConvo = projectData?.conversations.find(
+                    c => c.status === 'in_progress' && (
+                      c.originText === item.description || c.firstMessageContent === item.description
                     )
+                  )
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  setChatOrigin({ type: 'provocation', text: item.description })
+                  if (existingConvo) {
+                    setChatInitialQuestion(undefined)
+                    setChatResumeConversationId(existingConvo.id)
+                  } else {
+                    setChatInitialQuestion(item.description)
+                    setChatResumeConversationId(undefined)
                   }
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                } else if (item.type === 'gap') {
+                  setChatDeepDiveId(undefined)
+                  setChatInitialQuestion(undefined)
+                  setChatOrigin({ type: 'gap', text: item.description })
+                  setChatGapExploration({
+                    dimension: item.dimension || '',
+                    summary: item.description,
+                  })
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }
+              }}
+              onAddDeepDive={() => setAddDeepDiveOpen(true)}
+            />
 
-                  return (
+              {/* Conversations */}
+              <Card data-section="chats">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <MessageSquare className="h-4 w-4" />
+                      Chats
+                    </CardTitle>
+                    {!isDemo && (
+                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
+                        setChatInitialQuestion(undefined)
+                        setChatDeepDiveId(undefined)
+                        setChatGapExploration(undefined)
+                        setChatResumeConversationId(undefined)
+                        setChatViewOnly(false)
+                        setChatSheetOpen(true)
+                      }}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        New
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {projectData?.conversations && projectData.conversations.length > 0 ? (
                     <Tabs
                       value={chatsActiveTab ?? (inProgressConversations.length > 0 ? 'in-progress' : 'analysed')}
                       onValueChange={setChatsActiveTab}
@@ -673,179 +1160,133 @@ export default function ProjectPage() {
                         )}
                       </TabsContent>
                     </Tabs>
-                  )
-                })()
-              ) : (
-                <div className="text-center py-4 px-6 text-muted-foreground">
-                  <MessageSquare className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                  <p className="text-xs">No conversations yet</p>
-                </div>
+                  ) : (
+                    <div className="text-center py-4 px-6 text-muted-foreground">
+                      <MessageSquare className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs">No conversations yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+            </div>
+
+            {/* Documents + Import CTA side by side */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Documents */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FileText className="h-4 w-4" />
+                      Documents
+                    </CardTitle>
+                    {!isDemo && (
+                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
+                        setUploadDeepDiveId(undefined)
+                        setUploadDialogOpen(true)
+                      }}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Upload
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {projectData?.documents && projectData.documents.length > 0 ? (
+                    (() => {
+                      const INPUT_LIMIT = 10
+                      const allDocs = projectData.documents
+                      const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
+                      const hasMore = allDocs.length > INPUT_LIMIT
+
+                      return (
+                        <ItemGroup>
+                          {visibleDocs.map((doc, index) => (
+                            <React.Fragment key={doc.id}>
+                              {index > 0 && <ItemSeparator />}
+                              <Item size="sm">
+                                <ItemContent>
+                                  <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
+                                  <ItemDescription className="text-xs">
+                                    {doc.status === 'complete'
+                                      ? `${doc.fragmentCount} fragments`
+                                      : doc.status === 'processing'
+                                        ? 'Processing...'
+                                        : doc.status}
+                                  </ItemDescription>
+                                </ItemContent>
+                              </Item>
+                            </React.Fragment>
+                          ))}
+                          {hasMore && (
+                            <>
+                              <ItemSeparator />
+                              <div className="px-4 py-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-muted-foreground"
+                                  onClick={() => setShowAllInputs(!showAllInputs)}
+                                >
+                                  {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </ItemGroup>
+                      )
+                    })()
+                  ) : (
+                    <div className="text-center py-4 px-6 text-muted-foreground">
+                      <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs">No documents yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Import CTA */}
+              {!isDemo && (
+                <Card className="border-dashed">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Package className="h-4 w-4" />
+                        Integrations
+                      </CardTitle>
+                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => setImportDialogOpen(true)}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Import context
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-4">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Prepare context in your favourite tool &rarr; Import a complete bundle into Luna. CLI skills and Agent tools available for major AI platforms.
+                    </p>
+                    <div className="flex items-center gap-4 opacity-60">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-claude.svg" alt="Claude" className="h-8" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-8" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-8" />
+                    </div>
+                    <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
+                      Learn more &rarr;
+                    </a>
+                  </CardContent>
+                </Card>
               )}
-              <div className="p-4 pt-3 border-t">
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    getStatsigClient()?.logEvent('cta_new_chat', 'project-page', { projectId })
-                    setChatInitialQuestion(undefined)
-                    setChatDeepDiveId(undefined)
-                    setChatGapExploration(undefined)
-                    setChatResumeConversationId(undefined)
-                    setChatViewOnly(false)
-                    setChatSheetOpen(true)
-                  }}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  New Chat
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            </>
+            )}
+            </>
+            )}
+          </TabsContent>
 
-        {/* Row 2: Explore Next + Documents */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <ExploreNextSection
-            deepDives={projectData?.deepDives || []}
-            provocations={projectData?.suggestedQuestions || []}
-            syntheses={projectData?.syntheses || []}
-            isItemDismissed={isItemDismissed}
-            onDismissItem={dismissItem}
-            onItemClick={(item: ExploreItem) => {
-              if (item.type === 'deep-dive') {
-                const ddId = item.id.replace('dd-', '')
-                openDeepDiveSheet(ddId)
-              } else if (item.type === 'provocation') {
-                // TECH DEBT: Client-side match — provocations should be tracked via
-                // a schema-level `originText` field on Conversation. This matching
-                // works because suggestedQuestion is used verbatim as the first
-                // assistant message, but it's fragile. See docs/luna-fix.md.
-                const existingConvo = projectData?.conversations.find(
-                  c => c.status === 'in_progress' && c.firstMessageContent === item.description
-                )
-                setChatDeepDiveId(undefined)
-                setChatGapExploration(undefined)
-                if (existingConvo) {
-                  setChatInitialQuestion(undefined)
-                  setChatResumeConversationId(existingConvo.id)
-                } else {
-                  setChatInitialQuestion(item.description)
-                  setChatResumeConversationId(undefined)
-                }
-                setChatViewOnly(false)
-                setChatSheetOpen(true)
-              } else if (item.type === 'gap') {
-                setChatDeepDiveId(undefined)
-                setChatInitialQuestion(undefined)
-                setChatGapExploration({
-                  dimension: item.dimension || '',
-                  summary: item.description,
-                })
-                setChatResumeConversationId(undefined)
-                setChatViewOnly(false)
-                setChatSheetOpen(true)
-              }
-            }}
-            onAddDeepDive={() => setAddDeepDiveOpen(true)}
-          />
-
-          {/* Documents & Memos */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Upload className="h-4 w-4" />
-                Documents & Memos
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Files and notes that inform your strategy
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projectData?.documents && projectData.documents.length > 0 ? (
-                (() => {
-                  const INPUT_LIMIT = 10
-                  const allDocs = projectData.documents
-                  const visibleDocs = showAllInputs ? allDocs : allDocs.slice(0, INPUT_LIMIT)
-                  const hasMore = allDocs.length > INPUT_LIMIT
-
-                  return (
-                    <ItemGroup>
-                      {visibleDocs.map((doc, index) => (
-                        <React.Fragment key={doc.id}>
-                          {index > 0 && <ItemSeparator />}
-                          <Item size="sm">
-                            <ItemContent>
-                              <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
-                              <ItemDescription className="text-xs">
-                                {doc.status === 'complete'
-                                  ? `${doc.fragmentCount} fragments`
-                                  : doc.status === 'processing'
-                                    ? 'Processing...'
-                                    : doc.status}
-                              </ItemDescription>
-                            </ItemContent>
-                          </Item>
-                        </React.Fragment>
-                      ))}
-                      {hasMore && (
-                        <>
-                          <ItemSeparator />
-                          <div className="px-4 py-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full text-muted-foreground"
-                              onClick={() => setShowAllInputs(!showAllInputs)}
-                            >
-                              {showAllInputs ? 'Show less' : `Show ${allDocs.length - INPUT_LIMIT} more`}
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </ItemGroup>
-                  )
-                })()
-              ) : (
-                <div className="text-center py-4 px-6 text-muted-foreground">
-                  <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                  <p className="text-xs">No documents yet</p>
-                </div>
-              )}
-              <div className="p-4 pt-3 border-t">
-                <div className="flex w-full">
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-r-none"
-                    onClick={() => {
-                      getStatsigClient()?.logEvent('cta_upload_doc', 'project-page', { projectId })
-                      const isFirstContent =
-                        (stats.fragmentCount ?? 0) === 0 &&
-                        (stats.conversationCount ?? 0) === 0 &&
-                        (projectData?.strategyOutputs?.length ?? 0) === 0
-                      if (isFirstContent) {
-                        setPendingFirstContentUpload(true)
-                      }
-                      setUploadDeepDiveId(undefined)
-                      setUploadDialogOpen(true)
-                    }}
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload Doc
-                  </Button>
-                  <div className="w-px bg-primary-foreground/20" />
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-l-none"
-                    onClick={() => triggerUpgrade('audio-memo')}
-                  >
-                    <NotebookPen className="h-3 w-3 mr-1" />
-                    Add Memo
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        </Tabs>
       </div>
 
       {/* Upload Dialog */}
@@ -869,6 +1310,7 @@ export default function ProjectPage() {
             setChatGapExploration(undefined)
             setChatResumeConversationId(undefined)
             setChatViewOnly(false)
+            setChatOrigin(undefined)
             fetchProjectData()
           }
         }}
@@ -879,6 +1321,7 @@ export default function ProjectPage() {
         hasExistingStrategy={(projectData?.strategyOutputs?.length ?? 0) > 0}
         hasKnowledgebaseContent={(stats.fragmentCount ?? 0) > 0}
         viewOnly={chatViewOnly}
+        origin={chatOrigin}
       />
 
       {/* Add Deep Dive Dialog */}
@@ -914,6 +1357,33 @@ export default function ProjectPage() {
         open={synthesisDialogOpen}
         onOpenChange={setSynthesisDialogOpen}
         onComplete={fetchProjectData}
+      />
+
+      {/* Version History Sheet */}
+      <VersionHistorySheet
+        projectId={projectId}
+        open={versionHistoryOpen}
+        onOpenChange={setVersionHistoryOpen}
+        onExportBrief={async (outputId, version) => {
+          const res = await fetch(`/api/project/${projectId}/export-brief?outputId=${outputId}`)
+          if (res.ok) {
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `strategic-brief-v${version}.md`
+            a.click()
+            URL.revokeObjectURL(url)
+          }
+        }}
+      />
+
+      {/* Import Bundle Dialog */}
+      <ImportBundleDialog
+        projectId={projectId}
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImported={() => fetchProjectData()}
       />
 
       {/* Refresh Strategy Dialog */}

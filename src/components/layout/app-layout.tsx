@@ -7,7 +7,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   ChevronUp,
-  ChevronRight,
   Check,
   ChevronsUpDown,
   Sparkles,
@@ -19,10 +18,6 @@ import {
   MessageSquare,
   Trash2,
   RotateCcw,
-  Atom,
-  Glasses,
-  TrendingUp,
-  NotebookPen,
   Pencil,
 } from 'lucide-react'
 import {
@@ -31,23 +26,14 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,9 +80,7 @@ import { ChatSheet } from '@/components/chat-sheet'
 import { useProjectActions } from '@/hooks/use-project-actions'
 import { getStatsigClient } from '@/components/StatsigProvider'
 import { usePaywall } from '@/hooks/use-paywall'
-import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
-import { GenerationStatusIndicator } from '@/components/GenerationStatusIndicator'
 import { cn } from '@/lib/utils'
 
 interface Project {
@@ -133,7 +117,7 @@ export function AppLayout({
   }, [])
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar experimentVariant={experimentVariant} showVariantBadge={showVariantBadge} />
       <SidebarInset className="flex flex-col">
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4 bg-sidebar">
@@ -170,10 +154,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
   const [chatSheetOpen, setChatSheetOpen] = useState(false)
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | undefined>(undefined)
   const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
-  const [strategyHistory, setStrategyHistory] = useState<{id: string, createdAt: string}[] | null>(null)
 
   const { isOpen: paywallOpen, modal: paywallModal, triggerPaywall, closePaywall } = usePaywall()
-  const { isGenerating, getProgressLabel } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const {
     isPro,
@@ -211,10 +193,8 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
 
   const {
     createProject,
-    restoreDemo,
     deleteProject,
     isCreating: isCreatingProject,
-    isRestoring: isRestoringDemo,
     isDeleting,
   } = useProjectActions({ triggerPaywall: triggerProjectPaywall })
 
@@ -236,39 +216,10 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
     fetchProjects()
   }, [])
 
-  // Fetch strategy history when selected project changes
-  useEffect(() => {
-    if (!selectedProjectId) {
-      setStrategyHistory([])
-      return
-    }
-    setStrategyHistory(null) // Reset to loading state
-    fetch(`/api/project/${selectedProjectId}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.strategyOutputs) {
-          setStrategyHistory(data.strategyOutputs)
-        } else {
-          setStrategyHistory([])
-        }
-      })
-      .catch(() => setStrategyHistory([]))
-  }, [selectedProjectId])
-
-  // Refresh strategy history when generation completes
+  // Listen for generation events (for toast/refresh purposes)
   useEffect(() => {
     const handleGenerationComplete = (event: CustomEvent<{ projectId: string }>) => {
-      if (event.detail.projectId === selectedProjectId) {
-        // Refresh strategy history
-        fetch(`/api/project/${selectedProjectId}`)
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (data?.strategyOutputs) {
-              setStrategyHistory(data.strategyOutputs)
-            }
-          })
-          .catch(() => {})
-      }
+      // Could trigger sidebar notifications in future
     }
 
     window.addEventListener('generationComplete', handleGenerationComplete as EventListener)
@@ -340,21 +291,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
       console.error('Failed to rename project:', error)
     } finally {
       setIsRenaming(false)
-    }
-  }
-
-  const handleRestoreDemo = async () => {
-    getStatsigClient()?.logEvent('cta_restore_demo', 'sidebar')
-    const result = await restoreDemo()
-    if (result) {
-      await fetchProjects()
-      setProjectSwitcherOpen(false)
-      // Navigate to strategy view so users see the output, not just inputs
-      if (result.latestTraceId) {
-        router.push(`/strategy/${result.latestTraceId}`)
-      } else {
-        router.push(`/project/${result.projectId}/strategy`)
-      }
     }
   }
 
@@ -463,15 +399,6 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
                       <FolderPlus className="h-4 w-4 shrink-0" />
                       <span>{isCreatingProject ? 'Creating...' : 'Add Project'}</span>
                     </CommandItem>
-                    {session && (
-                      <CommandItem
-                        onSelect={handleRestoreDemo}
-                        disabled={isRestoringDemo}
-                      >
-                        <RotateCcw className={`h-4 w-4 shrink-0 ${isRestoringDemo ? 'animate-spin' : ''}`} />
-                        <span>{isRestoringDemo ? 'Restoring...' : 'Restore Demo'}</span>
-                      </CommandItem>
-                    )}
                     {session && selectedProject && (
                       <CommandItem
                         onSelect={() => {
@@ -501,133 +428,44 @@ function AppSidebar({ experimentVariant, showVariantBadge = false }: { experimen
         )}
       </SidebarHeader>
       <SidebarContent>
-        {/* Quick Actions - show when project selected (both auth and guests) */}
-        {selectedProject && (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => {
-                    getStatsigClient()?.logEvent('cta_new_chat', 'sidebar')
-                    setChatSheetOpen(true)
-                  }}>
-                    <MessageSquare className="h-4 w-4" />
-                    <span>New Chat</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => {
-                      getStatsigClient()?.logEvent('cta_upload_doc', 'sidebar')
-                      setUploadProjectId(selectedProject.id)
-                      setUploadDialogOpen(true)
-                    }}
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span>Upload Document</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => triggerUpgrade('audio-memo')}>
-                    <NotebookPen className="h-4 w-4" />
-                    <span>Add Memo</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {/* Spacer pushes helper links to bottom of content area */}
+        <div className="flex-1" />
+        <div className="px-3 py-4 space-y-8 text-center">
+          {/* Lunastak */}
+          <div className="flex flex-col items-center space-y-1.5">
+            <img src="/lunastak-logo-teal.svg" alt="Lunastak" className="h-12" />
+            <p className="text-xs text-muted-foreground/90">Your second brain for strategic clarity.</p>
+            <div className="text-xs text-muted-foreground/90 space-y-0.5">
+              <p>Built by <a href="https://www.humventures.com.au" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Jonny Schneider</a> at <a href="https://www.humventures.com.au" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Humble Ventures</a></p>
+              <p>© {new Date().getFullYear()} Humble Ventures Pty Ltd</p>
+            </div>
+          </div>
 
-        {/* Project Navigation - show when project selected (both auth and guests) */}
-        {selectedProject && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Focus</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}` || pathname === `/project/${selectedProject.id}/thinking`}>
-                    <Link href={`/project/${selectedProject.id}`} className="flex items-center gap-2">
-                      <Glasses className="h-4 w-4" />
-                      <span>Your Thinking</span>
-                      {isProcessingDocuments(selectedProject.id) && (
-                        <span className="flex items-center gap-1.5 ml-auto text-xs text-muted-foreground">
-                          <Image
-                            src="/animated-logo-glitch.svg"
-                            alt=""
-                            width={12}
-                            height={12}
-                            className="animate-pulse"
-                          />
-                          <span>processing</span>
-                        </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <Collapsible asChild defaultOpen className="group/collapsible">
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton>
-                        <Atom className="h-4 w-4" />
-                        <span>Your Strategy</span>
-                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {/* Show generating indicator when active */}
-                        {isGenerating(selectedProject.id) && (
-                          <SidebarMenuSubItem>
-                            <div className="px-2 py-1.5">
-                              <GenerationStatusIndicator
-                                status="generating"
-                                size="sm"
-                                generatingLabel={getProgressLabel(selectedProject.id) || 'generating...'}
-                              />
-                            </div>
-                          </SidebarMenuSubItem>
-                        )}
-                        {strategyHistory === null ? (
-                          <SidebarMenuSubItem>
-                            <span className="text-xs text-muted-foreground px-2 py-1">Loading...</span>
-                          </SidebarMenuSubItem>
-                        ) : strategyHistory.length === 0 && !isGenerating(selectedProject.id) ? (
-                          <SidebarMenuSubItem>
-                            <span className="text-xs text-muted-foreground px-2 py-1">No strategies yet</span>
-                          </SidebarMenuSubItem>
-                        ) : (
-                          strategyHistory.map((s) => (
-                            <SidebarMenuSubItem key={s.id}>
-                              <SidebarMenuSubButton asChild isActive={pathname === `/strategy/${s.id}`}>
-                                <Link href={`/strategy/${s.id}`}>
-                                  {new Date(s.createdAt).toLocaleString(undefined, {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                  })}
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))
-                        )}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === `/project/${selectedProject.id}/outcomes`}>
-                    <Link href={`/project/${selectedProject.id}/outcomes`}>
-                      <TrendingUp className="h-4 w-4" />
-                      <span>Manage Outcomes</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+          {/* Decision Stack */}
+          <div className="flex flex-col items-center gap-1.5">
+            <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="block">
+              <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-8" />
+            </a>
+            <p className="text-xs text-muted-foreground/90">
+              <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">The Decision Stack</a> by <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Martin Eriksson</a>. Used with permission.
+            </p>
+          </div>
 
+          {/* Data statement + links */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground/90 leading-relaxed text-left">
+              Your data is processed by Anthropic&apos;s Claude AI and is not used to train AI models. Uploaded documents are not stored — only the strategic insights extracted from them. Conversations and generated artefacts are retained to build your Decision Stack.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <a href="https://www.humventures.com.au/privacy" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground/90 h-8">Privacy Notice</Button>
+              </a>
+              <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground/90 h-8">Help</Button>
+              </a>
+            </div>
+          </div>
+        </div>
       </SidebarContent>
 
       <SidebarFooter className="border-t py-2">

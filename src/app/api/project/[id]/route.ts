@@ -47,11 +47,15 @@ export async function GET(
 
   try {
     // Get the project with related data
+    // Demo projects are accessible to any authenticated user
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: userId,
         status: 'active',
+        OR: [
+          { userId: userId },
+          { isDemo: true },
+        ],
       },
       include: {
         conversations: {
@@ -176,6 +180,8 @@ export async function GET(
         deepDiveId: conv.deepDiveId || null,
         isInitialConversation: conv.isInitialConversation,
         firstMessageContent: firstMessage?.content || null,
+        originType: conv.originType || null,
+        originText: conv.originText || null,
       }
     })
 
@@ -250,6 +256,7 @@ export async function GET(
     return NextResponse.json({
       id: project.id,
       name: project.name,
+      isDemo: project.isDemo,
       stats: {
         fragmentCount: project.fragments.length,
         conversationCount: project.conversations.length,

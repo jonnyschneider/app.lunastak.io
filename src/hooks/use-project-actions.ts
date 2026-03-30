@@ -6,23 +6,15 @@ interface UseProjectActionsOptions {
   triggerPaywall?: (feature: PaywallFeature) => Promise<boolean>;
 }
 
-interface RestoreDemoResult {
-  projectId: string;
-  latestTraceId: string | null;
-}
-
 interface UseProjectActionsReturn {
   createProject: () => Promise<string | null>;
-  restoreDemo: () => Promise<RestoreDemoResult | null>;
   deleteProject: (projectId: string) => Promise<boolean>;
   isCreating: boolean;
-  isRestoring: boolean;
   isDeleting: boolean;
 }
 
 export function useProjectActions(options: UseProjectActionsOptions = {}): UseProjectActionsReturn {
   const [isCreating, setIsCreating] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const createProject = useCallback(async (): Promise<string | null> => {
@@ -56,28 +48,6 @@ export function useProjectActions(options: UseProjectActionsOptions = {}): UsePr
     }
   }, [options]);
 
-  const restoreDemo = useCallback(async (): Promise<RestoreDemoResult | null> => {
-    setIsRestoring(true);
-    try {
-      const response = await fetch('/api/projects/restore-demo', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        options.onSuccess?.();
-        return { projectId: data.projectId, latestTraceId: data.latestTraceId ?? null };
-      }
-      console.error('Failed to restore demo project');
-      return null;
-    } catch (error) {
-      console.error('Failed to restore demo:', error);
-      return null;
-    } finally {
-      setIsRestoring(false);
-    }
-  }, [options]);
-
   const deleteProject = useCallback(async (projectId: string): Promise<boolean> => {
     setIsDeleting(true);
     try {
@@ -101,10 +71,8 @@ export function useProjectActions(options: UseProjectActionsOptions = {}): UsePr
 
   return {
     createProject,
-    restoreDemo,
     deleteProject,
     isCreating,
-    isRestoring,
     isDeleting,
   };
 }

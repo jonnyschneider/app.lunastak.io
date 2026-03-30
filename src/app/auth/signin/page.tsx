@@ -181,7 +181,7 @@ function SignInForm() {
         <CardHeader>
           <CardTitle>Sign in to Lunastak</CardTitle>
           <CardDescription>
-            Your AI strategy coach
+            Your second brain for strategic clarity
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

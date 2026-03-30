@@ -1,0 +1,144 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { MessageSquare, Upload, ExternalLink, ChevronDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+// Demo project IDs — persistent read-only instances
+const DEMO_PROJECTS = [
+  { id: 'cmn8anetr5kwlmbmq', name: 'Nike', logo: '/logo-nike.svg', logoHeight: 'h-14', description: 'Scale economies and brand power', episodeUrl: 'https://www.acquired.fm/episodes/nike' },
+  { id: 'cmn8an6ivpa0xoehj', name: 'Costco', logo: '/logo-costco.svg', logoHeight: 'h-14', description: 'Scale economies shared', episodeUrl: 'https://www.acquired.fm/episodes/costco' },
+  { id: 'cmn8anbaapaww1709', name: 'TSMC', logo: '/logo-tsmc.svg', logoHeight: 'h-14', description: 'Process power and counter-positioning', episodeUrl: 'https://www.acquired.fm/episodes/tsmc' },
+]
+
+interface LaunchpadProps {
+  projectId: string
+  fragmentCount: number
+  onStartChat: () => void
+  onImportBundle: () => void
+  onGenerateNow?: () => void
+}
+
+export function Launchpad({
+  projectId,
+  fragmentCount,
+  onStartChat,
+  onImportBundle,
+  onGenerateNow,
+}: LaunchpadProps) {
+  const router = useRouter()
+
+  return (
+    <div className="space-y-8">
+      {/* Contextual nudge when fragments exist */}
+      {fragmentCount > 0 && onGenerateNow && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex items-center justify-between">
+            <p className="text-sm">
+              You have <span className="font-semibold">{fragmentCount} fragments</span> ready to synthesise.
+            </p>
+            <Button size="sm" onClick={onGenerateNow}>
+              Generate now
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Two onboarding paths */}
+      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+        {/* Talk to Luna */}
+        <div className="cursor-pointer rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors" onClick={onStartChat}>
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
+            <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Tell Luna about your business.<br />
+            In ~10 minutes, get your first draft strategy.
+          </p>
+          <span className="inline-flex items-center gap-1.5 text-sm text-primary">
+            <MessageSquare className="h-3.5 w-3.5" />
+            Start
+          </span>
+        </div>
+
+        {/* Import a context bundle */}
+        <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            <span className="bg-[hsl(var(--ds-teal))] text-white px-2 py-0.5">Import</span>{' '}
+            <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Prepared context in Claude, ChatGPT, or Gemini?<br />
+            Import it and generate a Decision Stack instantly.
+          </p>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="gap-1.5 text-primary">
+                <Upload className="h-3.5 w-3.5" />
+                Import
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={onImportBundle}>
+                <Upload className="h-3.5 w-3.5 mr-2" />
+                Import a bundle
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.open('https://lunastak.io/integrations', '_blank')}>
+                <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                Get the Decision Stack skill
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Acquired × Lunastak */}
+      <div className="text-center space-y-5">
+        {/* Banner */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg" />
+
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
+              Because every company has a <span className="font-semibold">story</span>.
+            </p>
+            <p className="text-sm italic text-[hsl(var(--ds-teal))] font-[family-name:var(--font-ibm-plex-mono)]">
+              And every <span className="font-semibold">strategy</span> is a Decision Stack.
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Decision Stacks extracted from Acquired podcast episodes by Luna
+          </p>
+        </div>
+
+        <div className="grid gap-3 grid-cols-3 max-w-md mx-auto">
+          {DEMO_PROJECTS.map((demo) => (
+            <div
+              key={demo.id}
+              className="group cursor-pointer rounded-lg px-4 py-2 space-y-1 hover:bg-muted/50 transition-colors"
+              onClick={() => router.push(`/project/${demo.id}`)}
+            >
+              <div className="flex justify-center py-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={demo.logo} alt={demo.name} className={demo.logoHeight} />
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed text-center">
+                {demo.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

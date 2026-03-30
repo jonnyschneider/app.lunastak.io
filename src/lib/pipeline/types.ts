@@ -47,6 +47,18 @@ export type PipelineTrigger =
       // Set by route for fire-and-forget pattern (route creates upfront for polling)
       generatedOutputId?: string
     }
+  | {
+      type: 'generate_opportunities'
+      projectId: string
+      userId: string | null
+      generatedOutputId: string
+    }
+  | {
+      type: 'generate_from_knowledge'
+      projectId: string
+      userId: string | null
+      generatedOutputId: string
+    }
 
 /**
  * Pipeline Plan — what should we do?
@@ -73,6 +85,7 @@ export interface PipelinePlan {
     | { mode: 'initial'; source: 'extracted_context' }
     | { mode: 'refresh'; source: 'fragments_and_syntheses' }
     | { mode: 'template'; source: 'user_input' }
+    | { mode: 'opportunities'; source: 'fragments_and_syntheses' }
     | null
 
   // Config

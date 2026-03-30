@@ -139,6 +139,8 @@ interface KnowledgebaseHeaderProps {
   knowledgeBusyMessage?: string | null
   /** Strategy-side busy message (generation, refresh) — shown on RHS */
   strategyBusyMessage?: string | null
+  /** Hide action links (e.g. demo mode) */
+  readOnly?: boolean
 }
 
 export function KnowledgebaseHeader({
@@ -159,6 +161,7 @@ export function KnowledgebaseHeader({
   onDimensionClick,
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
+  readOnly = false,
 }: KnowledgebaseHeaderProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
@@ -365,19 +368,17 @@ export function KnowledgebaseHeader({
             </div>
           )}
 
-          {/* Ghost link to strategy when in sync */}
-          {!isBusy && !strategyIsStale && latestStrategyTraceId && (
+          {/* View all fragments link */}
+          {fragmentCount > 0 && !readOnly && (
             <div className="flex justify-end">
               <Button
                 variant="ghost"
                 size="sm"
-                asChild
+                onClick={() => onDimensionClick('')}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Link href={`/strategy/${latestStrategyTraceId}`}>
-                  Your Strategy
-                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Link>
+                View all {fragmentCount} fragments
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </div>
           )}

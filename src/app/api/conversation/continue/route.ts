@@ -72,6 +72,28 @@ export async function POST(req: Request) {
     });
     console.log('[Continue API] User message saved');
 
+    // Auto-title untitled conversations after 3+ user messages
+    if (!conversation.title && currentStep >= 5) {
+      // 5 steps = at least 2 user messages + 3 assistant messages
+      const titleMessages = conversation.messages.slice(0, 6).map(m => `${m.role}: ${m.content.slice(0, 100)}`).join('\n')
+      try {
+        const titleResponse = await createMessage({
+          model: CLAUDE_MODEL,
+          max_tokens: 30,
+          messages: [{ role: 'user', content: `Summarize this conversation in 3-6 words as a title. Output ONLY the title, nothing else.\n\n${titleMessages}` }],
+          temperature: 0.3,
+        }, 'conversation_title')
+        const title = titleResponse.content[0]?.type === 'text' ? titleResponse.content[0].text.trim().replace(/^["']|["']$/g, '') : null
+        if (title) {
+          await prisma.conversation.update({ where: { id: conversationId }, data: { title } })
+          console.log(`[Continue API] Auto-titled conversation: "${title}"`)
+        }
+      } catch (err) {
+        console.error('[Continue API] Failed to auto-title:', err)
+        // Non-fatal — conversation continues without title
+      }
+    }
+
     // Route based on phase
     const phase = currentPhase as ConversationPhase;
     console.log('[Continue API] Routing to phase handler:', phase);

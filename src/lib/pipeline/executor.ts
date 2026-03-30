@@ -5,7 +5,7 @@ import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
 import { runBackgroundTasks } from '@/lib/background-tasks'
 import type { StrategyStatements } from '@/lib/types'
 import type { PipelinePlan, PipelineTrigger, PipelineResult } from './types'
-import { runInitialGeneration, runRefreshGeneration } from './generation'
+import { runInitialGeneration, runRefreshGeneration, runOpportunityGeneration } from './generation'
 
 /**
  * Execute a pipeline plan.
@@ -161,23 +161,43 @@ export async function executePipeline(
         break
       }
       case 'initial': {
-        const t = trigger as Extract<PipelineTrigger, { type: 'conversation_ended' }>
-        generation = await runInitialGeneration(
-          t.projectId,
-          t.conversationId,
-          t.userId,
-          t.experimentVariant,
-          t.generatedOutputId,
-          plan.model
-        )
+        if (trigger.type === 'generate_from_knowledge') {
+          // No conversation — generation from imported/uploaded fragments only
+          const t = trigger as Extract<PipelineTrigger, { type: 'generate_from_knowledge' }>
+          generation = await runInitialGeneration(
+            t.projectId,
+            null, // No conversation
+            t.userId,
+            null, // No experiment variant
+            t.generatedOutputId,
+            plan.model
+          )
+        } else {
+          // Standard conversation-ended initial generation
+          const t = trigger as Extract<PipelineTrigger, { type: 'conversation_ended' }>
+          generation = await runInitialGeneration(
+            t.projectId,
+            t.conversationId,
+            t.userId,
+            t.experimentVariant,
+            t.generatedOutputId,
+            plan.model
+          )
+        }
         // Mark fragments as accounted for so the KB summary countdown resets.
-        // Initial conversations typically create <15 fragments, so the threshold
-        // won't trigger synthesis/knowledge summary. Without this stamp,
-        // knowledgeUpdatedAt stays NULL and the UI shows all fragments as
-        // "since last update". Same pattern as the refresh path (line 96-99).
+        await prisma.project.update({
+          where: { id: projectId },
+          data: { knowledgeUpdatedAt: new Date() },
+        })
+        break
+      }
+      case 'opportunities': {
+        const t = trigger as Extract<PipelineTrigger, { type: 'generate_opportunities' }>
+        await runOpportunityGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
+        // Mark direction as settled after first opportunity generation
         await prisma.project.update({
           where: { id: t.projectId },
-          data: { knowledgeUpdatedAt: new Date() },
+          data: { directionStatus: 'settled' },
         })
         break
       }
