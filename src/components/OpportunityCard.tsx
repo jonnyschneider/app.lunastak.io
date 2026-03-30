@@ -54,54 +54,50 @@ export function OpportunityCard({
             <p className="text-[13px] text-white/90 leading-relaxed mb-3">{description}</p>
           )}
 
-          {/* Belief statement + Success Indicator heading */}
-          {!compact && successMetrics.length > 0 && (
-            <div className="mb-3">
-              {successMetrics.map((metric) => (
-                <div key={metric.id} className="mb-2 last:mb-0">
-                  {metric.belief && (metric.belief.action || metric.belief.outcome) && (
-                    <p className="text-[13px] text-white/90 leading-relaxed">
-                      <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">We believe</span>{' '}
-                      {metric.belief.action}{' '}
-                      <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">will</span>{' '}
-                      {metric.belief.outcome}
+          {/* Primary metric only on front (first metric) */}
+          {!compact && successMetrics.length > 0 && (() => {
+            const metric = successMetrics[0]
+            return (
+              <div className="mb-3">
+                {metric.belief && (metric.belief.action || metric.belief.outcome) && (
+                  <p className="text-[13px] text-white/90 leading-relaxed mb-3">
+                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">We believe</span>{' '}
+                    {metric.belief.action}{' '}
+                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">will</span>{' '}
+                    {metric.belief.outcome}
+                  </p>
+                )}
+                {metric.signal && (
+                  <>
+                    <p className="text-[13px] text-white/90 mb-1">
+                      <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">Success is when...</span>
                     </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Goal metrics */}
-          {!compact && successMetrics.length > 0 && successMetrics.some(m => m.signal) && (
-            <div className="mb-3">
-              {successMetrics.map((metric) => metric.signal && (
-                <div key={metric.id} className="mb-2 last:mb-0">
-                  <p className="text-[13px] text-white/90 mb-1">
-                    <span className="italic font-medium text-ds-neon font-[family-name:var(--font-ibm-plex-mono)]">Success is when...</span>
-                  </p>
-                  <p className="text-[13px] font-bold text-white flex items-center gap-1.5 mb-2">
-                    <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
-                    {metric.signal}
-                  </p>
-                  {(metric.baseline || metric.target) && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 rounded px-2.5 py-1.5">
-                        <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)] text-center">{metric.baseline || '?'}</p>
+                    <p className="text-[13px] font-bold text-white flex items-center gap-1.5 mb-2">
+                      <TrendingUp className="w-4 h-4 text-ds-neon shrink-0" strokeWidth={3} />
+                      {metric.signal}
+                    </p>
+                    {(metric.baseline || metric.target) && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 rounded px-2.5 py-1.5">
+                          <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)] text-center">{metric.baseline || '?'}</p>
+                        </div>
+                        <div className="flex flex-col items-center shrink-0">
+                          <span className="text-ds-neon font-bold text-[15px]">→</span>
+                          <span className="text-[10px] font-bold text-ds-neon uppercase -mt-0.5">to</span>
+                        </div>
+                        <div className="flex-1 rounded px-2.5 py-1.5">
+                          <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)] text-center">{metric.target}</p>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-center shrink-0">
-                        <span className="text-ds-neon font-bold text-[15px]">→</span>
-                        <span className="text-[10px] font-bold text-ds-neon uppercase -mt-0.5">to</span>
-                      </div>
-                      <div className="flex-1 rounded px-2.5 py-1.5">
-                        <p className="text-[13px] italic text-white font-[family-name:var(--font-ibm-plex-mono)] text-center">{metric.target}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                    )}
+                  </>
+                )}
+                {successMetrics.length > 1 && (
+                  <p className="text-[10px] text-white/50 mt-2">+{successMetrics.length - 1} more metric{successMetrics.length > 2 ? 's' : ''}</p>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Related objectives — numbered circles */}
           {!compact && objectiveIds.length > 0 && (
