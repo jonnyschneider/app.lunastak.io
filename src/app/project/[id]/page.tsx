@@ -776,6 +776,21 @@ export default function ProjectPage() {
 
   return (
     <AppLayout>
+      {/* Demo banner */}
+      {isDemo && (
+        <div className="bg-primary/5 border-b px-6 py-1.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold uppercase tracking-wider text-primary">Example</span>
+            <span className="text-muted-foreground">{projectData?.name}</span>
+          </div>
+          <button
+            onClick={() => router.push('/')}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            &larr; Back to my project
+          </button>
+        </div>
+      )}
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Content — switched by activeTab (tabs + overflow are in header via HeaderContext) */}
         <div className="w-full">
