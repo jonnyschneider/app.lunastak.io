@@ -1174,10 +1174,13 @@ export default function ProjectPage() {
                     <p className="text-[10px] text-muted-foreground/70 mb-4">
                       CLI skills and Agent tools available for major AI platforms.
                     </p>
-                    <div className="flex items-center gap-3 mb-4 text-muted-foreground/50">
-                      <span className="text-xs font-semibold tracking-tight">Claude</span>
-                      <span className="text-xs font-semibold tracking-tight">Gemini</span>
-                      <span className="text-xs font-semibold tracking-tight">OpenAI</span>
+                    <div className="flex items-center gap-4 mb-4 opacity-40">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-claude.svg" alt="Claude" className="h-4" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-4" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-4" />
                     </div>
                     <div className="flex items-center gap-3">
                       <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
