@@ -62,7 +62,7 @@ import { useDocumentProcessingContext } from '@/components/providers/DocumentPro
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
-import { Launchpad } from '@/components/Launchpad'
+import { Launchpad, TalkToLunaCard, ImportBundleCard } from '@/components/Launchpad'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
@@ -926,44 +926,15 @@ export default function ProjectPage() {
                 <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
                 <p className="text-sm text-muted-foreground text-center mb-6">Start a conversation with Luna, or import a context bundle to get started.</p>
                 <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
-                  {/* Talk to Luna */}
-                  <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
-                    <h3 className="text-sm font-bold uppercase tracking-wide">
-                      <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
-                      <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Tell Luna about your business.<br />
-                      In ~10 minutes, get your first draft strategy.
-                    </p>
-                    <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={() => {
-                      setChatInitialQuestion(undefined)
-                      setChatDeepDiveId(undefined)
-                      setChatGapExploration(undefined)
-                      setChatResumeConversationId(undefined)
-                      setChatViewOnly(false)
-                      setChatSheetOpen(true)
-                    }}>
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      Start
-                    </Button>
-                  </div>
-
-                  {/* Import a context bundle */}
-                  <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
-                    <h3 className="text-sm font-bold uppercase tracking-wide">
-                      <span className="bg-[hsl(var(--ds-teal))] text-white px-2 py-0.5">Import</span>{' '}
-                      <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Prepared context in Claude, ChatGPT, or Gemini?<br />
-                      Import it and generate a Decision Stack instantly.
-                    </p>
-                    <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={() => setImportDialogOpen(true)}>
-                      <Upload className="h-3.5 w-3.5" />
-                      Import
-                    </Button>
-                  </div>
+                  <TalkToLunaCard onStartChat={() => {
+                    setChatInitialQuestion(undefined)
+                    setChatDeepDiveId(undefined)
+                    setChatGapExploration(undefined)
+                    setChatResumeConversationId(undefined)
+                    setChatViewOnly(false)
+                    setChatSheetOpen(true)
+                  }} />
+                  <ImportBundleCard onImportBundle={() => setImportDialogOpen(true)} />
                 </div>
               </div>
             ) : (

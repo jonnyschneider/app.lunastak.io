@@ -11,6 +11,59 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+// --- Shared onboarding cards (used in Launchpad + KB empty state) ---
+
+export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
+  return (
+    <div className="cursor-pointer rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all" onClick={onStartChat}>
+      <h3 className="text-sm font-bold uppercase tracking-wide">
+        <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
+        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
+      </h3>
+      <p className="text-[14px] text-foreground/70 leading-relaxed">
+        Tell Luna about your business. In ~10 minutes, get your first draft strategy.
+      </p>
+      <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={onStartChat}>
+        <MessageSquare className="h-3.5 w-3.5" />
+        Start
+      </Button>
+    </div>
+  )
+}
+
+export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => void }) {
+  return (
+    <div className="rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all">
+      <h3 className="text-sm font-bold uppercase tracking-wide">
+        <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
+        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+      </h3>
+      <p className="text-[14px] text-foreground/70 leading-relaxed">
+        Prepared context in Claude, ChatGPT, or Gemini? Import it and generate a Decision Stack instantly.
+      </p>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="sm" variant="ghost" className="gap-1.5 text-primary">
+            <Upload className="h-3.5 w-3.5" />
+            Import
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={onImportBundle}>
+            <Upload className="h-3.5 w-3.5 mr-2" />
+            Import a bundle
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.open('https://lunastak.io/integrations', '_blank')}>
+            <ExternalLink className="h-3.5 w-3.5 mr-2" />
+            Get the Decision Stack skill
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
 // Demo project IDs — persistent read-only instances
 const DEMO_PROJECTS = [
   { id: 'cmn8anetr5kwlmbmq', name: 'Nike', logo: '/logo-nike.svg', logoHeight: 'h-14', description: 'Scale economies and brand power', episodeUrl: 'https://www.acquired.fm/episodes/nike' },
@@ -53,50 +106,8 @@ export function Launchpad({
 
       {/* Two onboarding paths */}
       <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
-        {/* Talk to Luna */}
-        <div className="cursor-pointer rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all" onClick={onStartChat}>
-          <h3 className="text-sm font-bold uppercase tracking-wide">
-            <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
-            <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
-          </h3>
-          <p className="text-[14px] text-foreground/70 leading-relaxed">
-            Tell Luna about your business. In ~10 minutes, get your first draft strategy.
-          </p>
-          <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={onStartChat}>
-            <MessageSquare className="h-3.5 w-3.5" />
-            Start
-          </Button>
-        </div>
-
-        {/* Import a context bundle */}
-        <div className="rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all">
-          <h3 className="text-sm font-bold uppercase tracking-wide">
-            <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
-            <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
-          </h3>
-          <p className="text-[14px] text-foreground/70 leading-relaxed">
-            Prepared context in Claude, ChatGPT, or Gemini? Import it and generate a Decision Stack instantly.
-          </p>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="gap-1.5 text-primary">
-                <Upload className="h-3.5 w-3.5" />
-                Import
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={onImportBundle}>
-                <Upload className="h-3.5 w-3.5 mr-2" />
-                Import a bundle
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open('https://lunastak.io/integrations', '_blank')}>
-                <ExternalLink className="h-3.5 w-3.5 mr-2" />
-                Get the Decision Stack skill
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <TalkToLunaCard onStartChat={onStartChat} />
+        <ImportBundleCard onImportBundle={onImportBundle} />
       </div>
 
       {/* Acquired × Lunastak */}
