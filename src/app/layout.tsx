@@ -6,6 +6,7 @@ import { SessionProvider } from '@/components/SessionProvider'
 import { SessionTransferProvider } from '@/components/providers/SessionTransferProvider'
 import { BackgroundTaskProvider } from '@/components/providers/BackgroundTaskProvider'
 import { DocumentProcessingProvider } from '@/components/providers/DocumentProcessingProvider'
+import { HeaderProvider } from '@/components/HeaderContext'
 import { StatsigProvider } from '@/components/StatsigProvider'
 import { Toaster } from '@/components/ui/sonner'
 import { Analytics } from '@vercel/analytics/react'
@@ -47,7 +48,9 @@ export default async function RootLayout({
             <StatsigProvider>
               <BackgroundTaskProvider>
                 <DocumentProcessingProvider>
+                  <HeaderProvider>
                   {children}
+                  </HeaderProvider>
                   <Toaster position="bottom-right" />
                   <Analytics />
                 </DocumentProcessingProvider>
