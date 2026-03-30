@@ -1166,15 +1166,23 @@ export default function ProjectPage() {
               {/* Import CTA */}
               {!isDemo && (
                 <Card className="border-dashed">
-                  <CardContent className="p-6 flex flex-col justify-center h-full">
-                    <Package className="h-6 w-6 text-muted-foreground mb-3" />
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-1">
-                      Prepare context in your favourite tool &rarr; Import a complete bundle into Luna.
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Package className="h-4 w-4" />
+                        Integrations
+                      </CardTitle>
+                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => setImportDialogOpen(true)}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Import context
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-4">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Prepare context in your favourite tool &rarr; Import a complete bundle into Luna. CLI skills and Agent tools available for major AI platforms.
                     </p>
-                    <p className="text-[10px] text-muted-foreground/70 mb-4">
-                      CLI skills and Agent tools available for major AI platforms.
-                    </p>
-                    <div className="flex items-center gap-4 mb-4 opacity-40">
+                    <div className="flex items-center gap-4 opacity-60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/logo-claude.svg" alt="Claude" className="h-4" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1182,17 +1190,9 @@ export default function ProjectPage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/logo-openai.svg" alt="OpenAI" className="h-4" />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                        Learn more &rarr;
-                      </a>
-                      <button
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => setImportDialogOpen(true)}
-                      >
-                        Import a bundle
-                      </button>
-                    </div>
+                    <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
+                      Learn more &rarr;
+                    </a>
                   </CardContent>
                 </Card>
               )}
