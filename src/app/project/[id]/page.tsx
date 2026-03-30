@@ -883,6 +883,7 @@ export default function ProjectPage() {
                     setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
                   }}
                   readOnly={isDemo}
+                  onDraftOpportunities={!isDemo ? () => handleGenerateOpportunities() : undefined}
                 />
               </>
             ) : (

@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronDown, Sparkles, Pencil } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { OpportunityEditor } from './OpportunityEditor';
 import { OpportunityCard } from './OpportunityCard';
@@ -46,6 +52,7 @@ interface OpportunitySectionProps {
   editingCard?: { type: string; id?: string } | null;
   onStartEditing?: (id: string) => void;
   onStopEditing?: () => void;
+  onDraftWithLuna?: () => void;
 }
 
 export function OpportunitySection({
@@ -56,6 +63,7 @@ export function OpportunitySection({
   readOnly = false,
   editingCard,
   onStartEditing,
+  onDraftWithLuna,
   onStopEditing,
 }: OpportunitySectionProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -211,15 +219,31 @@ export function OpportunitySection({
           Opportunities
         </h3>
         {!readOnly && !isAdding && !editingId && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleStartAdding}
-            className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-lunastak-mid text-lunastak-mid hover:bg-lunastak-mid/10 gap-1 h-7 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add
+                <ChevronDown className="h-3 w-3 ml-0.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={handleStartAdding}>
+                <Pencil className="h-3.5 w-3.5 mr-2" />
+                Add manually
+              </DropdownMenuItem>
+              {onDraftWithLuna && (
+                <DropdownMenuItem onClick={onDraftWithLuna}>
+                  <Sparkles className="h-3.5 w-3.5 mr-2" />
+                  Draft with Luna
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
