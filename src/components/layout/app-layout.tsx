@@ -228,7 +228,7 @@ export function AppLayout({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header className="sticky top-0 z-50 bg-white border-b">
         {/* Desktop: single row */}
         <div className="flex h-14 items-center gap-6 px-6">
           {/* Logo */}
