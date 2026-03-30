@@ -374,14 +374,41 @@ export function AppLayout({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="ghost" size="sm" className="h-8 text-sm" asChild>
-              <Link href="/auth/signin">
-                <Avatar className="h-5 w-5 rounded-md bg-muted text-muted-foreground mr-1.5">
-                  <AvatarFallback className="rounded-md bg-muted text-muted-foreground text-[10px]">G</AvatarFallback>
-                </Avatar>
-                Sign in
-              </Link>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5">
+                  <Avatar className="h-5 w-5 rounded-md bg-muted text-muted-foreground">
+                    <AvatarFallback className="rounded-md bg-muted text-muted-foreground text-[10px]">G</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden sm:inline text-sm">Guest</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/auth/signin">
+                    <User className="h-4 w-4" />
+                    Sign in
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">About</DropdownMenuLabel>
+                <div className="px-2 py-2 space-y-2">
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Built by{' '}
+                    <a href="https://www.humventures.com.au" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Humble Ventures</a>.
+                    {' '}<a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Decision Stack</a> by{' '}
+                    <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">Martin Eriksson</a>.
+                  </p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Data processed by Claude AI. Not used to train models.
+                  </p>
+                  <div className="flex gap-2">
+                    <a href="https://www.humventures.com.au/privacy" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">Privacy</a>
+                    <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">Help</a>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           </>
           )}
