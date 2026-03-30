@@ -787,7 +787,7 @@ export default function ProjectPage() {
             <X className="h-3.5 w-3.5" />
           </button>
           <div className="flex-1 flex items-center justify-center gap-2 text-xs">
-            <span className="font-bold uppercase tracking-wider text-primary">Example</span>
+            <span className="font-bold uppercase tracking-wider text-primary">Demo</span>
             <span className="text-muted-foreground">{projectData?.name}</span>
           </div>
           <div className="w-3.5 shrink-0" />
@@ -804,10 +804,25 @@ export default function ProjectPage() {
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   {isDemo ? (
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold uppercase tracking-wider text-primary">Example</span>
-                      <span>{projectData?.name}</span>
-                    </div>
+                    (() => {
+                      const episodeUrls: Record<string, string> = {
+                        'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
+                        'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
+                        'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
+                      }
+                      const episodeUrl = episodeUrls[projectId]
+                      return (
+                        <span>
+                          Generated from{' '}
+                          {episodeUrl ? (
+                            <a href={episodeUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+                              Acquired podcast
+                            </a>
+                          ) : 'Acquired podcast'}
+                          {' '}transcript
+                        </span>
+                      )
+                    })()
                   ) : (
                     <>
                       <span>
