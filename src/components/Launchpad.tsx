@@ -114,11 +114,11 @@ export function Launchpad({
           </p>
         </div>
 
-        <div className="grid gap-3 grid-cols-3 max-w-md mx-auto">
+        <div className="grid gap-4 grid-cols-3 max-w-lg mx-auto">
           {DEMO_PROJECTS.map((demo) => (
             <div
               key={demo.id}
-              className="group cursor-pointer rounded-lg px-4 py-2 space-y-1 bg-white shadow-sm hover:shadow-md transition-all"
+              className="group cursor-pointer rounded-lg px-5 py-4 space-y-2 bg-white shadow-sm hover:shadow-md transition-all"
               onClick={() => router.push(`/project/${demo.id}`)}
             >
               <div className="flex justify-center py-1">
