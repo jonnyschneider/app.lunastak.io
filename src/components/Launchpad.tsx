@@ -118,7 +118,7 @@ export function Launchpad({
           {DEMO_PROJECTS.map((demo) => (
             <div
               key={demo.id}
-              className="group cursor-pointer rounded-lg px-4 py-2 space-y-1 hover:bg-muted/50 transition-colors"
+              className="group cursor-pointer rounded-lg px-4 py-2 space-y-1 bg-white shadow-sm hover:shadow-md transition-all"
               onClick={() => router.push(`/project/${demo.id}`)}
             >
               <div className="flex justify-center py-1">
