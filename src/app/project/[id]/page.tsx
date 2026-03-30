@@ -1237,7 +1237,7 @@ export default function ProjectPage() {
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Prepare context in your favourite tool &rarr; Import a complete bundle into Luna. CLI skills and Agent tools available for major AI platforms.
                     </p>
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center justify-center gap-8">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/logo-claude.svg" alt="Claude" className="h-14" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
