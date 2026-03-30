@@ -160,12 +160,35 @@ export async function POST(req: Request) {
       select: { id: true },
     });
 
+    // Derive initial title from origin context
+    const initialTitle = deepDive?.topic
+      || (origin?.text ? origin.text.slice(0, 80) : null)
+      || (gapExploration?.summary ? gapExploration.summary.slice(0, 80) : null)
+      || null  // Organic chats get titled after a few exchanges
+
+    // Clean up abandoned single-message conversations for this project
+    const abandoned = await prisma.conversation.findMany({
+      where: {
+        projectId: targetProjectId,
+        userId,
+        status: 'in_progress',
+        messages: { none: { role: 'user' } },  // No user messages — only system prompt
+      },
+      select: { id: true },
+    })
+    if (abandoned.length > 0) {
+      await prisma.message.deleteMany({ where: { conversationId: { in: abandoned.map(c => c.id) } } })
+      await prisma.conversation.deleteMany({ where: { id: { in: abandoned.map(c => c.id) } } })
+      console.log(`[Start API] Cleaned up ${abandoned.length} abandoned conversations`)
+    }
+
     // Create conversation
     const conversation = await prisma.conversation.create({
       data: {
         userId, // guest user ID or authenticated user ID
         projectId: targetProjectId,
         deepDiveId: deepDive?.id || null,
+        title: initialTitle,
         status: 'in_progress',
         experimentVariant,
         isInitialConversation: !hasExistingStrategy,  // True if no strategy exists yet
