@@ -14,13 +14,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 10%;
 
-    /* Primary - Lunastak Aubergine */
-    --primary: 307 17% 20%;
+    /* Primary - Lunastak Mulberry */
+    --primary: 307 17% 31%;
     --primary-foreground: 330 14% 98%;
 
     /* Secondary */
     --secondary: 330 14% 98%;
-    --secondary-foreground: 307 17% 20%;
+    --secondary-foreground: 307 17% 31%;
 
     /* Muted */
     --muted: 330 10% 96%;
