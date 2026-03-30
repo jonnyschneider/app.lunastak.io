@@ -54,7 +54,7 @@ export function Launchpad({
       {/* Two onboarding paths */}
       <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
         {/* Talk to Luna */}
-        <div className="cursor-pointer rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors" onClick={onStartChat}>
+        <div className="cursor-pointer rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all" onClick={onStartChat}>
           <h3 className="text-sm font-bold uppercase tracking-wide">
             <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
             <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
@@ -69,7 +69,7 @@ export function Launchpad({
         </div>
 
         {/* Import a context bundle */}
-        <div className="rounded-lg p-6 space-y-3 hover:bg-muted/50 transition-colors">
+        <div className="rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all">
           <h3 className="text-sm font-bold uppercase tracking-wide">
             <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
             <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
