@@ -30,6 +30,25 @@ export default function StrategyViewPage() {
   const { data: session } = useSession()
   const isGuest = !session
 
+  // Header breadcrumb — must be before early returns (hooks order)
+  const { setTabNav } = useHeaderTabNav()
+  useEffect(() => {
+    if (projectId) {
+      setTabNav(
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <button onClick={() => router.push(`/project/${projectId}`)} className="hover:text-foreground transition-colors">
+            Decision Stack
+          </button>
+          <span>/</span>
+          <span className="text-foreground font-medium">
+            {timestamp ? new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Version'}
+          </span>
+        </div>
+      )
+    }
+    return () => setTabNav(null)
+  }, [projectId, timestamp, router, setTabNav])
+
   useEffect(() => {
     fetchStrategy()
 
@@ -101,25 +120,6 @@ export default function StrategyViewPage() {
       </AppLayout>
     )
   }
-
-  // Inject breadcrumb into header
-  const { setTabNav } = useHeaderTabNav()
-  useEffect(() => {
-    if (projectId) {
-      setTabNav(
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <button onClick={() => router.push(`/project/${projectId}`)} className="hover:text-foreground transition-colors">
-            Decision Stack
-          </button>
-          <span>/</span>
-          <span className="text-foreground font-medium">
-            {timestamp ? new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Version'}
-          </span>
-        </div>
-      )
-    }
-    return () => setTabNav(null)
-  }, [projectId, timestamp, router, setTabNav])
 
   return (
     <AppLayout>
