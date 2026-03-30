@@ -105,7 +105,7 @@ export function Launchpad({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg" />
 
-        <div className="space-y-1 mb-4">
+        <div className="space-y-1 mb-8">
           <p className="text-base text-muted-foreground">
             Because every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
           </p>
