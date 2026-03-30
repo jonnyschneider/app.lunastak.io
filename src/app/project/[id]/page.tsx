@@ -769,10 +769,10 @@ export default function ProjectPage() {
             <Star className={`h-3 w-3 ${conv.starred ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
           </button>
           <ItemContent>
-            <ItemTitle className="text-xs truncate">
+            <ItemTitle className="text-sm truncate">
               {conv.title || 'Untitled conversation'}
             </ItemTitle>
-            <ItemDescription className="text-xs">
+            <ItemDescription className="text-sm">
               {formatShortDate(conv.createdAt)}
             </ItemDescription>
             {deepDive && (
@@ -1116,7 +1116,7 @@ export default function ProjectPage() {
                           </ItemGroup>
                         ) : (
                           <div className="text-center py-6 text-muted-foreground">
-                            <p className="text-xs">No analysed conversations yet</p>
+                            <p className="text-sm">No analysed conversations yet</p>
                           </div>
                         )}
                       </TabsContent>
@@ -1127,7 +1127,7 @@ export default function ProjectPage() {
                           </ItemGroup>
                         ) : (
                           <div className="text-center py-6 text-muted-foreground">
-                            <p className="text-xs">No conversations in progress</p>
+                            <p className="text-sm">No conversations in progress</p>
                           </div>
                         )}
                       </TabsContent>
@@ -1135,7 +1135,7 @@ export default function ProjectPage() {
                   ) : (
                     <div className="text-center py-4 px-6 text-muted-foreground">
                       <MessageSquare className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                      <p className="text-xs">No conversations yet</p>
+                      <p className="text-sm">No conversations yet</p>
                     </div>
                   )}
                 </CardContent>
@@ -1179,8 +1179,8 @@ export default function ProjectPage() {
                               {index > 0 && <ItemSeparator />}
                               <Item size="sm">
                                 <ItemContent>
-                                  <ItemTitle className="text-xs truncate">{doc.fileName}</ItemTitle>
-                                  <ItemDescription className="text-xs">
+                                  <ItemTitle className="text-sm truncate">{doc.fileName}</ItemTitle>
+                                  <ItemDescription className="text-sm">
                                     {doc.status === 'complete'
                                       ? `${doc.fragmentCount} fragments`
                                       : doc.status === 'processing'
@@ -1212,7 +1212,7 @@ export default function ProjectPage() {
                   ) : (
                     <div className="text-center py-4 px-6 text-muted-foreground">
                       <FileText className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                      <p className="text-xs">No documents yet</p>
+                      <p className="text-sm">No documents yet</p>
                     </div>
                   )}
                 </CardContent>
@@ -1234,7 +1234,7 @@ export default function ProjectPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-4">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       Prepare context in your favourite tool &rarr; Import a complete bundle into Luna. CLI skills and Agent tools available for major AI platforms.
                     </p>
                     <div className="flex items-center gap-4">
@@ -1245,7 +1245,7 @@ export default function ProjectPage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/logo-openai.svg" alt="OpenAI" className="h-16" />
                     </div>
-                    <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
+                    <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
                       Learn more &rarr;
                     </a>
                   </CardContent>
