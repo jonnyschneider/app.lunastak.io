@@ -108,10 +108,10 @@ export function Launchpad({
         <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg" />
 
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Because every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             And every <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block rotate-1">strategy</span> is a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-[0.5deg]">Decision Stack</span>.
           </p>
         </div>
