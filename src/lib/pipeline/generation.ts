@@ -694,8 +694,17 @@ Objectives:
 
 Generate 3-5 strategic opportunities. Each opportunity must:
 - Map to one or more existing objectives (by ID)
-- Have a clear title and description
-- Include exactly one success metric using the belief format (one hypothesis per opportunity)
+- Have a clear title and description (2-3 sentences)
+- Include ONE belief statement (what we think will happen)
+- Include 1-3 success indicators (how we'll know it's working)
+
+IMPORTANT: Each success indicator must be concise — communicating intent, not forensic precision.
+- signal: ONE metric name (5-15 words). NOT a comma-separated list.
+- baseline: Current state in 5-15 words
+- target: Desired state in 5-15 words
+
+BAD signal: "Yield parity ratio, local talent retention rates, and supplier response time parity"
+GOOD signal: "Leading-edge yield at non-Taiwan fabs"
 
 Output format:
 <opportunities>
@@ -705,12 +714,13 @@ Output format:
     <objective_ids>obj-1, obj-2</objective_ids>
     <metrics>
       <metric>
-        <action>what we believe doing</action>
-        <outcome>what result we expect</outcome>
-        <signal>what we'll measure</signal>
+        <action>what we believe doing (one sentence)</action>
+        <outcome>what result we expect (one sentence)</outcome>
+        <signal>one metric name</signal>
         <baseline>current state</baseline>
         <target>desired state</target>
       </metric>
+      <!-- 1-3 metrics per opportunity. Each metric is ONE signal, not a list. -->
     </metrics>
   </opportunity>
 </opportunities>`
