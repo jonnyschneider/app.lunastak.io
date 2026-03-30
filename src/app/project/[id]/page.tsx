@@ -20,6 +20,7 @@ import {
   Download,
   Clock,
   Package,
+  Plus,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -1014,7 +1015,8 @@ export default function ProjectPage() {
                         setChatViewOnly(false)
                         setChatSheetOpen(true)
                       }}>
-                        + New
+                        <Plus className="h-3 w-3 mr-1" />
+                        New
                       </Button>
                     )}
                   </div>
@@ -1101,7 +1103,8 @@ export default function ProjectPage() {
                         setUploadDeepDiveId(undefined)
                         setUploadDialogOpen(true)
                       }}>
-                        + Upload
+                        <Plus className="h-3 w-3 mr-1" />
+                        Upload
                       </Button>
                     )}
                   </div>
