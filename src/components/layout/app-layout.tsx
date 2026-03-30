@@ -230,11 +230,11 @@ export function AppLayout({
       {/* Top Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         {/* Desktop: single row */}
-        <div className="flex h-14 items-center gap-4 px-4">
+        <div className="flex h-14 items-center gap-6 px-6">
           {/* Logo */}
-          <Link href={selectedProjectId ? `/project/${selectedProjectId}` : '/'} className="shrink-0">
+          <Link href={selectedProjectId ? `/project/${selectedProjectId}` : '/'} className="shrink-0 mr-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/lunastak-logo.svg" alt="Lunastak" className="h-8 w-auto" />
+            <img src="/lunastak-logo.svg" alt="Lunastak" className="h-9 w-auto" />
           </Link>
 
           {/* Tab navigation slot (injected by pages via HeaderContext) */}
