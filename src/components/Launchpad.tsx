@@ -115,9 +115,6 @@ export function Launchpad({
             And every <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block rotate-1">strategy</span> is a <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-[0.5deg]">Decision Stack</span>.
           </p>
         </div>
-        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-          See how Luna extracts insight and creates a Decision Stack from <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Acquired podcast</a> transcripts by Ben Gilbert and David Rosenthal
-        </p>
 
         <div className="grid gap-3 grid-cols-3 max-w-md mx-auto">
           {DEMO_PROJECTS.map((demo) => (
@@ -136,6 +133,10 @@ export function Launchpad({
             </div>
           ))}
         </div>
+
+        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+          See how Luna extracts insight and creates a Decision Stack from <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Acquired podcast</a> transcripts by Ben Gilbert and David Rosenthal
+        </p>
       </div>
     </div>
   )
