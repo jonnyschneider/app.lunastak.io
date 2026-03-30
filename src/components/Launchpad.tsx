@@ -109,10 +109,10 @@ export function Launchpad({
 
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">
-            Because every company has a <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-primary/10 text-primary px-1 rounded-sm">story</span>.
+            Because every company has a <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-primary text-white/90 px-1.5 py-0.5 rounded-sm">story</span>.
           </p>
           <p className="text-sm text-muted-foreground">
-            And every <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-primary/10 text-primary px-1 rounded-sm">strategy</span> is a <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-primary/10 text-primary px-1 rounded-sm">Decision Stack</span>.
+            And every <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-primary text-white/90 px-1.5 py-0.5 rounded-sm">strategy</span> is a <span className="italic font-[family-name:var(--font-ibm-plex-mono)] bg-primary text-white/90 px-1.5 py-0.5 rounded-sm">Decision Stack</span>.
           </p>
         </div>
         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
