@@ -954,7 +954,13 @@ export default function ProjectPage() {
               dimensionalCoverage={stats.dimensionalCoverage}
               syntheses={projectData?.syntheses || []}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
-              onRefreshClick={() => setRefreshStrategyDialogOpen(true)}
+              onRefreshClick={() => {
+                if (hasStrategy) {
+                  setRefreshStrategyDialogOpen(true)
+                } else {
+                  handleGenerateStrategy()
+                }
+              }}
               onChatClick={() => triggerUpgrade('knowledge-chat')}
               onEditClick={() => triggerUpgrade('knowledge-edit')}
               onDimensionClick={(dimension?: string) => {
