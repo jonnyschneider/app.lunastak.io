@@ -1246,7 +1246,7 @@ export default function ProjectPage() {
                       <img src="/logo-openai.svg" alt="OpenAI" className="h-14" />
                     </div>
                     <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
-                      Learn more &rarr;
+                      Download &amp; setup &rarr;
                     </a>
                   </CardContent>
                 </Card>
