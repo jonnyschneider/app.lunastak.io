@@ -1001,7 +1001,7 @@ export default function ProjectPage() {
             />
 
               {/* Conversations */}
-              <Card data-section="chats" className="bg-white shadow-sm border-0">
+              <Card data-section="chats">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -1093,7 +1093,7 @@ export default function ProjectPage() {
             {/* Documents + Import CTA side by side */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Documents */}
-              <Card className="bg-white shadow-sm border-0">
+              <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -1167,7 +1167,7 @@ export default function ProjectPage() {
 
               {/* Import CTA */}
               {!isDemo && (
-                <Card className="bg-white shadow-sm border-0">
+                <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-base">
