@@ -219,8 +219,8 @@ export default function ProjectPage() {
     localStorage.setItem(`project-${projectId}-tab`, activeTab)
   }, [activeTab, projectId])
 
-  // Inject tab nav into header
-  const { setTabNav } = useHeaderTabNav()
+  // Inject tab nav + demo right slot into header
+  const { setTabNav, setRightSlot } = useHeaderTabNav()
   useEffect(() => {
     setTabNav(
       <div className="inline-flex rounded-lg border border-input">
@@ -249,6 +249,32 @@ export default function ProjectPage() {
     )
     return () => setTabNav(null)
   }, [activeTab, projectId, projectData?.stats?.fragmentCount, setTabNav])
+
+  // Demo mode: inject right slot with example info
+  useEffect(() => {
+    if (!projectData?.isDemo) { setRightSlot(null); return }
+    const episodeUrls: Record<string, string> = {
+      'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
+      'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
+      'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
+    }
+    const episodeUrl = episodeUrls[projectId]
+    setRightSlot(
+      <>
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Example</span>
+        <span className="text-sm text-muted-foreground">{projectData?.name}</span>
+        {episodeUrl && (
+          <a href={episodeUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">
+            Listen &rarr;
+          </a>
+        )}
+        <button onClick={() => router.push('/')} className="text-xs text-muted-foreground hover:text-foreground">
+          &larr; My project
+        </button>
+      </>
+    )
+    return () => setRightSlot(null)
+  }, [projectData?.isDemo, projectId, projectData?.name, router, setRightSlot])
 
   // Strategy data for Direction tab
   const [strategyData, setStrategyData] = useState<{
@@ -688,45 +714,6 @@ export default function ProjectPage() {
 
   return (
     <AppLayout>
-      {/* Demo banner */}
-      {isDemo && (() => {
-        const episodeUrls: Record<string, string> = {
-          'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
-          'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
-          'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
-        }
-        const episodeUrl = episodeUrls[projectId]
-        return (
-          <div className="bg-[hsl(307,17%,31%)] border-b border-[hsl(307,17%,40%)] px-6 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-white">
-                Example
-              </span>
-              <span className="text-sm text-white/70">
-                {projectData?.name}
-              </span>
-              {episodeUrl && (
-                <a
-                  href={episodeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-white/50 hover:text-white/80 underline underline-offset-2 transition-colors"
-                >
-                  Listen on Acquired.fm &rarr;
-                </a>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white/70 hover:text-white hover:bg-white/10"
-              onClick={() => router.push('/')}
-            >
-              &larr; Back to my project
-            </Button>
-          </div>
-        )
-      })()}
       <div className="container mx-auto px-6 py-8 space-y-6">
         {/* Content — switched by activeTab (tabs are in header via HeaderContext) */}
         <div className="w-full">

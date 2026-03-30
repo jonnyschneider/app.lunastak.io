@@ -81,7 +81,7 @@ export function AppLayout({
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
-  const { tabNav } = useHeaderSlot()
+  const { tabNav, rightSlot } = useHeaderSlot()
 
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
@@ -245,6 +245,13 @@ export function AppLayout({
           {/* Spacer */}
           <div className="flex-1" />
 
+          {/* Right slot (demo mode injects here) or default project switcher + account */}
+          {rightSlot ? (
+            <div className="flex items-center gap-3">
+              {rightSlot}
+            </div>
+          ) : (
+          <>
           {/* Project Switcher */}
           {!isLoadingProjects && projects.length > 0 && (
             <Popover open={projectSwitcherOpen} onOpenChange={setProjectSwitcherOpen}>
@@ -375,6 +382,8 @@ export function AppLayout({
                 Sign in
               </Link>
             </Button>
+          )}
+          </>
           )}
         </div>
 
