@@ -1030,10 +1030,24 @@ export default function ProjectPage() {
               {/* Conversations */}
               <Card data-section="chats">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <MessageSquare className="h-4 w-4" />
-                    Chats
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <MessageSquare className="h-4 w-4" />
+                      Chats
+                    </CardTitle>
+                    {!isDemo && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                        setChatInitialQuestion(undefined)
+                        setChatDeepDiveId(undefined)
+                        setChatGapExploration(undefined)
+                        setChatResumeConversationId(undefined)
+                        setChatViewOnly(false)
+                        setChatSheetOpen(true)
+                      }}>
+                        + New
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   {projectData?.conversations && projectData.conversations.length > 0 ? (
@@ -1107,10 +1121,20 @@ export default function ProjectPage() {
               {/* Documents */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FileText className="h-4 w-4" />
-                    Documents
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FileText className="h-4 w-4" />
+                      Documents
+                    </CardTitle>
+                    {!isDemo && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                        setUploadDeepDiveId(undefined)
+                        setUploadDialogOpen(true)
+                      }}>
+                        + Upload
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   {projectData?.documents && projectData.documents.length > 0 ? (
@@ -1171,17 +1195,28 @@ export default function ProjectPage() {
                 <Card className="border-dashed">
                   <CardContent className="p-6 flex flex-col justify-center h-full">
                     <Package className="h-6 w-6 text-muted-foreground mb-3" />
-                    <h3 className="font-semibold text-sm mb-1">Import context from AI</h3>
-                    <p className="text-xs text-muted-foreground mb-4">
-                      Use the Decision Stack skill in Claude, ChatGPT, or Gemini to prepare your strategic context, then import it here.
+                    <h3 className="font-semibold text-sm mb-1">Connect your AI tools</h3>
+                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                      Connectors available for your favourite CLI (Claude Code, Codex) or Desktop Agent (Claude Desktop, Gemini, OpenAI).
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setImportDialogOpen(true)}
-                    >
-                      Import Context Bundle
-                    </Button>
+                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                      Prepare your strategic context in any AI tool, export it, and bring it here.
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="w-full">
+                          Learn more &rarr;
+                        </Button>
+                      </a>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground"
+                        onClick={() => setImportDialogOpen(true)}
+                      >
+                        Import a bundle
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               )}

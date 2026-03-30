@@ -6,10 +6,8 @@ import { useSession } from 'next-auth/react'
 import { AppLayout } from '@/components/layout/app-layout'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { GuestSaveBanner } from '@/components/GuestSaveBanner'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { StrategyStatements } from '@/lib/types'
-import { KnowledgeSnapshot } from '@/components/KnowledgeSnapshot'
 
 export default function StrategyViewPage() {
   const params = useParams()
@@ -124,64 +122,18 @@ export default function StrategyViewPage() {
         {/* Guest Save Banner - above tabs */}
         {isGuest && <GuestSaveBanner />}
 
-        {/* Tabbed Content */}
-        <Tabs defaultValue="strategy" className="w-full">
-          {/* Header row: Tabs left, Logo right - constrained to match content */}
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center border-b">
-              {/* Left: Tabs */}
-              <TabsList className="h-10 bg-transparent p-0 gap-6">
-                <TabsTrigger
-                  value="strategy"
-                  className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                >
-                  Your Strategy
-                </TabsTrigger>
-                <TabsTrigger
-                  value="knowledge"
-                  className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                >
-                  Knowledge Snapshot
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Right: Decision Stack logo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/Decision Stack Logo.svg"
-                alt="Decision Stack"
-                className="h-8"
-              />
-            </div>
-          </div>
-
-          <TabsContent value="strategy" className="mt-6">
-            <div className="max-w-6xl mx-auto">
-              {/* Strategy Content */}
-              {strategy && conversationId && projectId && (
-                <StrategyDisplay
-                  strategy={strategy}
-                  conversationId={conversationId}
-                  traceId={traceId}
-                  projectId={projectId}
-                  onUpdate={setStrategy}
-                  readOnly={readOnly}
-                />
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="knowledge" className="mt-8">
-            <KnowledgeSnapshot
-              extractedContext={extractedContext}
-              timestamp={timestamp}
+        <div className="max-w-6xl mx-auto">
+          {strategy && conversationId && projectId && (
+            <StrategyDisplay
+              strategy={strategy}
+              conversationId={conversationId}
+              traceId={traceId}
               projectId={projectId}
+              onUpdate={setStrategy}
+              readOnly={readOnly}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
     </AppLayout>
   )
