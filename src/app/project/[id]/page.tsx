@@ -219,8 +219,13 @@ export default function ProjectPage() {
     localStorage.setItem(`project-${projectId}-tab`, activeTab)
   }, [activeTab, projectId])
 
+  // Derived state needed by header injection
+  const hasStrategy = (projectData?.strategyOutputs?.length ?? 0) > 0
+
   // Inject tab nav + demo right slot into header
   const { setTabNav, setRightSlot } = useHeaderTabNav()
+  const isDemo = projectData?.isDemo === true
+
   useEffect(() => {
     setTabNav(
       <div className="inline-flex rounded-lg border border-input">
@@ -236,8 +241,9 @@ export default function ProjectPage() {
         <button
           onClick={() => { setActiveTab('knowledgebase'); getStatsigClient()?.logEvent('tab_switch', 'knowledgebase', { projectId }) }}
           className={cn(
-            'rounded-r-lg border-l border-input px-4 py-1.5 text-sm font-medium transition-colors',
-            activeTab === 'knowledgebase' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            'border-l border-input px-4 py-1.5 text-sm font-medium transition-colors',
+            activeTab === 'knowledgebase' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+            isDemo ? 'rounded-r-lg' : ''
           )}
         >
           Knowledgebase
@@ -245,10 +251,94 @@ export default function ProjectPage() {
             <span className="ml-1.5 text-xs opacity-70">{projectData?.stats?.fragmentCount}</span>
           )}
         </button>
+        {!isDemo && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="border-l border-input px-3 py-1.5 text-sm hover:bg-muted transition-colors rounded-r-lg"
+                onClick={() => getStatsigClient()?.logEvent('overflow_menu_open', 'project-page', { projectId })}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_new_chat', 'overflow-menu', { projectId })
+                setChatInitialQuestion(undefined); setChatDeepDiveId(undefined); setChatGapExploration(undefined)
+                setChatResumeConversationId(undefined); setChatViewOnly(false); setChatSheetOpen(true)
+              }}>
+                <MessageSquare className="h-4 w-4 mr-2" />New Chat
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_upload_doc', 'overflow-menu', { projectId })
+                setUploadDeepDiveId(undefined); setUploadDialogOpen(true)
+              }}>
+                <Upload className="h-4 w-4 mr-2" />Upload Document
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_import_bundle', 'overflow-menu', { projectId })
+                setImportDialogOpen(true)
+              }}>
+                <Package className="h-4 w-4 mr-2" />Import Context Bundle
+              </DropdownMenuItem>
+              {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
+                <DropdownMenuItem onClick={() => router.push(`/project/${projectId}/fragments`)}>
+                  <FileText className="h-4 w-4 mr-2" />View all {projectData?.stats?.fragmentCount} fragments
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
+              <DropdownMenuItem
+                disabled={!hasStrategy && (projectData?.stats?.fragmentCount ?? 0) === 0}
+                onClick={() => {
+                  getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
+                  if (hasStrategy) { setRefreshStrategyDialogOpen(true) } else { handleGenerateStrategy() }
+                }}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                <div><div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
+                  <div className="text-[10px] text-muted-foreground">{hasStrategy ? 'Update V/S/O from latest context' : 'Create your first Decision Stack'}</div>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={!hasStrategy} onClick={() => {
+                getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
+                handleGenerateOpportunities()
+              }}>
+                <Target className="h-4 w-4 mr-2" />
+                <div><div>Draft Opportunities</div>
+                  <div className="text-[10px] text-muted-foreground">{hasStrategy ? 'Create initiatives for your objectives' : 'Generate strategy first'}</div>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
+              <DropdownMenuItem disabled={!hasStrategy} onClick={async () => {
+                getStatsigClient()?.logEvent('cta_export_brief', 'overflow-menu', { projectId })
+                const res = await fetch(`/api/project/${projectId}/export-brief`)
+                if (res.ok) {
+                  const blob = await res.blob(); const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
+                }
+              }}>
+                <Download className="h-4 w-4 mr-2" />Export Strategic Brief
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_version_history', 'overflow-menu', { projectId })
+                setVersionHistoryOpen(true)
+              }}>
+                <Clock className="h-4 w-4 mr-2" />Version History
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Examples</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => router.push('/project/cmn8anetr5kwlmbmq')}>Nike</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/project/cmn8an6ivpa0xoehj')}>Costco</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/project/cmn8anbaapaww1709')}>TSMC</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     )
     return () => setTabNav(null)
-  }, [activeTab, projectId, projectData?.stats?.fragmentCount, setTabNav])
+  }, [activeTab, projectId, projectData?.stats?.fragmentCount, isDemo, hasStrategy, setTabNav])
 
   // Demo mode: inject right slot with example info
   useEffect(() => {
@@ -707,140 +797,13 @@ export default function ProjectPage() {
     )
   }
 
-  const hasStrategy = (projectData?.strategyOutputs?.length ?? 0) > 0
   const opportunityCount = strategyData?.strategy?.opportunities?.length ?? 0
-
-  const isDemo = projectData?.isDemo === true
 
   return (
     <AppLayout>
       <div className="container mx-auto px-6 py-8 space-y-6">
-        {/* Content — switched by activeTab (tabs are in header via HeaderContext) */}
+        {/* Content — switched by activeTab (tabs + overflow are in header via HeaderContext) */}
         <div className="w-full">
-          {!isDemo && (
-            <div className="flex justify-end mb-2">
-              <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8"
-                      onClick={() => getStatsigClient()?.logEvent('overflow_menu_open', 'project-page', { projectId })}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => {
-                      getStatsigClient()?.logEvent('cta_new_chat', 'overflow-menu', { projectId })
-                      setChatInitialQuestion(undefined)
-                      setChatDeepDiveId(undefined)
-                      setChatGapExploration(undefined)
-                      setChatResumeConversationId(undefined)
-                      setChatViewOnly(false)
-                      setChatSheetOpen(true)
-                    }}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      New Chat
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      getStatsigClient()?.logEvent('cta_upload_doc', 'overflow-menu', { projectId })
-                      setUploadDeepDiveId(undefined)
-                      setUploadDialogOpen(true)
-                    }}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Document
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      getStatsigClient()?.logEvent('cta_import_bundle', 'overflow-menu', { projectId })
-                      setImportDialogOpen(true)
-                    }}>
-                      <Package className="h-4 w-4 mr-2" />
-                      Import Context Bundle
-                    </DropdownMenuItem>
-                    {stats.fragmentCount > 0 && (
-                      <DropdownMenuItem onClick={() => router.push(`/project/${projectId}/fragments`)}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        View all {stats.fragmentCount} fragments
-                      </DropdownMenuItem>
-                    )}
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
-                    <DropdownMenuItem
-                      disabled={!hasStrategy && (stats.fragmentCount ?? 0) === 0}
-                      onClick={() => {
-                        getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
-                        if (hasStrategy) {
-                          setRefreshStrategyDialogOpen(true)
-                        } else {
-                          handleGenerateStrategy()
-                        }
-                      }}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      <div>
-                        <div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {hasStrategy ? 'Update V/S/O from latest context' : 'Create your first Decision Stack'}
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={!hasStrategy}
-                      onClick={() => {
-                        getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
-                        handleGenerateOpportunities()
-                      }}
-                    >
-                      <Target className="h-4 w-4 mr-2" />
-                      <div>
-                        <div>Draft Opportunities</div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {hasStrategy ? 'Create initiatives for your objectives' : 'Generate strategy first'}
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
-                    <DropdownMenuItem disabled={!hasStrategy} onClick={async () => {
-                      getStatsigClient()?.logEvent('cta_export_brief', 'overflow-menu', { projectId })
-                      const res = await fetch(`/api/project/${projectId}/export-brief`)
-                      if (res.ok) {
-                        const blob = await res.blob()
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = 'strategic-brief.md'
-                        a.click()
-                        URL.revokeObjectURL(url)
-                      }
-                    }}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Strategic Brief
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      getStatsigClient()?.logEvent('cta_version_history', 'overflow-menu', { projectId })
-                      setVersionHistoryOpen(true)
-                    }}>
-                      <Clock className="h-4 w-4 mr-2" />
-                      Version History
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Acquired × Lunastak Examples</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => router.push('/project/cmn8anetr5kwlmbmq')}>
-                      Nike
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/project/cmn8an6ivpa0xoehj')}>
-                      Costco
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/project/cmn8anbaapaww1709')}>
-                      TSMC
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-          )}
-
           {/* Decision Stack */}
           {activeTab === 'decision-stack' && <div className="space-y-6">
             {strategyData ? (
