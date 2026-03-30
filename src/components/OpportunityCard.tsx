@@ -92,9 +92,6 @@ export function OpportunityCard({
                     )}
                   </>
                 )}
-                {successMetrics.length > 1 && (
-                  <p className="text-[10px] text-white/50 mt-2">+{successMetrics.length - 1} more metric{successMetrics.length > 2 ? 's' : ''}</p>
-                )}
               </div>
             )
           })()}

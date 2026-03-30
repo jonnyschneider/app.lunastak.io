@@ -695,7 +695,7 @@ Objectives:
 Generate 3-5 strategic opportunities. Each opportunity must:
 - Map to one or more existing objectives (by ID)
 - Have a clear title and description
-- Include at least one success metric using the belief format
+- Include exactly one success metric using the belief format (one hypothesis per opportunity)
 
 Output format:
 <opportunities>
