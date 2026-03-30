@@ -100,10 +100,10 @@ export function Launchpad({
       </div>
 
       {/* Acquired × Lunastak */}
-      <div className="text-center space-y-5">
+      <div className="text-center">
         {/* Banner */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg" />
+        <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg mb-5" />
 
         <div className="space-y-1 mb-8">
           <p className="text-base text-muted-foreground">
@@ -114,7 +114,7 @@ export function Launchpad({
           </p>
         </div>
 
-        <div className="grid gap-4 grid-cols-3 max-w-lg mx-auto">
+        <div className="grid gap-4 grid-cols-3 max-w-lg mx-auto mb-5">
           {DEMO_PROJECTS.map((demo) => (
             <div
               key={demo.id}
