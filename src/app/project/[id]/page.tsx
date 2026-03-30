@@ -779,18 +779,18 @@ export default function ProjectPage() {
     <AppLayout>
       {/* Demo banner */}
       {isDemo && (
-        <div className="bg-primary/5 border-b px-6 py-1.5 flex items-center">
+        <div className="bg-[#c74188] px-6 py-2 flex items-center">
           <button
             onClick={() => router.push('/')}
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="text-white/70 hover:text-white transition-colors shrink-0 p-1 -ml-1 rounded-md hover:bg-white/10"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
-          <div className="flex-1 flex items-center justify-center gap-2 text-xs">
-            <span className="font-bold uppercase tracking-wider text-primary">Demo</span>
-            <span className="text-muted-foreground">{projectData?.name}</span>
+          <div className="flex-1 flex items-center justify-center gap-2 text-sm">
+            <span className="font-bold uppercase tracking-wider text-white/90">Demo</span>
+            <span className="text-white/70">{projectData?.name}</span>
           </div>
-          <div className="w-3.5 shrink-0" />
+          <div className="w-6 shrink-0" />
         </div>
       )}
       <div className="container mx-auto px-6 py-8 space-y-6">
