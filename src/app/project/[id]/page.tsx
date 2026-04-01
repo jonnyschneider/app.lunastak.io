@@ -815,7 +815,7 @@ export default function ProjectPage() {
     <AppLayout>
       {/* Demo banner */}
       {isDemo && (
-        <div className="sticky top-14 z-40 bg-[#c74188]/85 backdrop-blur-sm px-6 py-2 flex items-center">
+        <div className="sticky top-[6.25rem] md:top-14 z-40 bg-[#c74188]/85 backdrop-blur-sm px-6 py-2 flex items-center">
           <button
             onClick={() => {
               getStatsigClient()?.logEvent('demo_exit', 'banner', { projectId })

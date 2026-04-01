@@ -31,7 +31,7 @@ export function StatusBanner({ projectId }: StatusBannerProps) {
   if (!message) return null
 
   return (
-    <div className="sticky top-14 z-40 bg-[#c74188]/85 backdrop-blur-sm px-6 py-2 flex items-center justify-center gap-2">
+    <div className="sticky top-[6.25rem] md:top-14 z-40 bg-[#c74188]/85 backdrop-blur-sm px-6 py-2 flex items-center justify-center gap-2">
       <Loader2 className="h-3.5 w-3.5 animate-spin text-white/70" />
       <span className="text-sm text-white/90">{message}</span>
     </div>
