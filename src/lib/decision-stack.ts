@@ -146,17 +146,8 @@ export async function writeStrategyToStack(
     },
   })
 
-  // Replace components per type: only archive types that have new values
-  // This preserves opportunities when regenerating V/S/O, and vice versa
-  const typeReplacements: Array<{
-    type: string
-    items: Array<{ id: string; [key: string]: unknown }>
-  }> = [
-    { type: 'objective', items: statements.objectives },
-    { type: 'opportunity', items: statements.opportunities },
-    { type: 'principle', items: statements.principles },
-  ]
-
+  // Replace all components atomically — O/P are linked to objectives by ID,
+  // so partial replacement would leave orphaned references
   const components: Array<{
     decisionStackId: string
     componentType: string
@@ -165,30 +156,48 @@ export async function writeStrategyToStack(
     sortOrder: number
   }> = []
 
-  for (const { type, items } of typeReplacements) {
-    if (items.length > 0) {
-      // Archive existing components of this type
-      await prisma.decisionStackComponent.updateMany({
-        where: { decisionStackId: stack.id, componentType: type },
-        data: { status: 'archived' },
-      })
+  statements.objectives.forEach((obj, i) => {
+    components.push({
+      decisionStackId: stack.id,
+      componentType: 'objective',
+      componentId: obj.id,
+      content: obj as object,
+      sortOrder: i,
+    })
+  })
 
-      // Queue new components
-      items.forEach((item, i) => {
-        components.push({
-          decisionStackId: stack.id,
-          componentType: type,
-          componentId: item.id as string,
-          content: item as object,
-          sortOrder: i,
-        })
-      })
+  statements.opportunities.forEach((opp, i) => {
+    components.push({
+      decisionStackId: stack.id,
+      componentType: 'opportunity',
+      componentId: opp.id,
+      content: opp as object,
+      sortOrder: i,
+    })
+  })
+
+  statements.principles.forEach((prin, i) => {
+    components.push({
+      decisionStackId: stack.id,
+      componentType: 'principle',
+      componentId: prin.id,
+      content: prin as object,
+      sortOrder: i,
+    })
+  })
+
+  // Only replace if we have at least objectives (the minimum for a valid stack)
+  if (statements.objectives.length > 0) {
+    await prisma.decisionStackComponent.updateMany({
+      where: { decisionStackId: stack.id },
+      data: { status: 'archived' },
+    })
+
+    if (components.length > 0) {
+      await prisma.decisionStackComponent.createMany({ data: components })
     }
-    // If items is empty, leave existing components untouched
-  }
-
-  if (components.length > 0) {
-    await prisma.decisionStackComponent.createMany({ data: components })
+  } else {
+    console.warn('[DecisionStack] writeStrategyToStack called with 0 objectives — skipping component replacement to prevent data loss')
   }
 
   return stack.id
