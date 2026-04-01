@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { StatsigClient } from '@statsig/js-client';
 import { runStatsigSessionReplay } from '@statsig/session-replay';
 import { runStatsigAutoCapture } from '@statsig/web-analytics';
+import packageJson from '../../package.json';
 
 let statsigClient: StatsigClient | null = null;
 
@@ -29,7 +30,9 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
         const tier = process.env.NEXT_PUBLIC_VERCEL_ENV || 'development';
         console.log(`[Statsig Client] Initializing (tier: ${tier}) with autocapture...`);
 
-        statsigClient = new StatsigClient(clientKey, {}, {
+        statsigClient = new StatsigClient(clientKey, {
+          custom: { app_version: packageJson.version },
+        }, {
           environment: { tier },
         });
 

@@ -190,13 +190,13 @@ export function KnowledgebaseHeader({
 
   const handleChatClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log('[Analytics] knowledge_panel_chat_clicked')
+    getStatsigClient()?.logEvent('pro_upgrade_click', 'knowledge-chat')
     onChatClick()
   }, [onChatClick])
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log('[Analytics] knowledge_panel_edit_clicked')
+    getStatsigClient()?.logEvent('pro_upgrade_click', 'knowledge-edit')
     onEditClick()
   }, [onEditClick])
 

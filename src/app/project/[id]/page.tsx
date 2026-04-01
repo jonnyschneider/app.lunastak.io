@@ -804,7 +804,10 @@ export default function ProjectPage() {
       {isDemo && (
         <div className="bg-[#c74188] px-6 py-2 flex items-center">
           <button
-            onClick={() => router.push('/')}
+            onClick={() => {
+              getStatsigClient()?.logEvent('demo_exit', 'banner', { projectId })
+              router.push('/')
+            }}
             className="text-white/70 hover:text-white transition-colors shrink-0 p-1 -ml-1 rounded-md hover:bg-white/10"
           >
             <X className="h-4 w-4" />
@@ -858,11 +861,7 @@ export default function ProjectPage() {
                   ) : (
                     <>
                       <span>
-                        v{projectData?.strategyOutputs?.[0]?.version || 1} &middot; {
-                          projectData?.strategyOutputs?.[0]?.createdAt
-                            ? new Date(projectData.strategyOutputs[0].createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                            : ''
-                        }
+                        v{(projectData as any)?.latestSnapshotVersion || projectData?.strategyOutputs?.[0]?.version || 1}
                       </span>
                       <button
                         onClick={() => setVersionHistoryOpen(true)}
@@ -1015,6 +1014,7 @@ export default function ProjectPage() {
               onItemClick={(item: ExploreItem) => {
                 if (item.type === 'deep-dive') {
                   const ddId = item.id.replace('dd-', '')
+                  getStatsigClient()?.logEvent('cta_open_deep_dive', 'explore-next', { projectId })
                   openDeepDiveSheet(ddId)
                 } else if (item.type === 'provocation') {
                   // Prefer originText match (new conversations), fall back to firstMessageContent (legacy)

@@ -1,4 +1,5 @@
 import Statsig from 'statsig-node';
+import packageJson from '../../package.json';
 
 let statsigInitialized = false;
 let statsigInitFailed = false;
@@ -144,7 +145,7 @@ export async function logStatsigEvent(
     return;
   }
 
-  Statsig.logEvent({ userID: userId }, eventName, value, metadata);
+  Statsig.logEvent({ userID: userId }, eventName, value, { ...metadata, app_version: packageJson.version });
   console.log(`[Statsig] Event logged: ${eventName}`, { userId, value, metadata });
 
   // Flush immediately in serverless environment to ensure events are sent

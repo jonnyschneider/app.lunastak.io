@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { OpportunityEditor } from './OpportunityEditor';
 import { OpportunityCard } from './OpportunityCard';
 import { SuccessMetric } from '@/lib/types';
+import { getStatsigClient } from '@/components/StatsigProvider';
 
 interface Opportunity {
   id: string;
@@ -240,7 +241,10 @@ export function OpportunitySection({
                 Add manually
               </DropdownMenuItem>
               {onDraftWithLuna && (
-                <DropdownMenuItem onClick={onDraftWithLuna}>
+                <DropdownMenuItem onClick={() => {
+                  getStatsigClient()?.logEvent('cta_draft_opportunities', 'opportunity-section', { projectId })
+                  onDraftWithLuna?.()
+                }}>
                   <Sparkles className="h-3.5 w-3.5 mr-2" />
                   Draft with Luna
                 </DropdownMenuItem>
