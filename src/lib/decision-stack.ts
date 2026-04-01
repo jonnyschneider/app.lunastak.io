@@ -146,18 +146,16 @@ export async function writeStrategyToStack(
     },
   })
 
-  // Replace all components: archive existing, create new
-  // Only archive if we have new components to write (prevent data loss on empty generation)
-  const hasNewComponents = statements.objectives.length > 0 ||
-    statements.opportunities.length > 0 ||
-    statements.principles.length > 0
-
-  if (hasNewComponents) {
-    await prisma.decisionStackComponent.updateMany({
-      where: { decisionStackId: stack.id },
-      data: { status: 'archived' },
-    })
-  }
+  // Replace components per type: only archive types that have new values
+  // This preserves opportunities when regenerating V/S/O, and vice versa
+  const typeReplacements: Array<{
+    type: string
+    items: Array<{ id: string; [key: string]: unknown }>
+  }> = [
+    { type: 'objective', items: statements.objectives },
+    { type: 'opportunity', items: statements.opportunities },
+    { type: 'principle', items: statements.principles },
+  ]
 
   const components: Array<{
     decisionStackId: string
@@ -167,35 +165,27 @@ export async function writeStrategyToStack(
     sortOrder: number
   }> = []
 
-  statements.objectives.forEach((obj, i) => {
-    components.push({
-      decisionStackId: stack.id,
-      componentType: 'objective',
-      componentId: obj.id,
-      content: obj as object,
-      sortOrder: i,
-    })
-  })
+  for (const { type, items } of typeReplacements) {
+    if (items.length > 0) {
+      // Archive existing components of this type
+      await prisma.decisionStackComponent.updateMany({
+        where: { decisionStackId: stack.id, componentType: type },
+        data: { status: 'archived' },
+      })
 
-  statements.opportunities.forEach((opp, i) => {
-    components.push({
-      decisionStackId: stack.id,
-      componentType: 'opportunity',
-      componentId: opp.id,
-      content: opp as object,
-      sortOrder: i,
-    })
-  })
-
-  statements.principles.forEach((prin, i) => {
-    components.push({
-      decisionStackId: stack.id,
-      componentType: 'principle',
-      componentId: prin.id,
-      content: prin as object,
-      sortOrder: i,
-    })
-  })
+      // Queue new components
+      items.forEach((item, i) => {
+        components.push({
+          decisionStackId: stack.id,
+          componentType: type,
+          componentId: item.id as string,
+          content: item as object,
+          sortOrder: i,
+        })
+      })
+    }
+    // If items is empty, leave existing components untouched
+  }
 
   if (components.length > 0) {
     await prisma.decisionStackComponent.createMany({ data: components })
