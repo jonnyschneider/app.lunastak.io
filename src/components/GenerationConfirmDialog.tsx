@@ -26,7 +26,7 @@ interface GenerationConfig {
 const GENERATION_CONFIGS: Record<GenerationAction, GenerationConfig> = {
   refresh: {
     title: 'Refresh Decision Stack',
-    description: 'Your current strategy will be snapshotted before updating — nothing is lost.',
+    description: 'Your current strategy is saved as a snapshot before updating — nothing is lost.',
     confirmLabel: 'Refresh Decision Stack',
     confirmLabelNoChanges: 'Refresh anyway',
     messageWithChanges: (n) =>

@@ -114,7 +114,7 @@ export function RefreshStrategyDialog({
           </DialogTitle>
           {!confirmed && (
             <DialogDescription>
-              Your current strategy will be snapshotted before updating — nothing is lost.
+              Your current strategy is saved as a snapshot before updating — nothing is lost.
             </DialogDescription>
           )}
         </DialogHeader>
