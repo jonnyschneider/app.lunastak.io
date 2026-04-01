@@ -7,7 +7,8 @@ import { prisma } from '@/lib/db'
 import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { waitUntil } from '@vercel/functions'
-import type { OpportunityGenerationStartedContract, CoverageWarning } from '@/lib/contracts/opportunity-generation'
+import { setGenerationStatus, hasDecisionStack } from '@/lib/decision-stack'
+import type { CoverageWarning } from '@/lib/contracts/opportunity-generation'
 
 export const maxDuration = 300
 
@@ -50,13 +51,9 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 
-  // Check that a decision stack exists (Direction must exist first)
-  const decisionStack = await prisma.generatedOutput.findFirst({
-    where: { projectId, outputType: 'full_decision_stack', status: 'complete' },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  if (!decisionStack) {
+  // Check that a decision stack exists
+  const hasStrategy = await hasDecisionStack(projectId)
+  if (!hasStrategy) {
     return NextResponse.json(
       { error: 'No Direction found. Complete your Direction first.' },
       { status: 400 }
@@ -89,30 +86,17 @@ export async function POST(
       fragmentCount: s.fragmentCount,
     }))
 
-  // Pre-create GeneratedOutput for polling
-  const generatedOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId,
-      userId,
-      outputType: 'opportunities',
-      version: 1,
-      status: 'generating',
-      startedAt: new Date(),
-      content: {},
-    },
-  })
-
-  console.log('[GenerateOpportunities] Created GeneratedOutput:', generatedOutput.id, 'status: generating')
-
-  // Set generation status for new polling
-  const { setGenerationStatus } = await import('@/lib/decision-stack')
+  // Set generation status for polling
   await setGenerationStatus(projectId, 'generating_opportunities')
+
+  const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+  console.log('[GenerateOpportunities] Starting generation', generationId)
 
   const trigger = {
     type: 'generate_opportunities' as const,
     projectId,
     userId,
-    generatedOutputId: generatedOutput.id,
   }
 
   const generationWork = (async () => {
@@ -121,26 +105,20 @@ export async function POST(
       await executePipeline(plan, trigger)
     } catch (error) {
       console.error('[GenerateOpportunities] Background generation failed:', error)
-      await prisma.generatedOutput.update({
-        where: { id: generatedOutput.id },
-        data: {
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Opportunity generation failed',
-        },
-      })
+      await setGenerationStatus(projectId, null)
     }
   })()
 
-  // On Vercel: fire-and-forget. Locally: await inline (waitUntil is a no-op outside Vercel).
+  // On Vercel: fire-and-forget. Locally: await inline.
   if (process.env.VERCEL) {
     waitUntil(generationWork)
   } else {
     await generationWork
   }
 
-  const response: OpportunityGenerationStartedContract = {
-    status: 'started',
-    generationId: generatedOutput.id,
+  const response = {
+    status: 'started' as const,
+    generationId,
     ...(coverageWarnings.length > 0 ? { coverageWarnings } : {}),
   }
 

@@ -246,21 +246,6 @@ async function hydrateProjectData(
     });
   }
 
-  // Create user content (opportunities, principles)
-  for (const ucFixture of projectFixture.userContent || []) {
-    const ucId = resolveId(ucFixture.id);
-    await prisma.userContent.create({
-      data: {
-        id: ucId,
-        projectId,
-        type: ucFixture.type,
-        content: ucFixture.content,
-        status: ucFixture.status,
-        metadata: ucFixture.metadata ? JSON.parse(JSON.stringify(ucFixture.metadata)) : undefined,
-      },
-    });
-  }
-
   // Set knowledgeUpdatedAt AFTER all fragments are created
   // This ensures existing fragments don't count as "new"
   if (projectFixture.fragments.length > 0) {
@@ -276,31 +261,8 @@ async function hydrateProjectData(
     });
   }
 
-  // Create generated outputs AFTER knowledgeUpdatedAt so startedAt > knowledgeUpdatedAt
-  // This ensures strategy shows as "in sync" for complete fixtures
-  // Timestamps spaced 25 min apart so version history looks natural
+  // Create DecisionStack from latest generatedOutput fixture data (if any)
   const outputs = projectFixture.generatedOutputs || [];
-  const outputBaseTime = Date.now();
-  for (let i = 0; i < outputs.length; i++) {
-    const outputFixture = outputs[i];
-    const startedAt = new Date(outputBaseTime - (outputs.length - 1 - i) * 25 * 60 * 1000);
-    await prisma.generatedOutput.create({
-      data: {
-        projectId,
-        userId,
-        outputType: outputFixture.outputType,
-        version: outputFixture.version,
-        content: outputFixture.content as Prisma.InputJsonValue,
-        generatedFrom: outputFixture.generatedFrom,
-        modelUsed: outputFixture.modelUsed,
-        changeSummary: outputFixture.changeSummary,
-        status: 'complete',
-        startedAt,
-      },
-    });
-  }
-
-  // Create DecisionStack from latest generatedOutput (if any)
   const latestFullStack = outputs
     .filter(o => o.outputType === 'full_decision_stack')
     .slice(-1)[0];
@@ -319,11 +281,11 @@ async function hydrateProjectData(
     // Merge UserContent opportunities/principles if present
     const ucOpps = (projectFixture.userContent || [])
       .filter(uc => uc.type === 'opportunity')
-      .map(uc => { try { return JSON.parse(uc.content); } catch { return null; } })
+      .map(uc => { try { return JSON.parse(uc.content as string); } catch { return null; } })
       .filter(Boolean);
     const ucPrins = (projectFixture.userContent || [])
       .filter(uc => uc.type === 'principle')
-      .map(uc => { try { return JSON.parse(uc.content); } catch { return null; } })
+      .map(uc => { try { return JSON.parse(uc.content as string); } catch { return null; } })
       .filter(Boolean);
 
     const objectives = content.objectives || [];
@@ -397,8 +359,8 @@ async function hydrateProjectData(
           opportunities: opportunities as object[],
           principles: principles as object[],
         },
-        modelUsed: latestFullStack.modelUsed,
-        changeSummary: latestFullStack.changeSummary,
+        modelUsed: latestFullStack.modelUsed as string,
+        changeSummary: latestFullStack.changeSummary as string | undefined,
       },
     });
   }
@@ -478,13 +440,6 @@ async function hydrate(options: HydrateOptions): Promise<void> {
     });
   });
 
-  // Map user content IDs
-  fixture.projects.forEach(p => {
-    p.userContent?.forEach((uc) => {
-      idMap.set(uc.id, generateCuid());
-    });
-  });
-
   const resolveId = (id: string): string => idMap.get(id) || id;
 
   // Mode 1: Hydrate into existing project (--projectId)
@@ -515,8 +470,9 @@ async function hydrate(options: HydrateOptions): Promise<void> {
     // Reset: delete existing data in project
     if (options.reset) {
       console.log(`[INFO] Deleting existing data in project...`);
-      await prisma.userContent.deleteMany({ where: { projectId: options.projectId } });
-      await prisma.generatedOutput.deleteMany({ where: { projectId: options.projectId } });
+      await prisma.decisionStackComponent.deleteMany({ where: { decisionStack: { projectId: options.projectId! } } });
+      await prisma.decisionStack.deleteMany({ where: { projectId: options.projectId } });
+      await prisma.decisionStackSnapshot.deleteMany({ where: { projectId: options.projectId } });
       await prisma.dimensionalSynthesis.deleteMany({ where: { projectId: options.projectId } });
       await prisma.fragment.deleteMany({ where: { projectId: options.projectId } });
       await prisma.conversation.deleteMany({ where: { projectId: options.projectId } });
@@ -743,21 +699,6 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       });
     }
 
-    // Create user content (opportunities, principles)
-    for (const ucFixture of projectFixture.userContent || []) {
-      const ucId = resolveId(ucFixture.id);
-      await prisma.userContent.create({
-        data: {
-          id: ucId,
-          projectId: project.id,
-          type: ucFixture.type,
-          content: ucFixture.content,
-          status: ucFixture.status,
-          metadata: ucFixture.metadata ? JSON.parse(JSON.stringify(ucFixture.metadata)) : undefined,
-        },
-      });
-    }
-
     // Set knowledgeUpdatedAt AFTER all fragments are created
     // This ensures existing fragments don't count as "new"
     await prisma.project.update({
@@ -765,34 +706,113 @@ async function hydrate(options: HydrateOptions): Promise<void> {
       data: { knowledgeUpdatedAt: new Date() },
     });
 
-    // Create generated outputs AFTER knowledgeUpdatedAt so startedAt > knowledgeUpdatedAt
-    // This ensures strategy shows as "in sync" for complete fixtures
-    // Timestamps spaced 25 min apart so version history looks natural
+    // Create DecisionStack from generatedOutputs fixture data (if any)
     const emailOutputs = projectFixture.generatedOutputs || [];
-    const emailOutputBaseTime = Date.now();
-    for (let i = 0; i < emailOutputs.length; i++) {
-      const outputFixture = emailOutputs[i];
-      const startedAt = new Date(emailOutputBaseTime - (emailOutputs.length - 1 - i) * 25 * 60 * 1000);
-      await prisma.generatedOutput.create({
+    const latestEmailFullStack = emailOutputs
+      .filter((o: any) => o.outputType === 'full_decision_stack')
+      .slice(-1)[0];
+
+    if (latestEmailFullStack) {
+      const content = latestEmailFullStack.content as {
+        vision?: string;
+        visionExplainer?: string;
+        strategy?: string;
+        strategyExplainer?: string;
+        objectives?: Array<{ id: string; [k: string]: unknown }>;
+        opportunities?: Array<{ id: string; [k: string]: unknown }>;
+        principles?: Array<{ id: string; [k: string]: unknown }>;
+      };
+
+      // Merge UserContent opportunities/principles if present
+      const ucOpps = (projectFixture.userContent || [])
+        .filter((uc: any) => uc.type === 'opportunity')
+        .map((uc: any) => { try { return JSON.parse(uc.content); } catch { return null; } })
+        .filter(Boolean);
+      const ucPrins = (projectFixture.userContent || [])
+        .filter((uc: any) => uc.type === 'principle')
+        .map((uc: any) => { try { return JSON.parse(uc.content); } catch { return null; } })
+        .filter(Boolean);
+
+      const objectives = content.objectives || [];
+      const opportunities = ucOpps.length > 0 ? ucOpps : (content.opportunities || []);
+      const principles = ucPrins.length > 0 ? ucPrins : (content.principles || []);
+
+      const stack = await prisma.decisionStack.create({
         data: {
           projectId: project.id,
-          userId: user.id,
-          outputType: outputFixture.outputType,
-          version: outputFixture.version,
-          content: outputFixture.content as Prisma.InputJsonValue,
-          generatedFrom: outputFixture.generatedFrom,
-          modelUsed: outputFixture.modelUsed,
-          changeSummary: outputFixture.changeSummary,
-          status: 'complete',
-          startedAt,
+          vision: content.vision || '',
+          visionElaboration: content.visionExplainer || null,
+          strategy: content.strategy || '',
+          strategyElaboration: content.strategyExplainer || null,
+        },
+      });
+
+      const components: Array<{
+        decisionStackId: string;
+        componentType: string;
+        componentId: string;
+        content: object;
+        sortOrder: number;
+      }> = [];
+
+      objectives.forEach((obj: any, i: number) => {
+        components.push({
+          decisionStackId: stack.id,
+          componentType: 'objective',
+          componentId: obj.id || `obj-${i + 1}`,
+          content: obj,
+          sortOrder: i,
+        });
+      });
+
+      opportunities.forEach((opp: any, i: number) => {
+        components.push({
+          decisionStackId: stack.id,
+          componentType: 'opportunity',
+          componentId: opp.id || `opp-${i + 1}`,
+          content: opp,
+          sortOrder: i,
+        });
+      });
+
+      principles.forEach((prin: any, i: number) => {
+        components.push({
+          decisionStackId: stack.id,
+          componentType: 'principle',
+          componentId: prin.id || `prin-${i + 1}`,
+          content: prin,
+          sortOrder: i,
+        });
+      });
+
+      if (components.length > 0) {
+        await prisma.decisionStackComponent.createMany({ data: components });
+      }
+
+      // Create snapshot from latest output
+      await prisma.decisionStackSnapshot.create({
+        data: {
+          projectId: project.id,
+          version: 1,
+          trigger: 'post_generation',
+          content: {
+            vision: content.vision || '',
+            visionElaboration: content.visionExplainer || null,
+            strategy: content.strategy || '',
+            strategyElaboration: content.strategyExplainer || null,
+            objectives: objectives as object[],
+            opportunities: opportunities as object[],
+            principles: principles as object[],
+          },
+          modelUsed: latestEmailFullStack.modelUsed as string,
+          changeSummary: latestEmailFullStack.changeSummary as string | undefined,
         },
       });
     }
 
     const synthCount = projectFixture.syntheses?.length || 0;
     const outputCount = projectFixture.generatedOutputs?.length || 0;
-    const ucCount = projectFixture.userContent?.length || 0;
-    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses, ${outputCount} outputs, ${ucCount} user content`);
+    console.log(`  [OK] Project complete: ${projectFixture.conversations.length} conversations, ${projectFixture.fragments.length} fragments, ${synthCount} syntheses, ${outputCount} outputs`);
   }
 
   console.log(`\n[OK] Hydration complete for ${options.email}\n`);

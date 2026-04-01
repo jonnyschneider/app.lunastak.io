@@ -145,12 +145,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       where: { projectId },
     });
 
-    // 7. Delete generated outputs
-    await prisma.generatedOutput.deleteMany({
-      where: { projectId },
-    });
-
-    // 8. Delete user dismissals scoped to project
+    // 7. Delete user dismissals scoped to project
     await prisma.userDismissal.deleteMany({
       where: { projectId },
     });

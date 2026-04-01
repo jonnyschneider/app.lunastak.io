@@ -52,9 +52,9 @@ export async function GET() {
           select: {
             fragments: { where: { status: 'active' } },
             conversations: { where: { status: { not: 'abandoned' } } },
-            generatedOutputs: true,
           },
         },
+        decisionStack: { select: { vision: true } },
       },
       orderBy: { updatedAt: 'desc' },
     })
@@ -66,7 +66,7 @@ export async function GET() {
       isDemo: project.isDemo,
       fragmentCount: project._count.fragments,
       conversationCount: project._count.conversations,
-      hasStrategy: project._count.generatedOutputs > 0,
+      hasStrategy: !!project.decisionStack && project.decisionStack.vision !== '',
       updatedAt: project.updatedAt.toISOString(),
     }))
 

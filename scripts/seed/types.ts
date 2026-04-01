@@ -103,29 +103,12 @@ export interface FixtureSynthesis {
   fragmentCount: number;
 }
 
-// Generated output in fixture
-export interface FixtureGeneratedOutput {
-  outputType: string;
-  version: number;
-  content: Record<string, unknown>;
-  generatedFrom?: string;
-  modelUsed: string;
-  changeSummary?: string;
-}
+// Legacy generated output in fixture (kept for backward compat with existing fixture files)
+// Data is now hydrated into DecisionStack tables
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 
-// User-authored content in fixture (opportunities, principles)
-export interface FixtureUserContent {
-  id: string; // "{{UC_N_ID}}" placeholder
-  type: 'opportunity' | 'principle';
-  content: string;
-  status: 'draft' | 'complete';
-  metadata?: {
-    objectiveIds?: string[];
-    coachingDismissed?: boolean;
-    parsedTitle?: string;
-    parsedTimeframe?: string;
-  };
-}
+// Legacy user-authored content in fixture (kept for backward compat with existing fixture files)
+// Data is now merged into DecisionStack during hydration
 
 // Project in fixture
 export interface FixtureProject {
@@ -140,8 +123,8 @@ export interface FixtureProject {
   deepDives: FixtureDeepDive[];
   documents: FixtureDocument[];
   syntheses?: FixtureSynthesis[];
-  generatedOutputs?: FixtureGeneratedOutput[];
-  userContent?: FixtureUserContent[];
+  generatedOutputs?: Array<Record<string, unknown>>;
+  userContent?: Array<Record<string, unknown>>;
 }
 
 // Complete fixture file

@@ -40,23 +40,27 @@ function parseArgs(): { traceIds: string[]; projectId?: string; force: boolean }
 async function getOpportunities(projectId: string | null): Promise<ExportedTrace['components']['generation']['opportunities']> {
   if (!projectId) return undefined;
   try {
-    const items = await prisma.userContent.findMany({
-      where: { projectId, type: 'opportunity' },
-      orderBy: { createdAt: 'asc' },
+    const stack = await prisma.decisionStack.findUnique({
+      where: { projectId },
     });
-    if (items.length === 0) return undefined;
-    return items.map(item => {
-      const meta = item.metadata as Record<string, unknown> | null;
+    if (!stack) return undefined;
+    const components = await prisma.decisionStackComponent.findMany({
+      where: { decisionStackId: stack.id, componentType: 'opportunity' },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (components.length === 0) return undefined;
+    return components.map(c => {
+      const content = c.content as Record<string, unknown>;
       return {
-        id: item.id,
-        title: (meta?.title as string) || item.content.slice(0, 60),
-        description: (meta?.description as string) || item.content,
-        objectiveIds: (meta?.objectiveIds as string[]) || [],
-        successMetrics: (meta?.successMetrics as any) || undefined,
+        id: c.componentId,
+        title: (content.title as string) || (content.pithy as string) || c.componentId,
+        description: (content.description as string) || '',
+        objectiveIds: (content.objectiveIds as string[]) || [],
+        successMetrics: (content.successMetrics as any) || undefined,
       };
     });
   } catch {
-    // UserContent table may not exist yet in this environment
+    // DecisionStack tables may not exist yet in this environment
     return undefined;
   }
 }

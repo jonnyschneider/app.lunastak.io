@@ -20,8 +20,6 @@ export type PipelineTrigger =
         dimensionalCoverage?: unknown
         themes?: EmergentThemeContract[]
       }
-      // Set by /generate route for fire-and-forget pattern (route creates upfront for polling)
-      generatedOutputId?: string
     }
   | {
       type: 'document_uploaded'
@@ -44,20 +42,16 @@ export type PipelineTrigger =
       type: 'refresh_requested'
       projectId: string
       userId: string
-      // Set by route for fire-and-forget pattern (route creates upfront for polling)
-      generatedOutputId?: string
     }
   | {
       type: 'generate_opportunities'
       projectId: string
       userId: string | null
-      generatedOutputId: string
     }
   | {
       type: 'generate_from_knowledge'
       projectId: string
       userId: string | null
-      generatedOutputId: string
     }
 
 /**
@@ -95,7 +89,6 @@ export interface PipelinePlan {
 
 /**
  * Pipeline Result — what happened, returned to API routes.
- * Routes format this for their response pattern (stream, poll, sync).
  */
 export interface PipelineResult {
   // Layer 0
@@ -109,10 +102,8 @@ export interface PipelineResult {
 
   // Layer 3
   generation?: {
-    generatedOutputId: string
     traceId: string
     statements: StrategyStatements
-    version: number
     changeSummary?: string | null
   }
 

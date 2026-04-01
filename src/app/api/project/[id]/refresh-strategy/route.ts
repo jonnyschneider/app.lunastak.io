@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db'
 import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { waitUntil } from '@vercel/functions'
+import { setGenerationStatus, hasDecisionStack } from '@/lib/decision-stack'
 import type { GenerationStartedContract } from '@/lib/contracts/generation-status'
 
 export const maxDuration = 300 // 5 minutes for Pro plan
@@ -50,13 +51,9 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 
-  // Get previous strategy - REQUIRED for refresh
-  const previousOutput = await prisma.generatedOutput.findFirst({
-    where: { projectId, outputType: 'full_decision_stack' },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  if (!previousOutput) {
+  // Check strategy exists to refresh
+  const hasStrategy = await hasDecisionStack(projectId)
+  if (!hasStrategy) {
     return NextResponse.json(
       { error: 'No strategy to refresh. Complete a conversation first.' },
       { status: 400 }
@@ -72,53 +69,33 @@ export async function POST(
     )
   }
 
-  // Pre-create GeneratedOutput for polling
-  const generatedOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId,
-      userId,
-      outputType: 'full_decision_stack',
-      version: previousOutput.version + 1,
-      status: 'generating',
-      startedAt: new Date(),
-      content: {}, // Populated on completion
-    },
-  })
-
-  console.log('[RefreshStrategy] Created GeneratedOutput:', generatedOutput.id, 'status: generating')
-
-  // Set generation status for new polling
-  const { setGenerationStatus } = await import('@/lib/decision-stack')
+  // Set generation status for polling
   await setGenerationStatus(projectId, 'generating')
 
+  const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+  console.log('[RefreshStrategy] Starting refresh', generationId)
+
   // Fire-and-forget: run synthesis + generation in background
-  // Executor runs foreground synthesis (Layer 2) then generation (Layer 3).
   waitUntil((async () => {
     try {
       const trigger = {
         type: 'refresh_requested' as const,
         projectId,
         userId,
-        generatedOutputId: generatedOutput.id,
       }
       const plan = planPipeline(trigger)
       await executePipeline(plan, trigger)
     } catch (error) {
       console.error('[RefreshStrategy] Background generation failed:', error)
-      await prisma.generatedOutput.update({
-        where: { id: generatedOutput.id },
-        data: {
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Refresh failed',
-        },
-      })
+      await setGenerationStatus(projectId, null)
     }
   })())
 
   // Return immediately with generationId for polling
   const response: GenerationStartedContract = {
     status: 'started',
-    generationId: generatedOutput.id,
+    generationId,
   }
 
   console.log('[RefreshStrategy] Returning immediately, generation running in background')

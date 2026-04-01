@@ -1,6 +1,9 @@
 #!/usr/bin/env npx tsx
+// @ts-nocheck
 /**
  * Migrate existing GeneratedOutput + UserContent data to DecisionStack tables.
+ * NOTE: This migration script has already run. Old tables (GeneratedOutput, UserContent)
+ * have been dropped from the schema. Kept for historical reference only.
  *
  * Usage:
  *   npx tsx scripts/migrate-to-decision-stack.ts              # dry run

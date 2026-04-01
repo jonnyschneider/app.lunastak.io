@@ -157,7 +157,7 @@ export async function executePipeline(
       }
       case 'refresh': {
         const t = trigger as Extract<PipelineTrigger, { type: 'refresh_requested' }>
-        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
+        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model)
         break
       }
       case 'initial': {
@@ -169,7 +169,6 @@ export async function executePipeline(
             null, // No conversation
             t.userId,
             null, // No experiment variant
-            t.generatedOutputId,
             plan.model
           )
         } else {
@@ -180,7 +179,6 @@ export async function executePipeline(
             t.conversationId,
             t.userId,
             t.experimentVariant,
-            t.generatedOutputId,
             plan.model
           )
         }
@@ -193,7 +191,7 @@ export async function executePipeline(
       }
       case 'opportunities': {
         const t = trigger as Extract<PipelineTrigger, { type: 'generate_opportunities' }>
-        await runOpportunityGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
+        await runOpportunityGeneration(t.projectId, t.userId, plan.model)
         // Mark direction as settled after first opportunity generation
         await prisma.project.update({
           where: { id: t.projectId },
@@ -256,27 +254,11 @@ async function runTemplateGeneration(
     modelUsed: 'template-entry',
   })
 
-  // Create GeneratedOutput
-  const generatedOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId,
-      userId,
-      outputType: 'full_decision_stack',
-      version: 1,
-      status: 'complete',
-      content: statements as object,
-      modelUsed: 'template-entry',
-      startedAt: new Date(),
-    },
-  })
-
   console.log('[Pipeline] Template generation complete for project:', projectId)
 
   return {
-    generatedOutputId: generatedOutput.id,
     traceId: trace.id,
     statements,
-    version: 1,
     changeSummary: null,
   }
 }

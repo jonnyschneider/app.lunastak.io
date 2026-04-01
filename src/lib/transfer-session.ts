@@ -43,7 +43,6 @@ export async function transferGuestToUser(
               conversations: true,
               documents: true,
               deepDives: true,
-              generatedOutputs: true,
             },
           },
         },
@@ -52,8 +51,7 @@ export async function transferGuestToUser(
       for (const project of guestProjects) {
         const counts = project._count
         const hasContent = counts.fragments > 0 || counts.conversations > 0 ||
-                          counts.documents > 0 || counts.deepDives > 0 ||
-                          counts.generatedOutputs > 0
+                          counts.documents > 0 || counts.deepDives > 0
         if (hasContent) {
           await tx.project.update({
             where: { id: project.id },

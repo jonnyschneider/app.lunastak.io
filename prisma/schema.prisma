@@ -187,11 +187,8 @@ model Project {
   documents            Document[]
   deepDives            DeepDive[]
   dimensionalSyntheses DimensionalSynthesis[]
-  generatedOutputs     GeneratedOutput[]
   extractionRuns       ExtractionRun[]
   dismissals           UserDismissal[]
-  userContent          UserContent[]
-  strategyVersions     StrategyVersion[]
   decisionStack        DecisionStack?
   decisionStackSnapshots DecisionStackSnapshot[]
 
@@ -361,74 +358,6 @@ model DimensionalSynthesis {
   @@index([lastSynthesizedAt])
 }
 
-model GeneratedOutput {
-  id        String  @id @default(cuid())
-  projectId String
-  userId    String?
-
-  // Output metadata
-  outputType String // vision | strategy | objectives | initiatives | principles | full_decision_stack
-  version    Int    @default(1)
-
-  // Background generation status (v1.8.0+)
-  status    String    @default("pending") // pending | generating | complete | failed
-  startedAt DateTime?                     // When generation started
-  viewedAt  DateTime?                     // When user first viewed (null = unseen)
-  error     String?   @db.Text            // Error message if status=failed
-
-  // Content
-  content Json
-
-  // Generation metadata
-  generatedFrom    String? @db.Text
-  modelUsed        String?                // Made nullable for fire-and-forget (set after generation)
-  promptTokens     Int?
-  completionTokens Int?
-  latencyMs        Int?
-
-  // User feedback
-  userFeedback    String?
-  feedbackAt      DateTime?
-  refinementNotes String?   @db.Text
-
-  // Version chain for incremental refresh
-  previousOutputId String?
-  previousOutput   GeneratedOutput?  @relation("VersionChain", fields: [previousOutputId], references: [id])
-  nextOutputs      GeneratedOutput[] @relation("VersionChain")
-
-  // Change tracking
-  changeSummary String? @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  extractionRuns ExtractionRun[]
-
-  @@index([projectId])
-  @@index([outputType])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model StrategyVersion {
-  id            String   @id @default(cuid())
-  projectId     String
-  componentType String   // 'vision' | 'strategy' | 'objective'
-  componentId   String?  // For objectives: which objective (null for vision/strategy)
-  content       Json     // The actual content
-  version       Int      @default(1)
-  createdAt     DateTime @default(now())
-  createdBy     String   // 'user' | 'ai' | 'system'
-  sourceType    String   // 'generation' | 'user_edit' | 'coaching'
-  sourceId      String?  // traceId, conversationId if relevant
-
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId, componentType, componentId])
-  @@index([projectId, componentType, version])
-}
 
 model ExtractionRun {
   id        String @id @default(cuid())
@@ -447,9 +376,6 @@ model ExtractionRun {
   // Synthesis state snapshots
   synthesesBefore Json?
   synthesesAfter  Json?
-
-  // Generated output
-  generatedOutputId String?
 
   // Model/performance metadata
   modelUsed        String
@@ -471,7 +397,6 @@ model ExtractionRun {
   // Relations
   project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   conversation    Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  generatedOutput GeneratedOutput? @relation(fields: [generatedOutputId], references: [id], onDelete: SetNull)
 
   @@index([projectId])
   @@index([conversationId])
@@ -555,24 +480,6 @@ model PendingGuestTransfer {
   @@index([email])
 }
 
-model UserContent {
-  id        String   @id @default(cuid())
-  projectId String
-
-  type      String   // 'opportunity' | 'principle'
-  content   String   @db.Text
-  status    String   @default("draft")  // 'draft' | 'complete'
-  metadata  Json?    // objectiveIds, coachingDismissed, parsed fields
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-  @@index([type])
-  @@index([status])
-}
 
 model DecisionStack {
   id        String   @id @default(cuid())
