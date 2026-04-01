@@ -62,7 +62,15 @@ export function RefreshStrategyDialog({
 
         if (data.status === 'started' && data.generationId) {
           // Hand off to BackgroundTaskProvider for polling
-          startTask('refresh', data.generationId, projectId)
+          startTask('generation', data.generationId, projectId, {
+            running: 'Refreshing strategy...',
+            complete: 'Strategy updated',
+            failed: 'Strategy refresh failed',
+            completeDescription: 'Click to view your updated strategy.',
+            completeAction: (data) => data.traceId
+              ? { label: 'View', href: `/strategy/${data.traceId}` }
+              : undefined,
+          })
 
           toast.info('Refreshing strategy in the background', {
             description: 'You\'ll be notified when it\'s ready.',

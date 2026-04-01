@@ -3,28 +3,43 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import type { GenerationStatus } from '@/lib/contracts/generation-status'
-
 // --- Types ---
 
-export type BackgroundTaskType = 'extraction' | 'generation' | 'refresh'
+export type BackgroundTaskType = 'extraction' | 'generation'
+
+export type PollResponseData = {
+  traceId?: string
+  fragmentCount?: number
+  error?: string
+}
+
+export type TaskMessaging = {
+  running: string
+  complete: string
+  failed: string
+  completeDescription?: string
+  failedDescription?: string
+  completeAction?: (data: PollResponseData) => { label: string; href: string } | undefined
+  onComplete?: (data: PollResponseData) => void
+}
 
 type TaskStatus = 'running' | 'complete' | 'failed'
 
 interface BackgroundTask {
-  id: string // conversationId for extraction, generationId for generation/refresh
+  id: string // conversationId for extraction, generationId for generation
   type: BackgroundTaskType
   projectId: string
   status: TaskStatus
   startedAt: Date
   progressLabel?: string
+  messaging: TaskMessaging
 }
 
 interface BackgroundTaskContextValue {
   /** All active tasks */
   activeTasks: BackgroundTask[]
   /** Start tracking a background task */
-  startTask: (type: BackgroundTaskType, id: string, projectId: string) => void
+  startTask: (type: BackgroundTaskType, id: string, projectId: string, messaging: TaskMessaging) => void
   /** Stop tracking a specific task */
   stopTask: (id: string) => void
   /** Check if any task is running for a project */
@@ -33,18 +48,6 @@ interface BackgroundTaskContextValue {
   isRunning: (projectId: string, type: BackgroundTaskType) => boolean
   /** Get progress label for the active generation/refresh task */
   getProgressLabel: (projectId: string) => string | undefined
-
-  // Legacy aliases (used by existing code, avoid big refactor)
-  /** @deprecated Use startTask('generation', ...) */
-  startGeneration: (generationId: string, projectId: string) => void
-  /** @deprecated Use isRunning(projectId, 'generation') */
-  isGenerating: (projectId: string) => boolean
-  /** @deprecated Use hasActiveTasks(projectId) */
-  hasActiveGeneration: (projectId: string) => boolean
-  /** @deprecated Use stopTask */
-  stopTracking: () => void
-  /** @deprecated */
-  activeGeneration: { generationId: string; projectId: string; status: GenerationStatus; startedAt: Date } | null
 }
 
 const BackgroundTaskContext = createContext<BackgroundTaskContextValue | null>(null)
@@ -52,29 +55,6 @@ const BackgroundTaskContext = createContext<BackgroundTaskContextValue | null>(n
 const POLL_INTERVAL = 2000 // 2 seconds
 const MAX_POLL_DURATION = 5 * 60 * 1000 // 5 minutes
 
-// --- Toast config per task type ---
-
-const TOAST_CONFIG: Record<BackgroundTaskType, {
-  running: { title: string; description: string }
-  complete: { title: string; description: string }
-  failed: { title: string; description: string }
-}> = {
-  extraction: {
-    running: { title: 'Processing insights...', description: '' },
-    complete: { title: 'New insights added', description: 'Your knowledge base has been updated.' },
-    failed: { title: 'Extraction failed', description: 'Your conversation has been saved.' },
-  },
-  generation: {
-    running: { title: 'Generating your strategy...', description: 'This will take a few moments.' },
-    complete: { title: 'Your strategy is ready', description: 'Click to view your new strategy.' },
-    failed: { title: 'Strategy generation failed', description: 'Something went wrong. Please try again.' },
-  },
-  refresh: {
-    running: { title: 'Refreshing strategy...', description: "You'll be notified when it's ready." },
-    complete: { title: 'Strategy updated', description: 'Click to view your updated strategy.' },
-    failed: { title: 'Strategy refresh failed', description: 'Something went wrong. Please try again.' },
-  },
-}
 
 export function BackgroundTaskProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -120,7 +100,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
       const elapsed = Date.now() - task.startedAt.getTime()
       if (elapsed > MAX_POLL_DURATION) {
         updateTaskStatus(task.id, 'failed')
-        toast.error(TOAST_CONFIG[task.type].failed.title, {
+        toast.error(task.messaging.failed, {
           description: 'The operation timed out. Please try again.',
           duration: 8000,
         })
@@ -150,8 +130,12 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
             updateTaskStatus(task.id, 'complete')
 
             const fragmentCount = data.fragmentCount || 0
-            toast.success(TOAST_CONFIG.extraction.complete.title, {
-              description: `${fragmentCount} insight${fragmentCount !== 1 ? 's' : ''} added to your knowledge base.`,
+            const responseData: PollResponseData = { fragmentCount }
+            const description = task.messaging.completeDescription
+              ?.replace('{{fragmentCount}}', String(fragmentCount))
+              ?? `${fragmentCount} insight${fragmentCount !== 1 ? 's' : ''} added to your knowledge base.`
+            toast.success(task.messaging.complete, {
+              description,
               duration: 5000,
             })
 
@@ -162,11 +146,14 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
               })
             )
 
+            // Caller-specific side effects
+            task.messaging.onComplete?.(responseData)
+
             setTimeout(() => removeTask(task.id), 2000)
           } else if (data.status === 'extraction_failed') {
             updateTaskStatus(task.id, 'failed')
-            toast.error(TOAST_CONFIG.extraction.failed.title, {
-              description: TOAST_CONFIG.extraction.failed.description,
+            toast.error(task.messaging.failed, {
+              description: task.messaging.failedDescription,
               duration: 8000,
             })
             setTimeout(() => removeTask(task.id), 2000)
@@ -179,12 +166,17 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
           if (data.status === 'complete') {
             updateTaskStatus(task.id, 'complete')
 
-            toast.success(TOAST_CONFIG[task.type].complete.title, {
-              description: TOAST_CONFIG[task.type].complete.description,
-              action: data.traceId
+            const responseData: PollResponseData = {
+              traceId: data.traceId,
+              error: data.error,
+            }
+            const action = task.messaging.completeAction?.(responseData)
+            toast.success(task.messaging.complete, {
+              description: task.messaging.completeDescription,
+              action: action
                 ? {
-                    label: 'View',
-                    onClick: () => routerRef.current.push(`/strategy/${data.traceId}`),
+                    label: action.label,
+                    onClick: () => routerRef.current.push(action.href),
                   }
                 : undefined,
               duration: 10000,
@@ -197,11 +189,14 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
               })
             )
 
+            // Caller-specific side effects
+            task.messaging.onComplete?.(responseData)
+
             setTimeout(() => removeTask(task.id), 2000)
           } else if (data.status === 'failed') {
             updateTaskStatus(task.id, 'failed')
-            toast.error(TOAST_CONFIG[task.type].failed.title, {
-              description: data.error || TOAST_CONFIG[task.type].failed.description,
+            toast.error(task.messaging.failed, {
+              description: data.error || task.messaging.failedDescription,
               duration: 8000,
             })
             setTimeout(() => removeTask(task.id), 2000)
@@ -226,7 +221,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
   }
 
   const startTask = useCallback(
-    (type: BackgroundTaskType, id: string, projectId: string) => {
+    (type: BackgroundTaskType, id: string, projectId: string, messaging: TaskMessaging) => {
       // Stop existing polling for this id if any
       if (pollingRef.current.has(id)) {
         clearTimeout(pollingRef.current.get(id))
@@ -239,6 +234,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
         projectId,
         status: 'running',
         startedAt: new Date(),
+        messaging,
       }
 
       setTasks((prev) => [...prev.filter((t) => t.id !== id), task])
@@ -273,52 +269,12 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
   const getProgressLabel = useCallback(
     (projectId: string) => {
       const task = tasks.find(
-        (t) => t.projectId === projectId && (t.type === 'generation' || t.type === 'refresh') && t.status === 'running'
+        (t) => t.projectId === projectId && t.type === 'generation' && t.status === 'running'
       )
       return task?.progressLabel
     },
     [tasks]
   )
-
-  // --- Legacy aliases for backward compat ---
-  const startGeneration = useCallback(
-    (generationId: string, projectId: string) => startTask('generation', generationId, projectId),
-    [startTask]
-  )
-
-  const isGenerating = useCallback(
-    (projectId: string) => isRunning(projectId, 'generation') || isRunning(projectId, 'refresh'),
-    [isRunning]
-  )
-
-  const hasActiveGeneration = useCallback(
-    (projectId: string) => {
-      return tasks.some(
-        (t) => t.projectId === projectId && (t.type === 'generation' || t.type === 'refresh')
-      )
-    },
-    [tasks]
-  )
-
-  const stopTracking = useCallback(() => {
-    // Stop all tasks (legacy — old code called this on unmount)
-    tasks.forEach((t) => removeTask(t.id))
-  }, [tasks, removeTask])
-
-  // Legacy activeGeneration object for any code that reads it directly
-  const genTask = tasks.find((t) => t.type === 'generation' || t.type === 'refresh')
-  const activeGeneration = genTask
-    ? {
-        generationId: genTask.id,
-        projectId: genTask.projectId,
-        status: (genTask.status === 'running'
-          ? 'generating'
-          : genTask.status === 'complete'
-            ? 'complete'
-            : 'failed') as GenerationStatus,
-        startedAt: genTask.startedAt,
-      }
-    : null
 
   return (
     <BackgroundTaskContext.Provider
@@ -329,12 +285,6 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
         hasActiveTasks,
         isRunning,
         getProgressLabel,
-        // Legacy aliases
-        startGeneration,
-        isGenerating,
-        hasActiveGeneration,
-        stopTracking,
-        activeGeneration,
       }}
     >
       {children}

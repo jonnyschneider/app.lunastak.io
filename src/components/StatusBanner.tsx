@@ -22,17 +22,7 @@ export function StatusBanner({ projectId }: StatusBannerProps) {
   if (projectTasks.length > 0) {
     const task = projectTasks[0] // Show the first/most recent
     const label = getProgressLabel(projectId)
-    switch (task.type) {
-      case 'generation':
-        message = label || 'Generating your strategy...'
-        break
-      case 'refresh':
-        message = label || 'Refreshing strategy...'
-        break
-      case 'extraction':
-        message = label || 'Processing insights...'
-        break
-    }
+    message = label || task.messaging.running
   } else if (isProcessingDocs) {
     const count = processingCount(projectId)
     message = count > 1 ? `Processing ${count} documents...` : 'Processing document...'

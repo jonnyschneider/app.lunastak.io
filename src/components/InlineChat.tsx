@@ -35,7 +35,7 @@ interface InlineChatProps {
 }
 
 export function InlineChat({ projectId, resumeConversationId, initialMessage, autoStart, onConversationStart }: InlineChatProps) {
-  const { startGeneration } = useGenerationStatusContext()
+  const { startTask } = useGenerationStatusContext()
   const [input, setInput] = useState(initialMessage || '')
   const [messages, setMessages] = useState<InlineMessage[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -285,7 +285,15 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
       if (data.status === 'started' && data.generationId) {
         setIsExtracting(false)
         // Track via generation polling (covers extracting → generating → complete)
-        startGeneration(data.generationId, projectId)
+        startTask('generation', data.generationId, projectId, {
+          running: 'Building your strategy...',
+          complete: 'Your strategy is ready',
+          failed: 'Strategy generation failed',
+          completeDescription: 'Click to view your new strategy.',
+          completeAction: (data) => data.traceId
+            ? { label: 'View', href: `/strategy/${data.traceId}` }
+            : undefined,
+        })
 
         // Notify listeners that strategy generation started
         // The project page's event listener will refetch data and re-render,

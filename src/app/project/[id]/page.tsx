@@ -186,7 +186,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { hasActiveGeneration, isRunning, getProgressLabel, startGeneration } = useGenerationStatusContext()
+  const { hasActiveTasks, isRunning, getProgressLabel, startTask } = useGenerationStatusContext()
   const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -498,7 +498,6 @@ export default function ProjectPage() {
     const handleGenerationComplete = () => {
       setRecentlyGenerated(true)
       fetchProjectData()
-      setOpportunityRefreshKey(k => k + 1)
       // Allow button to reappear after a short delay
       const timeout = setTimeout(() => setRecentlyGenerated(false), 5000)
       return () => clearTimeout(timeout)
@@ -669,7 +668,15 @@ export default function ProjectPage() {
       })
       if (res.ok) {
         const data = await res.json()
-        startGeneration(data.generationId, projectId)
+        startTask('generation', data.generationId, projectId, {
+          running: 'Generating your strategy...',
+          complete: 'Your strategy is ready',
+          failed: 'Strategy generation failed',
+          completeDescription: 'Click to view your new strategy.',
+          completeAction: (data) => data.traceId
+            ? { label: 'View', href: `/strategy/${data.traceId}` }
+            : undefined,
+        })
       } else {
         const err = await res.json()
         console.error('[GenerateStrategy] Failed:', err.error)
@@ -687,7 +694,12 @@ export default function ProjectPage() {
       })
       if (res.ok) {
         const data = await res.json()
-        startGeneration(data.generationId, projectId)
+        startTask('generation', data.generationId, projectId, {
+          running: 'Drafting opportunities...',
+          complete: 'Opportunities ready',
+          failed: 'Opportunity generation failed',
+          onComplete: () => setOpportunityRefreshKey(k => k + 1),
+        })
       } else {
         const err = await res.json()
         console.error('[GenerateOpportunities] Failed:', err.error)
@@ -968,13 +980,12 @@ export default function ProjectPage() {
               }}
               knowledgeBusyMessage={
                 isRunning(projectId, 'extraction') ? 'processing insights...'
-                : recentlyGenerated && !hasActiveGeneration(projectId) ? 'updating...'
+                : recentlyGenerated && !hasActiveTasks(projectId) ? 'updating...'
                 : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
                 : null
               }
               strategyBusyMessage={
                 isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
-                : isRunning(projectId, 'refresh') ? (getProgressLabel(projectId) || 'refreshing strategy...')
                 : null
               }
             />

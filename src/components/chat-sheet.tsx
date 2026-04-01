@@ -89,7 +89,7 @@ export function ChatSheet({
   origin,
 }: ChatSheetProps) {
   // Background generation context
-  const { startGeneration, startTask } = useGenerationStatusContext()
+  const { startTask } = useGenerationStatusContext()
 
   // Flow state
   const [flowStep, setFlowStep] = useState<FlowStep>('chat')
@@ -366,7 +366,13 @@ export function ChatSheet({
         const data = await response.json()
 
         if (data.status === 'started') {
-          startTask('extraction', data.conversationId, projectId)
+          startTask('extraction', data.conversationId, projectId, {
+            running: 'Processing insights...',
+            complete: 'New insights added',
+            failed: 'Extraction failed',
+            completeDescription: '{{fragmentCount}} insights added to your knowledge base.',
+            failedDescription: 'Your conversation has been saved.',
+          })
           toast.info('Processing insights in the background', {
             description: "You'll be notified when it's ready.",
             duration: 4000,
@@ -399,7 +405,15 @@ export function ChatSheet({
 
       if (data.status === 'started' && data.generationId) {
         // Track via generation polling (covers extracting → generating → complete)
-        startGeneration(data.generationId, projectId)
+        startTask('generation', data.generationId, projectId, {
+          running: 'Building your strategy...',
+          complete: 'Your strategy is ready',
+          failed: 'Strategy generation failed',
+          completeDescription: 'Click to view your new strategy.',
+          completeAction: (data) => data.traceId
+            ? { label: 'View', href: `/strategy/${data.traceId}` }
+            : undefined,
+        })
 
         // Notify listeners
         window.dispatchEvent(new Event('strategySaved'))
@@ -439,7 +453,15 @@ export function ChatSheet({
 
       if (data.status === 'started' && data.generationId) {
         // Start tracking generation in context (handles polling and toast)
-        startGeneration(data.generationId, projectId)
+        startTask('generation', data.generationId, projectId, {
+          running: 'Generating your strategy...',
+          complete: 'Your strategy is ready',
+          failed: 'Strategy generation failed',
+          completeDescription: 'Click to view your new strategy.',
+          completeAction: (data) => data.traceId
+            ? { label: 'View', href: `/strategy/${data.traceId}` }
+            : undefined,
+        })
 
         // Notify listeners
         window.dispatchEvent(new Event('strategySaved'))
