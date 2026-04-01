@@ -93,6 +93,10 @@ export async function POST(
 
   console.log('[GenerateStrategy] Created GeneratedOutput:', generatedOutput.id, 'from', fragmentCount, 'fragments')
 
+  // Set generation status for new polling
+  const { setGenerationStatus } = await import('@/lib/decision-stack')
+  await setGenerationStatus(projectId, 'generating')
+
   const trigger = {
     type: 'generate_from_knowledge' as const,
     projectId,

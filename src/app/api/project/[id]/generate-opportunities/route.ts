@@ -104,6 +104,10 @@ export async function POST(
 
   console.log('[GenerateOpportunities] Created GeneratedOutput:', generatedOutput.id, 'status: generating')
 
+  // Set generation status for new polling
+  const { setGenerationStatus } = await import('@/lib/decision-stack')
+  await setGenerationStatus(projectId, 'generating_opportunities')
+
   const trigger = {
     type: 'generate_opportunities' as const,
     projectId,

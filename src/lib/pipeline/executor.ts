@@ -248,65 +248,13 @@ async function runTemplateGeneration(
     },
   })
 
-  // Seed StrategyVersion records
-  const versionCreates = [
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'vision',
-        content: { text: statements.vision },
-        version: 1,
-        createdBy: 'user',
-        sourceType: 'template',
-        sourceId: trace.id,
-      },
-    }),
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'strategy',
-        content: { text: statements.strategy },
-        version: 1,
-        createdBy: 'user',
-        sourceType: 'template',
-        sourceId: trace.id,
-      },
-    }),
-    ...statements.objectives.map((obj) =>
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'objective',
-          componentId: obj.id,
-          content: {
-            title: obj.title,
-            pithy: obj.pithy,
-            objective: obj.objective,
-            omtm: obj.omtm,
-            aspiration: obj.aspiration,
-            explanation: obj.explanation,
-          } as object,
-          version: 1,
-          createdBy: 'user',
-          sourceType: 'template',
-          sourceId: trace.id,
-        },
-      })
-    ),
-  ]
-  await prisma.$transaction(versionCreates)
-
-  // Persist principles as UserContent
-  if (statements.principles && statements.principles.length > 0) {
-    await prisma.userContent.createMany({
-      data: statements.principles.map((principle) => ({
-        projectId,
-        type: 'principle',
-        content: JSON.stringify(principle),
-        status: 'complete',
-      })),
-    })
-  }
+  // Write to Decision Stack tables
+  const { writeStrategyToStack, captureSnapshot } = await import('@/lib/decision-stack')
+  await captureSnapshot(projectId, 'pre_generation')
+  await writeStrategyToStack(projectId, statements)
+  await captureSnapshot(projectId, 'post_generation', {
+    modelUsed: 'template-entry',
+  })
 
   // Create GeneratedOutput
   const generatedOutput = await prisma.generatedOutput.create({

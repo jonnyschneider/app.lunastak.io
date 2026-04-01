@@ -87,6 +87,10 @@ export async function POST(
 
   console.log('[RefreshStrategy] Created GeneratedOutput:', generatedOutput.id, 'status: generating')
 
+  // Set generation status for new polling
+  const { setGenerationStatus } = await import('@/lib/decision-stack')
+  await setGenerationStatus(projectId, 'generating')
+
   // Fire-and-forget: run synthesis + generation in background
   // Executor runs foreground synthesis (Layer 2) then generation (Layer 3).
   waitUntil((async () => {

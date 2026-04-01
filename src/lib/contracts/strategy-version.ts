@@ -74,6 +74,24 @@ export interface StrategyVersionOutputContract {
   sourceId: string | null;
 }
 
+// Snapshot-based version history (replaces per-component StrategyVersion for display)
+export type SnapshotTrigger =
+  | 'pre_generation'
+  | 'post_generation'
+  | 'pre_refresh'
+  | 'post_refresh'
+  | 'pre_opportunities'
+  | 'post_opportunities';
+
+export interface SnapshotVersionContract {
+  id: string;
+  version: number;
+  trigger: SnapshotTrigger;
+  createdAt: string;
+  changeSummary: string | null;
+  modelUsed: string | null;
+}
+
 // Validation functions
 export function validateStrategyVersionInput(data: unknown): data is StrategyVersionInputContract {
   if (typeof data !== 'object' || data === null) return false;

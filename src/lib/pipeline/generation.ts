@@ -342,68 +342,25 @@ export async function runRefreshGeneration(
     })
   }
 
-  // Create StrategyVersion records for edit history
-  const latestVersions = await prisma.strategyVersion.groupBy({
-    by: ['componentType', 'componentId'],
-    where: { projectId },
-    _max: { version: true },
+  // --- Write to Decision Stack tables ---
+  const { writeStrategyToStack, captureSnapshot, setGenerationStatus } = await import('@/lib/decision-stack')
+
+  // Pre-snapshot (current state before refresh)
+  await captureSnapshot(projectId, 'pre_refresh')
+
+  // Write refreshed strategy to stack
+  await writeStrategyToStack(projectId, newStatements)
+
+  // Post-snapshot with metadata
+  await captureSnapshot(projectId, 'post_refresh', {
+    modelUsed: model,
+    promptTokens: genResponse.usage.input_tokens,
+    completionTokens: genResponse.usage.output_tokens,
+    changeSummary: changeSummary ?? undefined,
   })
 
-  const getNextVersion = (type: string, componentId?: string) => {
-    const match = latestVersions.find(
-      v => v.componentType === type && v.componentId === (componentId ?? null)
-    )
-    return (match?._max.version ?? 0) + 1
-  }
-
-  await prisma.$transaction([
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'vision',
-        content: { text: newStatements.vision, elaboration: visionElaboration },
-        version: getNextVersion('vision'),
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'strategy',
-        content: { text: newStatements.strategy, elaboration: strategyElaboration },
-        version: getNextVersion('strategy'),
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    ...objectives.map((obj) =>
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'objective',
-          componentId: obj.id,
-          content: {
-            title: obj.title,
-            objective: obj.objective,
-            pithy: obj.pithy || obj.objective,
-            omtm: obj.omtm,
-            aspiration: obj.aspiration,
-            explanation: obj.explanation,
-            keyResults: obj.keyResults,
-            metric: obj.metric,
-            successCriteria: obj.successCriteria,
-          } as object,
-          version: getNextVersion('objective', obj.id),
-          createdBy: 'ai',
-          sourceType: 'generation',
-          sourceId: trace.id,
-        },
-      })
-    ),
-  ])
+  // Clear generation status
+  await setGenerationStatus(projectId, null)
 
   console.log('[Pipeline] Refresh generation complete for project:', projectId)
 
@@ -574,53 +531,25 @@ export async function runInitialGeneration(
     ;(trace as any)._generatedOutputId = created.id
   }
 
-  // Seed initial StrategyVersion records
-  await prisma.$transaction([
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'vision',
-        content: { text: vision, elaboration: visionElaboration },
-        version: 1,
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'strategy',
-        content: { text: strategy, elaboration: strategyElaboration },
-        version: 1,
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    ...objectives.map((obj) =>
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'objective',
-          componentId: obj.id,
-          content: {
-            title: obj.title,
-            objective: obj.objective,
-            pithy: obj.pithy || obj.objective,
-            keyResults: obj.keyResults,
-            metric: obj.metric,
-            explanation: obj.explanation,
-            successCriteria: obj.successCriteria,
-          } as object,
-          version: 1,
-          createdBy: 'ai',
-          sourceType: 'generation',
-          sourceId: trace.id,
-        },
-      })
-    ),
-  ])
+  // --- Write to Decision Stack tables ---
+  const { writeStrategyToStack, captureSnapshot, setGenerationStatus } = await import('@/lib/decision-stack')
+
+  // Pre-snapshot (empty state before first generation)
+  await captureSnapshot(projectId, 'pre_generation')
+
+  // Write to DecisionStack + components
+  await writeStrategyToStack(projectId, statements)
+
+  // Post-snapshot with metadata
+  await captureSnapshot(projectId, 'post_generation', {
+    modelUsed: model,
+    promptTokens: response.usage.input_tokens,
+    completionTokens: response.usage.output_tokens,
+    latencyMs: latency,
+  })
+
+  // Clear generation status
+  await setGenerationStatus(projectId, null)
 
   // Create ExtractionRun (reuses fragments loaded at top of function)
   const extractionRun = await createExtractionRun({
@@ -805,19 +734,6 @@ export async function runOpportunityGeneration(
   // Parse opportunities from XML
   const opportunities = parseOpportunitiesXML(content)
 
-  // Store as UserContent records
-  if (opportunities.length > 0) {
-    await prisma.userContent.createMany({
-      data: opportunities.map(opp => ({
-        projectId,
-        type: 'opportunity',
-        content: JSON.stringify(opp),
-        status: 'draft',
-        metadata: { objectiveIds: opp.objectiveIds },
-      })),
-    })
-  }
-
   // Update GeneratedOutput with result
   const outputContent: OpportunityGenerationOutputContract = {
     opportunities,
@@ -838,6 +754,25 @@ export async function runOpportunityGeneration(
       completionTokens: response.usage.output_tokens,
     },
   })
+
+  // --- Write to Decision Stack tables ---
+  const { writeOpportunitiesToStack, captureSnapshot, setGenerationStatus } = await import('@/lib/decision-stack')
+
+  // Pre-snapshot
+  await captureSnapshot(projectId, 'pre_opportunities')
+
+  // Write opportunities to stack
+  await writeOpportunitiesToStack(projectId, opportunities)
+
+  // Post-snapshot with metadata
+  await captureSnapshot(projectId, 'post_opportunities', {
+    modelUsed: model,
+    promptTokens: response.usage.input_tokens,
+    completionTokens: response.usage.output_tokens,
+  })
+
+  // Clear generation status
+  await setGenerationStatus(projectId, null)
 
   console.log(`[Pipeline] Opportunity generation complete: ${opportunities.length} opportunities for project ${projectId}`)
 }

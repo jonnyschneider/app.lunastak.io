@@ -300,6 +300,109 @@ async function hydrateProjectData(
     });
   }
 
+  // Create DecisionStack from latest generatedOutput (if any)
+  const latestFullStack = outputs
+    .filter(o => o.outputType === 'full_decision_stack')
+    .slice(-1)[0];
+
+  if (latestFullStack) {
+    const content = latestFullStack.content as {
+      vision?: string;
+      visionExplainer?: string;
+      strategy?: string;
+      strategyExplainer?: string;
+      objectives?: Array<{ id: string; [k: string]: unknown }>;
+      opportunities?: Array<{ id: string; [k: string]: unknown }>;
+      principles?: Array<{ id: string; [k: string]: unknown }>;
+    };
+
+    // Merge UserContent opportunities/principles if present
+    const ucOpps = (projectFixture.userContent || [])
+      .filter(uc => uc.type === 'opportunity')
+      .map(uc => { try { return JSON.parse(uc.content); } catch { return null; } })
+      .filter(Boolean);
+    const ucPrins = (projectFixture.userContent || [])
+      .filter(uc => uc.type === 'principle')
+      .map(uc => { try { return JSON.parse(uc.content); } catch { return null; } })
+      .filter(Boolean);
+
+    const objectives = content.objectives || [];
+    const opportunities = ucOpps.length > 0 ? ucOpps : (content.opportunities || []);
+    const principles = ucPrins.length > 0 ? ucPrins : (content.principles || []);
+
+    const stack = await prisma.decisionStack.create({
+      data: {
+        projectId,
+        vision: content.vision || '',
+        visionElaboration: content.visionExplainer || null,
+        strategy: content.strategy || '',
+        strategyElaboration: content.strategyExplainer || null,
+      },
+    });
+
+    const components: Array<{
+      decisionStackId: string;
+      componentType: string;
+      componentId: string;
+      content: object;
+      sortOrder: number;
+    }> = [];
+
+    objectives.forEach((obj: any, i: number) => {
+      components.push({
+        decisionStackId: stack.id,
+        componentType: 'objective',
+        componentId: obj.id || `obj-${i + 1}`,
+        content: obj,
+        sortOrder: i,
+      });
+    });
+
+    opportunities.forEach((opp: any, i: number) => {
+      components.push({
+        decisionStackId: stack.id,
+        componentType: 'opportunity',
+        componentId: opp.id || `opp-${i + 1}`,
+        content: opp,
+        sortOrder: i,
+      });
+    });
+
+    principles.forEach((prin: any, i: number) => {
+      components.push({
+        decisionStackId: stack.id,
+        componentType: 'principle',
+        componentId: prin.id || `prin-${i + 1}`,
+        content: prin,
+        sortOrder: i,
+      });
+    });
+
+    if (components.length > 0) {
+      await prisma.decisionStackComponent.createMany({ data: components });
+    }
+
+    // Create snapshot from latest output
+    await prisma.decisionStackSnapshot.create({
+      data: {
+        projectId,
+        version: 1,
+        trigger: 'post_generation',
+        content: {
+          vision: content.vision || '',
+          visionElaboration: content.visionExplainer || null,
+          strategy: content.strategy || '',
+          strategyElaboration: content.strategyExplainer || null,
+          objectives: objectives as object[],
+          opportunities: opportunities as object[],
+          principles: principles as object[],
+        },
+        modelUsed: latestFullStack.modelUsed,
+        changeSummary: latestFullStack.changeSummary,
+      },
+    });
+  }
+
   const convCount = projectFixture.conversations.length;
   const fragCount = projectFixture.fragments.length;
   console.log(`  [OK] Hydrated: ${convCount} conversations, ${fragCount} fragments`);

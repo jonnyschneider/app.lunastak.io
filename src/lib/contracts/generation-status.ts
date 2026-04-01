@@ -8,8 +8,19 @@
  * - Mark viewed /api/generation/[id]/viewed response
  */
 
-// Generation status enum
+// Generation status enum (legacy per-output polling)
 export type GenerationStatus = 'pending' | 'generating' | 'complete' | 'failed';
+
+// Project-level generation status (DecisionStack-based polling)
+export type ProjectGenerationStatus = 'idle' | 'generating' | 'generating_opportunities';
+
+/**
+ * Response from /api/project/[id]/generation-status polling endpoint.
+ */
+export interface ProjectGenerationStatusContract {
+  status: ProjectGenerationStatus;
+  startedAt: string | null;
+}
 
 /**
  * Response from /api/generate when using fire-and-forget mode.

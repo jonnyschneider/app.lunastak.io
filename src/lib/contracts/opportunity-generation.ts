@@ -31,6 +31,6 @@ export interface OpportunityGenerationOutputContract {
   generatedFrom: {
     fragmentCount: number
     synthesisCount: number
-    decisionStackVersion: number
+    decisionStackVersion?: number  // Deprecated — snapshots track versioning now
   }
 }

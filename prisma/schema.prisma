@@ -192,6 +192,8 @@ model Project {
   dismissals           UserDismissal[]
   userContent          UserContent[]
   strategyVersions     StrategyVersion[]
+  decisionStack        DecisionStack?
+  decisionStackSnapshots DecisionStackSnapshot[]
 
   @@index([userId])
   @@index([status])
@@ -570,4 +572,71 @@ model UserContent {
   @@index([projectId])
   @@index([type])
   @@index([status])
+}
+
+model DecisionStack {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+
+  // Singleton fields — direct columns
+  vision              String   @default("") @db.Text
+  visionElaboration   String?  @db.Text
+  strategy            String   @default("") @db.Text
+  strategyElaboration String?  @db.Text
+
+  // Background generation tracking
+  generationStatus  String?    // null | "generating" | "generating_opportunities"
+  generationStarted DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  components DecisionStackComponent[]
+
+  @@index([generationStatus])
+}
+
+model DecisionStackComponent {
+  id               String @id @default(cuid())
+  decisionStackId  String
+  componentType    String // "objective" | "opportunity" | "principle"
+  componentId      String // stable ID within type (e.g. "obj-1", "opp-1")
+  content          Json   // shape depends on componentType
+  sortOrder        Int    @default(0)
+  status           String @default("active") // active | archived
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  decisionStack DecisionStack @relation(fields: [decisionStackId], references: [id], onDelete: Cascade)
+
+  @@unique([decisionStackId, componentType, componentId])
+  @@index([decisionStackId, componentType])
+}
+
+model DecisionStackSnapshot {
+  id        String @id @default(cuid())
+  projectId String
+  version   Int    // auto-incrementing per project
+
+  // Full stack content — serialised from live state
+  content   Json   // { vision, visionElaboration, strategy, strategyElaboration, objectives, opportunities, principles }
+
+  // When/why this snapshot was created
+  trigger   String // "pre_generation" | "post_generation" | "pre_refresh" | "post_refresh" | "pre_opportunities" | "post_opportunities"
+
+  // Generation metadata (null for pre-snapshots)
+  modelUsed        String?
+  promptTokens     Int?
+  completionTokens Int?
+  latencyMs        Int?
+  changeSummary    String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, version])
+  @@index([projectId, createdAt])
 }

@@ -8,6 +8,11 @@ import {
   validateStrategyVersionInput,
   StrategyVersionInputContract,
 } from '@/lib/contracts/strategy-version';
+import {
+  updateSingleton,
+  updateComponent,
+  getSnapshots,
+} from '@/lib/decision-stack';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
 
@@ -31,7 +36,7 @@ async function getUserId(): Promise<string | null> {
 
 /**
  * GET /api/project/[id]/strategy-version
- * Fetch latest versions for all components
+ * Fetch snapshot history (replaces per-component version history)
  */
 export async function GET(
   request: NextRequest,
@@ -49,27 +54,32 @@ export async function GET(
   const project = await prisma.project.findFirst({
     where: {
       id: projectId,
-      userId,
+      OR: [{ userId }, { isDemo: true }],
     },
+    select: { id: true },
   });
 
   if (!project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  // Get latest version for each component
-  const versions = await prisma.strategyVersion.findMany({
-    where: { projectId },
-    orderBy: { version: 'desc' },
-    distinct: ['componentType', 'componentId'],
-  });
+  const snapshots = await getSnapshots(projectId);
+
+  // Map to the shape VersionHistorySheet expects
+  const versions = snapshots.map(s => ({
+    id: s.id,
+    version: s.version,
+    status: s.trigger,
+    createdAt: s.createdAt.toISOString(),
+    changeSummary: s.changeSummary || null,
+  }));
 
   return NextResponse.json({ versions });
 }
 
 /**
  * POST /api/project/[id]/strategy-version
- * Create a new version
+ * Create a new version (user edit) — writes to DecisionStack + creates StrategyVersion for audit
  */
 export async function POST(
   request: NextRequest,
@@ -104,34 +114,18 @@ export async function POST(
 
   const { componentType, componentId, content, sourceType, sourceId } = body as StrategyVersionInputContract;
 
-  // Get current max version for this component
-  const latestVersion = await prisma.strategyVersion.findFirst({
-    where: {
-      projectId,
-      componentType,
-      componentId: componentId ?? null,
-    },
-    orderBy: { version: 'desc' },
-  });
-
-  const newVersion = (latestVersion?.version ?? 0) + 1;
-
-  // Create the new version
-  const version = await prisma.strategyVersion.create({
-    data: {
-      projectId,
-      componentType,
-      componentId: componentId ?? null,
-      content: content as object,
-      version: newVersion,
-      createdBy: 'user',
-      sourceType,
-      sourceId: sourceId ?? null,
-    },
-  });
+  // Write to Decision Stack
+  if (componentType === 'vision') {
+    const c = content as { text: string; elaboration?: string };
+    await updateSingleton(projectId, 'vision', c.text, c.elaboration);
+  } else if (componentType === 'strategy') {
+    const c = content as { text: string; elaboration?: string };
+    await updateSingleton(projectId, 'strategy', c.text, c.elaboration);
+  } else if (componentType === 'objective' && componentId) {
+    await updateComponent(projectId, 'objective', componentId, content as object);
+  }
 
   // Also update Trace.output to persist the change for display
-  // Find the latest trace for this project
   const latestTrace = await prisma.trace.findFirst({
     where: {
       conversation: {
@@ -159,7 +153,6 @@ export async function POST(
             : obj
         );
       } else {
-        // New objective — append to array
         updatedOutput.objectives = [...objectives, { id: componentId, ...(content as object) }];
       }
     }
@@ -170,5 +163,5 @@ export async function POST(
     });
   }
 
-  return NextResponse.json({ version });
+  return NextResponse.json({ success: true, componentType, componentId });
 }
