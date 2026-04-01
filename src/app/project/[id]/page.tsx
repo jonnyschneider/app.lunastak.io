@@ -1357,15 +1357,33 @@ export default function ProjectPage() {
         onImported={() => fetchProjectData()}
       />
 
-      {/* Refresh Strategy Dialog */}
-      <RefreshStrategyDialog
-        projectId={projectId}
-        open={refreshStrategyDialogOpen}
-        onOpenChange={setRefreshStrategyDialogOpen}
-        onStarted={() => {
-          setRefreshStrategyDialogOpen(false)
-        }}
+      {/* Generation Confirm Dialog (refresh + opportunities) */}
+      <GenerationConfirmDialog
+        action={generationDialogAction}
+        open={generationDialogOpen}
+        onOpenChange={setGenerationDialogOpen}
         fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+        onConfirm={async () => {
+          getStatsigClient()?.logEvent(`confirm_${generationDialogAction}`, 'generation-dialog', {
+            projectId,
+            fragmentsSinceStrategy: String(stats.fragmentsSinceStrategy),
+          })
+          if (generationDialogAction === 'refresh') {
+            const res = await fetch(`/api/project/${projectId}/refresh-strategy`, { method: 'POST' })
+            if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Refresh failed') }
+            const data = await res.json()
+            if (data.status === 'started' && data.generationId) {
+              startTask('generation', data.generationId, projectId, {
+                running: 'Refreshing strategy...',
+                complete: 'Strategy updated',
+                failed: 'Strategy refresh failed',
+                completeDescription: 'Click to view your updated strategy.',
+              })
+            }
+          } else {
+            await handleGenerateOpportunities()
+          }
+        }}
       />
 
       {/* Pro Upgrade Flow Dialogs */}
