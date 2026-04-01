@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 import { waitUntil } from '@vercel/functions';
 import { planPipeline, executePipeline } from '@/lib/pipeline';
+import { setGenerationStatus } from '@/lib/decision-stack';
 import type { GenerationStartedContract } from '@/lib/contracts/generation-status';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
@@ -10,8 +11,8 @@ export const maxDuration = 300; // 5 minutes for Pro plan
 /**
  * Fire-and-forget generation API.
  *
- * Creates a GeneratedOutput record immediately, starts generation in background,
- * and returns the generationId for polling.
+ * Sets DecisionStack generation status, starts generation in background,
+ * and returns a generationId for client-side task tracking.
  */
 export async function POST(req: Request) {
   const requestStartTime = Date.now();
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Require projectId for fire-and-forget (need somewhere to store the output)
+  // Require projectId
   if (!conversation.projectId) {
     console.error('[Generate API] No projectId for conversation:', conversationId);
     return NextResponse.json(
@@ -73,20 +74,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // Create GeneratedOutput record upfront with 'generating' status
-  const generatedOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId: conversation.projectId,
-      userId: conversation.userId,
-      outputType: 'full_decision_stack',
-      version: 1,
-      status: 'generating',
-      startedAt: new Date(),
-      content: {}, // Empty initially, populated on completion
-    }
-  });
+  // Set generation status for polling
+  await setGenerationStatus(conversation.projectId, 'generating');
 
-  console.log('[Generate API] Created GeneratedOutput with ID:', generatedOutput.id, 'status: generating');
+  const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  console.log('[Generate API] Starting generation', generationId);
 
   // Start background generation via pipeline orchestrator
   waitUntil((async () => {
@@ -98,19 +91,12 @@ export async function POST(req: Request) {
         userId: conversation.userId,
         isInitial: true,
         experimentVariant: conversation.experimentVariant,
-        generatedOutputId: generatedOutput.id,
       };
       const plan = planPipeline(trigger);
       await executePipeline(plan, trigger);
     } catch (error) {
       console.error('[Generate API] Background generation failed:', error);
-      await prisma.generatedOutput.update({
-        where: { id: generatedOutput.id },
-        data: {
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Generation failed',
-        },
-      });
+      await setGenerationStatus(conversation.projectId!, null);
     }
   })());
 
@@ -120,7 +106,7 @@ export async function POST(req: Request) {
   // Return immediately with generationId for polling
   const response: GenerationStartedContract = {
     status: 'started',
-    generationId: generatedOutput.id,
+    generationId,
   };
 
   return NextResponse.json(response);

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Sheet,
   SheetContent,
@@ -10,12 +9,12 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Eye, Download, Loader2 } from 'lucide-react'
+import { Download, Loader2 } from 'lucide-react'
 
 interface VersionEntry {
   id: string
   version: number
-  status: string
+  status: string  // trigger: post_generation, post_refresh, etc.
   createdAt: string
   changeSummary: string | null
 }
@@ -24,7 +23,16 @@ interface VersionHistorySheetProps {
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onExportBrief?: (outputId: string, version: number) => void
+  onExportBrief?: (snapshotId: string, version: number) => void
+}
+
+const TRIGGER_LABELS: Record<string, string> = {
+  post_generation: 'Generated',
+  post_refresh: 'Refreshed',
+  post_opportunities: 'Opportunities added',
+  pre_generation: 'Before generation',
+  pre_refresh: 'Before refresh',
+  pre_opportunities: 'Before opportunities',
 }
 
 export function VersionHistorySheet({
@@ -33,18 +41,17 @@ export function VersionHistorySheet({
   onOpenChange,
   onExportBrief,
 }: VersionHistorySheetProps) {
-  const router = useRouter()
   const [versions, setVersions] = useState<VersionEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     if (!open) return
     setIsLoading(true)
-    fetch(`/api/project/${projectId}`)
+    fetch(`/api/project/${projectId}/strategy-version`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.strategyOutputs) {
-          setVersions(data.strategyOutputs)
+        if (data?.versions) {
+          setVersions(data.versions)
         }
       })
       .catch(() => {})
@@ -62,6 +69,9 @@ export function VersionHistorySheet({
     })
   }
 
+  // Only show post-snapshots (the "after" states) for cleaner history
+  const postVersions = versions.filter(v => v.status.startsWith('post_'))
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[400px] sm:w-[450px]">
@@ -75,12 +85,12 @@ export function VersionHistorySheet({
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               Loading...
             </div>
-          ) : versions.length === 0 ? (
+          ) : postVersions.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               No strategy versions yet.
             </p>
           ) : (
-            versions.map((version, i) => (
+            postVersions.map((version) => (
               <div
                 key={version.id}
                 className="flex items-start gap-3 py-3 border-b border-border last:border-0"
@@ -88,13 +98,13 @@ export function VersionHistorySheet({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">
-                      v{version.version || versions.length - i}
+                      v{version.version}
                     </span>
                     <Badge
-                      variant={version.status === 'complete' ? 'secondary' : 'outline'}
+                      variant="secondary"
                       className="text-[10px] px-1.5 py-0"
                     >
-                      {version.status}
+                      {TRIGGER_LABELS[version.status] || version.status}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -107,24 +117,12 @@ export function VersionHistorySheet({
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2"
-                    onClick={() => {
-                      router.push(`/strategy/${version.id}`)
-                      onOpenChange(false)
-                    }}
-                    title="View"
-                  >
-                    <Eye className="h-3 w-3" />
-                  </Button>
-                  {onExportBrief && version.status === 'complete' && (
+                  {onExportBrief && (
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 px-2"
-                      onClick={() => onExportBrief(version.id, version.version || versions.length - i)}
+                      onClick={() => onExportBrief(version.id, version.version)}
                       title="Export Brief"
                     >
                       <Download className="h-3 w-3" />

@@ -55,7 +55,7 @@ async function main() {
     orderBy: { createdAt: 'asc' },
   });
 
-  const outputs = await prisma.generatedOutput.findMany({
+  const snapshots = await prisma.decisionStackSnapshot.findMany({
     where: { projectId },
     orderBy: { createdAt: 'asc' },
   });
@@ -70,21 +70,15 @@ async function main() {
     orderBy: { createdAt: 'asc' },
   });
 
-  let userContent: Array<{
-    id: string;
-    type: string;
-    content: string;
-    status: string;
-    metadata: unknown;
-  }> = [];
-  try {
-    userContent = await prisma.userContent.findMany({
-      where: { projectId },
-      orderBy: { createdAt: 'asc' },
-    });
-  } catch {
-    // table may not exist
-  }
+  const decisionStack = await prisma.decisionStack.findUnique({
+    where: { projectId },
+  });
+  const stackComponents = decisionStack
+    ? await prisma.decisionStackComponent.findMany({
+        where: { decisionStackId: decisionStack.id },
+        orderBy: { sortOrder: 'asc' },
+      })
+    : [];
 
   const fixture = {
     template: {
@@ -170,21 +164,25 @@ async function main() {
           confidence: s.confidence,
           fragmentCount: s.fragmentCount,
         })),
-        generatedOutputs: outputs.map((o) => ({
-          outputType: o.outputType,
-          version: o.version,
-          content: o.content,
-          generatedFrom: o.generatedFrom,
-          modelUsed: o.modelUsed,
-          changeSummary: o.changeSummary,
+        generatedOutputs: snapshots.map((s) => ({
+          outputType: 'full_decision_stack',
+          version: s.version,
+          content: s.content,
+          modelUsed: s.modelUsed,
+          changeSummary: s.changeSummary,
         })),
-        userContent: userContent.map((uc) => ({
-          id: uc.id,
-          type: uc.type,
-          content: uc.content,
-          status: uc.status,
-          metadata: uc.metadata,
-        })),
+        decisionStack: decisionStack ? {
+          vision: decisionStack.vision,
+          visionElaboration: decisionStack.visionElaboration,
+          strategy: decisionStack.strategy,
+          strategyElaboration: decisionStack.strategyElaboration,
+          components: stackComponents.map((c) => ({
+            componentType: c.componentType,
+            componentId: c.componentId,
+            content: c.content,
+            sortOrder: c.sortOrder,
+          })),
+        } : null,
       },
     ],
   };
@@ -198,10 +196,10 @@ async function main() {
   console.log(`Traces: ${traces.length}`);
   console.log(`Fragments: ${fragments.length}`);
   console.log(`Syntheses: ${syntheses.length}`);
-  console.log(`Generated Outputs: ${outputs.length}`);
+  console.log(`Snapshots: ${snapshots.length}`);
+  console.log(`Stack Components: ${stackComponents.length}`);
   console.log(`Deep Dives: ${deepDives.length}`);
   console.log(`Documents: ${documents.length}`);
-  console.log(`User Content: ${userContent.length}`);
   console.log(`\nWritten to: ${outPath}`);
 
   await prisma.$disconnect();

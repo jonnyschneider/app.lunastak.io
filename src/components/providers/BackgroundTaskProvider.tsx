@@ -113,7 +113,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
         const url =
           task.type === 'extraction'
             ? `/api/extraction-status/${task.id}`
-            : `/api/generation-status/${task.id}`
+            : `/api/project/${task.projectId}/generation-status`
 
         const response = await fetch(url, { cache: 'no-store' })
         if (!response.ok) {
@@ -163,7 +163,8 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
           }
         } else {
           // --- Generation/Refresh poll handling ---
-          if (data.status === 'complete') {
+          // New project-level endpoint: status is 'idle' when done, 'generating'/'generating_opportunities' when active
+          if (data.status === 'idle' || data.status === 'complete') {
             updateTaskStatus(task.id, 'complete')
 
             const responseData: PollResponseData = {
@@ -185,7 +186,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
             // Dispatch event for sidebar/project page refresh
             window.dispatchEvent(
               new CustomEvent('generationComplete', {
-                detail: { projectId: task.projectId, traceId: data.traceId },
+                detail: { projectId: task.projectId },
               })
             )
 
@@ -202,9 +203,14 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
             setTimeout(() => removeTask(task.id), 2000)
           } else {
             // Still generating — update progress label and keep polling
-            if (data.progressLabel) {
+            const progressLabel = data.status === 'generating_opportunities'
+              ? 'Generating opportunities'
+              : data.status === 'generating'
+                ? 'Crafting strategy'
+                : data.progressLabel
+            if (progressLabel) {
               setTasks((prev) =>
-                prev.map((t) => (t.id === task.id ? { ...t, progressLabel: data.progressLabel } : t))
+                prev.map((t) => (t.id === task.id ? { ...t, progressLabel } : t))
               )
             }
             pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))

@@ -232,19 +232,23 @@ export async function GET(
       }
     })
 
-    // Determine if strategy is stale (new fragments since last generation)
-    const latestGeneration = await prisma.generatedOutput.findFirst({
-      where: { projectId, status: 'complete' },
-      orderBy: { startedAt: 'desc' },
-      select: { startedAt: true, id: true },
+    // Load Decision Stack (replaces GeneratedOutput reads)
+    const { getDecisionStack, assembleStrategyStatements } = await import('@/lib/decision-stack')
+    const decisionStack = await getDecisionStack(projectId)
+    const hasStrategy = !!decisionStack && decisionStack.vision !== ''
+    const strategyStatements = decisionStack ? assembleStrategyStatements(decisionStack) : null
+
+    // Staleness: compare fragment timestamps against latest snapshot
+    const latestSnapshot = await prisma.decisionStackSnapshot.findFirst({
+      where: { projectId, trigger: { startsWith: 'post_' } },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true, version: true },
     })
 
-    // Count fragments added since last strategy generation
-    const fragmentsSinceStrategy = latestGeneration?.startedAt
-      ? project.fragments.filter(f => f.createdAt > latestGeneration.startedAt!).length
-      : project.fragments.length // No strategy yet = all fragments are new
+    const fragmentsSinceStrategy = latestSnapshot
+      ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).length
+      : project.fragments.length
 
-    // Stale if new fragments exist — doesn't depend on background synthesis completing
     const strategyIsStale = fragmentsSinceStrategy > 0
 
     // Count fragments since last knowledge summary
@@ -270,6 +274,9 @@ export async function GET(
       documents,
       deepDives,
       strategyOutputs,
+      hasStrategy,
+      strategyStatements,
+      latestSnapshotVersion: latestSnapshot?.version ?? null,
       syntheses,
       knowledgeSummary: project.knowledgeSummary,
       knowledgeUpdatedAt: project.knowledgeUpdatedAt?.toISOString() || null,

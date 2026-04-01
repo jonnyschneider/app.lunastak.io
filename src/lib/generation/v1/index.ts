@@ -246,25 +246,19 @@ export async function performGeneration(
   });
   console.log('[Generate v1] Trace saved with ID:', trace.id);
 
-  // Create GeneratedOutput (new schema)
-  console.log('[Generate v1] Checking projectId:', conversation.projectId);
+  // Write to Decision Stack
   if (conversation.projectId) {
     try {
-      console.log('[Generate v1] Creating GeneratedOutput for project:', conversation.projectId);
-      const generatedOutput = await prisma.generatedOutput.create({
-        data: {
-          projectId: conversation.projectId,
-          userId: conversation.userId,
-          outputType: 'full_decision_stack',
-          version: 1,
-          content: statements as any,
-          modelUsed: CLAUDE_MODEL,
-          promptTokens: response.usage.input_tokens,
-          completionTokens: response.usage.output_tokens,
-          latencyMs: latency,
-        }
-      });
-      console.log('[Generate v1] GeneratedOutput saved with ID:', generatedOutput.id);
+      const { writeStrategyToStack, captureSnapshot } = await import('@/lib/decision-stack')
+      await captureSnapshot(conversation.projectId, 'pre_generation')
+      await writeStrategyToStack(conversation.projectId, statements)
+      await captureSnapshot(conversation.projectId, 'post_generation', {
+        modelUsed: CLAUDE_MODEL,
+        promptTokens: response.usage.input_tokens,
+        completionTokens: response.usage.output_tokens,
+        latencyMs: latency,
+      })
+      console.log('[Generate v1] Decision Stack written for project:', conversation.projectId)
 
       // Get fragment IDs from this conversation
       const fragments = await prisma.fragment.findMany({
@@ -283,7 +277,6 @@ export async function performGeneration(
         promptTokens: response.usage.input_tokens,
         completionTokens: response.usage.output_tokens,
         latencyMs: latency,
-        generatedOutputId: generatedOutput.id
       });
       console.log('[Generate v1] ExtractionRun saved with ID:', extractionRun.id);
 
@@ -294,8 +287,7 @@ export async function performGeneration(
         console.error('[Generate v1] Failed to update extraction run with syntheses:', err);
       }
     } catch (error) {
-      console.error('[Generate v1] Failed to create GeneratedOutput/ExtractionRun:', error);
-      // Continue - don't fail generation if new schema writes fail
+      console.error('[Generate v1] Failed to write Decision Stack/ExtractionRun:', error);
     }
   }
 

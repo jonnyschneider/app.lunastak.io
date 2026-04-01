@@ -19,7 +19,6 @@ export async function GET() {
           },
         },
       },
-      generatedOutput: true,
     },
   });
 
@@ -76,7 +75,7 @@ export async function GET() {
           projectId: 'demo-project',
         }
       : null,
-    generatedOutput: extractionRun.generatedOutput,
+    generatedOutput: null,
     extractedContext: trace?.extractedContext || null,
     dimensionalCoverage: trace?.dimensionalCoverage || null,
     traceId: 'demo-trace',

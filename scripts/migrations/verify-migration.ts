@@ -1,6 +1,9 @@
 #!/usr/bin/env tsx
+// @ts-nocheck
 /**
  * Verification: Check migration data integrity
+ * NOTE: References old tables (GeneratedOutput, UserContent) that have been dropped.
+ * Kept for historical reference only.
  */
 
 import { prisma } from '@/lib/db'

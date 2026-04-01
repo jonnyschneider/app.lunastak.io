@@ -117,23 +117,14 @@ export async function runRefreshGeneration(
   projectId: string,
   userId: string,
   model: string,
-  generatedOutputId?: string
 ): Promise<NonNullable<PipelineResult['generation']>> {
-  // Load previous strategy (exclude the pre-created record for fire-and-forget)
-  const previousOutput = await prisma.generatedOutput.findFirst({
-    where: {
-      projectId,
-      outputType: 'full_decision_stack',
-      ...(generatedOutputId ? { id: { not: generatedOutputId } } : {}),
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+  // Load previous strategy from Decision Stack
+  const { getStrategyStatements: getPrevStatements } = await import('@/lib/decision-stack')
+  const previousStatements = await getPrevStatements(projectId)
 
-  if (!previousOutput) {
+  if (!previousStatements) {
     throw new Error('No previous strategy found for refresh')
   }
-
-  const previousStatements = previousOutput.content as unknown as StrategyStatements
 
   // Get dimensional syntheses
   const syntheses = await prisma.dimensionalSynthesis.findMany({
@@ -148,8 +139,13 @@ export async function runRefreshGeneration(
     orderBy: { capturedAt: 'desc' },
   })
 
-  // Split by startedAt (when generation ran), not createdAt (when DB row was inserted)
-  const cutoff = previousOutput.startedAt || previousOutput.createdAt
+  // Split by latest snapshot timestamp (when last generation completed)
+  const latestSnapshot = await prisma.decisionStackSnapshot.findFirst({
+    where: { projectId, trigger: { startsWith: 'post_' } },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  })
+  const cutoff = latestSnapshot?.createdAt || new Date(0)
   const newFragments = allFragments.filter(f => f.createdAt > cutoff)
   const existingFragments = allFragments.filter(f => f.createdAt <= cutoff)
 
@@ -158,7 +154,7 @@ export async function runRefreshGeneration(
     where: {
       projectId,
       status: { in: ['archived', 'soft_deleted'] },
-      updatedAt: { gt: previousOutput.createdAt },
+      updatedAt: { gt: cutoff },
     },
     select: { content: true },
     take: 10,
@@ -305,105 +301,25 @@ export async function runRefreshGeneration(
     },
   })
 
-  let newOutput
-  if (generatedOutputId) {
-    // Fire-and-forget: update existing record (created by route for polling)
-    newOutput = await prisma.generatedOutput.update({
-      where: { id: generatedOutputId },
-      data: {
-        status: 'complete',
-        content: newStatements as any,
-        generatedFrom: 'incremental_refresh',
-        modelUsed: model,
-        promptTokens: genResponse.usage.input_tokens,
-        completionTokens: genResponse.usage.output_tokens,
-        previousOutputId: previousOutput.id,
-        changeSummary,
-        startedAt: new Date(),
-      },
-    })
-  } else {
-    // Synchronous: create new record (backward compatibility)
-    newOutput = await prisma.generatedOutput.create({
-      data: {
-        projectId,
-        userId,
-        outputType: 'full_decision_stack',
-        version: previousOutput.version + 1,
-        content: newStatements as any,
-        generatedFrom: 'incremental_refresh',
-        modelUsed: model,
-        promptTokens: genResponse.usage.input_tokens,
-        completionTokens: genResponse.usage.output_tokens,
-        previousOutputId: previousOutput.id,
-        changeSummary,
-        startedAt: new Date(),
-      },
-    })
-  }
+  // --- Write to Decision Stack tables ---
+  const { writeStrategyToStack, captureSnapshot, setGenerationStatus } = await import('@/lib/decision-stack')
 
-  // Create StrategyVersion records for edit history
-  const latestVersions = await prisma.strategyVersion.groupBy({
-    by: ['componentType', 'componentId'],
-    where: { projectId },
-    _max: { version: true },
+  // Pre-snapshot (current state before refresh)
+  await captureSnapshot(projectId, 'pre_refresh')
+
+  // Write refreshed strategy to stack
+  await writeStrategyToStack(projectId, newStatements)
+
+  // Post-snapshot with metadata
+  await captureSnapshot(projectId, 'post_refresh', {
+    modelUsed: model,
+    promptTokens: genResponse.usage.input_tokens,
+    completionTokens: genResponse.usage.output_tokens,
+    changeSummary: changeSummary ?? undefined,
   })
 
-  const getNextVersion = (type: string, componentId?: string) => {
-    const match = latestVersions.find(
-      v => v.componentType === type && v.componentId === (componentId ?? null)
-    )
-    return (match?._max.version ?? 0) + 1
-  }
-
-  await prisma.$transaction([
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'vision',
-        content: { text: newStatements.vision, elaboration: visionElaboration },
-        version: getNextVersion('vision'),
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'strategy',
-        content: { text: newStatements.strategy, elaboration: strategyElaboration },
-        version: getNextVersion('strategy'),
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    ...objectives.map((obj) =>
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'objective',
-          componentId: obj.id,
-          content: {
-            title: obj.title,
-            objective: obj.objective,
-            pithy: obj.pithy || obj.objective,
-            omtm: obj.omtm,
-            aspiration: obj.aspiration,
-            explanation: obj.explanation,
-            keyResults: obj.keyResults,
-            metric: obj.metric,
-            successCriteria: obj.successCriteria,
-          } as object,
-          version: getNextVersion('objective', obj.id),
-          createdBy: 'ai',
-          sourceType: 'generation',
-          sourceId: trace.id,
-        },
-      })
-    ),
-  ])
+  // Clear generation status
+  await setGenerationStatus(projectId, null)
 
   console.log('[Pipeline] Refresh generation complete for project:', projectId)
 
@@ -412,10 +328,8 @@ export async function runRefreshGeneration(
     .then(u => { if (u?.email) notifySlackStrategyGenerated(u.email, 'refresh') })
 
   return {
-    generatedOutputId: newOutput.id,
     traceId: trace.id,
     statements: newStatements,
-    version: newOutput.version,
     changeSummary,
   }
 }
@@ -429,7 +343,6 @@ export async function runInitialGeneration(
   conversationId: string | null,
   userId: string | null,
   experimentVariant: string | null,
-  generatedOutputId: string | undefined,
   model: string
 ): Promise<NonNullable<PipelineResult['generation']>> {
   const startTime = Date.now()
@@ -443,18 +356,6 @@ export async function runInitialGeneration(
 
   if (fragments.length === 0) {
     throw new Error('No active fragments found for initial generation')
-  }
-
-  // Bump startedAt to NOW so it's after fragment creation.
-  // The fire-and-forget path pre-creates the GeneratedOutput before extraction,
-  // so its original startedAt predates the fragments. Without this, the UI's
-  // "fragments since last strategy" check sees all fragments as newer than the
-  // strategy and incorrectly shows "Create Strategy". (See HUM-81)
-  if (generatedOutputId) {
-    await prisma.generatedOutput.update({
-      where: { id: generatedOutputId },
-      data: { startedAt: new Date() },
-    })
   }
 
   // Build prompt from fragments — same data as extractedContext.themes, read from DB
@@ -540,87 +441,25 @@ export async function runInitialGeneration(
     },
   })
 
-  // Update or create GeneratedOutput
-  const outputId = generatedOutputId
-  if (outputId) {
-    await prisma.generatedOutput.update({
-      where: { id: outputId },
-      data: {
-        status: 'complete',
-        content: statements as any,
-        modelUsed: model,
-        promptTokens: response.usage.input_tokens,
-        completionTokens: response.usage.output_tokens,
-        latencyMs: latency,
-      },
-    })
-  } else {
-    // Create new (when called from non-polling context)
-    const created = await prisma.generatedOutput.create({
-      data: {
-        projectId,
-        userId,
-        outputType: 'full_decision_stack',
-        version: 1,
-        status: 'complete',
-        content: statements as any,
-        modelUsed: model,
-        promptTokens: response.usage.input_tokens,
-        completionTokens: response.usage.output_tokens,
-        startedAt: new Date(),
-      },
-    })
-    // Use the created ID for the return value
-    ;(trace as any)._generatedOutputId = created.id
-  }
+  // --- Write to Decision Stack tables ---
+  const { writeStrategyToStack, captureSnapshot, setGenerationStatus } = await import('@/lib/decision-stack')
 
-  // Seed initial StrategyVersion records
-  await prisma.$transaction([
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'vision',
-        content: { text: vision, elaboration: visionElaboration },
-        version: 1,
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'strategy',
-        content: { text: strategy, elaboration: strategyElaboration },
-        version: 1,
-        createdBy: 'ai',
-        sourceType: 'generation',
-        sourceId: trace.id,
-      },
-    }),
-    ...objectives.map((obj) =>
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'objective',
-          componentId: obj.id,
-          content: {
-            title: obj.title,
-            objective: obj.objective,
-            pithy: obj.pithy || obj.objective,
-            keyResults: obj.keyResults,
-            metric: obj.metric,
-            explanation: obj.explanation,
-            successCriteria: obj.successCriteria,
-          } as object,
-          version: 1,
-          createdBy: 'ai',
-          sourceType: 'generation',
-          sourceId: trace.id,
-        },
-      })
-    ),
-  ])
+  // Pre-snapshot (empty state before first generation)
+  await captureSnapshot(projectId, 'pre_generation')
+
+  // Write to DecisionStack + components
+  await writeStrategyToStack(projectId, statements)
+
+  // Post-snapshot with metadata
+  await captureSnapshot(projectId, 'post_generation', {
+    modelUsed: model,
+    promptTokens: response.usage.input_tokens,
+    completionTokens: response.usage.output_tokens,
+    latencyMs: latency,
+  })
+
+  // Clear generation status
+  await setGenerationStatus(projectId, null)
 
   // Create ExtractionRun (reuses fragments loaded at top of function)
   const extractionRun = await createExtractionRun({
@@ -632,7 +471,6 @@ export async function runInitialGeneration(
     promptTokens: response.usage.input_tokens,
     completionTokens: response.usage.output_tokens,
     latencyMs: latency,
-    generatedOutputId: outputId || (trace as any)._generatedOutputId,
   })
 
   try {
@@ -666,10 +504,8 @@ export async function runInitialGeneration(
   console.log(`[Pipeline] Initial generation complete in ${Date.now() - startTime}ms`)
 
   return {
-    generatedOutputId: outputId || (trace as any)._generatedOutputId,
     traceId: trace.id,
     statements,
-    version: 1,
     changeSummary: null,
   }
 }
@@ -736,23 +572,14 @@ export async function runOpportunityGeneration(
   projectId: string,
   userId: string | null,
   model: string,
-  generatedOutputId: string
 ): Promise<void> {
-  // Load the latest full_decision_stack
-  const decisionStack = await prisma.generatedOutput.findFirst({
-    where: {
-      projectId,
-      outputType: 'full_decision_stack',
-      status: 'complete',
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+  // Load the current Decision Stack
+  const { getStrategyStatements: getStatements } = await import('@/lib/decision-stack')
+  const statements = await getStatements(projectId)
 
-  if (!decisionStack) {
+  if (!statements) {
     throw new Error('No decision stack found — generate Direction first')
   }
-
-  const statements = decisionStack.content as unknown as StrategyStatements
 
   // Load dimensional syntheses
   const syntheses = await prisma.dimensionalSynthesis.findMany({
@@ -805,39 +632,24 @@ export async function runOpportunityGeneration(
   // Parse opportunities from XML
   const opportunities = parseOpportunitiesXML(content)
 
-  // Store as UserContent records
-  if (opportunities.length > 0) {
-    await prisma.userContent.createMany({
-      data: opportunities.map(opp => ({
-        projectId,
-        type: 'opportunity',
-        content: JSON.stringify(opp),
-        status: 'draft',
-        metadata: { objectiveIds: opp.objectiveIds },
-      })),
-    })
-  }
+  // --- Write to Decision Stack tables ---
+  const { writeOpportunitiesToStack, captureSnapshot, setGenerationStatus } = await import('@/lib/decision-stack')
 
-  // Update GeneratedOutput with result
-  const outputContent: OpportunityGenerationOutputContract = {
-    opportunities,
-    generatedFrom: {
-      fragmentCount: fragments.length,
-      synthesisCount: syntheses.length,
-      decisionStackVersion: decisionStack.version,
-    },
-  }
+  // Pre-snapshot
+  await captureSnapshot(projectId, 'pre_opportunities')
 
-  await prisma.generatedOutput.update({
-    where: { id: generatedOutputId },
-    data: {
-      status: 'complete',
-      content: outputContent as any,
-      modelUsed: model,
-      promptTokens: response.usage.input_tokens,
-      completionTokens: response.usage.output_tokens,
-    },
+  // Write opportunities to stack
+  await writeOpportunitiesToStack(projectId, opportunities)
+
+  // Post-snapshot with metadata
+  await captureSnapshot(projectId, 'post_opportunities', {
+    modelUsed: model,
+    promptTokens: response.usage.input_tokens,
+    completionTokens: response.usage.output_tokens,
   })
+
+  // Clear generation status
+  await setGenerationStatus(projectId, null)
 
   console.log(`[Pipeline] Opportunity generation complete: ${opportunities.length} opportunities for project ${projectId}`)
 }

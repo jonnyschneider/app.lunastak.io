@@ -18,7 +18,6 @@ export async function GET(
           },
         },
       },
-      generatedOutput: true,
     },
   });
 
@@ -35,8 +34,7 @@ export async function GET(
             },
           },
         },
-        generatedOutput: true,
-      },
+        },
     });
   }
 
@@ -114,7 +112,7 @@ export async function GET(
     fragments,
     syntheses,
     conversation: extractionRun.conversation,
-    generatedOutput: extractionRun.generatedOutput,
+    generatedOutput: null,
     // User-facing extraction data from trace
     extractedContext: trace?.extractedContext || null,
     dimensionalCoverage: trace?.dimensionalCoverage || null,

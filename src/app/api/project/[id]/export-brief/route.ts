@@ -50,23 +50,50 @@ export async function GET(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 
-  // Determine which output to export
-  const outputId = request.nextUrl.searchParams.get('outputId')
+  // Read from Decision Stack (current live state or specific snapshot)
+  const snapshotId = request.nextUrl.searchParams.get('outputId') || request.nextUrl.searchParams.get('snapshotId')
 
-  const generatedOutput = outputId
-    ? await prisma.generatedOutput.findFirst({
-        where: { id: outputId, projectId, status: 'complete' },
-      })
-    : await prisma.generatedOutput.findFirst({
-        where: { projectId, outputType: 'full_decision_stack', status: 'complete' },
-        orderBy: { createdAt: 'desc' },
-      })
+  let strategy: StrategyStatements
+  let version: number
+  let generatedAt: string
 
-  if (!generatedOutput) {
-    return NextResponse.json({ error: 'No strategy found' }, { status: 404 })
+  if (snapshotId) {
+    // Export a specific snapshot
+    const snapshot = await prisma.decisionStackSnapshot.findFirst({
+      where: { id: snapshotId, projectId },
+    })
+    if (!snapshot) {
+      return NextResponse.json({ error: 'Snapshot not found' }, { status: 404 })
+    }
+    const content = snapshot.content as Record<string, unknown>
+    strategy = {
+      vision: (content.vision as string) || '',
+      visionExplainer: (content.visionElaboration as string) || undefined,
+      strategy: (content.strategy as string) || '',
+      strategyExplainer: (content.strategyElaboration as string) || undefined,
+      objectives: (content.objectives as StrategyStatements['objectives']) || [],
+      opportunities: (content.opportunities as StrategyStatements['opportunities']) || [],
+      principles: (content.principles as StrategyStatements['principles']) || [],
+    }
+    version = snapshot.version
+    generatedAt = snapshot.createdAt.toISOString()
+  } else {
+    // Export current live state
+    const { getStrategyStatements } = await import('@/lib/decision-stack')
+    const statements = await getStrategyStatements(projectId)
+    if (!statements) {
+      return NextResponse.json({ error: 'No strategy found' }, { status: 404 })
+    }
+    strategy = statements
+
+    const latestSnapshot = await prisma.decisionStackSnapshot.findFirst({
+      where: { projectId, trigger: { startsWith: 'post_' } },
+      orderBy: { version: 'desc' },
+      select: { version: true, createdAt: true },
+    })
+    version = latestSnapshot?.version ?? 1
+    generatedAt = latestSnapshot?.createdAt.toISOString() ?? new Date().toISOString()
   }
-
-  const strategy = generatedOutput.content as unknown as StrategyStatements
 
   // Get fragment count and syntheses
   const [fragmentCount, syntheses] = await Promise.all([
@@ -80,8 +107,8 @@ export async function GET(
 
   const markdown = generateStrategicBrief({
     projectName: project.name,
-    version: generatedOutput.version,
-    generatedAt: generatedOutput.createdAt.toISOString(),
+    version,
+    generatedAt,
     strategy,
     fragmentCount,
     syntheses,
@@ -91,7 +118,7 @@ export async function GET(
   return new NextResponse(markdown, {
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',
-      'Content-Disposition': `attachment; filename="strategic-brief-v${generatedOutput.version}.md"`,
+      'Content-Disposition': `attachment; filename="strategic-brief-v${version}.md"`,
     },
   })
 }

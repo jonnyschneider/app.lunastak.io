@@ -28,10 +28,9 @@ export async function GET(req: Request) {
     }),
     prisma.fragment.count({ where: { projectId, status: 'active' } }),
     prisma.dimensionalSynthesis.count({ where: { projectId } }),
-    prisma.generatedOutput.findFirst({
+    prisma.decisionStack.findUnique({
       where: { projectId },
-      select: { id: true, version: true, status: true, outputType: true },
-      orderBy: { createdAt: 'desc' },
+      select: { id: true, vision: true, generationStatus: true },
     }),
   ])
 
@@ -70,7 +69,7 @@ export async function GET(req: Request) {
     })),
     fragmentCount,
     synthesesCount,
-    hasGeneratedOutput: !!generatedOutput,
-    latestOutput: generatedOutput,
+    hasDecisionStack: !!generatedOutput && generatedOutput.vision !== '',
+    decisionStack: generatedOutput,
   })
 }

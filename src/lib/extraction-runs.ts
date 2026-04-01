@@ -13,7 +13,6 @@ export interface CreateExtractionRunInput {
   promptTokens?: number
   completionTokens?: number
   latencyMs?: number
-  generatedOutputId?: string
 }
 
 /**
@@ -42,7 +41,6 @@ export async function createExtractionRun(input: CreateExtractionRunInput) {
       promptTokens: input.promptTokens,
       completionTokens: input.completionTokens,
       latencyMs: input.latencyMs,
-      generatedOutputId: input.generatedOutputId
     }
   })
 

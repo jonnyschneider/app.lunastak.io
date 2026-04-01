@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db'
 import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { waitUntil } from '@vercel/functions'
+import { setGenerationStatus } from '@/lib/decision-stack'
 import type { GenerationStartedContract } from '@/lib/contracts/generation-status'
 
 export const maxDuration = 300
@@ -72,32 +73,17 @@ export async function POST(
     )
   }
 
-  // Check for previous strategy to get correct version
-  const previousOutput = await prisma.generatedOutput.findFirst({
-    where: { projectId, outputType: 'full_decision_stack' },
-    orderBy: { createdAt: 'desc' },
-  })
+  // Set generation status for polling
+  await setGenerationStatus(projectId, 'generating')
 
-  // Pre-create GeneratedOutput for polling
-  const generatedOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId,
-      userId,
-      outputType: 'full_decision_stack',
-      version: (previousOutput?.version ?? 0) + 1,
-      status: 'generating',
-      startedAt: new Date(),
-      content: {},
-    },
-  })
+  const generationId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
-  console.log('[GenerateStrategy] Created GeneratedOutput:', generatedOutput.id, 'from', fragmentCount, 'fragments')
+  console.log('[GenerateStrategy] Starting generation', generationId, 'from', fragmentCount, 'fragments')
 
   const trigger = {
     type: 'generate_from_knowledge' as const,
     projectId,
     userId,
-    generatedOutputId: generatedOutput.id,
   }
 
   const generationWork = (async () => {
@@ -106,13 +92,7 @@ export async function POST(
       await executePipeline(plan, trigger)
     } catch (error) {
       console.error('[GenerateStrategy] Background generation failed:', error)
-      await prisma.generatedOutput.update({
-        where: { id: generatedOutput.id },
-        data: {
-          status: 'failed',
-          error: error instanceof Error ? error.message : 'Strategy generation failed',
-        },
-      })
+      await setGenerationStatus(projectId, null)
     }
   })()
 
@@ -124,7 +104,7 @@ export async function POST(
 
   const response: GenerationStartedContract = {
     status: 'started',
-    generationId: generatedOutput.id,
+    generationId,
   }
 
   return NextResponse.json(response)

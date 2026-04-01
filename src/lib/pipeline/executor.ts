@@ -157,7 +157,7 @@ export async function executePipeline(
       }
       case 'refresh': {
         const t = trigger as Extract<PipelineTrigger, { type: 'refresh_requested' }>
-        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
+        generation = await runRefreshGeneration(t.projectId, t.userId, plan.model)
         break
       }
       case 'initial': {
@@ -169,7 +169,6 @@ export async function executePipeline(
             null, // No conversation
             t.userId,
             null, // No experiment variant
-            t.generatedOutputId,
             plan.model
           )
         } else {
@@ -180,7 +179,6 @@ export async function executePipeline(
             t.conversationId,
             t.userId,
             t.experimentVariant,
-            t.generatedOutputId,
             plan.model
           )
         }
@@ -193,7 +191,7 @@ export async function executePipeline(
       }
       case 'opportunities': {
         const t = trigger as Extract<PipelineTrigger, { type: 'generate_opportunities' }>
-        await runOpportunityGeneration(t.projectId, t.userId, plan.model, t.generatedOutputId)
+        await runOpportunityGeneration(t.projectId, t.userId, plan.model)
         // Mark direction as settled after first opportunity generation
         await prisma.project.update({
           where: { id: t.projectId },
@@ -248,87 +246,19 @@ async function runTemplateGeneration(
     },
   })
 
-  // Seed StrategyVersion records
-  const versionCreates = [
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'vision',
-        content: { text: statements.vision },
-        version: 1,
-        createdBy: 'user',
-        sourceType: 'template',
-        sourceId: trace.id,
-      },
-    }),
-    prisma.strategyVersion.create({
-      data: {
-        projectId,
-        componentType: 'strategy',
-        content: { text: statements.strategy },
-        version: 1,
-        createdBy: 'user',
-        sourceType: 'template',
-        sourceId: trace.id,
-      },
-    }),
-    ...statements.objectives.map((obj) =>
-      prisma.strategyVersion.create({
-        data: {
-          projectId,
-          componentType: 'objective',
-          componentId: obj.id,
-          content: {
-            title: obj.title,
-            pithy: obj.pithy,
-            objective: obj.objective,
-            omtm: obj.omtm,
-            aspiration: obj.aspiration,
-            explanation: obj.explanation,
-          } as object,
-          version: 1,
-          createdBy: 'user',
-          sourceType: 'template',
-          sourceId: trace.id,
-        },
-      })
-    ),
-  ]
-  await prisma.$transaction(versionCreates)
-
-  // Persist principles as UserContent
-  if (statements.principles && statements.principles.length > 0) {
-    await prisma.userContent.createMany({
-      data: statements.principles.map((principle) => ({
-        projectId,
-        type: 'principle',
-        content: JSON.stringify(principle),
-        status: 'complete',
-      })),
-    })
-  }
-
-  // Create GeneratedOutput
-  const generatedOutput = await prisma.generatedOutput.create({
-    data: {
-      projectId,
-      userId,
-      outputType: 'full_decision_stack',
-      version: 1,
-      status: 'complete',
-      content: statements as object,
-      modelUsed: 'template-entry',
-      startedAt: new Date(),
-    },
+  // Write to Decision Stack tables
+  const { writeStrategyToStack, captureSnapshot } = await import('@/lib/decision-stack')
+  await captureSnapshot(projectId, 'pre_generation')
+  await writeStrategyToStack(projectId, statements)
+  await captureSnapshot(projectId, 'post_generation', {
+    modelUsed: 'template-entry',
   })
 
   console.log('[Pipeline] Template generation complete for project:', projectId)
 
   return {
-    generatedOutputId: generatedOutput.id,
     traceId: trace.id,
     statements,
-    version: 1,
     changeSummary: null,
   }
 }

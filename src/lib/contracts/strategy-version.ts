@@ -10,8 +10,6 @@ import { ObjectiveContract, KeyResultContract } from './generation';
 // Component types
 export type StrategyComponentType = 'vision' | 'strategy' | 'objective';
 export type StrategyVersionSource = 'generation' | 'user_edit' | 'coaching';
-export type StrategyVersionCreator = 'user' | 'ai' | 'system';
-
 // Content contracts for each component type
 export interface VisionContentContract {
   text: string;
@@ -60,18 +58,22 @@ export interface StrategyVersionInputContract {
   sourceId?: string;
 }
 
-// API Output contract
-export interface StrategyVersionOutputContract {
+// Snapshot-based version history (replaces per-component StrategyVersion for display)
+export type SnapshotTrigger =
+  | 'pre_generation'
+  | 'post_generation'
+  | 'pre_refresh'
+  | 'post_refresh'
+  | 'pre_opportunities'
+  | 'post_opportunities';
+
+export interface SnapshotVersionContract {
   id: string;
-  projectId: string;
-  componentType: StrategyComponentType;
-  componentId: string | null;
-  content: VisionContentContract | StrategyContentContract | ObjectiveContentContract;
   version: number;
+  trigger: SnapshotTrigger;
   createdAt: string;
-  createdBy: StrategyVersionCreator;
-  sourceType: StrategyVersionSource;
-  sourceId: string | null;
+  changeSummary: string | null;
+  modelUsed: string | null;
 }
 
 // Validation functions
@@ -119,16 +121,3 @@ export function validateStrategyVersionInput(data: unknown): data is StrategyVer
   return true;
 }
 
-export function validateStrategyVersionOutput(data: unknown): data is StrategyVersionOutputContract {
-  if (typeof data !== 'object' || data === null) return false;
-  const obj = data as Record<string, unknown>;
-
-  if (typeof obj.id !== 'string' || !obj.id) return false;
-  if (typeof obj.projectId !== 'string' || !obj.projectId) return false;
-  if (!['vision', 'strategy', 'objective'].includes(obj.componentType as string)) return false;
-  if (typeof obj.version !== 'number') return false;
-  if (!['user', 'ai', 'system'].includes(obj.createdBy as string)) return false;
-  if (!['generation', 'user_edit', 'coaching'].includes(obj.sourceType as string)) return false;
-
-  return true;
-}

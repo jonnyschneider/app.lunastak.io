@@ -310,22 +310,13 @@ export async function POST(req: Request) {
   }
 
   // Fire-and-forget initial conversation path
-  // Creates GeneratedOutput upfront for polling, runs extraction + generation in background
+  // Sets generation status, runs extraction + generation in background
   if (isInitial && conversation.projectId) {
     const projectId = conversation.projectId;
 
-    // Create GeneratedOutput upfront so client can poll
-    const generatedOutput = await prisma.generatedOutput.create({
-      data: {
-        projectId,
-        userId: conversation.userId,
-        outputType: 'full_decision_stack',
-        version: 1,
-        status: 'extracting',
-        startedAt: new Date(),
-        content: {},
-      },
-    });
+    // Set generation status for polling
+    const { setGenerationStatus } = await import('@/lib/decision-stack');
+    await setGenerationStatus(projectId, 'generating');
 
     // Mark conversation as extracting
     await prisma.conversation.update({
@@ -372,12 +363,6 @@ export async function POST(req: Request) {
             extraction_approach: 'emergent' as const,
           };
 
-          // Update status to generating before pipeline runs
-          await prisma.generatedOutput.update({
-            where: { id: generatedOutput.id },
-            data: { status: 'generating' },
-          });
-
           // Log dimensional coverage
           if (dimensionalCoverage && conversation.userId) {
             logStatsigEvent(
@@ -399,7 +384,6 @@ export async function POST(req: Request) {
             conversationId,
             userId: conversation.userId,
             isInitial: true,
-            generatedOutputId: generatedOutput.id,
             experimentVariant: conversation.experimentVariant,
             extractionResult: {
               extractedContext: extractedContext as any,
@@ -421,14 +405,8 @@ export async function POST(req: Request) {
         console.log(`[Extract] Fire-and-forget initial extraction complete for ${conversationId}`);
       } catch (error) {
         console.error('[Extract] Fire-and-forget initial extraction failed:', error);
-        // Update GeneratedOutput to failed
-        await prisma.generatedOutput.update({
-          where: { id: generatedOutput.id },
-          data: {
-            status: 'failed',
-            error: error instanceof Error ? error.message : 'Extraction + generation failed',
-          },
-        }).catch((e) => console.error('[Extract] Failed to update GeneratedOutput status:', e));
+        // Clear generation status
+        await setGenerationStatus(projectId, null).catch((e) => console.error('[Extract] Failed to clear generation status:', e));
         // Update conversation status
         await prisma.conversation.update({
           where: { id: conversationId },
@@ -442,7 +420,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       status: 'started',
-      generationId: generatedOutput.id,
+      generationId: `gen-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     });
   }
 
