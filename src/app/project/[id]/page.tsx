@@ -56,7 +56,7 @@ import {
   ProComingSoonDialog,
 } from '@/components/ProUpgradeFlow'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
-import { RefreshStrategyDialog } from '@/components/RefreshStrategyDialog'
+import { GenerationConfirmDialog, type GenerationAction } from '@/components/GenerationConfirmDialog'
 import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
@@ -212,7 +212,8 @@ export default function ProjectPage() {
   const [selectedDeepDiveId, setSelectedDeepDiveId] = useState<string | null>(null)
   const [deepDiveSheetOpen, setDeepDiveSheetOpen] = useState(false)
   const [synthesisDialogOpen, setSynthesisDialogOpen] = useState(false)
-  const [refreshStrategyDialogOpen, setRefreshStrategyDialogOpen] = useState(false)
+  const [generationDialogOpen, setGenerationDialogOpen] = useState(false)
+  const [generationDialogAction, setGenerationDialogAction] = useState<GenerationAction>('refresh')
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
   // Main tab state (persisted per project)
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -304,7 +305,7 @@ export default function ProjectPage() {
                 disabled={!hasStrategy && (projectData?.stats?.fragmentCount ?? 0) === 0}
                 onClick={() => {
                   getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
-                  if (hasStrategy) { setRefreshStrategyDialogOpen(true) } else { handleGenerateStrategy() }
+                  if (hasStrategy) { { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) } } else { handleGenerateStrategy() }
                 }}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 <div><div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
@@ -313,7 +314,7 @@ export default function ProjectPage() {
               </DropdownMenuItem>
               <DropdownMenuItem disabled={!hasStrategy} onClick={() => {
                 getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
-                handleGenerateOpportunities()
+                { setGenerationDialogAction('opportunities'); setGenerationDialogOpen(true) }
               }}>
                 <Target className="h-4 w-4 mr-2" />
                 <div><div>Draft Opportunities</div>
@@ -821,7 +822,7 @@ export default function ProjectPage() {
       )}
       {/* Status banner for background tasks (non-demo) */}
       {!isDemo && <StatusBanner projectId={projectId} />}
-      <div className="container mx-auto px-6 py-8 space-y-6">
+      <div className="mx-auto max-w-4xl px-4 md:px-6 py-8 space-y-6">
         {/* Content — switched by activeTab (tabs + overflow are in header via HeaderContext) */}
         <div className="w-full">
           {/* Decision Stack */}
@@ -981,7 +982,7 @@ export default function ProjectPage() {
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
               onRefreshClick={() => {
                 if (hasStrategy) {
-                  setRefreshStrategyDialogOpen(true)
+                  { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) }
                 } else {
                   handleGenerateStrategy()
                 }
