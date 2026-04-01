@@ -129,7 +129,7 @@ export function RefreshStrategyDialog({
           {!confirmed && !preparing && !error && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                No new insights have been added since the last update. Luna will re-analyse your existing knowledge and may produce a refined strategy.
+                <span className="font-medium text-foreground">No new insights have been added</span> since the last update. Luna will re-analyse your existing knowledge and may produce a refined strategy.
               </p>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
