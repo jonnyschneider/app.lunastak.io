@@ -188,9 +188,10 @@ export async function writeStrategyToStack(
 
   // Only replace if we have at least objectives (the minimum for a valid stack)
   if (statements.objectives.length > 0) {
-    await prisma.decisionStackComponent.updateMany({
+    // Delete existing components — can't just archive because the unique constraint
+    // on (decisionStackId, componentType, componentId) would block createMany
+    await prisma.decisionStackComponent.deleteMany({
       where: { decisionStackId: stack.id },
-      data: { status: 'archived' },
     })
 
     if (components.length > 0) {
