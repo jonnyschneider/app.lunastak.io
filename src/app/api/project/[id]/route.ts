@@ -244,6 +244,10 @@ export async function GET(
       orderBy: { createdAt: 'desc' },
       select: { createdAt: true, version: true },
     })
+    // Display version = count of post-snapshots (not raw snapshot version)
+    const postSnapshotCount = await prisma.decisionStackSnapshot.count({
+      where: { projectId, trigger: { startsWith: 'post_' } },
+    })
 
     const fragmentsSinceStrategy = latestSnapshot
       ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).length
@@ -276,7 +280,7 @@ export async function GET(
       strategyOutputs,
       hasStrategy,
       strategyStatements,
-      latestSnapshotVersion: latestSnapshot?.version ?? null,
+      latestSnapshotVersion: postSnapshotCount || null,
       syntheses,
       knowledgeSummary: project.knowledgeSummary,
       knowledgeUpdatedAt: project.knowledgeUpdatedAt?.toISOString() || null,

@@ -1364,6 +1364,7 @@ export default function ProjectPage() {
         onStarted={() => {
           setRefreshStrategyDialogOpen(false)
         }}
+        fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
       />
 
       {/* Pro Upgrade Flow Dialogs */}

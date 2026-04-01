@@ -65,10 +65,11 @@ export async function GET(
 
   const snapshots = await getSnapshots(projectId);
 
-  // Map to the shape VersionHistorySheet expects
-  const versions = snapshots.map(s => ({
+  // Only show post-snapshots in version history (pre-snapshots are internal bookkeeping)
+  const postSnapshots = snapshots.filter(s => s.trigger.startsWith('post_'));
+  const versions = postSnapshots.map((s, i) => ({
     id: s.id,
-    version: s.version,
+    version: postSnapshots.length - i, // newest = highest version number
     status: s.trigger,
     createdAt: s.createdAt.toISOString(),
     changeSummary: s.changeSummary || null,
