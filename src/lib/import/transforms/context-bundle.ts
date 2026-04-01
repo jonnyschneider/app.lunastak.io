@@ -49,17 +49,22 @@ export function transformContextBundleDirect(bundle: ContextBundle): EmergentThe
     })
   }
 
-  // Transform tensions into insight themes
+  // Transform tensions into insight themes (handle variant field names)
   for (const tension of bundle.tensions || []) {
-    const dims = (tension.areas || [])
+    const t = tension as unknown as Record<string, unknown>
+    const content = (t.tension || t.description || t.tensionTitle || '') as string
+    if (!content) continue
+
+    const areas = (t.areas || []) as string[]
+    const dims = areas
       .map(a => AREA_TO_DIMENSION[a])
       .filter(Boolean)
       .map(name => ({ name: name!, confidence: 'MEDIUM' as const }))
 
     if (dims.length > 0) {
       themes.push({
-        theme_name: 'Strategic tension',
-        content: tension.tension,
+        theme_name: (t.tensionTitle as string) || 'Strategic tension',
+        content,
         dimensions: dims,
       })
     }
@@ -165,11 +170,15 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
     }
   })
 
-  // Also transform tensions
+  // Also transform tensions (handle variant field names from different agent outputs)
   for (const tension of bundle.tensions || []) {
+    const t = tension as unknown as Record<string, unknown>
+    const content = (t.tension || t.description || t.tensionTitle || '') as string
+    if (!content) continue
+
     themes.push({
-      theme_name: 'Strategic tension',
-      content: tension.tension,
+      theme_name: (t.tensionTitle as string) || 'Strategic tension',
+      content,
       dimensions: [{ name: 'risks_constraints', confidence: 'MEDIUM' as const }],
     })
   }
