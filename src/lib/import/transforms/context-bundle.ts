@@ -109,36 +109,50 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
     .map((c, i) => `[${i}] ${c.topic}\n${c.content}`)
     .join('\n\n---\n\n')
 
-  // LLM call for dimensional tagging
-  const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 2000,
-    messages: [{ role: 'user', content: DIMENSION_TAGGING_PROMPT.replace('{chunks}', chunksText) }],
-    temperature: 0.3,
-  }, 'import_dimension_tagging')
-
-  const responseText = response.content[0]?.type === 'text' ? response.content[0].text : ''
-  const taggingXML = extractXML(responseText, 'tagging')
-
-  // Parse tags per chunk
-  const chunkTagRegex = /<chunk index="(\d+)">([\s\S]*?)<\/chunk>/g
-  const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g
+  // LLM call for dimensional tagging — batch in groups of 20 to avoid truncation
+  const BATCH_SIZE = 20
   const tagsByIndex: Map<number, { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[]> = new Map()
 
-  let chunkMatch
-  while ((chunkMatch = chunkTagRegex.exec(taggingXML)) !== null) {
-    const index = parseInt(chunkMatch[1])
-    const chunkContent = chunkMatch[2]
-    const dims: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = []
+  for (let batchStart = 0; batchStart < chunks.length; batchStart += BATCH_SIZE) {
+    const batchChunks = chunks.slice(batchStart, batchStart + BATCH_SIZE)
+    const batchText = batchChunks
+      .map((c, i) => `[${batchStart + i}] ${c.topic}\n${c.content}`)
+      .join('\n\n---\n\n')
 
-    let dimMatch
-    while ((dimMatch = dimensionRegex.exec(chunkContent)) !== null) {
-      dims.push({ name: dimMatch[1], confidence: dimMatch[2].toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW' })
+    const response = await createMessage({
+      model: CLAUDE_MODEL,
+      max_tokens: Math.max(4000, batchChunks.length * 150),
+      messages: [{ role: 'user', content: DIMENSION_TAGGING_PROMPT.replace('{chunks}', batchText) }],
+      temperature: 0.3,
+    }, 'import_dimension_tagging')
+
+    const responseText = response.content[0]?.type === 'text' ? response.content[0].text : ''
+    const taggingXML = extractXML(responseText, 'tagging')
+
+    // Parse tags per chunk
+    const chunkTagRegex = /<chunk index="(\d+)">([\s\S]*?)<\/chunk>/g
+    const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g
+
+    let chunkMatch
+    while ((chunkMatch = chunkTagRegex.exec(taggingXML)) !== null) {
+      const index = parseInt(chunkMatch[1])
+      const chunkContent = chunkMatch[2]
+      const dims: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = []
+
+      let dimMatch
+      while ((dimMatch = dimensionRegex.exec(chunkContent)) !== null) {
+        dims.push({ name: dimMatch[1], confidence: dimMatch[2].toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW' })
+      }
+      tagsByIndex.set(index, dims)
     }
-    tagsByIndex.set(index, dims)
   }
 
   // Build EmergentThemeContract[] from chunks + tags
+  const untaggedCount = chunks.filter((_, i) => !tagsByIndex.has(i)).length
+  if (untaggedCount > 0) {
+    console.warn(`[Import] WARNING: ${untaggedCount}/${chunks.length} chunks fell through to fallback tagging (strategic_intent/LOW)`)
+  }
+
   const themes: EmergentThemeContract[] = chunks.map((chunk, i) => {
     const sourceAttr = chunk.sources?.length
       ? `\n\nSource: ${chunk.sources.join(', ')}`
