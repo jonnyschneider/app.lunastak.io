@@ -147,10 +147,17 @@ export async function writeStrategyToStack(
   })
 
   // Replace all components: archive existing, create new
-  await prisma.decisionStackComponent.updateMany({
-    where: { decisionStackId: stack.id },
-    data: { status: 'archived' },
-  })
+  // Only archive if we have new components to write (prevent data loss on empty generation)
+  const hasNewComponents = statements.objectives.length > 0 ||
+    statements.opportunities.length > 0 ||
+    statements.principles.length > 0
+
+  if (hasNewComponents) {
+    await prisma.decisionStackComponent.updateMany({
+      where: { decisionStackId: stack.id },
+      data: { status: 'archived' },
+    })
+  }
 
   const components: Array<{
     decisionStackId: string
