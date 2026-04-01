@@ -468,7 +468,8 @@ export default function ProjectPage() {
   // Load strategy data from API response (DecisionStack) or trace fallback
   useEffect(() => {
     // Primary: use strategyStatements from DecisionStack (returned by project API)
-    if (projectData?.strategyStatements) {
+    // Only use if it has actual content (vision non-empty), not just a placeholder from setGenerationStatus
+    if (projectData?.strategyStatements && projectData.strategyStatements.vision) {
       setStrategyData({
         strategy: projectData.strategyStatements,
         conversationId: projectData.conversations?.[0]?.id || '',
