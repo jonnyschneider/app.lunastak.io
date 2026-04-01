@@ -110,8 +110,8 @@ export function ImportBundleDialog({
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Paste a context bundle JSON or upload a .json file.{' '}
-            <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
-              How to create a bundle &rarr;
+            <a href="https://lunastak.io/docs/install" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+              How to create your bundle &rarr;
             </a>
           </p>
 

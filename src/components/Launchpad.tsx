@@ -54,9 +54,9 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
             <Upload className="h-3.5 w-3.5 mr-2" />
             Import a bundle
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.open('https://lunastak.io/integrations', '_blank')}>
+          <DropdownMenuItem onClick={() => window.open('https://lunastak.io/docs/install', '_blank')}>
             <ExternalLink className="h-3.5 w-3.5 mr-2" />
-            Get the Decision Stack skill
+            Installation guide
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

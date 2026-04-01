@@ -62,6 +62,7 @@ function SignInForm() {
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const prefilledEmail = searchParams.get('email') || ''
   const isConfirmed = searchParams.get('confirmed') === 'true'
+  const fromMarketing = searchParams.get('from') === 'marketing'
 
   const [email, setEmail] = useState(prefilledEmail)
   const [isLoading, setIsLoading] = useState(false)
@@ -179,7 +180,7 @@ function SignInForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
-          <CardTitle>Sign in to Lunastak</CardTitle>
+          <CardTitle>{fromMarketing ? 'Create your account' : 'Sign in to Lunastak'}</CardTitle>
           <CardDescription>
             Your second brain for strategic clarity
           </CardDescription>

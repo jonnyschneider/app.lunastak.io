@@ -362,8 +362,9 @@ export function AppLayout({
                     Data processed by Claude AI. Not used to train models.
                   </p>
                   <div className="flex gap-2">
+                    <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">About</a>
+                    <a href="mailto:hello@lunastak.io" className="text-[10px] text-muted-foreground underline underline-offset-2">Feedback</a>
                     <a href="https://www.humventures.com.au/privacy" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">Privacy</a>
-                    <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">Help</a>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
@@ -403,8 +404,9 @@ export function AppLayout({
                     Data processed by Claude AI. Not used to train models.
                   </p>
                   <div className="flex gap-2">
+                    <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">About</a>
+                    <a href="mailto:hello@lunastak.io" className="text-[10px] text-muted-foreground underline underline-offset-2">Feedback</a>
                     <a href="https://www.humventures.com.au/privacy" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">Privacy</a>
-                    <a href="https://lunastak.io" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground underline underline-offset-2">Help</a>
                   </div>
                 </div>
               </DropdownMenuContent>

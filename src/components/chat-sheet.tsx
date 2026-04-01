@@ -501,7 +501,7 @@ export function ChatSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-hidden p-0 flex flex-col">
         <SheetTitle className="sr-only">Chat</SheetTitle>
         {/* Header */}
         <div className="bg-muted/50 border-b px-6 py-4">
@@ -568,7 +568,7 @@ export function ChatSheet({
             </div>
           )}
         </div>
-        <div className="px-6 py-4 flex flex-col h-[calc(100vh-10rem)]">
+        <div className="px-6 py-4 flex flex-col flex-1 min-h-0">
           {/* Show skeleton while loading */}
           {flowStep === 'chat' && messages.length === 0 && (isLoading || (!hasCheckedForInitial && !resumeConversationId && !deepDiveId && !gapExploration)) && (
             <ChatSkeleton />

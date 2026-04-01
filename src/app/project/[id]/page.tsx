@@ -70,6 +70,13 @@ import { VersionHistorySheet } from '@/components/VersionHistorySheet'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
+// Demo project metadata
+const DEMO_META: Record<string, { name: string; logo: string }> = {
+  'cmn8anetr5kwlmbmq': { name: 'Nike', logo: '/logo-nike.svg' },
+  'cmn8an6ivpa0xoehj': { name: 'Costco', logo: '/logo-costco.svg' },
+  'cmn8anbaapaww1709': { name: 'TSMC', logo: '/logo-tsmc.svg' },
+}
+
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
   let timeoutId: NodeJS.Timeout | null = null
@@ -350,7 +357,6 @@ export default function ProjectPage() {
     traceId: string
   } | null>(null)
   // Opportunity generation state
-  const [isGeneratingOpportunities, setIsGeneratingOpportunities] = useState(false)
   const [opportunityRefreshKey, setOpportunityRefreshKey] = useState(0)
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
@@ -492,6 +498,7 @@ export default function ProjectPage() {
     const handleGenerationComplete = () => {
       setRecentlyGenerated(true)
       fetchProjectData()
+      setOpportunityRefreshKey(k => k + 1)
       // Allow button to reappear after a short delay
       const timeout = setTimeout(() => setRecentlyGenerated(false), 5000)
       return () => clearTimeout(timeout)
@@ -674,30 +681,19 @@ export default function ProjectPage() {
 
   // Handle opportunity generation
   const handleGenerateOpportunities = async () => {
-    setIsGeneratingOpportunities(true)
     try {
       const res = await fetch(`/api/project/${projectId}/generate-opportunities`, {
         method: 'POST',
       })
       if (res.ok) {
         const data = await res.json()
-        // Poll for completion using existing generation status infrastructure
-        const pollInterval = setInterval(async () => {
-          const statusRes = await fetch(`/api/generation-status/${data.generationId}`)
-          if (statusRes.ok) {
-            const statusData = await statusRes.json()
-            if (statusData.status === 'complete' || statusData.status === 'failed') {
-              clearInterval(pollInterval)
-              setIsGeneratingOpportunities(false)
-              fetchProjectData()
-              setOpportunityRefreshKey(k => k + 1)
-            }
-          }
-        }, 3000)
+        startGeneration(data.generationId, projectId)
+      } else {
+        const err = await res.json()
+        console.error('[GenerateOpportunities] Failed:', err.error)
       }
     } catch (err) {
-      console.error('Failed to generate opportunities:', err)
-      setIsGeneratingOpportunities(false)
+      console.error('[GenerateOpportunities] Error:', err)
     }
   }
 
@@ -803,6 +799,13 @@ export default function ProjectPage() {
           {activeTab === 'decision-stack' && <div className="space-y-6">
             {strategyData ? (
               <>
+                {/* Demo company logo */}
+                {isDemo && DEMO_META[projectId] && (
+                  <div className="flex justify-center pt-2 pb-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={DEMO_META[projectId].logo} alt={DEMO_META[projectId].name} className="h-20" />
+                  </div>
+                )}
                 {/* Version stamp + Decision Stack branding */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -1205,18 +1208,18 @@ export default function ProjectPage() {
                   </CardHeader>
                   <CardContent className="pt-0 space-y-4">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Prepare context in your favourite tool &rarr; Import a complete bundle into Luna. CLI skills and Agent tools available for major AI platforms.
+                      Prepare context in your favourite AI tool, then import it into Luna. Skills and connectors available for all major platforms.
                     </p>
                     <div className="flex items-center justify-center gap-8">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-claude.svg" alt="Claude" className="h-14" />
+                      <img src="/logo-claude.svg" alt="Claude" className="h-10 grayscale opacity-60" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-gemini.svg" alt="Gemini" className="h-14" />
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-10 grayscale opacity-60" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-openai.svg" alt="OpenAI" className="h-14" />
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-10 grayscale opacity-60" />
                     </div>
-                    <a href="https://lunastak.io/integrations" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
-                      Download &amp; setup &rarr;
+                    <a href="https://lunastak.io/docs/install" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
+                      Installation guide &rarr;
                     </a>
                   </CardContent>
                 </Card>
