@@ -163,6 +163,8 @@ interface ProjectData {
   id: string
   name: string
   isDemo?: boolean
+  hasStrategy?: boolean
+  strategyStatements?: StrategyStatements
   stats: ProjectStats
   conversations: ConversationSummary[]
   documents: DocumentSummary[]
@@ -229,7 +231,7 @@ export default function ProjectPage() {
   }, [activeTab, projectId])
 
   // Derived state needed by header injection
-  const hasStrategy = (projectData?.strategyOutputs?.length ?? 0) > 0
+  const hasStrategy = projectData?.hasStrategy === true || (projectData?.strategyOutputs?.length ?? 0) > 0
 
   // Inject tab nav + demo right slot into header
   const { setTabNav, setRightSlot } = useHeaderTabNav()
@@ -463,8 +465,19 @@ export default function ProjectPage() {
     fetchDismissals()
   }, [status, projectId])
 
-  // Fetch strategy data when strategyOutputs change
+  // Load strategy data from API response (DecisionStack) or trace fallback
   useEffect(() => {
+    // Primary: use strategyStatements from DecisionStack (returned by project API)
+    if (projectData?.strategyStatements) {
+      setStrategyData({
+        strategy: projectData.strategyStatements,
+        conversationId: projectData.conversations?.[0]?.id || '',
+        traceId: projectData.strategyOutputs?.[0]?.id || '',
+      })
+      return
+    }
+
+    // Fallback: fetch from trace (legacy path)
     const traceId = projectData?.strategyOutputs?.[0]?.id
     if (!traceId) {
       setStrategyData(null)
@@ -482,7 +495,7 @@ export default function ProjectPage() {
         }
       })
       .catch(err => console.error('Failed to fetch strategy:', err))
-  }, [projectData?.strategyOutputs])
+  }, [projectData?.strategyStatements, projectData?.strategyOutputs])
 
   // Listen for strategySaved event (fired after extraction starts generation)
   useEffect(() => {
