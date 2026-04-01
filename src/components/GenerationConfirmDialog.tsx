@@ -25,10 +25,10 @@ interface GenerationConfig {
 
 const GENERATION_CONFIGS: Record<GenerationAction, GenerationConfig> = {
   refresh: {
-    title: 'Update Direction',
+    title: 'Refresh Decision Stack',
     description: 'Your current strategy will be snapshotted before updating — nothing is lost.',
-    confirmLabel: 'Update Direction',
-    confirmLabelNoChanges: 'Update anyway',
+    confirmLabel: 'Refresh Decision Stack',
+    confirmLabelNoChanges: 'Refresh anyway',
     messageWithChanges: (n) =>
       `${n} new insight${n !== 1 ? 's' : ''} added since the last update. Luna will incorporate these into a refreshed strategy.`,
     messageNoChanges:
@@ -36,10 +36,10 @@ const GENERATION_CONFIGS: Record<GenerationAction, GenerationConfig> = {
     preparingLabel: 'Updating syntheses with your latest insights',
   },
   opportunities: {
-    title: 'Draft Opportunities',
+    title: 'Generate Opportunities',
     description: 'Luna will create strategic initiatives linked to your objectives.',
-    confirmLabel: 'Draft Opportunities',
-    confirmLabelNoChanges: 'Draft anyway',
+    confirmLabel: 'Generate Opportunities',
+    confirmLabelNoChanges: 'Generate anyway',
     messageWithChanges: (n) =>
       `${n} new insight${n !== 1 ? 's' : ''} added since the last update. Luna will use your latest knowledge to draft fresh opportunities.`,
     messageNoChanges:

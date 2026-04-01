@@ -44,12 +44,7 @@ export function RefreshStrategyDialog({
     }
   }, [open])
 
-  // Auto-confirm if there are new fragments (no need to ask)
-  useEffect(() => {
-    if (open && fragmentsSinceStrategy > 0) {
-      setConfirmed(true)
-    }
-  }, [open, fragmentsSinceStrategy])
+  // Always show confirmation — no auto-confirm
 
   // Start refresh when confirmed
   useEffect(() => {
@@ -115,7 +110,7 @@ export function RefreshStrategyDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5" />
-            {!confirmed ? 'Update Direction' : 'Refreshing Strategy'}
+            {!confirmed ? 'Refresh Decision Stack' : 'Refreshing Strategy'}
           </DialogTitle>
           {!confirmed && (
             <DialogDescription>
@@ -129,14 +124,18 @@ export function RefreshStrategyDialog({
           {!confirmed && !preparing && !error && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">No new insights have been added</span> since the last update. Luna will re-analyse your existing knowledge and may produce a refined strategy.
+                {fragmentsSinceStrategy > 0 ? (
+                  <><span className="font-medium text-foreground">{fragmentsSinceStrategy} new insight{fragmentsSinceStrategy !== 1 ? 's' : ''}</span> added since the last update. Luna will incorporate these into a refreshed strategy.</>
+                ) : (
+                  <><span className="font-medium text-foreground">No new insights have been added</span> since the last update. Luna will re-analyse your existing knowledge and may produce a refined strategy.</>
+                )}
               </p>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button onClick={() => setConfirmed(true)}>
-                  Update anyway
+                  {fragmentsSinceStrategy > 0 ? 'Refresh Decision Stack' : 'Refresh anyway'}
                 </Button>
               </div>
             </div>

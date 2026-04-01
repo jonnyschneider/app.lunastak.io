@@ -295,7 +295,10 @@ export default function ProjectPage() {
                 <Package className="h-4 w-4 mr-2" />Import Context Bundle
               </DropdownMenuItem>
               {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
-                <DropdownMenuItem onClick={() => router.push(`/project/${projectId}/fragments`)}>
+                <DropdownMenuItem onClick={() => {
+                  getStatsigClient()?.logEvent('cta_view_fragments', 'overflow-menu', { projectId })
+                  router.push(`/project/${projectId}/fragments`)
+                }}>
                   <FileText className="h-4 w-4 mr-2" />View all {projectData?.stats?.fragmentCount} fragments
                 </DropdownMenuItem>
               )}
@@ -308,7 +311,7 @@ export default function ProjectPage() {
                   if (hasStrategy) { { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) } } else { handleGenerateStrategy() }
                 }}>
                 <RefreshCw className="h-4 w-4 mr-2" />
-                <div><div>{hasStrategy ? 'Update Direction' : 'Generate Strategy'}</div>
+                <div><div>{hasStrategy ? 'Refresh Decision Stack' : 'Generate Decision Stack'}</div>
                   <div className="text-[10px] text-muted-foreground">{hasStrategy ? 'Update V/S/O from latest context' : 'Create your first Decision Stack'}</div>
                 </div>
               </DropdownMenuItem>
@@ -317,7 +320,7 @@ export default function ProjectPage() {
                 { setGenerationDialogAction('opportunities'); setGenerationDialogOpen(true) }
               }}>
                 <Target className="h-4 w-4 mr-2" />
-                <div><div>Draft Opportunities</div>
+                <div><div>Generate Opportunities</div>
                   <div className="text-[10px] text-muted-foreground">{hasStrategy ? 'Create initiatives for your objectives' : 'Generate strategy first'}</div>
                 </div>
               </DropdownMenuItem>
@@ -341,9 +344,18 @@ export default function ProjectPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Examples</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => router.push('/project/cmn8anetr5kwlmbmq')}>Nike</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/project/cmn8an6ivpa0xoehj')}>Costco</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/project/cmn8anbaapaww1709')}>TSMC</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
+                router.push('/project/cmn8anetr5kwlmbmq')
+              }}>Nike</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_view_demo', 'overflow-menu', { projectId: 'cmn8an6ivpa0xoehj', demo: 'Costco' })
+                router.push('/project/cmn8an6ivpa0xoehj')
+              }}>Costco</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                getStatsigClient()?.logEvent('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
+                router.push('/project/cmn8anbaapaww1709')
+              }}>TSMC</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
