@@ -105,7 +105,7 @@ Objectives: {new_objectives}
 ## New Insights That Informed Changes
 {new_fragments_summary}
 
-Write 2-4 sentences explaining what changed and why. Be specific. If nothing meaningful changed, say "No significant changes - strategy remains aligned with current insights."`
+Write 2-4 plain text sentences explaining what changed and why. Be specific. Do NOT use markdown formatting (no bold, italic, bullets, or headers). If nothing meaningful changed, say "No significant changes - strategy remains aligned with current insights."`
 
 // --- Generation functions ---
 

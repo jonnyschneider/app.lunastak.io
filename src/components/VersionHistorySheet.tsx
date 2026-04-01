@@ -9,7 +9,15 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')  // bold
+    .replace(/\*(.+?)\*/g, '$1')      // italic
+    .replace(/_(.+?)_/g, '$1')        // italic underscore
+    .replace(/`(.+?)`/g, '$1')        // inline code
+}
 
 interface VersionEntry {
   id: string
@@ -43,6 +51,7 @@ export function VersionHistorySheet({
 }: VersionHistorySheetProps) {
   const [versions, setVersions] = useState<VersionEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -111,9 +120,23 @@ export function VersionHistorySheet({
                     {formatDate(version.createdAt)}
                   </p>
                   {version.changeSummary && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {version.changeSummary}
-                    </p>
+                    <div className="mt-1">
+                      <p className={`text-xs text-muted-foreground ${expandedId === version.id ? '' : 'line-clamp-2'}`}>
+                        {stripMarkdown(version.changeSummary)}
+                      </p>
+                      {version.changeSummary.length > 120 && (
+                        <button
+                          onClick={() => setExpandedId(expandedId === version.id ? null : version.id)}
+                          className="text-[10px] text-primary hover:text-primary/80 mt-0.5 flex items-center gap-0.5"
+                        >
+                          {expandedId === version.id ? (
+                            <><ChevronUp className="h-3 w-3" /> less</>
+                          ) : (
+                            <><ChevronDown className="h-3 w-3" /> more</>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
