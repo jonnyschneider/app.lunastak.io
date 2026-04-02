@@ -45,7 +45,7 @@ export function OpportunityCard({
   return (
     <FlipCard
       front={
-        <div className={`bg-ds-teal rounded-xl p-6 shadow-sm min-h-[120px] ${status === 'draft' ? 'border border-dashed border-white/30' : ''}`}>
+        <div className="bg-ds-teal rounded-xl p-6 shadow-sm min-h-[120px]">
           {/* Title */}
           <p className="text-sm font-bold text-ds-neon mb-3">{title}</p>
 
@@ -120,14 +120,6 @@ export function OpportunityCard({
             </div>
           )}
 
-          {/* Draft badge */}
-          {!compact && status === 'draft' && (
-            <div className="mt-2">
-              <span className="text-xs px-2 py-0.5 bg-white/20 text-white rounded font-medium">
-                Draft
-              </span>
-            </div>
-          )}
         </div>
       }
       back={
