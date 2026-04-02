@@ -908,6 +908,7 @@ export default function ProjectPage() {
                   }}
                   readOnly={isDemo}
                   onDraftOpportunities={!isDemo ? () => { setGenerationDialogAction('opportunities'); setGenerationDialogOpen(true) } : undefined}
+                  onImproveWithAI={!isDemo ? () => triggerUpgrade('ai-improve') : undefined}
                   opportunityRefreshKey={opportunityRefreshKey}
                 />
               </>
