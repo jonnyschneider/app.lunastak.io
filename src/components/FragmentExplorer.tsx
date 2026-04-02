@@ -258,8 +258,8 @@ export function FragmentExplorer({ projectId, initialDimensionFilter, onResumeCo
                     onClick={() => setExpandedId(isExpanded ? null : fragment.id)}
                   >
                     {/* Row 1: title + source + date */}
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-medium truncate flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2">
+                      <span className="text-sm font-medium truncate">
                         {title}
                       </span>
                       <div className="flex items-center gap-2 shrink-0 text-[10px] text-muted-foreground">
@@ -275,7 +275,7 @@ export function FragmentExplorer({ projectId, initialDimensionFilter, onResumeCo
                               {fragment.source.name}
                             </button>
                           ) : (
-                            <span>{fragment.source.name}</span>
+                            <span className="truncate max-w-[200px]">{fragment.source.name}</span>
                           )
                         )}
                         <span>{formatDate(fragment.capturedAt)}</span>
