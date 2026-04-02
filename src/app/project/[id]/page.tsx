@@ -907,7 +907,7 @@ export default function ProjectPage() {
                     setStrategyData(prev => prev ? { ...prev, strategy: updated } : null)
                   }}
                   readOnly={isDemo}
-                  onDraftOpportunities={!isDemo ? () => handleGenerateOpportunities() : undefined}
+                  onDraftOpportunities={!isDemo ? () => { setGenerationDialogAction('opportunities'); setGenerationDialogOpen(true) } : undefined}
                   opportunityRefreshKey={opportunityRefreshKey}
                 />
               </>
