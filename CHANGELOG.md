@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-04-02
+
+**Unified Decision Stack, production launch.**
+
+### Added
+
+- **Unified DecisionStack schema** — V/S/O/O/P stored in `DecisionStack` + `DecisionStackComponent` + `DecisionStackSnapshot`, replacing `GeneratedOutput`, `UserContent`, `StrategyVersion`
+- **Point-in-time snapshots** — full stack captured before and after every AI action (generation, refresh, opportunities)
+- **Generation confirmation dialog** — unified dialog for refresh + opportunities with fragment count context and snapshot reassurance
+- **Principles** — full support in Decision Stack; demo principles for Nike (5), Costco (5), TSMC (4)
+- **Static demo data** — `src/data/demos/` with `scripts/restore-demos.ts` replaces seed fixtures
+- **Slack notification** on opportunity generation
+- **"Improve with AI" Pro fake door** — gated on opportunity editor with statsig tracking
+- **"Add Metric" Pro gate** — second metric gated behind Pro upgrade
+- **`from=marketing` sign-in** — contextual messaging from marketing site
+- **App footer** — About, Feedback, Privacy links
+- **Demo company logos** at top of Decision Stack
+- **Context bundle batching** — chunks tagged in groups of 20 with scaled max_tokens
+
+### Changed
+
+- **Opportunity cards** — 2-column layout, draft badge removed, baseline/target overflow fixed
+- **Version history** — sequential numbering, expandable summaries, markdown stripped
+- **Integration card** — grayscale logos, "Installation guide" link
+- **Fragment explorer** — responsive title layout on mobile
+- **Import dialog** — "How to create your bundle" link to docs/install
+
+### Fixed
+
+- **Component data loss on refresh** — atomic delete + recreate, guarded on objectives
+- **Empty Decision Stack flash** — hidden during background generation
+- **Context bundle tagging truncation** — was truncating at 2000 tokens
+- **Tension field name variants** — handles tension/description/tensionTitle
+- **Change summary markdown** — plain text prompt, client-side strip
+
+### Schema
+
+- Added: `DecisionStack`, `DecisionStackComponent`, `DecisionStackSnapshot`
+- Added: `Project.directionStatus`, `Fragment.title/sourceType/importBatchId`, `Conversation.originType/originText`
+- Dropped: `GeneratedOutput`, `UserContent`, `StrategyVersion`
+
+---
+
 ## [2.3.1] - 2026-03-30
 
 **Demo polish, homepage redesign, opportunity generation fixes.**
