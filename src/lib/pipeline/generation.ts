@@ -652,6 +652,17 @@ export async function runOpportunityGeneration(
   await setGenerationStatus(projectId, null)
 
   console.log(`[Pipeline] Opportunity generation complete: ${opportunities.length} opportunities for project ${projectId}`)
+
+  // Notify Slack (fire-and-forget)
+  if (userId) {
+    prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+      .then(u => {
+        if (u?.email) {
+          const { notifySlackOpportunitiesGenerated } = require('@/lib/notifications')
+          notifySlackOpportunitiesGenerated(u.email, opportunities.length)
+        }
+      })
+  }
 }
 
 /**

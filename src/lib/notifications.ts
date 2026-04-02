@@ -21,6 +21,10 @@ export function notifySlackStrategyGenerated(email: string, mode: 'initial' | 'r
   notifySlack(`🚀 Strategy generated (${mode}): ${email}`)
 }
 
+export function notifySlackOpportunitiesGenerated(email: string, count: number) {
+  notifySlack(`🎯 ${count} opportunities drafted: ${email}`)
+}
+
 export function notifySlackUserSignIn(email: string, isNewUser: boolean) {
   if (isNewUser) return // Already covered by notifySlackNewUser
   notifySlack(`👋 User signed in: ${email}`)
