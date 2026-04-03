@@ -63,4 +63,37 @@ describe('UserContract', () => {
     const invalid = { ...validUser, apiCallCount: 5.5 };
     expect(validateUser(invalid)).toBe(false);
   });
+
+  // Token tracking fields
+  it('should validate user with token tracking fields', () => {
+    const userWithTokens = {
+      ...validUser,
+      totalPromptTokens: 50000,
+      totalCompletionTokens: 12000,
+      lastLlmCallAt: '2026-04-02T12:00:00.000Z',
+    };
+    expect(validateUser(userWithTokens)).toBe(true);
+  });
+
+  it('should validate user with zero token counts', () => {
+    const userWithZeroTokens = {
+      ...validUser,
+      totalPromptTokens: 0,
+      totalCompletionTokens: 0,
+    };
+    expect(validateUser(userWithZeroTokens)).toBe(true);
+  });
+
+  it('should reject user with negative token counts', () => {
+    expect(validateUser({ ...validUser, totalPromptTokens: -1 })).toBe(false);
+    expect(validateUser({ ...validUser, totalCompletionTokens: -100 })).toBe(false);
+  });
+
+  it('should reject user with non-integer token counts', () => {
+    expect(validateUser({ ...validUser, totalPromptTokens: 5.5 })).toBe(false);
+  });
+
+  it('should reject user with non-string lastLlmCallAt', () => {
+    expect(validateUser({ ...validUser, lastLlmCallAt: 12345 })).toBe(false);
+  });
 });

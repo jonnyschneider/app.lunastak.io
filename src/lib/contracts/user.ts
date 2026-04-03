@@ -11,10 +11,18 @@ export interface UserContract {
   isPaid: boolean;
   name?: string;
   apiCallCount?: number;
+  totalPromptTokens?: number;
+  totalCompletionTokens?: number;
+  lastLlmCallAt?: string;
 }
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isOptionalNonNegativeInt(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  return typeof value === 'number' && value >= 0 && Number.isInteger(value);
 }
 
 export function validateUser(data: unknown): data is UserContract {
@@ -27,11 +35,10 @@ export function validateUser(data: unknown): data is UserContract {
 
   // Optional fields
   if (obj.name !== undefined && obj.name !== null && typeof obj.name !== 'string') return false;
-  if (obj.apiCallCount !== undefined && obj.apiCallCount !== null) {
-    if (typeof obj.apiCallCount !== 'number' || obj.apiCallCount < 0 || !Number.isInteger(obj.apiCallCount)) {
-      return false;
-    }
-  }
+  if (!isOptionalNonNegativeInt(obj.apiCallCount)) return false;
+  if (!isOptionalNonNegativeInt(obj.totalPromptTokens)) return false;
+  if (!isOptionalNonNegativeInt(obj.totalCompletionTokens)) return false;
+  if (obj.lastLlmCallAt !== undefined && obj.lastLlmCallAt !== null && typeof obj.lastLlmCallAt !== 'string') return false;
 
   return true;
 }

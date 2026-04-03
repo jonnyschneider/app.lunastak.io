@@ -82,7 +82,7 @@ export async function POST(req: Request) {
           max_tokens: 30,
           messages: [{ role: 'user', content: `Summarize this conversation in 3-6 words as a title. Output ONLY the title, nothing else.\n\n${titleMessages}` }],
           temperature: 0.3,
-        }, 'conversation_title')
+        }, 'conversation_title', conversation.userId)
         const title = titleResponse.content[0]?.type === 'text' ? titleResponse.content[0].text.trim().replace(/^["']|["']$/g, '') : null
         if (title) {
           await prisma.conversation.update({ where: { id: conversationId }, data: { title } })
@@ -221,7 +221,7 @@ Return only the question, no preamble.`;
       content: prompt
     }],
     temperature: 0.7
-  }, 'continue_initial');
+  }, 'continue_initial', conversation!.userId);
 
   const firstQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text
@@ -337,7 +337,7 @@ Return your assessment:
       content: CONFIDENCE_PROMPT.replace('{conversation}', conversationHistory)
     }],
     temperature: 0.3
-  }, 'continue_confidence');
+  }, 'continue_confidence', conversation!.userId);
 
   const confidenceContent = confidenceResponse.content[0]?.type === 'text' ? confidenceResponse.content[0].text : '';
 
@@ -462,7 +462,7 @@ async function continueQuestioning(
       content: prompt
     }],
     temperature: 0.7
-  }, 'continue_questioning');
+  }, 'continue_questioning', conversation!.userId);
 
   const nextQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text
@@ -516,7 +516,7 @@ async function offerEarlyExit(
     max_tokens: 150,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-  }, 'continue_early_exit');
+  }, 'continue_early_exit', conversation!.userId);
 
   const suggestedQuestion = response.content[0]?.type === 'text'
     ? response.content[0].text

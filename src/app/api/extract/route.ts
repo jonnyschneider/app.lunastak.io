@@ -243,7 +243,7 @@ export async function POST(req: Request) {
           max_tokens: 2000,
           messages: [{ role: 'user', content: extractionPrompt }],
           temperature: 0.3,
-        }, 'extraction');
+        }, 'extraction', conversation.userId);
 
         const extractionContent = extractionResponse.content[0]?.type === 'text'
           ? extractionResponse.content[0].text
@@ -347,7 +347,7 @@ export async function POST(req: Request) {
           max_tokens: 2000,
           messages: [{ role: 'user', content: extractionPrompt }],
           temperature: 0.3,
-        }, 'extraction');
+        }, 'extraction', conversation.userId);
 
         const extractionContent = extractionResponse.content[0]?.type === 'text'
           ? extractionResponse.content[0].text
@@ -467,7 +467,7 @@ export async function POST(req: Request) {
             content: extractionPrompt
           }],
           temperature: 0.3
-        }, 'extraction');
+        }, 'extraction', conversation.userId);
 
         const extractionContent = extractionResponse.content[0]?.type === 'text'
           ? extractionResponse.content[0].text : '';
@@ -529,7 +529,7 @@ export async function POST(req: Request) {
               content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)
             }],
             temperature: 0.5
-          }, 'reflective_summary_prescriptive');
+          }, 'reflective_summary_prescriptive', conversation.userId);
 
           const summaryContent = summaryResponse.content[0]?.type === 'text'
             ? summaryResponse.content[0].text : '';

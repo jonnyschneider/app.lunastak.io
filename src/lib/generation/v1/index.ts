@@ -201,7 +201,7 @@ export async function performGeneration(
       content: prompt
     }],
     temperature: 0.7
-  }, 'strategy_generation');
+  }, 'strategy_generation', conversation.userId);
   const latency = Date.now() - startTime;
   console.log(`[Generate v1] Claude API responded in ${latency}ms`);
 

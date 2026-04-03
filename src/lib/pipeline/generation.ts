@@ -207,7 +207,7 @@ export async function runRefreshGeneration(
     max_tokens: 3000,
     messages: [{ role: 'user', content: updatePrompt }],
     temperature: 0.7,
-  }, 'refresh_strategy_generation')
+  }, 'refresh_strategy_generation', userId)
 
   const genContent = genResponse.content[0]?.type === 'text'
     ? genResponse.content[0].text
@@ -260,7 +260,7 @@ export async function runRefreshGeneration(
       max_tokens: 300,
       messages: [{ role: 'user', content: summaryPrompt }],
       temperature: 0.5,
-    }, 'refresh_strategy_summary')
+    }, 'refresh_strategy_summary', userId)
 
     changeSummary = summaryResponse.content[0]?.type === 'text'
       ? summaryResponse.content[0].text.trim()
@@ -372,7 +372,7 @@ export async function runInitialGeneration(
     max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-  }, 'strategy_generation')
+  }, 'strategy_generation', userId)
   const latency = Date.now() - claudeStartTime
 
   // Parse response
@@ -625,7 +625,7 @@ export async function runOpportunityGeneration(
     max_tokens: 6000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-  }, 'opportunity_generation')
+  }, 'opportunity_generation', userId)
 
   const content = response.content[0]?.type === 'text' ? response.content[0].text : ''
 

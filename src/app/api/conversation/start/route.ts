@@ -264,7 +264,7 @@ export async function POST(req: Request) {
           content: prompt
         }],
         temperature: 0.7
-      }, 'conversation_start');
+      }, 'conversation_start', userId);
       console.log(`[Start API] Claude responded in ${Date.now() - claudeStart}ms (total: ${Date.now() - startTime}ms)`);
 
       firstQuestion = response.content[0]?.type === 'text'

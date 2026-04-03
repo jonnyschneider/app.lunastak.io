@@ -176,7 +176,7 @@ export async function POST(req: Request) {
         content: prompt
       }],
       temperature: 0.7
-    }, 'admin_regenerate');
+    }, 'admin_regenerate', originalTrace.userId);
 
     const latency = Date.now() - startTime;
     console.log(`[Regenerate API] Claude responded in ${latency}ms`);
