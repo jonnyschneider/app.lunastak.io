@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages';
+import { prisma } from '@/lib/db';
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -21,7 +22,8 @@ export const CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
  */
 export async function createMessage(
   params: MessageCreateParamsNonStreaming,
-  context?: string // Optional context for logging (e.g., 'reflective_summary', 'generation')
+  context?: string, // Optional context for logging (e.g., 'reflective_summary', 'generation')
+  userId?: string | null // Optional userId for token tracking
 ) {
   const response = await anthropic.messages.create(params);
 
@@ -36,6 +38,19 @@ export async function createMessage(
         stop_reason: response.stop_reason,
       }
     );
+  }
+
+  // Track token usage per user (fire-and-forget)
+  if (userId && response.usage) {
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        apiCallCount: { increment: 1 },
+        totalPromptTokens: { increment: response.usage.input_tokens },
+        totalCompletionTokens: { increment: response.usage.output_tokens },
+        lastLlmCallAt: new Date(),
+      },
+    }).catch(err => console.error('[Claude] Token tracking failed:', err))
   }
 
   return response;

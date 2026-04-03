@@ -148,7 +148,10 @@ model User {
   createdAt     DateTime  @default(now())
   isPaid        Boolean   @default(false)
   upgradedAt    DateTime?              // When user clicked "Upgrade to Pro" (free upgrade during beta)
-  apiCallCount  Int       @default(0)
+  apiCallCount          Int       @default(0)
+  totalPromptTokens     Int       @default(0)
+  totalCompletionTokens Int       @default(0)
+  lastLlmCallAt         DateTime?
 
   projects      Project[]
   conversations Conversation[]
