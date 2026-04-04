@@ -1376,6 +1376,7 @@ export default function ProjectPage() {
         open={generationDialogOpen}
         onOpenChange={setGenerationDialogOpen}
         fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+        isFirstTime={generationDialogAction === 'opportunities' && opportunityCount === 0}
         onConfirm={async () => {
           getStatsigClient()?.logEvent(`confirm_${generationDialogAction}`, 'generation-dialog', {
             projectId,

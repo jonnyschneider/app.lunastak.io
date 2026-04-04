@@ -447,7 +447,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           <div className="flex gap-2">
             <Button
               onClick={handleExtract}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-[hsl(var(--luna))] hover:bg-[hsl(var(--luna))]/90 text-white"
             >
               <Sparkles className="h-4 w-4" />
               Draft First Strategy

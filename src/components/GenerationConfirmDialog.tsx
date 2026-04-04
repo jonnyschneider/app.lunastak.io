@@ -54,6 +54,7 @@ interface GenerationConfirmDialogProps {
   onOpenChange: (open: boolean) => void
   onConfirm: () => Promise<void>
   fragmentsSinceStrategy?: number
+  isFirstTime?: boolean // true = no existing content for this action (skip confirmation)
 }
 
 export function GenerationConfirmDialog({
@@ -62,6 +63,7 @@ export function GenerationConfirmDialog({
   onOpenChange,
   onConfirm,
   fragmentsSinceStrategy = 0,
+  isFirstTime = false,
 }: GenerationConfirmDialogProps) {
   const [error, setError] = useState<string | undefined>()
   const [preparing, setPreparing] = useState(false)
@@ -92,6 +94,13 @@ export function GenerationConfirmDialog({
       setError(err instanceof Error ? err.message : 'Something went wrong')
     }
   }
+
+  // Auto-confirm for first-time generation (nothing to lose, skip the dialog)
+  useEffect(() => {
+    if (open && isFirstTime && !runningRef.current && !preparing && !error) {
+      handleConfirm()
+    }
+  }, [open, isFirstTime]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Dialog
