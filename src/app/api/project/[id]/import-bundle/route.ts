@@ -78,6 +78,18 @@ export async function POST(
   try {
     const result = await executeImport(plan, trigger)
 
+    // Track successful import
+    if (userId) {
+      const { logStatsigEvent } = await import('@/lib/statsig')
+      logStatsigEvent(userId, 'bundle_imported', result.fragmentsCreated, {
+        projectId,
+        fragmentCount: String(result.fragmentsCreated),
+        chunkCount: String(bundle.chunks?.length || bundle.themes?.length || 0),
+        mode,
+        importBatchId: result.importBatchId || '',
+      })
+    }
+
     return NextResponse.json({
       fragmentsCreated: result.fragmentsCreated,
       questionsAdded: result.questionsAdded,
@@ -85,6 +97,17 @@ export async function POST(
     })
   } catch (error) {
     console.error('[ImportBundle] Error:', error)
+
+    // Track failed import
+    if (userId) {
+      const { logStatsigEvent } = await import('@/lib/statsig')
+      logStatsigEvent(userId, 'bundle_import_failed', 1, {
+        projectId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        mode,
+      })
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Import failed' },
       { status: 500 }
