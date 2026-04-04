@@ -51,6 +51,16 @@ export async function createMessage(
         lastLlmCallAt: new Date(),
       },
     }).catch(err => console.error('[Claude] Token tracking failed:', err))
+
+    // Statsig event for token burn dashboards
+    import('@/lib/statsig').then(({ logStatsigEvent }) => {
+      logStatsigEvent(userId, 'llm_token_usage', response.usage.input_tokens + response.usage.output_tokens, {
+        context: context || 'unknown',
+        promptTokens: String(response.usage.input_tokens),
+        completionTokens: String(response.usage.output_tokens),
+        model: params.model || '',
+      })
+    }).catch(() => {})
   }
 
   return response;
