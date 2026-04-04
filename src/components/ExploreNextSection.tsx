@@ -15,7 +15,7 @@ import {
 import { Zap, Puzzle, Crosshair, X, Plus } from 'lucide-react'
 import { StructuredProvocation } from '@/lib/types'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -211,7 +211,7 @@ export function ExploreNextSection({
             variant="ghost"
             className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50"
             onClick={() => {
-              getStatsigClient()?.logEvent('cta_add_deep_dive', 'explore-next')
+              logAndFlush('cta_add_deep_dive', 'explore-next')
               onAddDeepDive()
             }}
           >

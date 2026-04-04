@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sparkles, Check, Calendar, FileText, Plug, Mic } from 'lucide-react';
-import { getStatsigClient } from '@/components/StatsigProvider';
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
 
 // Feature definitions for the interstitial
 export const PRO_FEATURES = {
@@ -87,7 +87,7 @@ export function ProFeatureInterstitial({
   const Icon = featureConfig.icon;
 
   const handleUpgradeClick = () => {
-    getStatsigClient()?.logEvent('pro_upgrade_click', feature);
+    logAndFlush('pro_upgrade_click', feature);
     onUpgrade();
   };
 
@@ -361,10 +361,10 @@ export function useProUpgradeFlow() {
     setCurrentFeature(feature);
     if (isPro) {
       setComingSoonOpen(true);
-      getStatsigClient()?.logEvent('pro_coming_soon_view', feature);
+      logAndFlush('pro_coming_soon_view', feature);
     } else {
       setInterstitialOpen(true);
-      getStatsigClient()?.logEvent('pro_interstitial_view', feature);
+      logAndFlush('pro_interstitial_view', feature);
     }
   };
 

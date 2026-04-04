@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { getStatsigClient } from '@/components/StatsigProvider';
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
 
 interface EmptyProjectStateProps {
   onCreateProject: () => void;
@@ -14,7 +14,7 @@ export function EmptyProjectState({ onCreateProject }: EmptyProjectStateProps) {
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateProject = async () => {
-    getStatsigClient()?.logEvent('cta_create_project', 'empty-state');
+    logAndFlush('cta_create_project', 'empty-state');
     setIsCreating(true);
     try {
       await onCreateProject();

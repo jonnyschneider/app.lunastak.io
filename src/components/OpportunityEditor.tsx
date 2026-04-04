@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
-import { getStatsigClient } from '@/components/StatsigProvider';
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
 import { getObjectiveTitle } from '@/lib/utils';
 import { SuccessMetric } from '@/lib/types';
 import { SuccessMetricEditor } from './SuccessMetricEditor';
@@ -238,7 +238,7 @@ export function OpportunityEditor({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  getStatsigClient()?.logEvent('fake_door_click', 'Additional Metrics (Pro)')
+                  logAndFlush('fake_door_click', 'Additional Metrics (Pro)')
                   onImproveWithAI()
                 }}
                 className="h-7 text-xs text-muted-foreground"

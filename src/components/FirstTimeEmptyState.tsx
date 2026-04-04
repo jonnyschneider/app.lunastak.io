@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/tooltip'
 import { InlineChat } from '@/components/InlineChat'
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 
 interface FirstTimeEmptyStateProps {
   projectId: string
@@ -116,7 +116,7 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
               <Button
                 variant="outline"
                 onClick={() => {
-                  getStatsigClient()?.logEvent('cta_upload_doc', 'first-time', { projectId })
+                  logAndFlush('cta_upload_doc', 'first-time', { projectId })
                   setUploadDialogOpen(true)
                 }}
                 className="flex items-center gap-2"
@@ -129,7 +129,7 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
                   <Button
                     variant="outline"
                     onClick={() => {
-                      getStatsigClient()?.logEvent('cta_build_strategy', 'first-time', { projectId })
+                      logAndFlush('cta_build_strategy', 'first-time', { projectId })
                       router.push(`/project/${projectId}/template`)
                     }}
                     className="flex items-center gap-2"
@@ -147,7 +147,7 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
                   <Button
                     variant="outline"
                     onClick={() => {
-                      getStatsigClient()?.logEvent('cta_demo_peek', 'first-time')
+                      logAndFlush('cta_demo_peek', 'first-time')
                       setDemoDialogOpen(true)
                     }}
                     disabled={isLoadingDemo}
@@ -195,7 +195,7 @@ export function FirstTimeEmptyState({ projectId, resumeConversationId, onUploadC
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
-              getStatsigClient()?.logEvent('cta_demo_confirm', 'first-time')
+              logAndFlush('cta_demo_confirm', 'first-time')
               handleCreateDemo()
             }}>
               Let me in

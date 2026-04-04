@@ -70,3 +70,18 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
 export function getStatsigClient(): StatsigClient | null {
   return statsigClient;
 }
+
+/**
+ * Log an event and immediately flush to ensure delivery.
+ * Use this instead of getStatsigClient()?.logEvent() for events
+ * that fire just before UI transitions (menu closes, sheet opens, navigation).
+ */
+export function logAndFlush(
+  eventName: string,
+  value?: string | number,
+  metadata?: Record<string, string>
+) {
+  if (!statsigClient) return;
+  statsigClient.logEvent(eventName, value, metadata);
+  statsigClient.flush();
+}

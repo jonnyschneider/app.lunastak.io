@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface GuestSaveBannerProps {
@@ -22,7 +22,7 @@ export function GuestSaveBanner({ onDismiss }: GuestSaveBannerProps) {
   }
 
   const handleSignIn = () => {
-    getStatsigClient()?.logEvent('cta_create_account', 'guest-banner')
+    logAndFlush('cta_create_account', 'guest-banner')
     signIn(undefined, { callbackUrl: window.location.href })
   }
 

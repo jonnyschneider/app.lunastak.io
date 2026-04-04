@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { getStatsigClient } from '@/components/StatsigProvider';
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +43,7 @@ export function SignInGateDialog({
   description = SIGN_IN_GATE_PRESETS.generic.description,
 }: SignInGateDialogProps) {
   const handleSignIn = () => {
-    getStatsigClient()?.logEvent('cta_create_account', 'sign-in-gate');
+    logAndFlush('cta_create_account', 'sign-in-gate');
     signIn(undefined, { callbackUrl: window.location.href });
   };
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -242,7 +242,7 @@ export default function ProjectPage() {
     setTabNav(
       <div className="inline-flex rounded-lg border border-input">
         <button
-          onClick={() => { setActiveTab('decision-stack'); getStatsigClient()?.logEvent('tab_switch', 'decision-stack', { projectId }) }}
+          onClick={() => { setActiveTab('decision-stack'); logAndFlush('tab_switch', 'decision-stack', { projectId }) }}
           className={cn(
             'rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
             activeTab === 'decision-stack' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
@@ -251,7 +251,7 @@ export default function ProjectPage() {
           Decision Stack
         </button>
         <button
-          onClick={() => { setActiveTab('knowledgebase'); getStatsigClient()?.logEvent('tab_switch', 'knowledgebase', { projectId }) }}
+          onClick={() => { setActiveTab('knowledgebase'); logAndFlush('tab_switch', 'knowledgebase', { projectId }) }}
           className={cn(
             'border-l border-input px-4 py-1.5 text-sm font-medium transition-colors',
             activeTab === 'knowledgebase' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
@@ -268,7 +268,7 @@ export default function ProjectPage() {
             <DropdownMenuTrigger asChild>
               <button
                 className="border-l border-input px-3 py-1.5 text-sm hover:bg-muted transition-colors rounded-r-lg"
-                onClick={() => getStatsigClient()?.logEvent('overflow_menu_open', 'project-page', { projectId })}
+                onClick={() => logAndFlush('overflow_menu_open', 'project-page', { projectId })}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
@@ -276,27 +276,27 @@ export default function ProjectPage() {
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_new_chat', 'overflow-menu', { projectId })
+                logAndFlush('cta_new_chat', 'overflow-menu', { projectId })
                 setChatInitialQuestion(undefined); setChatDeepDiveId(undefined); setChatGapExploration(undefined)
                 setChatResumeConversationId(undefined); setChatViewOnly(false); setChatSheetOpen(true)
               }}>
                 <MessageSquare className="h-4 w-4 mr-2" />New Chat
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_upload_doc', 'overflow-menu', { projectId })
+                logAndFlush('cta_upload_doc', 'overflow-menu', { projectId })
                 setUploadDeepDiveId(undefined); setUploadDialogOpen(true)
               }}>
                 <Upload className="h-4 w-4 mr-2" />Upload Document
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_import_bundle', 'overflow-menu', { projectId })
+                logAndFlush('cta_import_bundle', 'overflow-menu', { projectId })
                 setImportDialogOpen(true)
               }}>
                 <Package className="h-4 w-4 mr-2" />Import Context Bundle
               </DropdownMenuItem>
               {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
                 <DropdownMenuItem onClick={() => {
-                  getStatsigClient()?.logEvent('cta_view_fragments', 'overflow-menu', { projectId })
+                  logAndFlush('cta_view_fragments', 'overflow-menu', { projectId })
                   router.push(`/project/${projectId}/fragments`)
                 }}>
                   <FileText className="h-4 w-4 mr-2" />View all {projectData?.stats?.fragmentCount} fragments
@@ -307,7 +307,7 @@ export default function ProjectPage() {
               <DropdownMenuItem
                 disabled={!hasStrategy && (projectData?.stats?.fragmentCount ?? 0) === 0}
                 onClick={() => {
-                  getStatsigClient()?.logEvent('cta_update_direction', 'overflow-menu', { projectId })
+                  logAndFlush('cta_update_direction', 'overflow-menu', { projectId })
                   if (hasStrategy) { { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) } } else { handleGenerateStrategy() }
                 }}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -316,7 +316,7 @@ export default function ProjectPage() {
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem disabled={!hasStrategy} onClick={() => {
-                getStatsigClient()?.logEvent('cta_draft_opportunities', 'overflow-menu', { projectId })
+                logAndFlush('cta_draft_opportunities', 'overflow-menu', { projectId })
                 { setGenerationDialogAction('opportunities'); setGenerationDialogOpen(true) }
               }}>
                 <Target className="h-4 w-4 mr-2" />
@@ -327,7 +327,7 @@ export default function ProjectPage() {
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
               <DropdownMenuItem disabled={!hasStrategy} onClick={async () => {
-                getStatsigClient()?.logEvent('cta_export_brief', 'overflow-menu', { projectId })
+                logAndFlush('cta_export_brief', 'overflow-menu', { projectId })
                 const res = await fetch(`/api/project/${projectId}/export-brief`)
                 if (res.ok) {
                   const blob = await res.blob(); const url = URL.createObjectURL(blob)
@@ -337,7 +337,7 @@ export default function ProjectPage() {
                 <Download className="h-4 w-4 mr-2" />Export Strategic Brief
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_version_history', 'overflow-menu', { projectId })
+                logAndFlush('cta_version_history', 'overflow-menu', { projectId })
                 setVersionHistoryOpen(true)
               }}>
                 <Clock className="h-4 w-4 mr-2" />Version History
@@ -345,15 +345,15 @@ export default function ProjectPage() {
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Examples</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
+                logAndFlush('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
                 router.push('/project/cmn8anetr5kwlmbmq')
               }}>Nike</DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_view_demo', 'overflow-menu', { projectId: 'cmn8an6ivpa0xoehj', demo: 'Costco' })
+                logAndFlush('cta_view_demo', 'overflow-menu', { projectId: 'cmn8an6ivpa0xoehj', demo: 'Costco' })
                 router.push('/project/cmn8an6ivpa0xoehj')
               }}>Costco</DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                getStatsigClient()?.logEvent('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
+                logAndFlush('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
                 router.push('/project/cmn8anbaapaww1709')
               }}>TSMC</DropdownMenuItem>
             </DropdownMenuContent>
@@ -818,7 +818,7 @@ export default function ProjectPage() {
         <div className="sticky top-[6.25rem] md:top-14 z-40 bg-[#c74188]/85 backdrop-blur-sm px-6 py-2 flex items-center">
           <button
             onClick={() => {
-              getStatsigClient()?.logEvent('demo_exit', 'banner', { projectId })
+              logAndFlush('demo_exit', 'banner', { projectId })
               router.push('/')
             }}
             className="text-white/70 hover:text-white transition-colors shrink-0 p-1 -ml-1 rounded-md hover:bg-white/10"
@@ -924,7 +924,7 @@ export default function ProjectPage() {
                   setChatViewOnly(false)
                   setChatSheetOpen(true)
                 }}
-                onImportBundle={() => { getStatsigClient()?.logEvent('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
+                onImportBundle={() => { logAndFlush('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
                 onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
               />
             )}
@@ -975,7 +975,7 @@ export default function ProjectPage() {
                     setChatViewOnly(false)
                     setChatSheetOpen(true)
                   }} />
-                  <ImportBundleCard onImportBundle={() => { getStatsigClient()?.logEvent('cta_import_bundle', 'kb-empty-state', { projectId }); setImportDialogOpen(true) }} />
+                  <ImportBundleCard onImportBundle={() => { logAndFlush('cta_import_bundle', 'kb-empty-state', { projectId }); setImportDialogOpen(true) }} />
                 </div>
               </div>
             ) : (
@@ -1028,7 +1028,7 @@ export default function ProjectPage() {
               onItemClick={(item: ExploreItem) => {
                 if (item.type === 'deep-dive') {
                   const ddId = item.id.replace('dd-', '')
-                  getStatsigClient()?.logEvent('cta_open_deep_dive', 'explore-next', { projectId })
+                  logAndFlush('cta_open_deep_dive', 'explore-next', { projectId })
                   openDeepDiveSheet(ddId)
                 } else if (item.type === 'provocation') {
                   // Prefer originText match (new conversations), fall back to firstMessageContent (legacy)
@@ -1378,7 +1378,7 @@ export default function ProjectPage() {
         fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
         isFirstTime={generationDialogAction === 'opportunities' && opportunityCount === 0}
         onConfirm={async () => {
-          getStatsigClient()?.logEvent(`confirm_${generationDialogAction}`, 'generation-dialog', {
+          logAndFlush(`confirm_${generationDialogAction}`, 'generation-dialog', {
             projectId,
             fragmentsSinceStrategy: String(stats.fragmentsSinceStrategy),
           })

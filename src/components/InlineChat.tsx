@@ -18,7 +18,7 @@ import {
 import { ConversationPhase } from '@/lib/types'
 import { ExtractionStep, ExtractionProgress } from '@/components/ExtractionProgress'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 
 interface InlineMessage {
   id: string
@@ -77,7 +77,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
   }, [autoStart, initialMessage, conversationId])
 
   const startConversation = async (firstMessage: string) => {
-    getStatsigClient()?.logEvent('cta_start_initial_conversation', 'inline-chat', { projectId })
+    logAndFlush('cta_start_initial_conversation', 'inline-chat', { projectId })
     setIsLoading(true)
     setIsExpanded(true)
     setError(null)
@@ -574,7 +574,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
           <AlertDialogFooter>
             <AlertDialogCancel>Keep chatting</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
-              getStatsigClient()?.logEvent('cta_generate_strategy', 'inline-chat', { projectId })
+              logAndFlush('cta_generate_strategy', 'inline-chat', { projectId })
               setShowFinishConfirm(false)
               handleExtract()
             }}>

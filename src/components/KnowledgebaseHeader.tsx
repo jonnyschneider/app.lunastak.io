@@ -8,7 +8,7 @@ import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucid
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -184,19 +184,19 @@ export function KnowledgebaseHeader({
 
   const handleRefreshClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    getStatsigClient()?.logEvent('cta_refresh_strategy', 'knowledge-panel')
+    logAndFlush('cta_refresh_strategy', 'knowledge-panel')
     onRefreshClick()
   }, [onRefreshClick])
 
   const handleChatClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    getStatsigClient()?.logEvent('pro_upgrade_click', 'knowledge-chat')
+    logAndFlush('pro_upgrade_click', 'knowledge-chat')
     onChatClick()
   }, [onChatClick])
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    getStatsigClient()?.logEvent('pro_upgrade_click', 'knowledge-edit')
+    logAndFlush('pro_upgrade_click', 'knowledge-edit')
     onEditClick()
   }, [onEditClick])
 

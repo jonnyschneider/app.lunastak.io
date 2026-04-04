@@ -59,7 +59,7 @@ import {
 import { PaywallModal } from '@/components/PaywallModal'
 import { SignInGateDialog, SIGN_IN_GATE_PRESETS } from '@/components/SignInGateDialog'
 import { useProjectActions } from '@/hooks/use-project-actions'
-import { getStatsigClient } from '@/components/StatsigProvider'
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { usePaywall } from '@/hooks/use-paywall'
 import { useHeaderSlot } from '@/components/HeaderContext'
 import { cn } from '@/lib/utils'
@@ -199,7 +199,7 @@ export function AppLayout({
   }
 
   const handleCreateProject = async () => {
-    getStatsigClient()?.logEvent('cta_create_project', 'header')
+    logAndFlush('cta_create_project', 'header')
     if (!session) {
       setProjectSwitcherOpen(false)
       setSignUpDialogOpen(true)

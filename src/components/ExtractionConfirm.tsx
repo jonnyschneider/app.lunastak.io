@@ -1,7 +1,7 @@
 'use client';
 
 import { ExtractedContextVariant, isEmergentContext } from '@/lib/types';
-import { getStatsigClient } from '@/components/StatsigProvider';
+import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
 
 interface ExtractionConfirmProps {
   extractedContext: ExtractedContextVariant;
@@ -163,7 +163,7 @@ export default function ExtractionConfirm({
         <div>
           <button
             onClick={() => {
-              getStatsigClient()?.logEvent('cta_generate_strategy', 'extraction-confirm')
+              logAndFlush('cta_generate_strategy', 'extraction-confirm')
               onGenerate()
             }}
             disabled={isGenerating}
