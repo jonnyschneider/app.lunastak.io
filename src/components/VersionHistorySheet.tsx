@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { logAndFlush } from '@/components/StatsigProvider'
 import {
   Sheet,
   SheetContent,
@@ -145,7 +146,10 @@ export function VersionHistorySheet({
                       variant="ghost"
                       size="sm"
                       className="h-7 px-2"
-                      onClick={() => onExportBrief(version.id, version.version)}
+                      onClick={() => {
+                        logAndFlush('version_history_downloaded', 'version-history', { projectId, version: String(version.version) })
+                        onExportBrief(version.id, version.version)
+                      }}
                       title="Export Brief"
                     >
                       <Download className="h-3 w-3" />
