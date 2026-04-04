@@ -268,7 +268,6 @@ export default function ProjectPage() {
             <DropdownMenuTrigger asChild>
               <button
                 className="border-l border-input px-3 py-1.5 text-sm hover:bg-muted transition-colors rounded-r-lg"
-                onClick={() => logAndFlush('overflow_menu_open', 'project-page', { projectId })}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
