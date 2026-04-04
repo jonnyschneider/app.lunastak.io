@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-04-05
+
+**Statsig instrumentation, token tracking, UX polish.**
+
+### Added
+
+- **LLM token tracking** — `totalPromptTokens`, `totalCompletionTokens`, `lastLlmCallAt` on User, wired through all 15 `createMessage` call sites
+- **`llm_token_usage` Statsig event** — server-side token burn tracking per LLM call with context and model metadata
+- **`bundle_imported` / `bundle_import_failed`** — server-side events for import pipeline success/failure
+- **`version_history_downloaded`** — tracks brief exports from version history
+- **`kb_summary_viewed`** — tracks knowledgebase accordion opens
+- **`logAndFlush()` helper** — ensures Statsig events are delivered before Radix UI transitions
+
+### Fixed
+
+- **Statsig event loss** — events fired before Radix dropdown close were being dropped; all 19 call sites now flush immediately
+- **Missing `cta_import_bundle`** from launchpad and KB empty state (only overflow menu was logging)
+- **"Draft First Strategy" button** — now uses gold accent colour (`--luna`) instead of default primary
+- **First-time opportunity guard** — auto-confirms when no existing opportunities (nothing to snapshot)
+- **Removed `overflow_menu_open`** — unreliable on Radix trigger, individual menu item events sufficient
+
+---
+
 ## [2.4.0] - 2026-04-02
 
 **Unified Decision Stack, production launch.**
