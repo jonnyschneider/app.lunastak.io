@@ -175,9 +175,9 @@ export function KnowledgebaseHeader({
 
     if (willExpand) {
       expandedAtRef.current = Date.now()
-      console.log('[Analytics] knowledge_panel_expanded', {
-        strategyIsStale,
-        fragmentCount,
+      logAndFlush('kb_summary_viewed', 'knowledge-panel', {
+        strategyIsStale: String(strategyIsStale),
+        fragmentCount: String(fragmentCount),
       })
     }
   }, [isExpanded, strategyIsStale, fragmentCount])
