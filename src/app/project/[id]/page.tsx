@@ -924,7 +924,7 @@ export default function ProjectPage() {
                   setChatViewOnly(false)
                   setChatSheetOpen(true)
                 }}
-                onImportBundle={() => setImportDialogOpen(true)}
+                onImportBundle={() => { getStatsigClient()?.logEvent('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
                 onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
               />
             )}
@@ -975,7 +975,7 @@ export default function ProjectPage() {
                     setChatViewOnly(false)
                     setChatSheetOpen(true)
                   }} />
-                  <ImportBundleCard onImportBundle={() => setImportDialogOpen(true)} />
+                  <ImportBundleCard onImportBundle={() => { getStatsigClient()?.logEvent('cta_import_bundle', 'kb-empty-state', { projectId }); setImportDialogOpen(true) }} />
                 </div>
               </div>
             ) : (
