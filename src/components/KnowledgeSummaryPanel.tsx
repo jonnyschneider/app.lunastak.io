@@ -368,20 +368,6 @@ export function KnowledgeSummaryPanel({
             </div>
           )}
 
-          {/* View all fragments link */}
-          {fragmentCount > 0 && !readOnly && (
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDimensionClick('')}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                View all {fragmentCount} fragments
-                <ArrowRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-          )}
         </div>
       )}
     </div>
