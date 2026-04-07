@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
 
@@ -9,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
+import { cn } from '@/lib/utils'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -119,7 +119,7 @@ interface DimensionalSynthesis {
   fragmentCount: number
 }
 
-interface KnowledgebaseHeaderProps {
+interface KnowledgeSummaryPanelProps {
   fragmentCount: number
   chatCount: number
   documentCount: number
@@ -141,9 +141,13 @@ interface KnowledgebaseHeaderProps {
   strategyBusyMessage?: string | null
   /** Hide action links (e.g. demo mode) */
   readOnly?: boolean
+  /** Optional class name for outer container (e.g. col-span control) */
+  className?: string
+  /** Notify parent when expanded state changes (so parent can adjust layout) */
+  onExpandedChange?: (expanded: boolean) => void
 }
 
-export function KnowledgebaseHeader({
+export function KnowledgeSummaryPanel({
   fragmentCount,
   chatCount,
   documentCount,
@@ -162,7 +166,9 @@ export function KnowledgebaseHeader({
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
   readOnly = false,
-}: KnowledgebaseHeaderProps) {
+  className,
+  onExpandedChange,
+}: KnowledgeSummaryPanelProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
   const isBusy = knowledgeBusy || strategyBusy
@@ -172,6 +178,7 @@ export function KnowledgebaseHeader({
   const handleToggle = useCallback(() => {
     const willExpand = !isExpanded
     setIsExpanded(willExpand)
+    onExpandedChange?.(willExpand)
 
     if (willExpand) {
       expandedAtRef.current = Date.now()
@@ -180,7 +187,7 @@ export function KnowledgebaseHeader({
         fragmentCount: String(fragmentCount),
       })
     }
-  }, [isExpanded, strategyIsStale, fragmentCount])
+  }, [isExpanded, strategyIsStale, fragmentCount, onExpandedChange])
 
   const handleRefreshClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -201,7 +208,7 @@ export function KnowledgebaseHeader({
   }, [onEditClick])
 
   const handleDimensionClick = useCallback((dimension: string) => {
-    console.log('[Analytics] knowledge_panel_dimension_clicked', { dimension })
+    logAndFlush('cta_open_evidence', 'dimension-chip', { dimension })
     onDimensionClick(dimension)
   }, [onDimensionClick])
 
@@ -211,58 +218,59 @@ export function KnowledgebaseHeader({
     : null
 
   return (
-    <div className="border border-border rounded-lg bg-card overflow-hidden">
+    <div className={cn("border border-border rounded-lg bg-background overflow-hidden", className)}>
       {/* Header Bar */}
       <button
         onClick={handleToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
+        className="w-full px-4 py-3 flex flex-col gap-2 hover:bg-muted/50 transition-colors text-left"
       >
-        <div className="flex items-center gap-3">
-          <Image
-            src="/animated-logo-glitch.svg"
-            alt=""
-            width={16}
-            height={16}
-            className={isBusy ? 'animate-pulse' : ''}
-          />
-          <span className="font-medium text-sm">
-            {knowledgeBusy ? knowledgeBusyMessage : 'Knowledgebase'}
-          </span>
-          {!knowledgeBusy && updatedLabel && (
-            <span className="hidden md:inline text-xs text-muted-foreground">
-              ({updatedLabel})
+        {/* Row 1: title + strategy action + chevron */}
+        <div className="flex items-center justify-between gap-3 w-full">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className={cn("font-medium text-sm", knowledgeBusy && "animate-pulse text-muted-foreground")}>
+              {knowledgeBusy ? knowledgeBusyMessage : 'Knowledge Summary'}
             </span>
-          )}
+            {!knowledgeBusy && updatedLabel && (
+              <span className="text-xs text-muted-foreground truncate">
+                ({updatedLabel})
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center shrink-0">
+            {/* Chevron */}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Stats + strategy status */}
-          {!isBusy && fragmentCount > 0 && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <span className="hidden md:inline">{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
-              <span className="hidden md:inline">&middot;</span>
-              <span className="hidden md:inline">{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
-              <span className="hidden md:inline">&middot;</span>
+        {/* Row 2: stats meta + strategy action */}
+        {!isBusy && fragmentCount > 0 && (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
+              <span>&middot;</span>
+              <span>{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
+              <span>&middot;</span>
               <span>{fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}</span>
               {strategyIsStale && fragmentsSinceStrategy > 0 && (
                 <>
-                  <span className="hidden md:inline">&middot;</span>
-                  <span className="hidden md:inline font-medium text-lunastak dark:text-lunastak">
+                  <span>&middot;</span>
+                  <span className="font-medium text-lunastak dark:text-lunastak">
                     {fragmentsSinceStrategy} since last strategy
                   </span>
                 </>
               )}
             </div>
-          )}
-
-          {/* Strategy action — RHS */}
-          {strategyBusy ? (
-            <span className="text-sm text-muted-foreground animate-pulse">
-              {strategyBusyMessage}
-            </span>
-          ) : fragmentCount > 0 && (
-            strategyIsStale ? (
-              <div className="flex items-center gap-2">
+            <div className="shrink-0">
+              {strategyBusy ? (
+                <span className="text-xs text-muted-foreground animate-pulse">
+                  {strategyBusyMessage}
+                </span>
+              ) : strategyIsStale ? (
                 <Button
                   size="sm"
                   onClick={handleRefreshClick}
@@ -270,21 +278,14 @@ export function KnowledgebaseHeader({
                 >
                   Create strategy
                 </Button>
-              </div>
-            ) : latestStrategyTraceId ? (
-              <span className="text-xs text-muted-foreground">
-                Strategy in sync
-              </span>
-            ) : null
-          )}
-
-          {/* Chevron */}
-          {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
-        </div>
+              ) : latestStrategyTraceId ? (
+                <span className="text-xs text-muted-foreground">
+                  Strategy in sync
+                </span>
+              ) : null}
+            </div>
+          </div>
+        )}
       </button>
 
       {/* Expanded Content */}
@@ -368,20 +369,6 @@ export function KnowledgebaseHeader({
             </div>
           )}
 
-          {/* View all fragments link */}
-          {fragmentCount > 0 && !readOnly && (
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDimensionClick('')}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                View all {fragmentCount} fragments
-                <ArrowRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-          )}
         </div>
       )}
     </div>

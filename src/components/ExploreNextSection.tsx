@@ -12,7 +12,7 @@ import {
   ItemActions,
   ItemSeparator,
 } from '@/components/ui/item'
-import { Zap, Puzzle, Crosshair, X, Plus } from 'lucide-react'
+import { Zap, Puzzle, Crosshair, X, Plus, Compass } from 'lucide-react'
 import { StructuredProvocation } from '@/lib/types'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
@@ -199,6 +199,7 @@ export function ExploreNextSection({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
+          <Compass className="h-4 w-4" />
           Explore Next
         </CardTitle>
       </CardHeader>

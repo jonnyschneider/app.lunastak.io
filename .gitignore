@@ -127,7 +127,3 @@ scripts/seed/fixtures/
 
 docs/backtest-sessions.md
 docs/gdrive
-.aigon/.board-map.json
-.aigon/worktree.json
-.aigon/state/
-.aigon/locks/
