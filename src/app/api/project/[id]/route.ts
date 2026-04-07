@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
-import { isGuestUser } from '@/lib/projects'
+import { isGuestUser, createGuestUser } from '@/lib/projects'
 
 const GUEST_COOKIE_NAME = 'guestUserId'
 
@@ -38,6 +38,29 @@ export async function GET(
       if (guestUser && isGuestUser(guestUser.email)) {
         userId = guestCookie.value
       }
+    }
+  }
+
+  if (!userId) {
+    // Demo deep-link fallback: if the requested project is a demo, mint a
+    // guest session inline so unauthenticated visitors from marketing/share
+    // links can view it. Mirrors /api/guest/init.
+    const demoCheck = await prisma.project.findFirst({
+      where: { id: projectId, isDemo: true, status: 'active' },
+      select: { id: true },
+    })
+
+    if (demoCheck) {
+      const guestUser = await createGuestUser()
+      userId = guestUser.id
+
+      const cookieStore = await cookies()
+      cookieStore.set(GUEST_COOKIE_NAME, guestUser.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+      })
     }
   }
 

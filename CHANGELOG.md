@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] - 2026-04-07
+
+**Cross-site analytics, demo access, pretty demo URLs.**
+
+This release closes the loop on the marketing-site → app activation funnel. Demo projects can now be deep-linked from anywhere without an auth gate, demo URLs are short and shareable, and Statsig events on both sites are reconciled into a single end-to-end funnel spec.
+
+### Added
+
+- **Pretty demo URLs via `/demo/<slug>`** — Next.js middleware rewrites `/demo/nike` (and `/costco`, `/tsmc`) to the underlying project IDs at runtime. New `Project.demoSlug` column (nullable, unique). Adding or changing a demo only needs a DB update — no deploy. Includes `scripts/set-demo-slugs.ts` to backfill slugs. Schema change requires `npm run prisma:push` against each environment.
+- **Cross-site Statsig dashboard spec** at `docs/analytics/statsig-dashboards.md` — moved from Drive into the repo so it travels with the code. Covers all 6 dashboards (Activation, Engagement, Demo, Pro Demand, Account Conversion, Token Usage) with full event reference, cross-site funnel definitions, and notes on the deprecated `cta_view_fragments` event.
+- **Architecture decision: Cross-Site Statsig Identity Stitching (2026-04-07)** — captured in `docs/architecture/ARCHITECTURE.md` as both a "Known Compromises" row and a full ADR. Documents why marketing-site and app events are siloed for anonymous users (Statsig stableID is per-origin), why we're accepting the gap (aggregate funnels are sufficient), and the implementation recipe (~3hrs work) for when we want to fix it.
+- **`source: 'app'` metadata** on the in-app `cta_view_demo` events (Nike/Costco/TSMC overflow menu items), to disambiguate from the marketing-site `cta_view_demo` of the same name (which carries `source: 'marketing'`).
+- **Tests for `/api/project/[id]`** covering the unauthenticated demo deep-link flow (`src/app/api/project/[id]/__tests__/route.test.ts`).
+
+### Changed
+
+- **Demo project deep-links no longer 401 for unauthenticated visitors.** `/api/project/[id]/route.ts` now mints a guest session inline when an unauth visitor requests a demo project, mirroring the pattern used by `/api/guest/init`. This is the server-side counterpart to the cross-site activation funnel — marketing CTAs that lead to demos now work for cold visitors without requiring sign-in.
+
+### Notes
+
+- Companion changes shipped to the marketing site (`humventures/lunastak/lunastak.io` v1.1.1): instruments four previously-untracked CTAs (`cta_create_account` on Hero + Header, `cta_sign_in` on desktop + mobile menu) and adds `source: 'marketing'` to the AcquiredShowcase `cta_view_demo` event. These feed the cross-site funnels documented in the analytics spec.
+- The deprecated `cta_view_fragments` event remains unused as of v2.4.2; any dashboards still referencing it should be pointed at `cta_open_evidence` filtered by `source=overflow-menu`.
+
 ## [2.4.2] - 2026-04-07
 
 **Knowledge Summary + Evidence panel redesign.**

@@ -362,15 +362,15 @@ export default function ProjectPage() {
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Examples</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
+                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
                 router.push('/project/cmn8anetr5kwlmbmq')
               }}>Nike</DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { projectId: 'cmn8an6ivpa0xoehj', demo: 'Costco' })
+                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8an6ivpa0xoehj', demo: 'Costco' })
                 router.push('/project/cmn8an6ivpa0xoehj')
               }}>Costco</DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
+                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
                 router.push('/project/cmn8anbaapaww1709')
               }}>TSMC</DropdownMenuItem>
             </DropdownMenuContent>

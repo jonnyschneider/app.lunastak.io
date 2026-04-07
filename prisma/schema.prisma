@@ -171,6 +171,7 @@ model Project {
   description String? @db.Text
   status      String  @default("active") // active | archived | deleted
   isDemo      Boolean @default(false)
+  demoSlug    String? @unique // e.g. "nike", "costco", "tsmc" — only set on demo projects
 
   directionStatus String @default("drafting") // drafting | settled
 
