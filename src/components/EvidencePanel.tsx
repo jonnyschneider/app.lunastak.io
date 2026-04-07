@@ -1,7 +1,5 @@
 'use client'
 
-import { FileText, ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { logAndFlush } from '@/components/StatsigProvider'
 
 interface EvidencePanelProps {
@@ -18,25 +16,32 @@ export function EvidencePanel({ projectId, fragmentCount, onOpen, readOnly = fal
     onOpen()
   }
 
+  const clickable = !readOnly && fragmentCount > 0
   return (
-    <div className="rounded-lg border bg-card text-card-foreground p-6 flex flex-col">
-      <div className="flex items-center gap-2 mb-2">
-        <FileText className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-base font-semibold">Evidence</h2>
-      </div>
-      <p className="text-sm text-muted-foreground mb-4">
-        {fragmentCount === 0
-          ? 'No fragments yet. As Luna analyses your context, the receipts will appear here.'
-          : `${fragmentCount} fragment${fragmentCount === 1 ? '' : 's'} extracted from your conversations and documents.`}
-      </p>
-      <div className="mt-auto">
-        {!readOnly && fragmentCount > 0 && (
-          <Button variant="outline" size="sm" onClick={handleOpen}>
-            Open Evidence
-            <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
+    <button
+      type="button"
+      onClick={clickable ? handleOpen : undefined}
+      disabled={!clickable}
+      className="w-full text-left rounded-lg border border-border bg-background text-card-foreground overflow-hidden hover:bg-muted/50 transition-colors disabled:cursor-default disabled:hover:bg-background"
+    >
+      <div className="px-4 py-3 flex flex-col gap-2">
+        {/* Row 1: title */}
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="font-medium text-sm">Review Evidence</span>
+        </div>
+        {/* Row 2: meta */}
+        {fragmentCount > 0 ? (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{fragmentCount} fragment{fragmentCount !== 1 ? 's' : ''}</span>
+            <span>&middot;</span>
+            <span>extracted from your conversations and documents</span>
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground">
+            No fragments yet. As Luna analyses your context, the receipts will appear here.
+          </div>
         )}
       </div>
-    </div>
+    </button>
   )
 }

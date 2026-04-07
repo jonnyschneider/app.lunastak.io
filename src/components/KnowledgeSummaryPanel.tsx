@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
 
@@ -209,7 +208,7 @@ export function KnowledgeSummaryPanel({
   }, [onEditClick])
 
   const handleDimensionClick = useCallback((dimension: string) => {
-    console.log('[Analytics] knowledge_panel_dimension_clicked', { dimension })
+    logAndFlush('cta_open_evidence', 'dimension-chip', { dimension })
     onDimensionClick(dimension)
   }, [onDimensionClick])
 
@@ -219,58 +218,59 @@ export function KnowledgeSummaryPanel({
     : null
 
   return (
-    <div className={cn("border border-border rounded-lg bg-card overflow-hidden", className)}>
+    <div className={cn("border border-border rounded-lg bg-background overflow-hidden", className)}>
       {/* Header Bar */}
       <button
         onClick={handleToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
+        className="w-full px-4 py-3 flex flex-col gap-2 hover:bg-muted/50 transition-colors text-left"
       >
-        <div className="flex items-center gap-3">
-          <Image
-            src="/animated-logo-glitch.svg"
-            alt=""
-            width={16}
-            height={16}
-            className={isBusy ? 'animate-pulse' : ''}
-          />
-          <span className="font-medium text-sm">
-            {knowledgeBusy ? knowledgeBusyMessage : 'Knowledgebase'}
-          </span>
-          {!knowledgeBusy && updatedLabel && (
-            <span className="hidden md:inline text-xs text-muted-foreground">
-              ({updatedLabel})
+        {/* Row 1: title + strategy action + chevron */}
+        <div className="flex items-center justify-between gap-3 w-full">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className={cn("font-medium text-sm", knowledgeBusy && "animate-pulse text-muted-foreground")}>
+              {knowledgeBusy ? knowledgeBusyMessage : 'Knowledge Summary'}
             </span>
-          )}
+            {!knowledgeBusy && updatedLabel && (
+              <span className="text-xs text-muted-foreground truncate">
+                ({updatedLabel})
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center shrink-0">
+            {/* Chevron */}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Stats + strategy status */}
-          {!isBusy && fragmentCount > 0 && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <span className="hidden md:inline">{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
-              <span className="hidden md:inline">&middot;</span>
-              <span className="hidden md:inline">{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
-              <span className="hidden md:inline">&middot;</span>
+        {/* Row 2: stats meta + strategy action */}
+        {!isBusy && fragmentCount > 0 && (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
+              <span>&middot;</span>
+              <span>{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
+              <span>&middot;</span>
               <span>{fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}</span>
               {strategyIsStale && fragmentsSinceStrategy > 0 && (
                 <>
-                  <span className="hidden md:inline">&middot;</span>
-                  <span className="hidden md:inline font-medium text-lunastak dark:text-lunastak">
+                  <span>&middot;</span>
+                  <span className="font-medium text-lunastak dark:text-lunastak">
                     {fragmentsSinceStrategy} since last strategy
                   </span>
                 </>
               )}
             </div>
-          )}
-
-          {/* Strategy action — RHS */}
-          {strategyBusy ? (
-            <span className="text-sm text-muted-foreground animate-pulse">
-              {strategyBusyMessage}
-            </span>
-          ) : fragmentCount > 0 && (
-            strategyIsStale ? (
-              <div className="flex items-center gap-2">
+            <div className="shrink-0">
+              {strategyBusy ? (
+                <span className="text-xs text-muted-foreground animate-pulse">
+                  {strategyBusyMessage}
+                </span>
+              ) : strategyIsStale ? (
                 <Button
                   size="sm"
                   onClick={handleRefreshClick}
@@ -278,21 +278,14 @@ export function KnowledgeSummaryPanel({
                 >
                   Create strategy
                 </Button>
-              </div>
-            ) : latestStrategyTraceId ? (
-              <span className="text-xs text-muted-foreground">
-                Strategy in sync
-              </span>
-            ) : null
-          )}
-
-          {/* Chevron */}
-          {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
-        </div>
+              ) : latestStrategyTraceId ? (
+                <span className="text-xs text-muted-foreground">
+                  Strategy in sync
+                </span>
+              ) : null}
+            </div>
+          </div>
+        )}
       </button>
 
       {/* Expanded Content */}

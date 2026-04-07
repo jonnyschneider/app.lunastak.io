@@ -313,7 +313,7 @@ export default function ProjectPage() {
               </DropdownMenuItem>
               {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
                 <DropdownMenuItem onClick={() => {
-                  logAndFlush('cta_view_fragments', 'overflow-menu', { projectId })
+                  logAndFlush('cta_open_evidence', 'overflow-menu', { projectId })
                   setEvidenceOpen(true)
                 }}>
                   <FileText className="h-4 w-4 mr-2" />View all {projectData?.stats?.fragmentCount} fragments
@@ -851,11 +851,11 @@ export default function ProjectPage() {
       )}
       {/* Status banner for background tasks (non-demo) */}
       {!isDemo && <StatusBanner projectId={projectId} />}
-      <div className="mx-auto max-w-4xl px-4 md:px-6 py-8 space-y-6">
+      <div className="w-full">
         {/* Content — switched by activeTab (tabs + overflow are in header via HeaderContext) */}
         <div className="w-full">
           {/* Decision Stack */}
-          {activeTab === 'decision-stack' && <div className="space-y-6">
+          {activeTab === 'decision-stack' && <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {strategyData ? (
               <>
                 {/* Demo company logo */}
@@ -948,9 +948,9 @@ export default function ProjectPage() {
           </div>}
 
           {/* Knowledgebase */}
-          {activeTab === 'knowledgebase' && <div className="space-y-6">
+          {activeTab === 'knowledgebase' && <div>
             {isDemo ? (
-            <>
+            <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {/* Demo: simplified KB — coverage grid + inline fragments */}
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
@@ -975,12 +975,12 @@ export default function ProjectPage() {
             <FragmentExplorer
               projectId={projectId}
             />
-            </>
+            </div>
             ) : (
             <>
             {/* Empty state when no content at all */}
             {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
-              <div className="py-8">
+              <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
                 <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
                 <p className="text-sm text-muted-foreground text-center mb-6">Start a conversation with Luna, or import a context bundle to get started.</p>
                 <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
@@ -997,7 +997,9 @@ export default function ProjectPage() {
               </div>
             ) : (
             <>
-            {/* Summary panels: Knowledge Summary + Evidence */}
+            {/* Summary panels: Knowledge Summary + Evidence — full-viewport-width band */}
+            <div className="bg-primary py-8">
+            <div className="mx-auto max-w-7xl px-4 md:px-6">
             <div className="grid gap-6 md:grid-cols-2">
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
@@ -1045,7 +1047,10 @@ export default function ProjectPage() {
               onOpen={() => setEvidenceOpen(true)}
             />
             </div>
+            </div>
+            </div>
 
+            <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {/* Explore Next + Conversations side by side */}
             <div className="grid gap-6 md:grid-cols-2">
               <ExploreNextSection
@@ -1292,6 +1297,7 @@ export default function ProjectPage() {
                   </CardContent>
                 </Card>
               )}
+            </div>
             </div>
             </>
             )}
