@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
+import { cn } from '@/lib/utils'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -141,6 +142,10 @@ interface KnowledgeSummaryPanelProps {
   strategyBusyMessage?: string | null
   /** Hide action links (e.g. demo mode) */
   readOnly?: boolean
+  /** Optional class name for outer container (e.g. col-span control) */
+  className?: string
+  /** Notify parent when expanded state changes (so parent can adjust layout) */
+  onExpandedChange?: (expanded: boolean) => void
 }
 
 export function KnowledgeSummaryPanel({
@@ -162,6 +167,8 @@ export function KnowledgeSummaryPanel({
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
   readOnly = false,
+  className,
+  onExpandedChange,
 }: KnowledgeSummaryPanelProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
@@ -172,6 +179,7 @@ export function KnowledgeSummaryPanel({
   const handleToggle = useCallback(() => {
     const willExpand = !isExpanded
     setIsExpanded(willExpand)
+    onExpandedChange?.(willExpand)
 
     if (willExpand) {
       expandedAtRef.current = Date.now()
@@ -180,7 +188,7 @@ export function KnowledgeSummaryPanel({
         fragmentCount: String(fragmentCount),
       })
     }
-  }, [isExpanded, strategyIsStale, fragmentCount])
+  }, [isExpanded, strategyIsStale, fragmentCount, onExpandedChange])
 
   const handleRefreshClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -211,7 +219,7 @@ export function KnowledgeSummaryPanel({
     : null
 
   return (
-    <div className="border border-border rounded-lg bg-card overflow-hidden">
+    <div className={cn("border border-border rounded-lg bg-card overflow-hidden", className)}>
       {/* Header Bar */}
       <button
         onClick={handleToggle}
