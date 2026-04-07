@@ -32,7 +32,10 @@ export function EvidenceSheet({
             <span className="sr-only">Close</span>
           </SheetClose>
         </SheetHeader>
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            These <em>fragments</em> are extracted from your source artefacts &mdash; conversations, documents, and context bundles. You can prune this context by removing or archiving fragments you don&rsquo;t want included in strategy.
+          </p>
           <div className="rounded-lg border border-border bg-card p-4">
             <FragmentExplorer
               projectId={projectId}
