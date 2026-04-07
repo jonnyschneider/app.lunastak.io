@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2026-04-07
+
+**Knowledge Summary + Evidence panel redesign.**
+
+Restructures the Knowledgebase tab into two peer summary panels and moves the Fragments viewer into a sheet, so users never lose top-level navigation. Decision driven by Jonny/Martin Monthly 2026-04-06 — supersedes the original 3-tab proposal.
+
+### Added
+
+- **`KnowledgeSummaryPanel` + `EvidencePanel`** — two peer summary panels at the top of the Knowledgebase tab, sitting on a full-viewport-width brand-coloured band. Knowledge Summary expands inline; Evidence is a clickable card that opens the Evidence sheet.
+- **`EvidenceSheet`** — right-side sheet (`sm:max-w-3xl`) wrapping `FragmentExplorer`. Constrained line length, white data-grid card on a tinted body, intro sentence explaining fragments and pruning. Mobile-friendly explicit close button in the sticky header.
+- **Compass icon** on the Explore Next card title.
+- **e2e regression test** (`e2e/evidence-sheet.spec.ts`) covering nav persistence, sheet open/close, deep-link redirect, and dimension filter survival.
+
+### Changed
+
+- **Top-tab nav (Decision Stack / Knowledgebase) is now persistent on every project surface.** The legacy `/project/[id]/fragments` route used to inject a breadcrumb that wiped the tabs — that route is now a redirect to `/project/[id]?evidence=1` (preserving any `?dimension=…` filter), so external links from the book and marketing site still work.
+- **Content container widened** from `max-w-4xl` (896px) to `max-w-7xl` (1280px). Affects both Decision Stack and Knowledgebase tabs.
+- **`KnowledgebaseHeader` renamed to `KnowledgeSummaryPanel`** (file + component). The "View all N fragments" link inside the panel was removed — Evidence is now the canonical surface.
+- **Overflow menu's "View all N fragments"** now opens the Evidence sheet instead of navigating to the legacy route.
+- **`cta_view_fragments` Statsig event consolidated into `cta_open_evidence`** with a `source` field (`evidence-panel` / `dimension-chip` / `overflow-menu`). Dimension chip clicks now emit a real Statsig event (was previously a dead `console.log`).
+
+### Removed
+
+- Aigon workflow tooling (`.aigon/`, `.claude/commands/aigon`, `.claude/skills/aigon`, `docs/agents`, `docs/specs`, settings hooks). Aigon CLI remains installed globally for use in other repos; this repo no longer participates in the Aigon workflow.
+
 ## [2.4.1] - 2026-04-05
 
 **Statsig instrumentation, token tracking, UX polish.**
