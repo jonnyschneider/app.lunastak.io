@@ -57,7 +57,7 @@ import {
 } from '@/components/ProUpgradeFlow'
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { GenerationConfirmDialog, type GenerationAction } from '@/components/GenerationConfirmDialog'
-import { KnowledgebaseHeader } from '@/components/KnowledgebaseHeader'
+import { KnowledgeSummaryPanel } from '@/components/KnowledgeSummaryPanel'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
@@ -934,7 +934,7 @@ export default function ProjectPage() {
             {isDemo ? (
             <>
             {/* Demo: simplified KB — coverage grid + inline fragments */}
-            <KnowledgebaseHeader
+            <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={0}
               documentCount={0}
@@ -980,7 +980,7 @@ export default function ProjectPage() {
             ) : (
             <>
             {/* Coverage hero */}
-            <KnowledgebaseHeader
+            <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={stats.conversationCount}
               documentCount={stats.documentCount}

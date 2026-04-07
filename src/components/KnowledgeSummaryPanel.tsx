@@ -119,7 +119,7 @@ interface DimensionalSynthesis {
   fragmentCount: number
 }
 
-interface KnowledgebaseHeaderProps {
+interface KnowledgeSummaryPanelProps {
   fragmentCount: number
   chatCount: number
   documentCount: number
@@ -143,7 +143,7 @@ interface KnowledgebaseHeaderProps {
   readOnly?: boolean
 }
 
-export function KnowledgebaseHeader({
+export function KnowledgeSummaryPanel({
   fragmentCount,
   chatCount,
   documentCount,
@@ -162,7 +162,7 @@ export function KnowledgebaseHeader({
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
   readOnly = false,
-}: KnowledgebaseHeaderProps) {
+}: KnowledgeSummaryPanelProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
   const isBusy = knowledgeBusy || strategyBusy
