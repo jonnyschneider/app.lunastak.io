@@ -132,6 +132,7 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 |-----------|----------|--------|
 | Vercel: background tasks silently fail when response completes | `await` all async operations before response | **Durable** |
 | Statsig: events don't flush in serverless | Call `statsig.flush()` after logging | **Durable** |
+| Statsig: stableID is per-origin, so `lunastak.io` and `app.lunastak.io` see the same physical visitor as two anonymous users until guest userID is created on app arrival | Accepted gap. Aggregate funnels are sufficient. See [Decision: Cross-Site Statsig Identity Stitching (2026-04-07)](#decision-cross-site-statsig-identity-stitching-2026-04-07). | **Revisit:** when running marketing A/B tests or per-user attribution analysis |
 | Claude: adds preamble to JSON responses | `extractJSON()` finds JSON within text | **Durable** |
 | Claude: silent truncation at `max_tokens` | `createMessage()` logs warning | **Revisit:** auto-retry with higher limit |
 
@@ -177,6 +178,32 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 ### Related Documents
 
 - **Product & Tech Summary:** `My Drive (jonny@humventures.com.au)/05-Initiatives/Lunastak/2026 01 26 Product and Tech Summary.md` — broader product context, auth model rationale, and scaling roadmap
+
+### Decision: Cross-Site Statsig Identity Stitching (2026-04-07)
+
+**Context:** As of 2026-04-07, both `lunastak.io` (marketing) and `app.lunastak.io` are wired into the same Statsig project and share the same client key. We want to measure the activation funnel end-to-end, from marketing page view through to in-app strategy generation.
+
+**Discovery:** The Statsig client SDK uses `localStorage` for stableID, which is per-origin. A single physical visitor browsing both sites is registered as two distinct anonymous users in Statsig. Once they reach `app.lunastak.io`, Lunastak auto-creates a guest user, and Statsig stitches all subsequent events by `userID` — but the marketing-side events remain siloed under a different stableID.
+
+**Decision:** Accept the gap. Do not implement cross-site stableID stitching at this time.
+
+**Rationale:**
+- ✅ **Aggregate funnel metrics work without stitching** — "1000 marketing visits → 200 CTA clicks → 150 account creations" is computable from raw event counts. No per-user joining required.
+- ✅ **Post-arrival behaviour stitches by `userID`** — once a visitor lands on the app, every event is tied to a guest or real user.
+- ❌ **Per-user marketing attribution doesn't work** — "which copy variant did *this specific user* see before signup?" is unanswerable without stitching.
+- ❌ **A/B test analysis spanning the marketing→app jump is broken.**
+
+We currently care about aggregate metrics, not per-user attribution or A/B test analysis. The fix is additive and low-risk (~3 hours), so we can revisit when the trigger conditions arrive (running marketing experiments, or wanting copy-level attribution).
+
+**The fix (when we want it):** Use Statsig's `customIDs` feature with a shared identifier stored in a `.lunastak.io` parent-domain cookie. Both sites pass `customIDs.crossSiteId` to `StatsigClient` at init, and dashboards are configured to use `crossSiteId` as the unit of analysis instead of stableID. Full recipe, sample code, effort estimate, and caveats are in the spec doc.
+
+**Trigger to revisit:**
+- Running an A/B test where the variant assignment is on the marketing site and the conversion is in the app
+- Wanting to attribute signups to specific marketing copy or referral sources at the per-user level
+- Implementing campaign tracking or paid acquisition analysis
+
+**Related Documents:**
+- **Statsig Dashboards Spec:** `My Drive (jonny@humventures.com.au)/05-Initiatives/Lunastak/docs/plans/statsig-dashboards.md` — full dashboard catalogue, event reference, and the "Known Limitation: Cross-Site Identity Stitching" section with the implementation recipe.
 
 ### API Route Auth Summary
 
