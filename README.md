@@ -74,6 +74,17 @@ npm run dev
 
 > **Note on `prisma db push`:** the project does not use Prisma migrations. **Do not run `npm run prisma:push` against shared environments** — it can drop columns and tables without warning. For schema changes, apply raw SQL per env via the Neon console or a small `@neondatabase/serverless` script. The drift check (below) will tell you if any env disagrees with `schema.prisma`.
 
+### Database access convention
+
+Every environment file (`.env`, `.env.preview`, `.env.production`) exposes **the same two variables**:
+
+| Variable | Use |
+|---|---|
+| `DATABASE_URL` | Pooled connection — what the running app uses |
+| `DATABASE_URL_UNPOOLED` | Direct connection — what CLI tools use for DDL, schema diffs, raw SQL |
+
+CLI scripts should always load env files via [`prisma/env.ts`](prisma/env.ts) (`loadDbEnv('dev'|'preview'|'prod')`) rather than grepping the files themselves. Run `npm run db:envs` to print the current endpoint each env points at (with credentials masked) — useful for confirming you're talking to the right database.
+
 ### Schema drift check
 
 `npm run db:check-drift` compares each env's live schema to `prisma/schema.prisma` and fails if anything differs from the approved baseline in `prisma/drift-baseline/`. It runs automatically on `git push`. When you intentionally change the schema (or directly modify a database), run `npm run db:approve-drift` to recapture the baselines, then commit them. See [`prisma/drift-baseline/README.md`](prisma/drift-baseline/README.md) for the full story.
@@ -88,6 +99,7 @@ npm run smoke             # smoke tests only
 npm run verify            # type-check + tests + smoke (run by pre-push hook)
 npm run db:check-drift    # compare each env's schema to prisma/schema.prisma
 npm run db:approve-drift  # capture current diffs as the new baseline
+npm run db:envs           # show the (masked) DB endpoint each env points at
 npm run prisma:studio     # browse the DB
 npm run pipeline          # run the pipeline manually against a project
 npm run seed:hydrate      # hydrate a demo project from a JSON bundle

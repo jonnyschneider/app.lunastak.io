@@ -26,27 +26,9 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-
-interface EnvSpec {
-  name: 'dev' | 'preview' | 'prod'
-  envFile: string
-  varName: string
-}
-
-const ENVS: EnvSpec[] = [
-  { name: 'dev',     envFile: '.env',            varName: 'DATABASE_URL_UNPOOLED' },
-  { name: 'preview', envFile: '.env.preview',    varName: 'DATABASE_URL_UNPOOLED' },
-  { name: 'prod',    envFile: '.env.production', varName: 'DATABASE_URL_UNPOOLED' },
-]
+import { ENV_NAMES, loadDbEnv, type EnvName } from './env'
 
 const BASELINE_DIR = join(process.cwd(), 'prisma', 'drift-baseline')
-
-function readEnvVar(file: string, key: string): string | null {
-  if (!existsSync(file)) return null
-  const txt = readFileSync(file, 'utf8')
-  const m = txt.match(new RegExp(`^${key}="?([^"\\n]+)"?`, 'm'))
-  return m ? m[1] : null
-}
 
 function diffEnv(url: string): string {
   // prisma migrate diff prints the SQL to stdout. With --exit-code, exit 2
@@ -83,13 +65,13 @@ function normalise(sql: string): string {
     .trimEnd()
 }
 
-function loadBaseline(envName: string): string | null {
+function loadBaseline(envName: EnvName): string | null {
   const path = join(BASELINE_DIR, `${envName}.sql`)
   if (!existsSync(path)) return null
   return normalise(readFileSync(path, 'utf8'))
 }
 
-function writeBaseline(envName: string, sql: string): void {
+function writeBaseline(envName: EnvName, sql: string): void {
   if (!existsSync(BASELINE_DIR)) mkdirSync(BASELINE_DIR, { recursive: true })
   const path = join(BASELINE_DIR, `${envName}.sql`)
   // Always end with a newline so the file is sane in editors.
@@ -100,24 +82,26 @@ async function main() {
   const writeMode = process.argv.includes('--write')
   let failed = false
 
-  for (const env of ENVS) {
-    const url = readEnvVar(env.envFile, env.varName)
-    if (!url) {
-      console.error(`[${env.name}] no ${env.varName} in ${env.envFile} — skipping`)
+  for (const name of ENV_NAMES) {
+    let env
+    try {
+      env = loadDbEnv(name)
+    } catch (err) {
+      console.error(`[${name}] ${(err as Error).message} — skipping`)
       continue
     }
 
-    const actual = diffEnv(url)
+    const actual = diffEnv(env.unpooled)
 
     if (writeMode) {
-      writeBaseline(env.name, actual)
-      console.log(`[${env.name}] baseline written (${actual.length} chars)`)
+      writeBaseline(name, actual)
+      console.log(`[${name}] baseline written (${actual.length} chars)`)
       continue
     }
 
-    const baseline = loadBaseline(env.name)
+    const baseline = loadBaseline(name)
     if (baseline === null) {
-      console.error(`[${env.name}] FAIL: no baseline at prisma/drift-baseline/${env.name}.sql`)
+      console.error(`[${name}] FAIL: no baseline at prisma/drift-baseline/${name}.sql`)
       console.error(`  current diff (${actual.length} chars):`)
       console.error(actual ? indent(actual) : '  (empty — env is in sync)')
       console.error(`  run \`npm run db:approve-drift\` to capture this as the baseline`)
@@ -126,11 +110,11 @@ async function main() {
     }
 
     if (actual === baseline) {
-      console.log(`[${env.name}] ok (${actual.length === 0 ? 'in sync' : `${actual.length} chars of approved drift`})`)
+      console.log(`[${name}] ok (${actual.length === 0 ? 'in sync' : `${actual.length} chars of approved drift`})`)
       continue
     }
 
-    console.error(`[${env.name}] FAIL: drift differs from baseline`)
+    console.error(`[${name}] FAIL: drift differs from baseline`)
     console.error(`  baseline (${baseline.length} chars):`)
     console.error(indent(baseline) || '  (empty)')
     console.error(`  actual (${actual.length} chars):`)
