@@ -72,7 +72,11 @@ npm run prisma:generate
 npm run dev
 ```
 
-> **Note on `prisma db push`:** the project uses `prisma db push` rather than migrations, but the live databases currently have schema drift relative to `prisma/schema.prisma`. **Do not run `npm run prisma:push` against shared environments without checking what it wants to drop.** For schema changes, prefer raw SQL via the Neon console or a small `@neondatabase/serverless` script applied per environment.
+> **Note on `prisma db push`:** the project does not use Prisma migrations. **Do not run `npm run prisma:push` against shared environments** — it can drop columns and tables without warning. For schema changes, apply raw SQL per env via the Neon console or a small `@neondatabase/serverless` script. The drift check (below) will tell you if any env disagrees with `schema.prisma`.
+
+### Schema drift check
+
+`npm run db:check-drift` compares each env's live schema to `prisma/schema.prisma` and fails if anything differs from the approved baseline in `prisma/drift-baseline/`. It runs automatically on `git push`. When you intentionally change the schema (or directly modify a database), run `npm run db:approve-drift` to recapture the baselines, then commit them. See [`prisma/drift-baseline/README.md`](prisma/drift-baseline/README.md) for the full story.
 
 ### Common scripts
 
@@ -82,6 +86,8 @@ npm run type-check        # tsc --noEmit
 npm test                  # jest
 npm run smoke             # smoke tests only
 npm run verify            # type-check + tests + smoke (run by pre-push hook)
+npm run db:check-drift    # compare each env's schema to prisma/schema.prisma
+npm run db:approve-drift  # capture current diffs as the new baseline
 npm run prisma:studio     # browse the DB
 npm run pipeline          # run the pipeline manually against a project
 npm run seed:hydrate      # hydrate a demo project from a JSON bundle
