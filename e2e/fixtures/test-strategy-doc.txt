@@ -1,9 +1,0 @@
-Competitive Landscape Analysis - Restaurant Tech
-
-The restaurant technology market is fragmented, with most solutions targeting large chains. Small independent restaurants (1-5 locations) are underserved. Current tools are either too complex (enterprise POS systems) or too simple (basic spreadsheets).
-
-Key competitors include Toast (primarily POS), Square for Restaurants (payments-first), and MenuDrive (online ordering only). None offer integrated menu management with dynamic pricing recommendations.
-
-Customer research indicates three unmet needs: (1) real-time food cost tracking as supplier prices change, (2) menu performance analytics showing which items drive profit vs volume, and (3) automated pricing suggestions based on local market conditions.
-
-The primary barrier to adoption is trust — restaurant owners have been burned by technology promises before. Successful competitors win through peer referrals, not marketing. Our five pilot customers acquired through word of mouth confirm this pattern.

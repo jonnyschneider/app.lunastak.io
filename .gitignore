@@ -119,8 +119,9 @@ TECH_DILIGENCE_BRIEFING.md
 docs/*
 !docs/architecture/
 !docs/analytics/
+e2e/
 evals/
-scripts/seed/fixtures/
+scripts/
 
 
 
