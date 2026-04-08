@@ -208,6 +208,16 @@ export default function ProjectPage() {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
   const [isKnowledgeSummaryExpanded, setIsKnowledgeSummaryExpanded] = useState(false)
+  const vsoGuidanceKey = `vso-guidance-dismissed:${projectId}`
+  const [vsoGuidanceDismissed, setVsoGuidanceDismissed] = useState(true)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setVsoGuidanceDismissed(localStorage.getItem(vsoGuidanceKey) === '1')
+  }, [vsoGuidanceKey])
+  const dismissVsoGuidance = () => {
+    setVsoGuidanceDismissed(true)
+    try { localStorage.setItem(vsoGuidanceKey, '1') } catch {}
+  }
 
   const searchParams = useSearchParams()
   const evidenceOpen = searchParams.get('evidence') === '1'
@@ -915,12 +925,21 @@ export default function ProjectPage() {
                   </PopoverContent>
                 </Popover>
                 </div>
-                {!isDemo && (
-                  <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
-                    <p className="text-sm font-semibold mb-1">Your Vision, Strategy, and Objectives are ready.</p>
-                    <p className="text-sm text-muted-foreground">
-                      Review and edit anything inline. When you&apos;re happy, draft Opportunities with Luna, or head to the Knowledge tab to add more context before regenerating.
-                    </p>
+                {!isDemo && !vsoGuidanceDismissed && (
+                  <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold mb-1">Your Vision, Strategy, and Objectives are ready.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Review, edit, and add Opportunities and Principles as you go, or have Luna generate those too. Head to Knowledgebase to add more context before generating new strategy.
+                      </p>
+                    </div>
+                    <button
+                      onClick={dismissVsoGuidance}
+                      aria-label="Dismiss"
+                      className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
                 )}
                 <StrategyDisplay
