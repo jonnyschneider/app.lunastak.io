@@ -1416,6 +1416,7 @@ export default function ProjectPage() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImported={() => fetchProjectData()}
+        onGenerateStrategy={handleGenerateStrategy}
       />
 
       {/* Generation Confirm Dialog (refresh + opportunities) */}

@@ -95,10 +95,10 @@ export function Launchpad({
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4 flex items-center justify-between">
             <p className="text-sm">
-              You have <span className="font-semibold">{fragmentCount} fragments</span> ready to synthesise.
+              <span className="font-semibold">{fragmentCount} fragments</span> imported. Ready when you are — generate your Decision Stack to see Vision, Strategy, and Objectives.
             </p>
             <Button size="sm" onClick={onGenerateNow}>
-              Generate now
+              Generate strategy
             </Button>
           </CardContent>
         </Card>
