@@ -128,6 +128,21 @@ export default function StrategyViewPage() {
         {isGuest && <GuestSaveBanner />}
 
         <div className="max-w-6xl mx-auto">
+          {strategy && conversationId && projectId && !readOnly && (
+            <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <p className="text-sm font-semibold mb-1">Your Vision, Strategy, and Objectives are ready.</p>
+              <p className="text-sm text-muted-foreground">
+                Review and edit anything inline. When you&apos;re happy, head back to your{' '}
+                <button
+                  onClick={() => router.push(`/project/${projectId}`)}
+                  className="text-primary underline underline-offset-2 hover:text-primary/80"
+                >
+                  Decision Stack
+                </button>{' '}
+                to add Opportunities and Principles — or let Luna draft them for you.
+              </p>
+            </div>
+          )}
           {strategy && conversationId && projectId && (
             <StrategyDisplay
               strategy={strategy}

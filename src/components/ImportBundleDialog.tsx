@@ -16,6 +16,7 @@ interface ImportBundleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onImported: (result: { fragmentsCreated: number; questionsAdded: number }) => void
+  onGenerateStrategy?: () => void
 }
 
 export function ImportBundleDialog({
@@ -23,10 +24,12 @@ export function ImportBundleDialog({
   open,
   onOpenChange,
   onImported,
+  onGenerateStrategy,
 }: ImportBundleDialogProps) {
   const [jsonText, setJsonText] = useState('')
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [imported, setImported] = useState<{ fragmentsCreated: number; questionsAdded: number } | null>(null)
   const [preview, setPreview] = useState<{
     themes: number
     questions: number
@@ -89,8 +92,7 @@ export function ImportBundleDialog({
 
       const result = await res.json()
       toast.success(`Imported ${result.fragmentsCreated} fragments`)
-      onImported(result)
-      onOpenChange(false)
+      setImported(result)
       setJsonText('')
       setPreview(null)
     } catch (err) {
@@ -100,8 +102,54 @@ export function ImportBundleDialog({
     }
   }
 
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      // Defer parent refresh until dialog is being dismissed, so the success
+      // state isn't torn down by a parent re-render mid-flow.
+      if (imported) onImported(imported)
+      setImported(null)
+    }
+    onOpenChange(open)
+  }
+
+  if (imported) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Context import successful</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{imported.fragmentsCreated} fragments</span> added to your knowledge base
+              {imported.questionsAdded > 0 && <> — plus <span className="font-semibold text-foreground">{imported.questionsAdded} open questions</span> for Explore Next</>}.
+            </p>
+            <p className="text-sm">
+              Ready to generate your Decision Stack? Luna will synthesise your Vision, Strategy, and Objectives from everything you&apos;ve shared.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => handleClose(false)}>
+                Not yet
+              </Button>
+              {onGenerateStrategy && (
+                <Button
+                  onClick={() => {
+                    onGenerateStrategy()
+                    handleClose(false)
+                  }}
+                >
+                  Generate Decision Stack
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Import Context Bundle</DialogTitle>

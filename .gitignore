@@ -128,4 +128,10 @@ scripts/
 
 
 docs/backtest-sessions.md
-docs/gdrive
+docs/_external-files
+
+# DB dumps and backups — keep these out of the repo
+*.dump
+*.sql.gz
+prod-backup-*
+

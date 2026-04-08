@@ -15,6 +15,8 @@ import {
   Trash2,
   Pencil,
   Info,
+  BookOpen,
+  ShieldCheck,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -349,6 +351,21 @@ export function AppLayout({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                {/* Resources */}
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">Resources</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <a href="https://lunastak.io/docs" target="_blank" rel="noopener noreferrer">
+                    <BookOpen className="h-4 w-4" />
+                    Help &amp; docs
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="https://lunastak.io/docs/data-security" target="_blank" rel="noopener noreferrer">
+                    <ShieldCheck className="h-4 w-4" />
+                    How we handle your data
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {/* About section — branding + attribution */}
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">About</DropdownMenuLabel>
                 <div className="px-2 py-2 space-y-2">
@@ -390,6 +407,21 @@ export function AppLayout({
                     <User className="h-4 w-4" />
                     Sign in
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {/* Resources */}
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">Resources</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <a href="https://lunastak.io/docs" target="_blank" rel="noopener noreferrer">
+                    <BookOpen className="h-4 w-4" />
+                    Help &amp; docs
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="https://lunastak.io/docs/data-security" target="_blank" rel="noopener noreferrer">
+                    <ShieldCheck className="h-4 w-4" />
+                    How we handle your data
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-normal">About</DropdownMenuLabel>

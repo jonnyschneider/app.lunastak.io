@@ -10,4 +10,16 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+echo "Checking schema drift across envs..."
+npm run db:check-drift
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "Schema drift check failed. Push blocked."
+  echo ""
+  echo "Inspect the diff above. If the drift is intentional and you accept it,"
+  echo "run: npm run db:approve-drift  (then commit the updated baselines)."
+  exit 1
+fi
+
 echo "Verification passed. Pushing..."

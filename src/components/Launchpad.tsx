@@ -3,13 +3,18 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 // --- Shared onboarding cards (used in Launchpad + KB empty state) ---
 
@@ -95,10 +100,10 @@ export function Launchpad({
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4 flex items-center justify-between">
             <p className="text-sm">
-              You have <span className="font-semibold">{fragmentCount} fragments</span> ready to synthesise.
+              <span className="font-semibold">{fragmentCount} fragments</span> imported. Ready when you are — generate your Decision Stack to see Vision, Strategy, and Objectives.
             </p>
             <Button size="sm" onClick={onGenerateNow}>
-              Generate now
+              Generate strategy
             </Button>
           </CardContent>
         </Card>
@@ -108,6 +113,54 @@ export function Launchpad({
       <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
         <TalkToLunaCard onStartChat={onStartChat} />
         <ImportBundleCard onImportBundle={onImportBundle} />
+      </div>
+
+      {/* Data security hook */}
+      <div className="flex justify-center -mt-4">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground text-xs">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Curious about data security?
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 text-sm" align="center">
+            <div className="space-y-3">
+              <p className="font-semibold text-foreground">Your data, your control</p>
+              <ul className="space-y-2 text-foreground/80 text-[13px] leading-relaxed">
+                <li className="flex gap-2">
+                  <span aria-hidden>🔒</span>
+                  <span><strong>Encrypted, isolated database</strong> — your projects live in Neon Postgres, encrypted in transit and at rest.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>🚫</span>
+                  <span><strong>Never used to train AI models</strong> — Anthropic doesn&apos;t train Claude on your conversations.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>🗑️</span>
+                  <span><strong>Delete projects anytime</strong> — wipes everything in them, instantly.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>📄</span>
+                  <span><strong>Uploaded documents aren&apos;t kept</strong> — we extract the text and discard the file.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span aria-hidden>🛠️</span>
+                  <span><strong>Our skills run on your machine</strong> — they never send data to us until you upload a prepared bundle.</span>
+                </li>
+              </ul>
+              <a
+                href="https://lunastak.io/docs/data-security"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary underline underline-offset-2 hover:text-primary/80"
+              >
+                Read the full data &amp; privacy docs
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Acquired × Lunastak */}
