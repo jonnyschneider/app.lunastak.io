@@ -92,7 +92,6 @@ export function ImportBundleDialog({
 
       const result = await res.json()
       toast.success(`Imported ${result.fragmentsCreated} fragments`)
-      onImported(result)
       setImported(result)
       setJsonText('')
       setPreview(null)
@@ -104,7 +103,12 @@ export function ImportBundleDialog({
   }
 
   const handleClose = (open: boolean) => {
-    if (!open) setImported(null)
+    if (!open) {
+      // Defer parent refresh until dialog is being dismissed, so the success
+      // state isn't torn down by a parent re-render mid-flow.
+      if (imported) onImported(imported)
+      setImported(null)
+    }
     onOpenChange(open)
   }
 

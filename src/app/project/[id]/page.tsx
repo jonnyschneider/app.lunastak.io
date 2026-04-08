@@ -915,6 +915,14 @@ export default function ProjectPage() {
                   </PopoverContent>
                 </Popover>
                 </div>
+                {!isDemo && (
+                  <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                    <p className="text-sm font-semibold mb-1">Your Vision, Strategy, and Objectives are ready.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Review and edit anything inline. When you&apos;re happy, draft Opportunities with Luna, or head to the Knowledge tab to add more context before regenerating.
+                    </p>
+                  </div>
+                )}
                 <StrategyDisplay
                   strategy={strategyData.strategy}
                   conversationId={strategyData.conversationId}
