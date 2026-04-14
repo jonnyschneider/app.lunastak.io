@@ -1,8 +1,13 @@
 {
+  "bundleVersion": 1,
   "projectId": "cmn8an6ivpa0xoehj",
   "projectName": "Costco",
   "isDemo": true,
-  "exportedAt": "2026-04-02T00:41:54.223Z",
+  "demoSlug": "costco",
+  "description": null,
+  "exportedAt": "2026-04-14T09:56:29.593Z",
+  "knowledgeSummary": null,
+  "suggestedQuestions": [],
   "decisionStack": {
     "vision": "Prove that treating people right is the best business strategy",
     "visionElaboration": "Every decision Costco makes asks the same question: does this serve the member? Lowest prices, highest wages, best products. The business model is the proof that it works.",
@@ -660,6 +665,7 @@
         "Membership fee as multi-function mechanism: revenue, customer selection, retention driver, and psychological commitment device",
         "Low SKU count (3,800) concentrates volume to 10x per-product revenue versus Walmart, creating supplier leverage and operational simplicity"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International economics vs domestic",
@@ -682,8 +688,11 @@
           "description": "What are the actual margins and contribution economics of Costco Logistics (big-and-bulky) and costconext.com versus in-warehouse sales? Do these channels dilute or enhance overall economics?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 35
+      "fragmentCount": 35,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "CAPABILITIES_ASSETS",
@@ -697,6 +706,7 @@
         "Strategic intent prioritizes member value over short-term profit, with shareholders explicitly absent from code of ethics",
         "Cultural fragility as greatest risk—continuity depends on future leaders maintaining customer-first philosophy"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Digital and e-commerce capability development",
@@ -719,8 +729,11 @@
           "description": "What specific mechanisms ensure cultural continuity beyond the promote-from-within practice? The FedMart lineage will eventually end—what systems, training, or governance structures preserve the culture when direct mentorship chains break?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 22
+      "fragmentCount": 22,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "COMPETITIVE_LANDSCAPE",
@@ -734,6 +747,7 @@
         "Kirkland Signature credibility even in premium categories where brand traditionally matters",
         "Bezos-Sinegal meeting influencing Amazon's philosophy but not its structural model"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International competitive dynamics",
@@ -756,8 +770,11 @@
           "description": "Why has Walmart apparently deprioritized Sam's Club? Is this a permanent strategic choice or could they reinvest? What would it take for Sam's Club to close the execution gap?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 7
+      "fragmentCount": 7,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "CUSTOMER_MARKET",
@@ -771,6 +788,7 @@
         "Cultural portability: value proposition transcends geography and demographic cohorts",
         "Membership fee creates endowment effect, customer qualification, and retention lock beyond just revenue"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Customer acquisition economics and payback period",
@@ -793,8 +811,11 @@
           "description": "Do members maintain dual memberships with Sam's Club or BJ's? What drives switching between warehouse clubs? How does Amazon Prime membership overlap with Costco, and does it create competitive tension or complementary behavior?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 13
+      "fragmentCount": 13,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "DIFFERENTIATION_ADVANTAGE",
@@ -808,6 +829,7 @@
         "Interdependent trade-offs that break the entire system if any single element is compromised—warehouse format, bulk-only, membership gate, markup cap",
         "Process power embedded in buyer culture, supplier relationships, and four-generation leadership continuity that competitors have failed to replicate over 40+ years"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International replication challenges",
@@ -826,8 +848,11 @@
           "description": "How durable is the bulk-buying, warehouse-visit model with younger consumers who prioritize convenience, smaller living spaces, and on-demand delivery? What evidence exists about Gen Z and Millennial adoption patterns?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 40
+      "fragmentCount": 40,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "GO_TO_MARKET",
@@ -841,6 +866,7 @@
         "Domestic market consistently less saturated than management expects",
         "Membership model itself drives acquisition through member evangelism"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Member acquisition economics and payback period",
@@ -863,8 +889,11 @@
           "description": "What percentage of Costco's revenue comes from e-commerce (big-and-bulky plus costconext.com)? Is this growing, stable, or shrinking relative to warehouse sales?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 7
+      "fragmentCount": 7,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "PROBLEM_OPPORTUNITY",
@@ -876,6 +905,7 @@
         "Direct manufacturer-to-selling-floor distribution removes intermediary costs",
         "Sol Price's models became the blueprint for modern discount retail"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "What specific customer pain points drove the demand?",
@@ -894,8 +924,11 @@
           "description": "Did the core problem opportunity change or deepen as the model evolved through FedMart, Price Club, and Costco? Or was it the same problem with progressively better solutions?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "LOW",
-      "fragmentCount": 1
+      "fragmentCount": 1,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "PRODUCT_EXPERIENCE",
@@ -909,6 +942,7 @@
         "Concentration risk: single bad buying decision has disproportionate impact",
         "Format limitations: requires large suburban footprints, limiting urban penetration"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "How are SKU decisions actually made?",
@@ -931,8 +965,11 @@
           "description": "What happens when a curated item choice fails (quality issues, member rejection, supplier problems)? How quickly can Costco pivot given the concentration risk? Are there documented examples of major product missteps?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 5
+      "fragmentCount": 5,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "RISKS_CONSTRAINTS",
@@ -946,6 +983,7 @@
         "FedMart disaster as institutional memory—loss of cultural control destroys operating models regardless of brilliance",
         "Deliberate growth quality over velocity—returning 80% of net income to shareholders rather than forcing expansion faster than culture can absorb"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Succession planning beyond current leadership generation",
@@ -968,8 +1006,11 @@
           "description": "How are competitors responding to Costco's strategy of maintaining latent pricing power? Are there emerging threats from retailers who can match the model or exploit its constraints?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 15
+      "fragmentCount": 15,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "STRATEGIC_INTENT",
@@ -983,6 +1024,7 @@
         "Physical constraints on growth velocity as strategic feature",
         "Maximum consumer surplus as path to long-term shareholder value"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Explicit articulation of 'enough' profit",
@@ -1005,8 +1047,11 @@
           "description": "How does Costco operationalize 'high quality merchandise' in buyer decisions? What trade-offs exist between quality, price, and margin within the 14% cap? How is quality measured and enforced?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 22
+      "fragmentCount": 22,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "VALUE_PROPOSITION",
@@ -1020,6 +1065,7 @@
         "Kirkland Signature as the anti-brand: $52B CPG leader built on credibility, not marketing",
         "Universal appeal transcending demographics and cultures through fundamental value"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Member perception vs. objective value measurement",
@@ -1038,8 +1084,11 @@
           "description": "Where does the value proposition break down? What categories or customer segments does it NOT work for? What would cause members to perceive the value as diminished?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 12
+      "fragmentCount": 12,
+      "synthesisVersion": "v1"
     }
   ]
 }
