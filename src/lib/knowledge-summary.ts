@@ -43,6 +43,11 @@ Guidelines:
 - Keep it concise (150-300 words)
 - End on an encouraging note
 
+Plain-language constraint:
+- Use words an operator would say in a standup, not framework vocabulary lifted from the source (avoid academic terms like "paradox", "apex", "cornered resource", "wallet share", "lifecycle", "cohort").
+- Define specialist terms on first use with a short appositive ("Classiche, our certification program for older Ferraris" — not just "Classiche").
+- Question titles (in suggested_questions, dimension_gaps) follow the same rule: ≤8 words ideal, plain language, would survive being shared without context.
+
 Format your response:
 <summary>
 Your conversational summary here

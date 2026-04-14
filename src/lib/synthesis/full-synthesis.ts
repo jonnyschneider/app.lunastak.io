@@ -26,7 +26,7 @@ Synthesize these fragments into structured understanding:
 3. **Key Quotes** (3-5 quotes): Verbatim quotes that capture the essence. Use exact wording from fragments.
 
 4. **Gaps** (list of objects): What's missing? Each gap should have:
-   - "title": A punchy, attention-grabbing title (max 60 chars)
+   - "title": A punchy, attention-grabbing title (max 60 chars). Plain operational language — what an operator would say in a standup, not framework vocabulary from the source. ≤8 words ideal. Avoid academic terms like "paradox", "apex", "cohort", "lifecycle". Define specialist terms on first use ("Classiche, our certification program for older Ferraris").
    - "description": The full question or explanation of what's missing
 
 5. **Contradictions** (list): Are there conflicting fragments? Surface tensions, don't hide them.
