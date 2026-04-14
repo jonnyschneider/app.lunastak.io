@@ -1,8 +1,13 @@
 {
+  "bundleVersion": 1,
   "projectId": "cmn8anetr5kwlmbmq",
   "projectName": "Nike",
   "isDemo": true,
-  "exportedAt": "2026-04-02T00:41:54.129Z",
+  "demoSlug": "nike",
+  "description": null,
+  "exportedAt": "2026-04-14T09:56:28.771Z",
+  "knowledgeSummary": null,
+  "suggestedQuestions": [],
   "decisionStack": {
     "vision": "Make every body an athlete",
     "visionElaboration": "If you have a body, you are an athlete. Nike exists to serve every one of them — from Olympic champions to weekend joggers — with innovation that moves and a brand that inspires.",
@@ -674,6 +679,7 @@
         "Futures Program innovation shifted financing burden from banks to retail partners through advance commitments",
         "Power-law industry concentration unique in apparel, with Nike 2x larger than Adidas and extreme drop-off after that"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Unit economics of DTC vs wholesale channels",
@@ -696,8 +702,11 @@
           "description": "How does the Jordan brand actually operate financially within Nike? Is it a separate P&L? How are costs allocated between Jordan and Nike proper? At $6.6B revenue growing 35% annually, could Jordan operate as a standalone business, and what would its standalone valuation be?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 22
+      "fragmentCount": 22,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "CAPABILITIES_ASSETS",
@@ -711,6 +720,7 @@
         "Organizational tension between sport-specific athlete obsession and demographic/retail alignment",
         "Key talent as capability multipliers: Bowerman's innovation, Strasser's systematization, Hatfield's architectural design thinking"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Current innovation pipeline health and velocity",
@@ -733,8 +743,11 @@
           "description": "How has the fabless model evolved since Nissho Iwai? What's the concentration risk in the manufacturing partner ecosystem? How does Nike maintain quality and innovation control without owning production?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 18
+      "fragmentCount": 18,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "COMPETITIVE_LANDSCAPE",
@@ -747,6 +760,7 @@
         "Vulnerability to category blindness and niche disruption despite scale advantages",
         "Mid-market competitors like Under Armour caught between platform scale and focused differentiation"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International competitive dynamics beyond Adidas",
@@ -769,8 +783,11 @@
           "description": "How does control of distribution channels affect competitive position? What role do Foot Locker, Dick's, and other retailers play? Is Nike's DTC push changing this?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 9
+      "fragmentCount": 9,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "CUSTOMER_MARKET",
@@ -784,6 +801,7 @@
         "China risk: tension between social justice brand and CCP control threatens foundational market",
         "Category hubris danger: missing aerobics boom to Reebok showed peril of narrow market definition"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Geographic market breakdown beyond China",
@@ -806,8 +824,11 @@
           "description": "What does Nike know about customer lifetime value, repeat purchase rates, churn, or acquisition costs across different segments?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 9
+      "fragmentCount": 9,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "DIFFERENTIATION_ADVANTAGE",
@@ -821,6 +842,7 @@
         "Zero switching costs require continuous reinvestment—no structural lock-in",
         "Extreme power-law concentration in footwear unique among apparel categories"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "How does Nike's DTC transition affect differentiation?",
@@ -843,8 +865,11 @@
           "description": "On and Hoka are mentioned as competitors 'who lead with performance' but there's no analysis of whether their innovation-first approach can break Nike's flywheel, whether they can achieve sufficient scale, or what Nike's competitive response looks like."
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 32
+      "fragmentCount": 32,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "GO_TO_MARKET",
@@ -858,6 +883,7 @@
         "12-city strategy targeting street-level tastemakers drives deliberate pricing restraint",
         "Marketing as 'demand creation'—athlete acquisition flywheel mirrors Netflix content strategy"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International market penetration strategy",
@@ -880,8 +906,11 @@
           "description": "How does Nike orchestrate limited releases through SNKRS? What's the strategy behind artificial scarcity vs mass availability? How does resale market factor into planning?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 19
+      "fragmentCount": 19,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "PROBLEM_OPPORTUNITY",
@@ -894,6 +923,7 @@
         "Massive untapped opportunities in women's segment and China risk",
         "Scale paradox: $50B+ revenue 'when they technically don't make a single shoe'"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International market opportunity quantification",
@@ -912,8 +942,11 @@
           "description": "How are emerging competitors (Chinese brands, DTC startups, athleisure players like Lululemon, Hoka, On Running) redefining the opportunity or fragmenting Nike's addressable market?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 8
+      "fragmentCount": 8,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "PRODUCT_EXPERIENCE",
@@ -927,6 +960,7 @@
         "Digital ecosystem transforms product experience into ongoing relationship",
         "Product failures as learning moments that strengthen long-term partnerships"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Product development cycle and speed-to-market",
@@ -949,8 +983,11 @@
           "description": "What's the strategic framework for collaborations (Off-White, Travis Scott, etc.)? How do limited releases balance exclusivity with accessibility?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 7
+      "fragmentCount": 7,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "RISKS_CONSTRAINTS",
@@ -964,6 +1001,7 @@
         "Organizational restructuring risks losing athlete-obsessed niche focus that built the brand",
         "Category hubris and product missteps can create near-death competitive threats"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Quantified financial risk exposure from DTC transition",
@@ -986,8 +1024,11 @@
           "description": "How does Nike measure brand health beyond revenue? What are the leading indicators that would signal brand erosion before it shows up in financials?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 19
+      "fragmentCount": 19,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "STRATEGIC_INTENT",
@@ -1001,6 +1042,7 @@
         "Offense-always culture: 'Our business is change. We are on offense all the time'",
         "Three-pillar architecture: sports marketing, creative financing, outsourced manufacturing"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "International expansion strategy evolution",
@@ -1023,8 +1065,11 @@
           "description": "What is the strategic intent around leadership development and succession? How does Nike ensure strategic continuity when moving from insular culture to external CEO and back?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 17
+      "fragmentCount": 17,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "VALUE_PROPOSITION",
@@ -1038,6 +1083,7 @@
         "Marketing as demand creation—$4 billion annual spend transforms sponsorships into economic value, not just promotion",
         "The swoosh as ultimate intangible asset—brand power that differentiates commodity products and creates collectible culture"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Value proposition evolution and lifecycle management",
@@ -1060,8 +1106,11 @@
           "description": "What is the actual price premium Nike commands versus competitors, and how does this vary by product category and customer segment? How does deliberate pricing restraint balance accessibility with premium positioning?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 19
+      "fragmentCount": 19,
+      "synthesisVersion": "v1"
     }
   ]
 }
