@@ -74,6 +74,7 @@ const DEMO_PROJECTS = [
   { id: 'cmn8anetr5kwlmbmq', name: 'Nike', logo: '/logo-nike.svg', logoHeight: 'h-14', description: 'Scale economies and brand power', episodeUrl: 'https://www.acquired.fm/episodes/nike' },
   { id: 'cmn8an6ivpa0xoehj', name: 'Costco', logo: '/logo-costco.svg', logoHeight: 'h-14', description: 'Scale economies shared', episodeUrl: 'https://www.acquired.fm/episodes/costco' },
   { id: 'cmn8anbaapaww1709', name: 'TSMC', logo: '/logo-tsmc.svg', logoHeight: 'h-14', description: 'Process power and counter-positioning', episodeUrl: 'https://www.acquired.fm/episodes/tsmc' },
+  { id: 'cmnxrkvuv0094ow1betk3sjzr', name: 'Ferrari', logo: '/logo-ferrari.svg', logoHeight: 'h-14', description: 'Cornered resource and brand power', episodeUrl: 'https://www.acquired.fm/episodes/ferrari' },
 ]
 
 interface LaunchpadProps {
@@ -178,7 +179,7 @@ export function Launchpad({
           </p>
         </div>
 
-        <div className="grid gap-4 grid-cols-3 max-w-lg mx-auto mb-5">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mb-5">
           {DEMO_PROJECTS.map((demo) => (
             <div
               key={demo.id}

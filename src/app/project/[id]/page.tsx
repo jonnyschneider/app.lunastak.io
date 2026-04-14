@@ -77,6 +77,7 @@ const DEMO_META: Record<string, { name: string; logo: string }> = {
   'cmn8anetr5kwlmbmq': { name: 'Nike', logo: '/logo-nike.svg' },
   'cmn8an6ivpa0xoehj': { name: 'Costco', logo: '/logo-costco.svg' },
   'cmn8anbaapaww1709': { name: 'TSMC', logo: '/logo-tsmc.svg' },
+  'cmnxrkvuv0094ow1betk3sjzr': { name: 'Ferrari', logo: '/logo-ferrari.svg' },
 }
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -383,6 +384,10 @@ export default function ProjectPage() {
                 logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
                 router.push('/project/cmn8anbaapaww1709')
               }}>TSMC</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmnxrkvuv0094ow1betk3sjzr', demo: 'Ferrari' })
+                router.push('/project/cmnxrkvuv0094ow1betk3sjzr')
+              }}>Ferrari</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -884,6 +889,7 @@ export default function ProjectPage() {
                         'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
                         'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
                         'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
+                        'cmnxrkvuv0094ow1betk3sjzr': 'https://www.acquired.fm/episodes/ferrari',
                       }
                       const episodeUrl = episodeUrls[projectId]
                       return (
