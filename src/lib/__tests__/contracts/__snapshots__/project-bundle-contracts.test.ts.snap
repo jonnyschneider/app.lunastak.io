@@ -1,0 +1,302 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Project Bundle contracts schema shape JSON Schema is stable (snapshot) 1`] = `
+{
+  "$ref": "#/definitions/ProjectBundle",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ProjectBundle": {
+      "additionalProperties": false,
+      "properties": {
+        "bundleVersion": {
+          "const": 1,
+          "type": "number",
+        },
+        "decisionStack": {
+          "additionalProperties": false,
+          "properties": {
+            "objectives": {
+              "items": {
+                "additionalProperties": true,
+                "properties": {
+                  "id": {
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "id",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+            "opportunities": {
+              "items": {
+                "additionalProperties": true,
+                "properties": {
+                  "id": {
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "id",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+            "principles": {
+              "items": {
+                "additionalProperties": true,
+                "properties": {
+                  "id": {
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "id",
+                ],
+                "type": "object",
+              },
+              "type": "array",
+            },
+            "strategy": {
+              "type": "string",
+            },
+            "strategyElaboration": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "vision": {
+              "type": "string",
+            },
+            "visionElaboration": {
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+          },
+          "required": [
+            "vision",
+            "visionElaboration",
+            "strategy",
+            "strategyElaboration",
+            "objectives",
+            "opportunities",
+            "principles",
+          ],
+          "type": "object",
+        },
+        "demoSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "description": {
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "exportedAt": {
+          "format": "date-time",
+          "type": "string",
+        },
+        "fragments": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW",
+                    ],
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+              "content": {
+                "type": "string",
+              },
+              "contentType": {
+                "type": "string",
+              },
+              "sourceType": {
+                "type": "string",
+              },
+              "title": {
+                "type": [
+                  "string",
+                  "null",
+                ],
+              },
+            },
+            "required": [
+              "title",
+              "content",
+              "contentType",
+              "confidence",
+              "sourceType",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "isDemo": {
+          "type": "boolean",
+        },
+        "knowledgeSummary": {
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "projectId": {
+          "minLength": 1,
+          "type": "string",
+        },
+        "projectName": {
+          "minLength": 1,
+          "type": "string",
+        },
+        "suggestedQuestions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "type": "string",
+              },
+              "title": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "title",
+              "description",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "syntheses": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "type": "string",
+              },
+              "contradictions": {
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "dimension": {
+                "type": "string",
+              },
+              "fragmentCount": {
+                "minimum": 0,
+                "type": "integer",
+              },
+              "gaps": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "type": "string",
+                    },
+                    "title": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "title",
+                    "description",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "keyQuotes": {
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "keyThemes": {
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "subdimensions": {
+                "anyOf": [
+                  {},
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+              "summary": {
+                "type": [
+                  "string",
+                  "null",
+                ],
+              },
+              "synthesisVersion": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "dimension",
+              "summary",
+              "keyThemes",
+              "keyQuotes",
+              "gaps",
+              "contradictions",
+              "confidence",
+              "fragmentCount",
+              "synthesisVersion",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "bundleVersion",
+        "projectId",
+        "projectName",
+        "isDemo",
+        "demoSlug",
+        "description",
+        "exportedAt",
+        "knowledgeSummary",
+        "suggestedQuestions",
+        "decisionStack",
+        "fragments",
+        "syntheses",
+      ],
+      "type": "object",
+    },
+  },
+}
+`;

@@ -11,6 +11,10 @@ import {
   VISION_GUIDELINES, VISION_XML_FORMAT,
   STRATEGY_GUIDELINES, STRATEGY_XML_FORMAT,
 } from '@/lib/prompts/shared/vision-strategy'
+import {
+  PLAIN_LANGUAGE_TITLE_GUIDANCE,
+  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
+} from '@/lib/prompts/shared/plain-language'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import type { StrategyStatements, Objective, Opportunity, SuccessMetric } from '@/lib/types'
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
@@ -230,7 +234,9 @@ export async function runRefreshGeneration(
 
   const newStatements: StrategyStatements = {
     vision: vision || previousStatements.vision,
+    visionExplainer: visionElaboration ?? previousStatements.visionExplainer,
     strategy: strategy || previousStatements.strategy,
+    strategyExplainer: strategyElaboration ?? previousStatements.strategyExplainer,
     objectives,
     opportunities: previousStatements.opportunities || [],
     principles: previousStatements.principles || [],
@@ -400,7 +406,9 @@ export async function runInitialGeneration(
 
   const statements: StrategyStatements = {
     vision: vision || '',
+    visionExplainer: visionElaboration,
     strategy: strategy || '',
+    strategyExplainer: strategyElaboration,
     objectives,
     opportunities: [],
     principles: [],
@@ -532,6 +540,10 @@ Generate 3-5 strategic opportunities. Each opportunity must:
 - Map to one or more existing objectives (by ID)
 - Have a clear title and description (2-3 sentences)
 - Include exactly ONE success metric with a belief hypothesis
+
+${PLAIN_LANGUAGE_TITLE_GUIDANCE}
+
+${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
 
 The UI renders the belief as: "We believe [action] will [outcome]"
 So action and outcome must read naturally after those lead-in words. Keep each to 8-20 words.

@@ -3,6 +3,7 @@
  * Shared objective format guidelines and XML templates.
  * Used by both generation and refresh-strategy prompts.
  */
+import { PLAIN_LANGUAGE_TITLE_GUIDANCE, PLAIN_LANGUAGE_EXPLAINER_GUIDANCE } from './plain-language'
 
 export const OBJECTIVE_GUIDELINES = `## Objectives Guidelines
 
@@ -35,7 +36,11 @@ They should be ambitious enough that 12-18 months isn't enough to fully achieve 
 - Bad: "Context relevance score (user-rated) and connection rate" - TOO VERBOSE
 - Bad: "TBD - need to establish measurement → 8+ relevance score" - measurement detail, not a metric name
 
-NOTE: Specific measurements (baseline → target) belong on Opportunities, not Objectives. Keep OMTM simple.`
+NOTE: Specific measurements (baseline → target) belong on Opportunities, not Objectives. Keep OMTM simple.
+
+${PLAIN_LANGUAGE_TITLE_GUIDANCE}
+
+${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}`
 
 export const OBJECTIVE_XML_FORMAT = `<objectives>
     <objective>

@@ -15,7 +15,20 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `In a business strategy context, someone has said "${priority}" is their top priority. What's the mutually exclusive opposite they're implicitly deprioritizing? Reply with ONLY the opposite (2-4 words, no explanation).`,
+          content: `In a business strategy context, someone has said "${priority}" is their top priority. What's the legitimate trade-off they're implicitly deprioritizing?
+
+The deprioritized side must be something a well-run company would credibly choose — a real virtue, not a pejorative or obvious bad. Principles capture "good vs good" trade-offs, not "good vs bad."
+
+Examples of well-formed pairs:
+- Priority: Ubiquity → Deprioritized: Premium pricing
+- Priority: Curation → Deprioritized: Selection
+- Priority: Investing in people → Deprioritized: Minimising labour costs
+- Priority: Pure-play trust → Deprioritized: Vertical integration
+- Priority: Scarcity → Deprioritized: Volume growth
+
+Avoid pejorative framings like "trend-following", "easy revenue", "over-production", "cutting corners" — these collapse the trade-off into a false choice every reader can already identify.
+
+Reply with ONLY the deprioritized side (2-4 words, no explanation).`,
         },
       ],
     }, 'suggest_opposite');

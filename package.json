@@ -1,6 +1,6 @@
 {
   "name": "lunastak",
-  "version": "2.4.3",
+  "version": "2.4.4",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -23,9 +23,9 @@
     "regen:remote": "tsx scripts/regenerate-remote.ts",
     "pipeline": "tsx scripts/run-pipeline.ts",
     "backfill:extraction": "tsx scripts/backfill-extraction.ts",
-    "seed:hydrate": "tsx scripts/seed/hydrate.ts",
-    "seed:export": "tsx scripts/seed/export.ts",
-    "seed:validate": "tsx scripts/seed/validate.ts",
+    "bundle:export": "tsx tools/project-bundle/export.ts",
+    "bundle:restore": "tsx tools/project-bundle/restore.ts",
+    "bundle:validate": "tsx tools/project-bundle/validate.ts",
     "prepare": "husky",
     "e2e": "playwright test",
     "e2e:report": "playwright show-report"
@@ -100,6 +100,7 @@
     "shadcn": "^3.6.2",
     "tailwindcss": "^3.3.0",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod-to-json-schema": "^3.25.2"
   }
 }

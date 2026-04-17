@@ -1,8 +1,13 @@
 {
+  "bundleVersion": 1,
   "projectId": "cmn8anbaapaww1709",
   "projectName": "TSMC",
   "isDemo": true,
-  "exportedAt": "2026-04-02T00:41:54.303Z",
+  "demoSlug": "tsmc",
+  "description": null,
+  "exportedAt": "2026-04-14T09:56:30.327Z",
+  "knowledgeSummary": null,
+  "suggestedQuestions": [],
   "decisionStack": {
     "vision": "Make the future computable",
     "visionElaboration": "Every significant computing advance — phones, AI, autonomous vehicles — runs through TSMC's fabs. By making the world's most advanced chips, TSMC makes the future possible.",
@@ -650,6 +655,7 @@
         "Profit concentration: 95%+ of industry profits despite 50% market share",
         "Unconventional founding: zero founder equity, government-backed, yet built world's 9th most valuable company"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Customer contract economics and lock-in mechanisms",
@@ -676,8 +682,11 @@
           "description": "How do yield rates translate into margin differences? What is the economic impact of yield improvements over a node's lifecycle? How do yields compare to competitors?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 17
+      "fragmentCount": 17,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "CAPABILITIES_ASSETS",
@@ -691,6 +700,7 @@
         "The fundamental question of whether process power is place-bound or portable",
         "Marriage of scale economies and process power creating a moat greater than either alone"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Post-Morris leadership capabilities and succession depth",
@@ -713,8 +723,11 @@
           "description": "The Arizona and Japan fabs are described as tests of whether process power is portable, but what are the actual performance metrics emerging from these facilities? Are yields, ramp times, and quality comparable to Taiwan operations?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 18
+      "fragmentCount": 18,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "COMPETITIVE_LANDSCAPE",
@@ -728,6 +741,7 @@
         "Competitor structural handicaps: Samsung's customer conflicts, Intel's strategic errors, China's knowledge gap",
         "Only existential threat is complete computing paradigm shift rendering current manufacturing knowledge obsolete"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Emerging foundry competitors outside US/Taiwan/Korea",
@@ -750,8 +764,11 @@
           "description": "Who are the competitors at mature/trailing process nodes and what is the competitive landscape for non-leading-edge manufacturing where TSMC doesn't dominate?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 19
+      "fragmentCount": 19,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "CUSTOMER_MARKET",
@@ -765,6 +782,7 @@
         "Intentional invisibility -- no consumer brand, only B2B relationships",
         "TSMC as 'index' on semiconductor entrepreneurship and innovation"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Customer profitability segmentation",
@@ -791,8 +809,11 @@
           "description": "What do TSMC customer contracts look like? Are there volume commitments, exclusivity clauses, pricing mechanisms, or capacity guarantees? How long are typical contract terms?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 11
+      "fragmentCount": 11,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "DIFFERENTIATION_ADVANTAGE",
@@ -806,6 +827,7 @@
         "Ecosystem lock-in through 'open innovation platform' integration with EDA tools and IP companies",
         "Winner-take-all dynamics—from 22 competitors at leading edge to potentially 1 at 3nm"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Quantified switching cost economics",
@@ -828,8 +850,11 @@
           "description": "What specific strategies are Samsung, Intel, and others pursuing to close the gap? Why haven't they succeeded, and what would it take for them to catch up?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 31
+      "fragmentCount": 31,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "GO_TO_MARKET",
@@ -842,6 +867,7 @@
         "Learning curve pricing: automatic quarterly price reductions to drive volume and market share",
         "Geographic expansion driven by government subsidies rather than pure business logic"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Evolution beyond Morris's personal relationships",
@@ -864,8 +890,11 @@
           "description": "Is the Arizona/Japan expansion purely subsidy-driven or is there a coherent strategic rationale? How do these facilities fit into the broader go-to-market approach?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 5
+      "fragmentCount": 5,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "PROBLEM_OPPORTUNITY",
@@ -879,6 +908,7 @@
         "Global chip shortage revealed TSMC's criticality across all industries",
         "Only existential threat is complete computing paradigm shift"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Why did IDMs initially resist the foundry model?",
@@ -901,8 +931,11 @@
           "description": "Beyond 'golden opportunities ahead,' what internal crisis or external threat prompted the board to bring back a 78-year-old retired CEO? What was the specific problem he was brought back to solve?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 9
+      "fragmentCount": 9,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "PRODUCT_EXPERIENCE",
@@ -914,6 +947,7 @@
         "Open innovation platform creating ecosystem lock-in beyond traditional switching costs",
         "Deep integration with EDA tools and IP companies as product differentiation"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Customer experience of working with TSMC",
@@ -936,8 +970,11 @@
           "description": "How has the ecosystem integration strategy evolved over time? When did TSMC start building this platform, and how has it changed the product experience?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "MEDIUM",
-      "fragmentCount": 3
+      "fragmentCount": 3,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "RISKS_CONSTRAINTS",
@@ -951,6 +988,7 @@
         "Only existential threat is complete computing paradigm shift",
         "Physical limits approaching as Moore's Law slows"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Succession risk after Morris Chang",
@@ -973,8 +1011,11 @@
           "description": "What happens if a major recession reduces demand while TSMC is mid-cycle on $100 billion in capital commitments? How much financial flexibility exists to weather downturns given the capital intensity treadmill?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 21
+      "fragmentCount": 21,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "STRATEGIC_INTENT",
@@ -988,6 +1029,7 @@
         "Strategic decisions driven by long-term vision, not short-term pricing or returns",
         "Concentration creates both vulnerability and protection: the 'silicon shield' paradox"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Evolution of strategic intent over time",
@@ -1010,8 +1052,11 @@
           "description": "TSMC partners with ASML for lithography equipment. What is the strategic intent regarding which capabilities to develop in-house vs. rely on partners? Where are the boundaries of the pure-play model?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 13
+      "fragmentCount": 13,
+      "synthesisVersion": "v1"
     },
     {
       "dimension": "VALUE_PROPOSITION",
@@ -1024,6 +1069,7 @@
         "Evolution from adequate to best-in-world manufacturing that even IDMs cannot match",
         "Convergence point in semiconductor value chain where all innovation flows through"
       ],
+      "keyQuotes": [],
       "gaps": [
         {
           "title": "Customer economics and pricing model",
@@ -1046,8 +1092,11 @@
           "description": "What specific performance, cost, or time-to-market improvements do customers achieve through TSMC? Are there concrete examples of products that wouldn't exist or would be significantly worse without TSMC manufacturing?"
         }
       ],
+      "contradictions": [],
+      "subdimensions": null,
       "confidence": "HIGH",
-      "fragmentCount": 10
+      "fragmentCount": 10,
+      "synthesisVersion": "v1"
     }
   ]
 }
