@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { SessionProvider } from '../SessionProvider'
 
 // Mock NextAuth SessionProvider
-jest.mock('next-auth/react', () => ({
+vi.mock('next-auth/react', () => ({
   SessionProvider: ({ children, session }: any) => (
     <div data-testid="next-auth-provider" data-session={JSON.stringify(session)}>
       {children}

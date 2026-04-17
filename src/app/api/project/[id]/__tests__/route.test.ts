@@ -14,47 +14,47 @@
 
 import { GET } from '../route'
 
-const mockFindFirstProject = jest.fn()
-const mockFindUniqueUser = jest.fn()
-const mockCookieGet = jest.fn()
-const mockCookieSet = jest.fn()
-const mockGetServerSession = jest.fn()
-const mockCreateGuestUser = jest.fn()
-const mockIsGuestUser = jest.fn()
+const mockFindFirstProject = vi.fn()
+const mockFindUniqueUser = vi.fn()
+const mockCookieGet = vi.fn()
+const mockCookieSet = vi.fn()
+const mockGetServerSession = vi.fn()
+const mockCreateGuestUser = vi.fn()
+const mockIsGuestUser = vi.fn()
 
-jest.mock('next/headers', () => ({
-  cookies: jest.fn(async () => ({
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({
     get: mockCookieGet,
     set: mockCookieSet,
   })),
 }))
 
-jest.mock('next-auth/next', () => ({
+vi.mock('next-auth/next', () => ({
   getServerSession: (...args: unknown[]) => mockGetServerSession(...args),
 }))
 
-jest.mock('@/lib/auth', () => ({ authOptions: {} }))
+vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 
-jest.mock('@/lib/db', () => ({
+vi.mock('@/lib/db', () => ({
   prisma: {
     project: { findFirst: (...args: unknown[]) => mockFindFirstProject(...args) },
     user: { findUnique: (...args: unknown[]) => mockFindUniqueUser(...args) },
   },
 }))
 
-jest.mock('@/lib/projects', () => ({
+vi.mock('@/lib/projects', () => ({
   isGuestUser: (...args: unknown[]) => mockIsGuestUser(...args),
   createGuestUser: (...args: unknown[]) => mockCreateGuestUser(...args),
 }))
 
-jest.mock('@/lib/constants/dimensions', () => ({ TIER_1_DIMENSIONS: [] }))
+vi.mock('@/lib/constants/dimensions', () => ({ TIER_1_DIMENSIONS: [] }))
 
 const makeParams = (id: string) => ({ params: Promise.resolve({ id }) })
 const req = () => new Request('http://localhost/api/project/demo-1')
 
 describe('GET /api/project/[id] — demo deep-link fallback', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockGetServerSession.mockResolvedValue(null)
     mockCookieGet.mockReturnValue(undefined)
   })

@@ -27,45 +27,45 @@ import {
 } from './fixtures/ai-responses';
 
 // Mock Prisma
-jest.mock('@/lib/db', () => ({
+vi.mock('@/lib/db', () => ({
   prisma: {
     conversation: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
     },
     message: {
-      create: jest.fn(),
-      findMany: jest.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
     },
     trace: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
     fragment: {
-      create: jest.fn(),
-      findMany: jest.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
     },
     fragmentDimensionTag: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
     generatedOutput: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
     extractionRun: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
     dimensionalSynthesis: {
-      createMany: jest.fn(),
-      findMany: jest.fn(),
+      createMany: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
 
 // Mock Claude API
-jest.mock('@/lib/claude', () => ({
+vi.mock('@/lib/claude', () => ({
   anthropic: {
     messages: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
   },
   CLAUDE_MODEL: 'claude-sonnet-4-5-20250929',
@@ -73,7 +73,7 @@ jest.mock('@/lib/claude', () => ({
 
 describe('Smoke Test: Critical Path', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Step 1: Extraction produces valid contract', () => {
@@ -187,7 +187,7 @@ describe('Smoke Test: Critical Path', () => {
 
 describe('Smoke Test: Document Upload Path', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Step 1: Document upload creates valid record', () => {

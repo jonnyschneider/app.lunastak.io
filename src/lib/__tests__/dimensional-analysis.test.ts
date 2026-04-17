@@ -324,18 +324,22 @@ describe('Dimensional Analysis Parsing', () => {
 });
 
 // Mock the Claude module to avoid Anthropic SDK initialization
-jest.mock('@/lib/claude', () => ({
+vi.mock('@/lib/claude', () => ({
   anthropic: {
     messages: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
   },
   CLAUDE_MODEL: 'claude-sonnet-4-20250514',
 }));
 
 describe('computeDimensionalCoverageFromInline', () => {
-  // Import after mocking
-  const { computeDimensionalCoverageFromInline } = require('@/lib/dimensional-analysis');
+  // Import after mocking — use dynamic import for Vitest alias resolution
+  let computeDimensionalCoverageFromInline: any
+  beforeAll(async () => {
+    const mod = await import('@/lib/dimensional-analysis')
+    computeDimensionalCoverageFromInline = mod.computeDimensionalCoverageFromInline
+  })
 
   it('should compute coverage from themes with inline dimensions', () => {
     const themes = [

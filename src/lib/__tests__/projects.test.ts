@@ -6,27 +6,27 @@
 import { isGuestUser } from '@/lib/projects'
 
 // Mock Prisma for database operations
-jest.mock('@/lib/db', () => ({
+vi.mock('@/lib/db', () => ({
   prisma: {
     user: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     project: {
-      create: jest.fn(),
-      findFirst: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
-      updateMany: jest.fn(),
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      updateMany: vi.fn(),
     },
     conversation: {
-      updateMany: jest.fn(),
+      updateMany: vi.fn(),
     },
     trace: {
-      updateMany: jest.fn(),
+      updateMany: vi.fn(),
     },
     dimensionalSynthesis: {
-      createMany: jest.fn(),
+      createMany: vi.fn(),
     },
   },
 }))
@@ -58,18 +58,18 @@ describe('Guest User Isolation', () => {
 
   describe('createGuestUser', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
+      vi.clearAllMocks()
     })
 
     it('should create user with guest email pattern', async () => {
-      const { prisma } = require('@/lib/db')
+      const { prisma } = await import('@/lib/db')
       const mockUser = {
         id: 'test-user-id',
         email: 'guest_abc123@guest.lunastak.io',
       }
-      prisma.user.create.mockResolvedValue(mockUser)
+      ;(prisma.user.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser)
 
-      const { createGuestUser } = require('@/lib/projects')
+      const { createGuestUser } = await import('@/lib/projects')
       const result = await createGuestUser()
 
       expect(prisma.user.create).toHaveBeenCalledTimes(1)
@@ -81,15 +81,15 @@ describe('Guest User Isolation', () => {
     })
 
     it('should generate unique IDs for each guest', async () => {
-      const { prisma } = require('@/lib/db')
+      const { prisma } = await import('@/lib/db')
       const emails: string[] = []
 
-      prisma.user.create.mockImplementation(({ data }: any) => {
+      ;(prisma.user.create as ReturnType<typeof vi.fn>).mockImplementation(({ data }: any) => {
         emails.push(data.email)
         return Promise.resolve({ id: 'id', email: data.email })
       })
 
-      const { createGuestUser } = require('@/lib/projects')
+      const { createGuestUser } = await import('@/lib/projects')
       await createGuestUser()
       await createGuestUser()
       await createGuestUser()
@@ -101,22 +101,21 @@ describe('Guest User Isolation', () => {
 
   describe('getOrCreateDefaultProject', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
-      // Reset module to clear any cached state
-      jest.resetModules()
+      vi.clearAllMocks()
+      vi.resetModules()
     })
 
     it('should create guest user with empty project when userId is null', async () => {
-      const { prisma } = require('@/lib/db')
+      const { prisma } = await import('@/lib/db')
       const mockGuestUser = { id: 'guest-user-id', email: 'guest_abc@guest.lunastak.io' }
       const mockProject = { id: 'empty-project-id', name: 'My Strategy', userId: 'guest-user-id' }
 
-      prisma.user.create.mockResolvedValue(mockGuestUser)
-      prisma.project.create.mockResolvedValue(mockProject)
-      prisma.dimensionalSynthesis.createMany.mockResolvedValue({ count: 11 })
-      prisma.project.findUniqueOrThrow.mockResolvedValue(mockProject)
+      ;(prisma.user.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockGuestUser)
+      ;(prisma.project.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockProject)
+      ;(prisma.dimensionalSynthesis.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 11 })
+      ;(prisma.project.findUniqueOrThrow as ReturnType<typeof vi.fn>).mockResolvedValue(mockProject)
 
-      const { getOrCreateDefaultProject } = require('@/lib/projects')
+      const { getOrCreateDefaultProject } = await import('@/lib/projects')
       const result = await getOrCreateDefaultProject(null)
 
       expect(result.isGuest).toBe(true)
@@ -128,12 +127,12 @@ describe('Guest User Isolation', () => {
     })
 
     it('should return existing project for authenticated user', async () => {
-      const { prisma } = require('@/lib/db')
+      const { prisma } = await import('@/lib/db')
       const mockProject = { id: 'existing-project', name: 'My Strategy', userId: 'auth-user-id' }
 
-      prisma.project.findFirst.mockResolvedValue(mockProject)
+      ;(prisma.project.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockProject)
 
-      const { getOrCreateDefaultProject } = require('@/lib/projects')
+      const { getOrCreateDefaultProject } = await import('@/lib/projects')
       const result = await getOrCreateDefaultProject('auth-user-id')
 
       expect(result.isGuest).toBe(false)
@@ -143,13 +142,13 @@ describe('Guest User Isolation', () => {
     })
 
     it('should create new project for authenticated user without existing project', async () => {
-      const { prisma } = require('@/lib/db')
+      const { prisma } = await import('@/lib/db')
       const mockProject = { id: 'new-project', name: 'My Strategy', userId: 'auth-user-id' }
 
-      prisma.project.findFirst.mockResolvedValue(null)
-      prisma.project.create.mockResolvedValue(mockProject)
+      ;(prisma.project.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null)
+      ;(prisma.project.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockProject)
 
-      const { getOrCreateDefaultProject } = require('@/lib/projects')
+      const { getOrCreateDefaultProject } = await import('@/lib/projects')
       const result = await getOrCreateDefaultProject('auth-user-id')
 
       expect(result.isGuest).toBe(false)
