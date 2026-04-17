@@ -28,6 +28,7 @@ export function ImportBundleDialog({
 }: ImportBundleDialogProps) {
   const [jsonText, setJsonText] = useState('')
   const [importing, setImporting] = useState(false)
+  const [importPhase, setImportPhase] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [imported, setImported] = useState<{ fragmentsCreated: number; questionsAdded: number } | null>(null)
   const [preview, setPreview] = useState<{
@@ -77,13 +78,23 @@ export function ImportBundleDialog({
     if (!jsonText.trim() || error) return
 
     setImporting(true)
+    setImportPhase(`Tagging ${preview?.themes || 0} chunks with Luna's dimensions...`)
     try {
       const bundle = JSON.parse(jsonText)
+
+      // Advance phase after a short delay — LLM tagging is the slow part,
+      // fragment creation is now bulk and fast.
+      const phaseTimer = setTimeout(() => {
+        setImportPhase('Creating fragments...')
+      }, 8000)
+
       const res = await fetch(`/api/project/${projectId}/import-bundle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bundle),
       })
+
+      clearTimeout(phaseTimer)
 
       if (!res.ok) {
         const data = await res.json()
@@ -91,14 +102,22 @@ export function ImportBundleDialog({
       }
 
       const result = await res.json()
-      toast.success(`Imported ${result.fragmentsCreated} fragments`)
+      toast.success(`Imported ${result.fragmentsCreated} fragments`, {
+        description: result.questionsAdded > 0
+          ? `Plus ${result.questionsAdded} open questions for Explore Next`
+          : undefined,
+      })
       setImported(result)
       setJsonText('')
       setPreview(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import failed')
+      const message = err instanceof Error ? err.message : 'Import failed'
+      setError(message.includes('fetch') || message.includes('network')
+        ? 'Connection lost during import. Your data is safe — try again.'
+        : message)
     } finally {
       setImporting(false)
+      setImportPhase(null)
     }
   }
 
@@ -209,7 +228,7 @@ export function ImportBundleDialog({
               {importing ? (
                 <>
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Importing...
+                  {importPhase || 'Importing...'}
                 </>
               ) : (
                 'Import'

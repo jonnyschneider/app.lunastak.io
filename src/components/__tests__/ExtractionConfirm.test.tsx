@@ -4,14 +4,14 @@ import { EmergentExtractedContext, PrescriptiveExtractedContext } from '@/lib/ty
 
 describe('ExtractionConfirm', () => {
   const mockCallbacks = {
-    onGenerate: jest.fn(),
-    onContinue: jest.fn(),
-    onFlagForLater: jest.fn(),
-    onDismiss: jest.fn(),
+    onGenerate: vi.fn(),
+    onContinue: vi.fn(),
+    onFlagForLater: vi.fn(),
+    onDismiss: vi.fn(),
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('renders emergent variant with themes', () => {

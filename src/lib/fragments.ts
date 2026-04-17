@@ -3,6 +3,7 @@
  */
 
 import { prisma } from '@/lib/db'
+import { randomUUID } from 'crypto'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { EmergentThemeContract } from '@/lib/contracts/extraction'
 
@@ -166,47 +167,68 @@ export async function createFragmentsFromDocument(
 }
 
 /**
- * Create multiple fragments from imported themes (context bundles)
+ * Create multiple fragments from imported themes (context bundles).
+ *
+ * Uses bulk createMany for fragments and dimension tags — 2 INSERT
+ * statements instead of N individual transactions. This keeps import
+ * fast even for large bundles (60+ chunks).
  */
 export async function createFragmentsFromImport(
   projectId: string,
   importBatchId: string,
   themes: ThemeWithDimensions[]
 ) {
-  const fragments = await Promise.all(
-    themes.map(theme => {
-      const tags: DimensionTagInput[] = (theme.dimensions || [])
-        .map(dim => {
-          const tier1Dimension = EXTRACTION_DIMENSION_MAP[dim.name]
-          if (!tier1Dimension) {
-            console.log(`[Fragments] Unknown dimension key: ${dim.name}`)
-            return null
-          }
-          return {
-            dimension: tier1Dimension,
-            confidence: dim.confidence as 'HIGH' | 'MEDIUM' | 'LOW',
-            reasoning: 'Tagged during import',
-          } as DimensionTagInput
-        })
-        .filter((tag): tag is DimensionTagInput => tag !== null)
-
-      return createFragment({
-        projectId,
-        title: theme.theme_name,
-        content: theme.content,
-        contentType: 'insight',
-        confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
-      }, tags)
-    })
-  )
-
-  // Set sourceType and importBatchId on all created fragments
-  await prisma.fragment.updateMany({
-    where: { id: { in: fragments.map(f => f.id) } },
-    data: { sourceType: 'import', importBatchId },
+  // Pre-assign IDs so we can bulk-create fragments and tags in one pass
+  const fragmentRows = themes.map(theme => {
+    const hasTags = (theme.dimensions || []).some(
+      dim => EXTRACTION_DIMENSION_MAP[dim.name]
+    )
+    return {
+      id: randomUUID(),
+      projectId,
+      title: theme.theme_name || null,
+      content: theme.content,
+      contentType: 'insight',
+      status: 'active',
+      confidence: hasTags ? 'MEDIUM' : 'LOW',
+      sourceType: 'import',
+      importBatchId,
+    }
   })
 
-  return fragments
+  // Build all dimension tag rows
+  const tagRows = themes.flatMap((theme, i) =>
+    (theme.dimensions || [])
+      .map(dim => {
+        const tier1Dimension = EXTRACTION_DIMENSION_MAP[dim.name]
+        if (!tier1Dimension) return null
+        return {
+          id: randomUUID(),
+          fragmentId: fragmentRows[i].id,
+          dimension: tier1Dimension,
+          confidence: (dim.confidence as string) || 'MEDIUM',
+          reasoning: 'Tagged during import',
+        }
+      })
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== null)
+  )
+
+  // Two bulk inserts in a transaction
+  await prisma.$transaction(async (tx) => {
+    await tx.fragment.createMany({ data: fragmentRows })
+    if (tagRows.length > 0) {
+      await tx.fragmentDimensionTag.createMany({ data: tagRows })
+    }
+  })
+
+  console.log(`[Fragments] Bulk created ${fragmentRows.length} fragments with ${tagRows.length} dimension tags`)
+
+  // Return created fragments with tags for caller
+  return prisma.fragment.findMany({
+    where: { importBatchId },
+    include: { dimensionTags: true },
+    orderBy: { capturedAt: 'asc' },
+  })
 }
 
 /**

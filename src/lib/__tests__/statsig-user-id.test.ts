@@ -14,23 +14,23 @@ import { getExperimentVariant, logStatsigEvent } from '@/lib/statsig'
 const statsigCalls: { method: string; userId: string }[] = []
 
 // Mock Statsig SDK
-jest.mock('statsig-node', () => ({
+vi.mock('statsig-node', () => ({
   __esModule: true,
   default: {
-    initialize: jest.fn().mockResolvedValue(undefined),
-    getExperiment: jest.fn((user: { userID: string }) => {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getExperiment: vi.fn((user: { userID: string }) => {
       statsigCalls.push({ method: 'getExperiment', userId: user.userID })
       return {
-        get: jest.fn().mockReturnValue('test-variant'),
-        getRuleID: jest.fn().mockReturnValue('test-rule'),
+        get: vi.fn().mockReturnValue('test-variant'),
+        getRuleID: vi.fn().mockReturnValue('test-rule'),
         value: { variant: 'test-variant' }
       }
     }),
-    logEvent: jest.fn((user: { userID: string }, eventName: string) => {
+    logEvent: vi.fn((user: { userID: string }, eventName: string) => {
       statsigCalls.push({ method: 'logEvent', userId: user.userID })
     }),
-    flush: jest.fn().mockResolvedValue(undefined),
-    shutdown: jest.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
+    shutdown: vi.fn(),
   }
 }))
 
