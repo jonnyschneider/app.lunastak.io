@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] - 2026-04-17
+
+**Plain-language prompts, project-bundle boundary, Ferrari demo.**
+
+Prompts across the intelligence pipeline now enforce plain-language constraints on operational outputs (objectives, opportunities, principles, syntheses, knowledge summary). Titles must survive being shared out of context — no more "Defend the Scarcity-Awareness Paradox" or "Pyramid Ascension at Scale." Also introduces the project-bundle egress/ingress boundary — a Zod-schema-validated format for moving project data between environments and external tools.
+
+### Added
+
+- **Ferrari demo project** — fourth Acquired episode demo alongside Nike, Costco, TSMC. Launchpad grid widens to 4 columns. Data replicated to dev, preview, and prod.
+- **`tools/project-bundle/`** — canonical egress/ingress format for Lunastak project data. Zod schema (`ProjectBundleSchema`), `BUNDLE_VERSION` sentinel, and CLI entrypoints (`export.ts`, `restore.ts`, `validate.ts`). All external tooling that produces or consumes project data must conform to this schema.
+- **npm scripts** `bundle:export`, `bundle:restore`, `bundle:validate` (replace broken `seed:hydrate` / `seed:export` / `seed:validate`).
+- **Contract test** `src/lib/__tests__/contracts/project-bundle-contracts.test.ts` — validates every `src/data/demos/*.json` against the schema; snapshots the JSON Schema so structural drift fails the test loudly.
+- **Shared plain-language module** `src/lib/prompts/shared/plain-language.ts` — title and explainer guidance constants reused across prompt surfaces.
+- **"Good vs good" principle rule** in `suggest-opposite` API — deprioritised side must be a legitimate virtue another company would choose, not a pejorative framing. Includes calibrated examples from the demo set.
+- **Data security notice** in overflow menu and Launchpad.
+- **Dismissable VSO guidance callout** with per-project localStorage persistence.
+
+### Changed
+
+- **Objective titles** now constrained to ≤8 words, operational language, verb-or-outcome-first. Framework vocabulary ("paradox", "apex", "cornered resource", "wallet share") blocked from titles; permitted in explainer fields.
+- **Opportunity titles and descriptions** carry the same plain-language constraints.
+- **Full synthesis** gap titles get the plain-language constraint.
+- **Knowledge summary** picks up jargon-avoidance + "define specialist terms on first use" rule.
+- **Import → strategy flow** — clearer next-step CTAs; import success state stays alive until dialog dismissed; inline callout above StrategyDisplay.
+- **Demo bundle JSONs** re-exported under v1 schema (picks up `bundleVersion`, `demoSlug`, `description`, `knowledgeSummary`, `suggestedQuestions`, `keyQuotes`, `contradictions`, `subdimensions`, `synthesisVersion` — fields the prior ad-hoc export was missing).
+
+### Fixed
+
+- **Vision/Strategy elaboration parse-but-drop bug** — `runInitialGeneration` and `runRefreshGeneration` parsed `<elaboration>` tags from the LLM response but never assigned the values to the `StrategyStatements` object (field name mismatch: parser used `visionElaboration`; persistence reads `visionExplainer`). Result: `visionElaboration` / `strategyElaboration` were always null after generation. Now wired through in both generation paths.
+- **Import success state torn down by parent re-render** — deferred `onImported` callback until dialog dismissal.
+
+### Infrastructure
+
+- Unified env-file convention (`prisma/env.ts`) and centralised DB credential loading.
+- Schema drift check across all environments (`npm run db:check-drift`).
+- Docs restructure: rewritten README, removed AGENTS.md, excluded db dumps from repo.
+
 ## [2.4.3] - 2026-04-07
 
 **Cross-site analytics, demo access, pretty demo URLs.**
