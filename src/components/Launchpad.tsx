@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck } from 'lucide-react'
+import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -184,7 +185,10 @@ export function Launchpad({
             <div
               key={demo.id}
               className="group cursor-pointer rounded-lg px-5 py-4 space-y-2 bg-white shadow-sm hover:shadow-md transition-all"
-              onClick={() => router.push(`/project/${demo.id}`)}
+              onClick={() => {
+                logAndFlush('cta_view_demo', 'launchpad', { source: 'app', projectId: demo.id, demo: demo.name })
+                router.push(`/project/${demo.id}`)
+              }}
             >
               <div className="flex justify-center py-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

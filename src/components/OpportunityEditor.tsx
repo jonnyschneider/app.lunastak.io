@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Sparkles } from 'lucide-react';
-import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
+import { Plus } from 'lucide-react';
 import { getObjectiveTitle } from '@/lib/utils';
 import { SuccessMetric } from '@/lib/types';
 import { SuccessMetricEditor } from './SuccessMetricEditor';
@@ -30,7 +29,6 @@ interface OpportunityEditorProps {
   onCancel: () => void;
   saving?: boolean;
   compact?: boolean;
-  onImproveWithAI?: () => void;
 }
 
 function generateMetricId(): string {
@@ -63,7 +61,6 @@ export function OpportunityEditor({
   onCancel,
   saving = false,
   compact = false,
-  onImproveWithAI,
 }: OpportunityEditorProps) {
   const parsed = parseOpportunityContent(initialContent);
   const [title, setTitle] = useState(parsed.title);
@@ -149,20 +146,9 @@ export function OpportunityEditor({
     <div className="space-y-4 bg-white border rounded-lg shadow-lg p-6">
       {/* Title */}
       <div>
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
-            Initiative Title
-          </label>
-          {onImproveWithAI && (
-            <button
-              onClick={onImproveWithAI}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <Sparkles className="w-3 h-3" />
-              Improve with AI
-            </button>
-          )}
-        </div>
+        <label className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+          Initiative Title
+        </label>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -213,8 +199,6 @@ export function OpportunityEditor({
         />
       </div>
 
-      {/* Coaching removed — replaced by Pro "Improve with AI" fake door */}
-
       {/* Success Metrics */}
       {!compact && (
         <div>
@@ -231,21 +215,6 @@ export function OpportunityEditor({
               >
                 <Plus className="w-3 h-3 mr-1" />
                 Add Metric
-              </Button>
-            )}
-            {successMetrics.length >= 1 && successMetrics.length < 3 && onImproveWithAI && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  logAndFlush('fake_door_click', 'Additional Metrics (Pro)')
-                  onImproveWithAI()
-                }}
-                className="h-7 text-xs text-muted-foreground"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Add Metric
-                <Sparkles className="w-3 h-3 ml-1" />
               </Button>
             )}
           </div>

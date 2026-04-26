@@ -197,13 +197,11 @@ export function KnowledgeSummaryPanel({
 
   const handleChatClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    logAndFlush('pro_upgrade_click', 'knowledge-chat')
     onChatClick()
   }, [onChatClick])
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    logAndFlush('pro_upgrade_click', 'knowledge-edit')
     onEditClick()
   }, [onEditClick])
 

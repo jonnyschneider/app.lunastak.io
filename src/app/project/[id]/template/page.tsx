@@ -461,7 +461,6 @@ export default function TemplateEntryPage() {
                 objective: o.objective,
                 pithy: o.objective,
               }))}
-              onImproveWithAI={() => pro.triggerUpgrade('ai-improve')}
               compact
             />
           </div>
