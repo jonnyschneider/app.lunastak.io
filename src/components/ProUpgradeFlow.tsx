@@ -87,7 +87,8 @@ export function ProFeatureInterstitial({
   const Icon = featureConfig.icon;
 
   const handleUpgradeClick = () => {
-    logAndFlush('pro_upgrade_click', feature);
+    const eventName = feature === 'unlimited-projects' ? 'paywall_upgrade_click' : 'fake_door_click';
+    logAndFlush(eventName, feature);
     onUpgrade();
   };
 
@@ -361,10 +362,11 @@ export function useProUpgradeFlow() {
     setCurrentFeature(feature);
     if (isPro) {
       setComingSoonOpen(true);
-      logAndFlush('pro_coming_soon_view', feature);
+      logAndFlush('fake_door_view', feature, { state: 'pro_coming_soon' });
     } else {
       setInterstitialOpen(true);
-      logAndFlush('pro_interstitial_view', feature);
+      const eventName = feature === 'unlimited-projects' ? 'paywall_prompt_view' : 'fake_door_view';
+      logAndFlush(eventName, feature, { state: 'interstitial' });
     }
   };
 

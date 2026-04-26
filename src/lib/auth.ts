@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
 import { notifySlackNewUser, notifySlackUserSignIn } from "@/lib/notifications"
 import { transferGuestToUser } from "@/lib/transfer-session"
+import { logStatsigEvent } from "@/lib/statsig"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -55,10 +56,21 @@ export const authOptions: NextAuthOptions = {
       // Note: We no longer seed demo projects on signup.
       // New users get an empty project, with "See an example" available on-demand.
     },
-    signIn: async ({ user, isNewUser }) => {
+    signIn: async ({ user, account, isNewUser }) => {
       // Notify Slack of returning user login
       if (user.email) {
         notifySlackUserSignIn(user.email, !!isNewUser)
+      }
+
+      // Statsig: server-side analytics for confirmed sign-in/signup
+      // provider: 'google' (OAuth) | 'email' (magic link). Future: 'credentials' for password.
+      if (user.id) {
+        const provider = account?.provider ?? 'unknown'
+        const eventName = isNewUser ? 'account_created' : 'account_signed_in'
+        logStatsigEvent(user.id, eventName, undefined, {
+          provider,
+          userType: 'signed_up',
+        }).catch((err) => console.error('[Auth] Statsig log failed:', err))
       }
       // Server-side fallback: check for pending guest transfer
       // This handles cross-browser magic link flows where the cookie is lost.

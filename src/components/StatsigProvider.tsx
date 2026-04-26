@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { StatsigClient } from '@statsig/js-client';
 import { runStatsigSessionReplay } from '@statsig/session-replay';
 import { runStatsigAutoCapture } from '@statsig/web-analytics';
@@ -8,8 +9,17 @@ import packageJson from '../../package.json';
 
 let statsigClient: StatsigClient | null = null;
 
+type UserType = 'guest' | 'signed_up' | 'unknown';
+let currentUserType: UserType = 'unknown';
+
+function deriveUserType(email: string | null | undefined): UserType {
+  if (!email) return 'unknown';
+  return email.endsWith('@guest.lunastak.io') ? 'guest' : 'signed_up';
+}
+
 export function StatsigProvider({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
@@ -62,6 +72,35 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Sync userType — guests don't have a NextAuth session, so resolve via /api/me
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const applyIdentity = (userId: string | null, userType: UserType, email?: string) => {
+      currentUserType = userType;
+      if (statsigClient) {
+        statsigClient.updateUserAsync({
+          userID: userId ?? undefined,
+          email,
+          custom: { app_version: packageJson.version, userType },
+        }).catch(() => {});
+      }
+    };
+
+    if (session?.user?.email) {
+      applyIdentity(session.user.id ?? null, deriveUserType(session.user.email), session.user.email);
+      return;
+    }
+
+    fetch('/api/user/account')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data) return;
+        applyIdentity(data.userId ?? null, data.userType ?? 'unknown', data.email);
+      })
+      .catch(() => {});
+  }, [session?.user?.id, session?.user?.email, status]);
+
   // Always render children - Statsig init is non-blocking
   return <>{children}</>;
 }
@@ -73,8 +112,7 @@ export function getStatsigClient(): StatsigClient | null {
 
 /**
  * Log an event and immediately flush to ensure delivery.
- * Use this instead of getStatsigClient()?.logEvent() for events
- * that fire just before UI transitions (menu closes, sheet opens, navigation).
+ * Auto-attaches userType (guest | signed_up | unknown) to metadata.
  */
 export function logAndFlush(
   eventName: string,
@@ -82,6 +120,7 @@ export function logAndFlush(
   metadata?: Record<string, string>
 ) {
   if (!statsigClient) return;
-  statsigClient.logEvent(eventName, value, metadata);
+  const meta = { userType: currentUserType, ...(metadata || {}) };
+  statsigClient.logEvent(eventName, value, meta);
   statsigClient.flush();
 }

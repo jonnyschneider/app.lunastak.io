@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Statsig event taxonomy: split paywall from fake-door, add userType dimension.**
+
+Disambiguates real-feature paywall signal (unlimited projects) from fake-door demand signal (features that don't exist yet) — they were conflated under shared `pro_*` event names. Adds a `userType` (`guest` | `signed_up` | `unknown`) dimension to every client-side event so funnels can be segmented by account state.
+
+### Added
+
+- **`paywall_prompt_view`** / **`paywall_upgrade_click`** — fired only for the real `unlimited-projects` gate. Clean funnel for the one shipped Pro feature.
+- **`fake_door_view`** — fired for any unbuilt Pro feature interstitial. Carries `state: "interstitial" | "pro_coming_soon"` to distinguish free-user prompt from Pro-user "coming soon".
+- **`userType` metadata** auto-attached to every event via `logAndFlush` in `StatsigProvider`. Resolved from NextAuth session for signed-up users, from the `guestUserId` cookie via `/api/user/account` for guests.
+- **Guest support in `GET /api/user/account`** — endpoint now resolves identity for cookie-based guest users (returns `userId`, `userType`, `isPro: false`) instead of 401-ing. Same cookie pattern as `/api/projects`.
+
+### Changed
+
+- **`fake_door_click`** now also fires from the Pro-upgrade interstitial CTA (was previously only from direct fake-door buttons in `OpportunityEditor`).
+- Removed redundant `pro_upgrade_click` calls on the knowledge-chat / knowledge-edit chips in `KnowledgeSummaryPanel` — the downstream interstitial already fires `fake_door_view`.
+
+### Removed
+
+- **`pro_interstitial_view`**, **`pro_upgrade_click`**, **`pro_coming_soon_view`** — replaced by the new taxonomy. Hard cutover; no dual-fire window.
+
 ## [2.4.4] - 2026-04-17
 
 **Plain-language prompts, project-bundle boundary, Ferrari demo.**
