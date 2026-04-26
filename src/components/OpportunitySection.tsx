@@ -46,7 +46,6 @@ interface ObjectiveForLinking {
 interface OpportunitySectionProps {
   projectId: string;
   objectives: ObjectiveForLinking[];
-  onImproveWithAI?: () => void;
   compact?: boolean;
   readOnly?: boolean;
   // Global edit state
@@ -61,7 +60,6 @@ interface OpportunitySectionProps {
 export function OpportunitySection({
   projectId,
   objectives,
-  onImproveWithAI,
   compact = false,
   readOnly = false,
   editingCard,
@@ -295,7 +293,6 @@ export function OpportunitySection({
                   onCancel={handleCancelEdit}
                   saving={saving}
                   compact={compact}
-                  onImproveWithAI={onImproveWithAI}
                 />
               </div>
             ) : (
@@ -310,7 +307,6 @@ export function OpportunitySection({
                 objectives={objectives}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onImproveWithAI={onImproveWithAI}
                 compact={compact}
                 readOnly={readOnly}
               />
@@ -328,7 +324,6 @@ export function OpportunitySection({
             onCancel={handleCancelEdit}
             saving={saving}
             compact={compact}
-            onImproveWithAI={onImproveWithAI}
           />
         </div>
       )}

@@ -23,7 +23,6 @@ interface OpportunityCardProps {
   objectives: ObjectiveForLinking[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onImproveWithAI?: () => void;
   compact?: boolean;
   readOnly?: boolean;
 }
@@ -38,7 +37,6 @@ export function OpportunityCard({
   objectives,
   onEdit,
   onDelete,
-  onImproveWithAI,
   compact = false,
   readOnly = false,
 }: OpportunityCardProps) {

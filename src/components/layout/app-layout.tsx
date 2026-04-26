@@ -339,7 +339,7 @@ export function AppLayout({
                   <>
                     <DropdownMenuItem onSelect={() => triggerUpgrade('model-selection')}>
                       <Sparkles className="h-4 w-4" />
-                      Upgrade to Pro
+                      Use Claude Opus 4.7
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
