@@ -4,9 +4,9 @@ import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/db"
 import { resend, EMAIL_CONFIG } from "@/lib/resend"
-import { notifySlackNewUser, notifySlackUserSignIn } from "@/lib/notifications"
-import { transferGuestToUser } from "@/lib/transfer-session"
-import { logStatsigEvent } from "@/lib/statsig"
+import { renderEmail } from "@/lib/render-email"
+import { MagicLinkEmail } from "@/emails/transactional/magic-link"
+import { onSignup, onSignIn } from "@/lib/signup-orchestrator"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -19,16 +19,13 @@ export const authOptions: NextAuthOptions = {
       server: "", // Not needed for Resend
       from: EMAIL_CONFIG.from,
       sendVerificationRequest: async ({ identifier: email, url }) => {
+        const html = await renderEmail(MagicLinkEmail({ signInUrl: url }))
         const { data, error } = await resend.emails.send({
           from: EMAIL_CONFIG.from,
           replyTo: EMAIL_CONFIG.replyTo,
           to: email,
           subject: "Sign in to Lunastak",
-          html: `
-            <p>Click the link below to sign in:</p>
-            <a href="${url}">Sign in to Lunastak</a>
-            <p>If you did not request this email, you can safely ignore it.</p>
-          `,
+          html,
         })
 
         if (error) {
@@ -48,61 +45,28 @@ export const authOptions: NextAuthOptions = {
     verifyRequest: "/auth/verify-request",
   },
   events: {
-    createUser: async ({ user }) => {
-      // Notify Slack of new signup
-      if (user.email) {
-        notifySlackNewUser(user.email)
-      }
-      // Note: We no longer seed demo projects on signup.
-      // New users get an empty project, with "See an example" available on-demand.
-    },
     signIn: async ({ user, account, isNewUser }) => {
-      // Notify Slack of returning user login
-      if (user.email) {
-        notifySlackUserSignIn(user.email, !!isNewUser)
-      }
+      if (!user.id || !user.email) return
 
-      // Statsig: server-side analytics for confirmed sign-in/signup
-      // provider: 'google' (OAuth) | 'email' (magic link). Future: 'credentials' for password.
-      if (user.id) {
-        const provider = account?.provider ?? 'unknown'
-        const eventName = isNewUser ? 'account_created' : 'account_signed_in'
-        logStatsigEvent(user.id, eventName, undefined, {
+      const rawProvider = account?.provider as 'google' | 'email' | undefined
+      const provider = rawProvider ?? 'email'
+
+      if (isNewUser) {
+        await onSignup({
+          userId: user.id,
+          email: user.email,
+          name: user.name ?? undefined,
           provider,
-          userType: 'signed_up',
-        }).catch((err) => console.error('[Auth] Statsig log failed:', err))
+          source: 'nextauth',
+        })
       }
-      // Server-side fallback: check for pending guest transfer
-      // This handles cross-browser magic link flows where the cookie is lost.
-      // Must be in events.signIn (not callbacks.signIn) because for new users
-      // the callback fires BEFORE the user is persisted to the database.
-      if (user.id && user.email) {
-        try {
-          const pending = await prisma.pendingGuestTransfer.findFirst({
-            where: { email: user.email.toLowerCase() },
-          })
 
-          if (pending) {
-            console.log(`[Auth] Found pending transfer for ${user.email}: guest ${pending.guestUserId}`)
-            await transferGuestToUser(pending.guestUserId, user.id)
-
-            // Clean up this pending transfer
-            await prisma.pendingGuestTransfer.delete({
-              where: { id: pending.id },
-            })
-          }
-
-          // Clean up stale pending transfers (older than 24h)
-          await prisma.pendingGuestTransfer.deleteMany({
-            where: {
-              createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-            },
-          })
-        } catch (error) {
-          // Don't block sign-in on transfer failure
-          console.error('[Auth] Pending transfer failed:', error)
-        }
-      }
+      await onSignIn({
+        userId: user.id,
+        email: user.email,
+        isNewUser: !!isNewUser,
+        provider,
+      })
     },
   },
   callbacks: {
