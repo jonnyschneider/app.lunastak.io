@@ -30,10 +30,10 @@
     "e2e": "playwright test",
     "e2e:report": "playwright show-report",
     "email": "email dev --dir src/emails --port 3001",
-    "send-newsletter": "tsx scripts/send-newsletter-broadcast.ts",
-    "check-subscribers": "tsx scripts/check-subscribers.ts",
-    "unsubscribe-bounced": "tsx scripts/unsubscribe-bounced.ts",
-    "backfill:resend-audience": "tsx scripts/backfill-resend-audience.ts"
+    "send-newsletter": "tsx tools/email/send-newsletter-broadcast.ts",
+    "check-subscribers": "tsx tools/email/check-subscribers.ts",
+    "unsubscribe-bounced": "tsx tools/email/unsubscribe-bounced.ts",
+    "backfill:resend-audience": "tsx tools/email/backfill-resend-audience.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
