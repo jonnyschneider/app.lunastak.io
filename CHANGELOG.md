@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-05-23
+
+**Signup orchestrator + transactional email infrastructure.**
+
+### Added
+
+- Signup orchestrator (`src/lib/signup-orchestrator.ts`) consolidating audience add, admin email, welcome email, Slack, Statsig, and pending guest transfer recovery into one module (`onSubscribe` / `onSignup` / `onSignIn`).
+- React Email component library at `src/emails/components/` (Button, Heading, Paragraph, Divider, List, CalloutBox, ContentSection, EmailLayout) with Lunastak theme.
+- Transactional templates: magic-link sign-in, welcome (first-signup), waitlist confirmation. Subscribe-confirm refactored onto shared components.
+- Broadcast pipeline mirroring humventures.com.au — `npm run email` (preview), `send-newsletter`, `check-subscribers`, `unsubscribe-bounced`, and `src/emails/content/` directory pattern. Scripts live under `tools/email/` (the `scripts/` dir is gitignored).
+- `/api/email/webhook` for automatic unsubscribing on hard bounces and spam complaints (svix signature verification).
+- `tools/email/backfill-resend-audience.ts` — one-off backfill of existing users into the Resend audience.
+- New env var: `RESEND_WEBHOOK_SECRET`.
+
+### Changed
+
+- NextAuth `events.signIn` now delegates to the signup orchestrator instead of running side-effects inline. New users now receive a welcome email + audience-add on first sign-in, and Slack is pinged once (previously double-pinged via both `createUser` and `signIn`).
+- Magic-link sign-in email migrated from inline HTML to React Email template.
+
+### Fixed
+
+- `/api/email/webhook` now inspects Resend's `{ error }` return values instead of swallowing them. Bounce/complaint unsubscribe failures (e.g. a contact not in the audience → 404) are logged with the `audienceId` and reflected honestly in the admin notification, rather than silently reported as a successful unsubscribe.
+
+### Removed
+
+- Dead `/api/subscribe` and `/api/subscribe/confirm` endpoints. Their only caller (`RegistrationBanner`) was removed previously; live guest→signup now goes through NextAuth `signIn()`. The orchestrator's `onSubscribe` is retained for a future pre-auth email-capture surface.
+
+### Notes
+
+- Schema unchanged. Password authentication (Phase 2) is a separate release.
+
 ## [2.4.5] - 2026-04-26
 
 **Analytics rebuild: split paywall from fake-door, add userType, server-side signin tracking, dead-code sweep.**

@@ -1,35 +1,71 @@
-/**
- * Email layout component for transactional emails
- *
- * NOTE: This is a duplicate implementation from the marketing site
- * (lunastak.io/emails/components/EmailLayout.tsx).
- * If updating this file, consider whether the marketing site also needs updating.
- */
-import { Body, Container, Head, Html, Link, Section, Text } from '@react-email/components'
+import {
+  Body,
+  Container,
+  Head,
+  Html,
+  Link,
+  Preview,
+  Section,
+  Text,
+} from '@react-email/components'
 import * as React from 'react'
+import { colors } from '../lib/colors'
 
 interface EmailLayoutProps {
-  preview: string
   children: React.ReactNode
+  preview: string
+  unsubscribeUrl?: string
+  webviewUrl?: string
 }
 
-export const EmailLayout = ({ preview, children }: EmailLayoutProps) => {
+export const EmailLayout = ({
+  children,
+  preview,
+  unsubscribeUrl,
+  webviewUrl,
+}: EmailLayoutProps) => {
+  const showFooterLinks = !!unsubscribeUrl || !!webviewUrl
+
   return (
-    <Html>
+    <Html lang="en" dir="ltr">
       <Head />
+      <Preview>{preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          {children}
+          {/* Logo / wordmark */}
+          <Section style={logoSection}>
+            <Text style={logoText}>Lunastak</Text>
+          </Section>
+
+          {/* Main content */}
+          <Section style={contentWrapper}>{children}</Section>
 
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Lunastak
+              Lunastak — AI Strategy Coach
               <br />
-              <Link href="mailto:hello@lunastak.io" style={footerLink}>
-                hello@lunastak.io
+              <Link href="mailto:luna@lunastak.io" style={footerLink}>
+                luna@lunastak.io
               </Link>
             </Text>
+            {showFooterLinks && (
+              <Text style={footerLinks}>
+                {webviewUrl && (
+                  <>
+                    <Link href={webviewUrl} style={footerLink}>
+                      View in browser
+                    </Link>
+                    {' · '}
+                  </>
+                )}
+                {unsubscribeUrl && (
+                  <Link href={unsubscribeUrl} style={footerLink}>
+                    Unsubscribe
+                  </Link>
+                )}
+              </Text>
+            )}
           </Section>
         </Container>
       </Body>
@@ -38,32 +74,57 @@ export const EmailLayout = ({ preview, children }: EmailLayoutProps) => {
 }
 
 const main = {
-  backgroundColor: '#ffffff',
+  backgroundColor: colors.background.white,
   fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 }
 
 const container = {
   maxWidth: '600px',
   margin: '0 auto',
-  padding: '20px',
+  backgroundColor: colors.background.white,
+}
+
+const logoSection = {
+  padding: '32px 20px 20px',
+  textAlign: 'center' as const,
+}
+
+const logoText = {
+  fontFamily: "'DM Sans', sans-serif",
+  fontSize: '24px',
+  fontWeight: 'bold' as const,
+  color: colors.text.primary,
+  margin: 0,
+  letterSpacing: '-0.02em',
+}
+
+const contentWrapper = {
+  padding: '0 20px',
 }
 
 const footer = {
-  backgroundColor: '#13231C',
-  padding: '40px 20px',
+  backgroundColor: colors.background.dark,
+  padding: '32px 20px',
   textAlign: 'center' as const,
   marginTop: '40px',
   borderRadius: '8px',
 }
 
 const footerText = {
-  color: '#ffffff',
+  color: colors.background.white,
   fontSize: '14px',
+  lineHeight: '165%',
+  margin: '0 0 16px',
+}
+
+const footerLinks = {
+  color: colors.background.white,
+  fontSize: '12px',
   lineHeight: '150%',
-  margin: '0',
+  margin: 0,
 }
 
 const footerLink = {
-  color: '#77CC88',
+  color: colors.green[500],
   textDecoration: 'underline',
 }
