@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('svix', () => ({
-  Webhook: vi.fn().mockImplementation((secret: string) => ({
-    verify: (payload: string) => {
-      if (secret === 'good-secret') {
-        return JSON.parse(payload)
-      }
-      throw new Error('Invalid signature')
-    },
-  })),
+  Webhook: vi.fn().mockImplementation(function (this: unknown, secret: string) {
+    return {
+      verify: (payload: string) => {
+        if (secret === 'good-secret') {
+          return JSON.parse(payload)
+        }
+        throw new Error('Invalid signature')
+      },
+    }
+  }),
 }))
 
 vi.mock('@/lib/resend', () => ({
