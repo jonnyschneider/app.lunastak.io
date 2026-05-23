@@ -74,6 +74,59 @@ function recipientEmail(event: ResendWebhookEvent): string | undefined {
   return Array.isArray(event.data.to) ? event.data.to[0] : event.data.to
 }
 
+type UnsubscribeResult = 'unsubscribed' | 'not_in_audience' | 'error'
+
+/**
+ * Unsubscribes a contact from the audience.
+ *
+ * The Resend SDK returns `{ data, error }` and does NOT throw on API errors,
+ * so we must inspect `.error` explicitly — otherwise failures (e.g. a contact
+ * that isn't in the audience → 404) pass silently.
+ */
+async function unsubscribeFromAudience(email: string, audienceId: string): Promise<UnsubscribeResult> {
+  try {
+    const { error } = await resend.contacts.update({ email, unsubscribed: true, audienceId })
+    if (error) {
+      if (error.name === 'not_found' || /not found/i.test(error.message ?? '')) {
+        console.warn(`[Email Webhook] ${email} not in audience ${audienceId}; nothing to unsubscribe`)
+        return 'not_in_audience'
+      }
+      console.error(`[Email Webhook] contacts.update failed for ${email} (audience ${audienceId}):`, error)
+      return 'error'
+    }
+    console.log(`[Email Webhook] Unsubscribed ${email} from audience ${audienceId}`)
+    return 'unsubscribed'
+  } catch (err) {
+    console.error(`[Email Webhook] contacts.update threw for ${email}:`, err)
+    return 'error'
+  }
+}
+
+const RESULT_SUFFIX: Record<UnsubscribeResult, string> = {
+  unsubscribed: 'email unsubscribed',
+  not_in_audience: 'contact not in audience',
+  error: 'unsubscribe failed',
+}
+
+/** Sends the admin notification independently of the unsubscribe outcome. */
+async function notifyAdmin(subject: string, text: string): Promise<void> {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: EMAIL_CONFIG.adminEmail,
+      subject,
+      text,
+    })
+    if (error) {
+      console.error('[Email Webhook] admin notification failed:', error)
+      return
+    }
+    console.log(`[Email Webhook] Admin notified: ${data?.id}`)
+  } catch (err) {
+    console.error('[Email Webhook] admin notification threw:', err)
+  }
+}
+
 async function handleBounce(event: ResendWebhookEvent) {
   const email = recipientEmail(event)
   if (!email) return console.error('[Email Webhook] No address in bounce')
@@ -82,26 +135,18 @@ async function handleBounce(event: ResendWebhookEvent) {
   const bounceReason = event.data.bounce?.message ?? 'Unknown'
 
   if (bounceType !== 'Permanent') {
-    console.log(`[Email Webhook] Soft bounce for ${email}, not unsubscribing`)
+    console.log(`[Email Webhook] Soft bounce for ${email} (type=${bounceType ?? 'unknown'}), not unsubscribing`)
     return
   }
 
   const audienceId = process.env.RESEND_AUDIENCE_ID
   if (!audienceId) return console.error('[Email Webhook] RESEND_AUDIENCE_ID not configured')
 
-  try {
-    await resend.contacts.update({ email, unsubscribed: true, audienceId })
-    console.log(`[Email Webhook] Unsubscribed bounced: ${email}`)
-
-    await resend.emails.send({
-      from: EMAIL_CONFIG.from,
-      to: EMAIL_CONFIG.adminEmail,
-      subject: '[Lunastak] Hard bounce — email unsubscribed',
-      text: `Email: ${email}\nReason: ${bounceReason}\nSubject: ${event.data.subject ?? 'N/A'}\nTime: ${event.created_at ?? 'N/A'}`,
-    })
-  } catch (error) {
-    console.error(`[Email Webhook] Failed unsubscribing ${email}:`, error)
-  }
+  const result = await unsubscribeFromAudience(email, audienceId)
+  await notifyAdmin(
+    `[Lunastak] Hard bounce — ${RESULT_SUFFIX[result]}`,
+    `Email: ${email}\nAudience: ${audienceId}\nUnsubscribe: ${result}\nReason: ${bounceReason}\nSubject: ${event.data.subject ?? 'N/A'}\nTime: ${event.created_at ?? 'N/A'}`,
+  )
 }
 
 async function handleComplaint(event: ResendWebhookEvent) {
@@ -111,17 +156,9 @@ async function handleComplaint(event: ResendWebhookEvent) {
   const audienceId = process.env.RESEND_AUDIENCE_ID
   if (!audienceId) return console.error('[Email Webhook] RESEND_AUDIENCE_ID not configured')
 
-  try {
-    await resend.contacts.update({ email, unsubscribed: true, audienceId })
-    console.log(`[Email Webhook] Unsubscribed complainant: ${email}`)
-
-    await resend.emails.send({
-      from: EMAIL_CONFIG.from,
-      to: EMAIL_CONFIG.adminEmail,
-      subject: '[Lunastak] Spam complaint — email unsubscribed',
-      text: `Email: ${email}\nSubject: ${event.data.subject ?? 'N/A'}\nTime: ${event.created_at ?? 'N/A'}`,
-    })
-  } catch (error) {
-    console.error(`[Email Webhook] Failed unsubscribing ${email}:`, error)
-  }
+  const result = await unsubscribeFromAudience(email, audienceId)
+  await notifyAdmin(
+    `[Lunastak] Spam complaint — ${RESULT_SUFFIX[result]}`,
+    `Email: ${email}\nAudience: ${audienceId}\nUnsubscribe: ${result}\nSubject: ${event.data.subject ?? 'N/A'}\nTime: ${event.created_at ?? 'N/A'}`,
+  )
 }

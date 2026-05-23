@@ -87,6 +87,29 @@ describe('POST /api/email/webhook', () => {
     )
   })
 
+  it('reports honestly (does not claim "unsubscribed") when the contact is not in the audience', async () => {
+    ;(resend.contacts.update as any).mockResolvedValueOnce({
+      data: null,
+      error: { statusCode: 404, name: 'not_found', message: 'Contact not found' },
+    })
+    const req = makeRequest(
+      {
+        type: 'email.bounced',
+        data: { to: 'ghost@example.com', subject: 'Test', bounce: { type: 'Permanent', message: 'mailbox does not exist', subType: 'General' } },
+      },
+      true
+    )
+    const res = await POST(req as any)
+    expect(res.status).toBe(200)
+    // Admin is still notified about the hard bounce…
+    const adminCall = (resend.emails.send as any).mock.calls.find(
+      (c: any[]) => c[0]?.to === 'jonny@humventures.com.au'
+    )
+    expect(adminCall).toBeDefined()
+    // …but the message must NOT claim the contact was unsubscribed (it wasn't).
+    expect(String(adminCall[0].subject)).not.toMatch(/unsubscribed/i)
+  })
+
   it('does NOT unsubscribe on soft bounce', async () => {
     const req = makeRequest(
       {
