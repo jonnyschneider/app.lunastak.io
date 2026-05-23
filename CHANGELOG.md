@@ -21,8 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `/api/subscribe` and NextAuth `events.signIn` now delegate to the signup orchestrator instead of running side-effects inline. New users now receive a welcome email + audience-add on first sign-in, and Slack is pinged once (previously double-pinged via both `createUser` and `signIn`).
+- NextAuth `events.signIn` now delegates to the signup orchestrator instead of running side-effects inline. New users now receive a welcome email + audience-add on first sign-in, and Slack is pinged once (previously double-pinged via both `createUser` and `signIn`).
 - Magic-link sign-in email migrated from inline HTML to React Email template.
+
+### Fixed
+
+- `/api/email/webhook` now inspects Resend's `{ error }` return values instead of swallowing them. Bounce/complaint unsubscribe failures (e.g. a contact not in the audience → 404) are logged with the `audienceId` and reflected honestly in the admin notification, rather than silently reported as a successful unsubscribe.
+
+### Removed
+
+- Dead `/api/subscribe` and `/api/subscribe/confirm` endpoints. Their only caller (`RegistrationBanner`) was removed previously; live guest→signup now goes through NextAuth `signIn()`. The orchestrator's `onSubscribe` is retained for a future pre-auth email-capture surface.
 
 ### Notes
 
