@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { resend, EMAIL_CONFIG } from '@/lib/resend'
+import { renderEmail } from '@/lib/render-email'
+import { WaitlistConfirmEmail } from '@/emails/transactional/waitlist-confirm'
 
 export async function POST(request: Request) {
   try {
@@ -27,24 +29,13 @@ Time: ${new Date().toISOString()}
     })
 
     // Send confirmation to user
+    const html = await renderEmail(WaitlistConfirmEmail({ feature }))
     await resend.emails.send({
       from: EMAIL_CONFIG.from,
       replyTo: EMAIL_CONFIG.replyTo,
       to: email,
       subject: "You're on the early access list!",
-      text: `
-Hey there!
-
-Thanks for joining the Lunastak early access list. We'll let you know as soon as new Pro features are ready.
-
-In the meantime, keep using Lunastak to refine your strategy - your feedback helps us build the right things.
-
-Cheers,
-Luna
-
---
-Lunastak - AI Strategy Coach
-      `.trim(),
+      html,
     })
 
     return NextResponse.json({ success: true })
