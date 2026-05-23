@@ -2,7 +2,10 @@
  * Signup orchestrator.
  *
  * Single canonical place for signup/sign-in side-effects.
- * Called from NextAuth events.signIn and from /api/subscribe.
+ * Called from NextAuth events.signIn (onSignup / onSignIn).
+ *
+ * onSubscribe is reserved for a pre-auth email-capture surface (none currently
+ * wired — the former /api/subscribe endpoint was removed). Kept for that future use.
  *
  * Failure-tolerant: each side-effect is wrapped so one failure doesn't block others.
  * None of these functions throw — they log and continue.
