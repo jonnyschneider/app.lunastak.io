@@ -1,13 +1,19 @@
 /**
- * Email rendering utilities
+ * Renders a React Email template to HTML for sending via Resend.
  *
- * NOTE: This is a duplicate implementation from the marketing site
- * (lunastak.io/lib/render-email.ts).
- * If updating this file, consider whether the marketing site also needs updating.
+ * Critical: React Email URL-encodes the {{{RESEND_UNSUBSCRIBE_URL}}} merge tag.
+ * We decode it back so Resend can substitute the per-recipient unsubscribe URL.
+ *
+ * Mirrors humventures.com.au/src/lib/render-email.ts but accepts any React element.
  */
 import { render } from '@react-email/components'
-import { SubscribeConfirmEmail } from '@/emails/transactional/subscribe-confirm'
+import type { ReactElement } from 'react'
 
-export async function renderSubscribeConfirmEmail(confirmationLink: string): Promise<string> {
-  return await render(SubscribeConfirmEmail({ confirmationLink }))
+export async function renderEmail(template: ReactElement): Promise<string> {
+  const html = await render(template)
+
+  return html.replace(
+    /%7B%7B%7BRESEND_UNSUBSCRIBE_URL%7D%7D%7D/g,
+    '{{{RESEND_UNSUBSCRIBE_URL}}}'
+  )
 }
