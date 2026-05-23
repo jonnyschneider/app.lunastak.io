@@ -1,6 +1,6 @@
 {
   "name": "lunastak",
-  "version": "2.4.5",
+  "version": "2.5.0",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -28,7 +28,12 @@
     "bundle:validate": "tsx tools/project-bundle/validate.ts",
     "prepare": "husky",
     "e2e": "playwright test",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "email": "email dev --dir src/emails --port 3001",
+    "send-newsletter": "tsx tools/email/send-newsletter-broadcast.ts",
+    "check-subscribers": "tsx tools/email/check-subscribers.ts",
+    "unsubscribe-bounced": "tsx tools/email/unsubscribe-bounced.ts",
+    "backfill:resend-audience": "tsx tools/email/backfill-resend-audience.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
@@ -61,6 +66,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dotenv": "^17.4.2",
     "jose": "^6.1.3",
     "lucide-react": "^0.556.0",
     "next": "14.1.0",
@@ -74,6 +80,7 @@
     "resend": "^6.6.0",
     "sonner": "^2.0.7",
     "statsig-node": "^6.5.1",
+    "svix": "^1.94.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "unstructured-client": "^0.30.2",
@@ -82,6 +89,8 @@
   "devDependencies": {
     "@linear/sdk": "^68.1.0",
     "@playwright/test": "^1.58.2",
+    "@react-email/preview-server": "^5.2.11",
+    "@react-email/ui": "^6.3.2",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.6.1",
@@ -96,6 +105,7 @@
     "jsdom": "^29.0.2",
     "postcss": "^8.4.31",
     "prisma": "^5.22.0",
+    "react-email": "^6.3.2",
     "shadcn": "^3.6.2",
     "tailwindcss": "^3.3.0",
     "tsx": "^4.21.0",
