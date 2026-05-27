@@ -3,6 +3,7 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -34,7 +35,12 @@ export const EmailLayout = ({
         <Container style={container}>
           {/* Logo / wordmark */}
           <Section style={logoSection}>
-            <Text style={logoText}>Lunastak</Text>
+            <Img
+              src="https://cdn.sanity.io/images/6i6wbquj/production/c05e8b689484ae8ac0cac77175311475167c9fa0-2480x1860.png?w=400&fm=png&fit=max"
+              width="170"
+              alt="Lunastak"
+              style={logoImg}
+            />
           </Section>
 
           {/* Main content */}
@@ -89,13 +95,10 @@ const logoSection = {
   textAlign: 'center' as const,
 }
 
-const logoText = {
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: '24px',
-  fontWeight: 'bold' as const,
-  color: colors.text.primary,
-  margin: 0,
-  letterSpacing: '-0.02em',
+const logoImg = {
+  display: 'inline-block',
+  margin: '0 auto',
+  height: 'auto' as const,
 }
 
 const contentWrapper = {
