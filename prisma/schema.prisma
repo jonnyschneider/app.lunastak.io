@@ -175,6 +175,11 @@ model Project {
 
   directionStatus String @default("drafting") // drafting | settled
 
+  // Public sharing: one rolling link per project; the unguessable token IS the security mechanism
+  shareToken   String?   @unique // minted on first share-enable, persists across on/off toggles
+  shareEnabled Boolean   @default(false)
+  sharedAt     DateTime? // last time sharing was turned on
+
   // Luna Remembers: accumulated knowledge
   knowledgeSummary   String?   @db.Text // "What Luna Knows" - human-readable summary
   knowledgeUpdatedAt DateTime? // Last time knowledge was synthesized

@@ -7,6 +7,23 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ## [Unreleased]
 
+### 2026-07-05: Public Share Links (v2.6.0)
+
+**Related Plan**: `docs/_plans/2026-07-05-public-share-links-design.md`
+
+#### Project Model Additions
+- `shareToken String? @unique` - 192-bit random base64url token; the unguessable URL is the security mechanism. Minted on first share-enable, persists across on/off toggles.
+- `shareEnabled Boolean @default(false)` - "Anyone with the link can view" toggle
+- `sharedAt DateTime?` - Last time sharing was turned on
+
+**Migration risk**: Additive only (nullable + defaulted columns). Safe to apply before code deploy.
+
+**API Changes**:
+- New `/api/project/[id]/share` (GET/POST, strict owner-only, session auth only — no guest)
+- New public page `/share/[token]` (server-rendered read-only Decision Stack)
+
+---
+
 ### 2025-01-07: Conversation Title Field
 
 **Purpose**: Better conversation identification in UI lists (sidebar, project page)

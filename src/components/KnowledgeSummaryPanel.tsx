@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
+import { InlineMarkdown } from '@/components/InlineMarkdown'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -95,22 +96,6 @@ function formatRelativeTime(dateStr: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
-/** Render inline markdown: **bold** */
-function InlineMarkdown({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/)
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.startsWith('**') && part.endsWith('**') ? (
-          <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  )
 }
 
 interface DimensionalSynthesis {

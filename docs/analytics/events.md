@@ -89,6 +89,16 @@ Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`
 | `cta_build_strategy` | client | `first-time` | `projectId`, userType | User started the build-strategy path from first-time empty state. (Note: `FirstTimeEmptyState` is currently orphaned; this event may not fire in production.) |
 | `cta_complete_template` | client | `review` \| `early-exit` | `projectId`, userType | User completed (or early-exited) the template flow. (Template page is orphaned.) |
 
+## Sharing
+
+| Event | Side | Value | Metadata | What it means |
+|---|---|---|---|---|
+| `cta_share` | client | `signed_up` \| `guest` | `projectId`, userType | User clicked the Share button in the project header. Guests get the sign-in gate instead of the dialog — `value` splits the two. |
+| `share_link_enabled` | client | `<projectId>` | `projectId`, userType | Owner turned sharing on ("anyone with the link can view"). |
+| `share_link_disabled` | client | `<projectId>` | `projectId`, userType | Owner turned sharing off — link goes dead immediately. |
+| `share_link_copied` | client | `<projectId>` | `projectId`, userType | Owner copied the share URL. Best proxy for "actually sent to someone". |
+| `share_page_view` | server | — | `projectId` | A recipient loaded `/share/[token]`. Attributed to the **owner's** userID (recipients are anonymous — no Statsig client runs on the public page). |
+
 ## Cost & infrastructure
 
 | Event | Side | Value | Metadata | What it means |

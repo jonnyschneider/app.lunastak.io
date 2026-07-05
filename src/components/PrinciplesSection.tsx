@@ -20,6 +20,8 @@ interface PrinciplesSectionProps {
   showAddDialog?: boolean;
   onCloseAddDialog?: () => void;
   readOnly?: boolean;
+  /** Pre-loaded data — skips the content API fetch (public share page has no session) */
+  staticPrinciples?: Principle[];
 }
 
 type InputStep = 'priority' | 'loading' | 'confirm';
@@ -144,8 +146,10 @@ export function PrinciplesSection({
   showAddDialog = false,
   onCloseAddDialog,
   readOnly = false,
+  staticPrinciples,
 }: PrinciplesSectionProps) {
-  const [principles, setPrinciples] = useState<Principle[]>([]);
+  const isStatic = staticPrinciples !== undefined;
+  const [principles, setPrinciples] = useState<Principle[]>(staticPrinciples ?? []);
   const [saving, setSaving] = useState(false);
 
   // Fetch principles from UserContent on mount — always use UserContent as source of truth
@@ -185,8 +189,9 @@ export function PrinciplesSection({
   }, [projectId]);
 
   useEffect(() => {
+    if (isStatic) return;
     fetchPrinciples();
-  }, [fetchPrinciples]);
+  }, [fetchPrinciples, isStatic]);
 
   // Socratic input state
   const [step, setStep] = useState<InputStep>('priority');

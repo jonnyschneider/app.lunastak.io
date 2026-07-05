@@ -357,5 +357,29 @@ describe('Persistence Contracts', () => {
       const invalid = { ...validProject, isDemo: 'true' };
       expect(validateProject(invalid)).toBe(false);
     });
+
+    it('should validate a project with share fields', () => {
+      const shared = {
+        ...validProject,
+        shareEnabled: true,
+        shareToken: 'Ab3-_x9Zq1KpLm2NvR8sT4uW6yE0cD5f',
+      };
+      expect(validateProject(shared)).toBe(true);
+    });
+
+    it('should validate a never-shared project (null token)', () => {
+      const unshared = { ...validProject, shareEnabled: false, shareToken: null };
+      expect(validateProject(unshared)).toBe(true);
+    });
+
+    it('should reject project with non-boolean shareEnabled', () => {
+      const invalid = { ...validProject, shareEnabled: 'yes' };
+      expect(validateProject(invalid)).toBe(false);
+    });
+
+    it('should reject project with non-string shareToken', () => {
+      const invalid = { ...validProject, shareToken: 12345 };
+      expect(validateProject(invalid)).toBe(false);
+    });
   });
 });
