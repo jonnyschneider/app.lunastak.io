@@ -7,7 +7,7 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ## [Unreleased]
 
-### 2026-07-05: Public Share Links (v2.6.0)
+### 2026-07-05: Public Share Links (v2.5.1)
 
 **Related Plan**: `docs/_plans/2026-07-05-public-share-links-design.md`
 
