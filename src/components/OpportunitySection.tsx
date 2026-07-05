@@ -55,6 +55,8 @@ interface OpportunitySectionProps {
   onDraftWithLuna?: () => void;
   /** Bump to trigger re-fetch (e.g. after generation completes) */
   refreshKey?: number;
+  /** Pre-loaded data — skips the content API fetch (public share page has no session) */
+  staticOpportunities?: Opportunity[];
 }
 
 export function OpportunitySection({
@@ -67,9 +69,11 @@ export function OpportunitySection({
   onDraftWithLuna,
   onStopEditing,
   refreshKey,
+  staticOpportunities,
 }: OpportunitySectionProps) {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isStatic = staticOpportunities !== undefined;
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(staticOpportunities ?? []);
+  const [loading, setLoading] = useState(!isStatic);
   const [saving, setSaving] = useState(false);
 
   // Derive editing state from global edit state
@@ -94,8 +98,9 @@ export function OpportunitySection({
   }, [projectId]);
 
   useEffect(() => {
+    if (isStatic) return;
     fetchOpportunities();
-  }, [fetchOpportunities, refreshKey]);
+  }, [fetchOpportunities, refreshKey, isStatic]);
 
   const handleCreate = async (
     content: string,

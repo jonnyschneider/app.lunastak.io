@@ -23,6 +23,12 @@ interface StrategyDisplayProps {
   readOnly?: boolean;
   onDraftOpportunities?: () => void;
   opportunityRefreshKey?: number;
+  /**
+   * Render opportunities/principles from the strategy prop instead of
+   * fetching via the content API (public share page — no session, no API).
+   * Empty sections are hidden entirely.
+   */
+  staticContent?: boolean;
 }
 
 type EditingCard = {
@@ -31,7 +37,7 @@ type EditingCard = {
   isNew?: boolean
 } | null
 
-export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate, readOnly = false, onDraftOpportunities, opportunityRefreshKey }: StrategyDisplayProps) {
+export default function StrategyDisplay({ strategy, conversationId, traceId, projectId, onUpdate, readOnly = false, onDraftOpportunities, opportunityRefreshKey, staticContent = false }: StrategyDisplayProps) {
   const [editingCard, setEditingCard] = useState<EditingCard>(null)
 
   const startEditing = useCallback((type: NonNullable<EditingCard>['type'], id?: string) => {
@@ -60,8 +66,10 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
   const objectives: Objective[] = useMemo(() => {
     if (strategy.objectives.length === 0) return [];
 
-    // Check if objectives are already in new format
-    if (typeof strategy.objectives[0] === 'object' && 'id' in strategy.objectives[0]) {
+    // Check if objectives are already in new format. Keyed on type, not 'id':
+    // hand-crafted/imported objectives can lack an id, and misclassifying an
+    // object as a legacy string crashes parseObjectiveText.
+    if (typeof strategy.objectives[0] === 'object' && strategy.objectives[0] !== null) {
       return (strategy.objectives as Objective[]).map(normalizeToOMTM);
     }
 
@@ -456,6 +464,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
           </div>
 
           {/* Opportunities Section */}
+          {!(staticContent && strategy.opportunities.length === 0) && (
           <div className={cn(
             'mt-12',
             editingCard?.type === 'opportunity' && 'relative z-50'
@@ -469,10 +478,21 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               readOnly={readOnly}
               onDraftWithLuna={!readOnly ? onDraftOpportunities : undefined}
               refreshKey={opportunityRefreshKey}
+              staticOpportunities={staticContent ? strategy.opportunities.map(o => ({
+                id: o.id,
+                content: '',
+                title: o.title,
+                description: o.description,
+                status: o.status ?? 'active' as const,
+                successMetrics: o.successMetrics,
+                metadata: { objectiveIds: o.objectiveIds },
+              })) : undefined}
             />
           </div>
+          )}
 
           {/* Principles Section */}
+          {!(staticContent && strategy.principles.length === 0) && (
           <div className={cn(
             'mt-12',
             editingCard?.type === 'principle' && 'relative z-50'
@@ -502,6 +522,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               showAddDialog={showAddPrincipleDialog}
               onCloseAddDialog={() => setShowAddPrincipleDialog(false)}
               readOnly={readOnly}
+              staticPrinciples={staticContent ? strategy.principles : undefined}
               onUpdate={(updated) => {
                 if (onUpdate) {
                   onUpdate({ ...strategy, principles: updated });
@@ -509,6 +530,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               }}
             />
           </div>
+          )}
         </div>
       </div>
     </div>

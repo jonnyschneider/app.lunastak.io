@@ -186,6 +186,9 @@ export interface ProjectContract {
   status: ProjectStatus;
   isDemo: boolean;
   description?: string;
+  // Public sharing (rolling link; token is the security mechanism)
+  shareEnabled?: boolean;
+  shareToken?: string | null;
 }
 
 export function isValidProjectStatus(status: string): status is ProjectStatus {
@@ -204,6 +207,8 @@ export function validateProject(data: unknown): data is ProjectContract {
 
   // Optional fields
   if (obj.description !== undefined && obj.description !== null && typeof obj.description !== 'string') return false;
+  if (obj.shareEnabled !== undefined && typeof obj.shareEnabled !== 'boolean') return false;
+  if (obj.shareToken !== undefined && obj.shareToken !== null && typeof obj.shareToken !== 'string') return false;
 
   return true;
 }

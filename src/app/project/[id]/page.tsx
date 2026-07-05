@@ -22,6 +22,7 @@ import {
   Package,
   Plus,
   X,
+  Share2,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -69,6 +70,8 @@ import { Launchpad, TalkToLunaCard, ImportBundleCard } from '@/components/Launch
 import { StatusBanner } from '@/components/StatusBanner'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
+import { ShareDialog } from '@/components/ShareDialog'
+import { SignInGateDialog } from '@/components/SignInGateDialog'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 
@@ -207,6 +210,8 @@ export default function ProjectPage() {
   const [chatOrigin, setChatOrigin] = useState<{ type: string; text: string } | undefined>()
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [shareSignInGateOpen, setShareSignInGateOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
   const [isKnowledgeSummaryExpanded, setIsKnowledgeSummaryExpanded] = useState(false)
   const vsoGuidanceKey = `vso-guidance-dismissed:${projectId}`
@@ -267,8 +272,11 @@ export default function ProjectPage() {
   const { setTabNav, setRightSlot } = useHeaderTabNav()
   const isDemo = projectData?.isDemo === true
 
+  const isSignedUp = !!session?.user?.id
+
   useEffect(() => {
     setTabNav(
+      <div className="flex items-center gap-2">
       <div className="inline-flex rounded-lg border border-input">
         <button
           onClick={() => { setActiveTab('decision-stack'); logAndFlush('tab_switch', 'decision-stack', { projectId }) }}
@@ -392,9 +400,26 @@ export default function ProjectPage() {
           </DropdownMenu>
         )}
       </div>
+      {!isDemo && hasStrategy && (
+        <button
+          onClick={() => {
+            logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
+            if (isSignedUp) {
+              setShareDialogOpen(true)
+            } else {
+              setShareSignInGateOpen(true)
+            }
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          <Share2 className="h-3.5 w-3.5" />
+          Share
+        </button>
+      )}
+      </div>
     )
     return () => setTabNav(null)
-  }, [activeTab, projectId, projectData?.stats?.fragmentCount, isDemo, hasStrategy, setTabNav])
+  }, [activeTab, projectId, projectData?.stats?.fragmentCount, isDemo, hasStrategy, isSignedUp, setTabNav])
 
 
   // Strategy data for Direction tab
@@ -1440,6 +1465,19 @@ export default function ProjectPage() {
             URL.revokeObjectURL(url)
           }
         }}
+      />
+
+      {/* Share Dialog (signed-up users) + sign-in gate (guests) */}
+      <ShareDialog
+        projectId={projectId}
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+      />
+      <SignInGateDialog
+        open={shareSignInGateOpen}
+        onOpenChange={setShareSignInGateOpen}
+        title="Create an Account to Share"
+        description="To share a read-only link to your Decision Stack, you'll need a free account. This keeps your share link tied to you so you can turn it off anytime."
       />
 
       {/* Import Bundle Dialog */}

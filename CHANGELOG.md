@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-07-05
+
+**Public share links — read-only Decision Stack via unguessable URL.**
+
+Google-pattern "anyone with the link" sharing. One rolling link per project backed by a 192-bit random base64url token — the URL itself is the security mechanism, no password. Owner toggles sharing on/off from a Share dialog in the project header; off kills the link instantly, and the token survives re-enable so previously sent links keep working.
+
+### Added
+
+- **`/share/[token]`** — server-rendered public read-only Decision Stack page: project name, knowledge-summary context paragraph (no harvey balls, no source counts), full stack via `StrategyDisplay` in read-only mode, signup CTA footer, `noindex`. Deliberately NOT the demo middleware-rewrite pattern — the public attack surface is a single DB read; the page makes zero client API calls. Dead/disabled links get a branded 404 ("This link is no longer active").
+- **`GET`/`POST /api/project/[id]/share`** — strict owner-only share management (session auth only; guests get the sign-in gate as a signup nudge). Mints the token on first enable.
+- **Share button** in the project header (hidden on demos and pre-strategy projects) opening a Google-style dialog: "Anyone with the link can view" switch + link + copy button.
+- **Schema:** `shareToken String? @unique`, `shareEnabled Boolean @default(false)`, `sharedAt DateTime?` on `Project` (additive; see `prisma/SCHEMA_CHANGELOG.md`).
+- **Component library:** `Switch` (new `@radix-ui/react-switch` dep), `CopyButton` (first clipboard utility), `InlineMarkdown` (extracted from `KnowledgeSummaryPanel`).
+- **`StrategyDisplay` `staticContent` mode** — opportunities/principles render from server-passed props instead of self-fetching the content API (which 401s for anonymous visitors); empty sections hide entirely.
+- **Analytics:** `cta_share`, `share_link_enabled`, `share_link_disabled`, `share_link_copied` (client) and `share_page_view` (server, attributed to owner). Catalogued in `docs/analytics/events.md`.
+
+### Fixed
+
+- Objectives without an `id` (hand-crafted/imported bundles) were misclassified as legacy strings and crashed `parseObjectiveText` — format detection now keys on type. Previously 500'd the owner view of such projects too.
+
 ## [2.5.0] - 2026-05-23
 
 **Signup orchestrator + transactional email infrastructure.**
