@@ -25,7 +25,7 @@ const sampleResponse = {
 
 describe('isCaptureEnabled', () => {
   const saved = { ...process.env }
-  afterEach(() => { process.env = { ...saved } })
+  afterEach(() => { process.env = { ...saved }; vi.unstubAllEnvs() })
 
   it('is off by default', () => {
     delete process.env.LUNASTAK_CAPTURE_DIR
@@ -35,6 +35,16 @@ describe('isCaptureEnabled', () => {
   it('is on when a capture dir is set', () => {
     process.env.LUNASTAK_CAPTURE_DIR = '/tmp/whatever'
     expect(isCaptureEnabled()).toBe(true)
+  })
+
+  it('REFUSES to enable in production, even when the env var is set', () => {
+    // Capture writes prompts — and therefore user content — to disk. In a
+    // deployed environment that is both useless (ephemeral filesystem) and a
+    // privacy problem. The gate is structural, not documentary: setting the
+    // env var in production must do nothing.
+    process.env.LUNASTAK_CAPTURE_DIR = '/tmp/whatever'
+    vi.stubEnv('NODE_ENV', 'production')
+    expect(isCaptureEnabled()).toBe(false)
   })
 })
 
@@ -49,6 +59,7 @@ describe('captureCall', () => {
 
   afterEach(() => {
     process.env = { ...saved }
+    vi.unstubAllEnvs()
     fs.rmSync(dir, { recursive: true, force: true })
   })
 
@@ -115,6 +126,17 @@ describe('captureCall', () => {
       response: sampleResponse,
       latencyMs: 1,
     })).not.toThrow()
+  })
+
+  it('writes nothing in production even with a valid dir configured', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    captureCall({
+      context: 'strategy_generation',
+      request: { model: 'claude-opus-5', max_tokens: 4000, messages: [{ role: 'user', content: 'private user content' }] },
+      response: sampleResponse,
+      latencyMs: 1,
+    })
+    expect(fs.readdirSync(dir)).toHaveLength(0)
   })
 
   it('NEVER throws on an unexpected response shape', () => {

@@ -99,6 +99,15 @@ export async function createMessage(
         promptTokens: String(response.usage.input_tokens),
         completionTokens: String(response.usage.output_tokens),
         model: response.model || resolved.model,
+        // Added 2026-08-26: the metrics half of experiment capture, which is
+        // safe in production because it carries no user content. Real
+        // per-stage volumes turn the model-bump cost projection into a real
+        // number rather than an extrapolation, and `truncated` is a permanent
+        // canary — it matters most immediately after a model change, when a
+        // max_tokens ceiling tuned for the old model starts cutting answers off.
+        latencyMs: String(latencyMs),
+        maxTokens: String(resolved.max_tokens),
+        truncated: String(response.stop_reason === 'max_tokens'),
       })
     }).catch(() => {})
   }
