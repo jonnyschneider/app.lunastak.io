@@ -105,6 +105,76 @@ Cost: ~+600 input tokens per generation call. Latency unchanged.
 **Also fixed: two drifted copy-pastes.** `knowledge-summary.ts` and `synthesis/full-synthesis.ts`
 each carried an inlined, shortened paraphrase of the plain-language guidance instead of importing
 it. Both now import the shared constants, so the guidance has one definition again.
+### Changed — the card explainers got an affordance (2026-08-27)
+
+The best prose in a Decision Stack lives on the back of each card, and nothing on the front
+ever said so. The whole card was the button, so no part of it looked like one, and the back
+was labelled **"Explainer"** — a word naming the mechanism rather than promising anything
+worth reading.
+
+Every card (vision, strategy, objective, opportunity, principle) now ends in a **cordoned
+disclosure strip**, full-bleed to the card edges. **The strip is the only click target** — the
+card surface is no longer a button, which also means the prose can finally be selected and
+copied.
+
+Three signals do the work, each carrying something the others do not:
+
+- **The label names the destination, with a verb.** `See the thinking` on the front,
+  `Back to the vision` (`…the strategy`, `…the objective`, …) on the back. A bare noun was
+  tried and failed: `The vision` on the back reads as a *caption for the face you are already
+  looking at*, which is the exact opposite of an invitation.
+- **Colour is the state.** The back sits a step lighter than the front, so you can never be
+  unsure which face you are on — and the strip's hover **previews the destination's colour**:
+  light from the dark front, dark from the lighter back.
+- **Dots say which of two.** `●○` / `○●`, centred under the label. Filled vs hollow, so the
+  signal is shape rather than a dimmed tint.
+
+The strip is **not** neon. Neon is the heading colour, and a neon strip competed with the very
+headings it sits under. It steps down by **size and weight only** — full-strength white at
+12px medium — because greying text out to signal hierarchy is a house no.
+
+A rotate icon was tried and **removed**: once colour carries state and the label names the
+destination, a glyph is a third signal saying nothing the other two do not.
+
+Consequences worth knowing:
+
+- **`FlipCard` now owns the card shell** (background, radius, shadow, padding via a `size`
+  token). Chrome used to be duplicated inside every `front`/`back` node at each call site,
+  which is why the strip could not be full-bleed until it moved. All five call sites pass
+  content only.
+- **Backs carry their card's identity, where identity is ambiguous.** A flipped card used to
+  render an anonymous paragraph — in the objectives grid you could not tell which objective
+  you were reading while its siblings still showed their numbers. Objectives repeat number +
+  title, opportunities the title, principles the priority. **Vision and Strategy do not**: the
+  strip already names the layer, so a heading there was pure repetition.
+- **Card height still tracks the visible face**, so a flip inside a grid reflows its row.
+  Deliberate: sizing every card to its taller face costs more whitespace than the jump costs
+  in stability.
+
+### Removed — the second flip component, which was dead (2026-08-27)
+
+`src/components/ObjectiveCard.tsx` was **orphaned** — nothing imported it — and it was the
+only consumer of `src/components/ui/flip-card.tsx`. Both deleted; git history is the archive.
+
+That dead pair is where the mobile story was worst: `ui/flip-card.tsx` flipped on
+`onMouseEnter`/`onMouseLeave` (no hover on touch) and pinned cards to a fixed `h-80`, clipping
+long explainers. None of it ever reached a user.
+
+How it got there: the 2026-03-26 Decision Stack rendering design introduced
+`components/FlipCard.tsx` as "the shared component used by all stack layers", but its
+files-affected list never named `ObjectiveCard.tsx`, so that one card was left behind on the
+December 2025 component and the duplication went unnoticed for five months. The crossfade
+itself was deliberate and stays.
+
+### Added — `card_thinking_viewed` (2026-08-27)
+
+Flips were **completely uninstrumented**, so the discovery rate for this prose has never been
+known. The strip now fires `card_thinking_viewed` on the reveal only (flipping back is not a
+second read), with the stack layer as `value`. Catalogued in `docs/analytics/events.md`.
+
+**There is no before-number.** This measures the new affordance, not the improvement over the
+old one — that comparison is unavailable and will stay unavailable.
+
 
 ### Fixed — model provenance recorded the plan's model, not the model that answered (2026-08-27)
 

@@ -25,6 +25,7 @@ interface OpportunityCardProps {
   onDelete: (id: string) => void;
   compact?: boolean;
   readOnly?: boolean;
+  projectId?: string;
 }
 
 export function OpportunityCard({
@@ -39,11 +40,16 @@ export function OpportunityCard({
   onDelete,
   compact = false,
   readOnly = false,
+  projectId,
 }: OpportunityCardProps) {
   return (
     <FlipCard
+      cardClassName="bg-ds-teal rounded-xl shadow-sm min-h-[120px]"
+      cardType="opportunity"
+      returnLabel="Back to the opportunity"
+      projectId={projectId}
       front={
-        <div className="bg-ds-teal rounded-xl p-6 shadow-sm min-h-[120px]">
+        <>
           {/* Title */}
           <p className="text-sm font-bold text-ds-neon mb-3">{title}</p>
 
@@ -118,13 +124,12 @@ export function OpportunityCard({
             </div>
           )}
 
-        </div>
+        </>
       }
       back={
-        <div className="bg-ds-teal rounded-xl p-6 shadow-sm min-h-[120px]">
-          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
-            Explainer
-          </div>
+        <>
+          {/* Title repeats on the back so a flipped card stays identifiable */}
+          <p className="text-sm font-bold text-ds-neon mb-3">{title}</p>
           {/* When no structured metrics, show guidance instead of description */}
           {successMetrics.length === 0 && (
             <div>
@@ -166,7 +171,7 @@ export function OpportunityCard({
               </Button>
             </div>
           )}
-        </div>
+        </>
       }
       onEditClick={() => onEdit(id)}
       hideEditButton

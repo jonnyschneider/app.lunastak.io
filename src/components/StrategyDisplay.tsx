@@ -233,22 +233,23 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             editingCard?.type === 'vision' && 'relative z-50'
           )}>
             <FlipCard
+              cardClassName="bg-ds-teal rounded-lg shadow-sm"
+              cardType="vision"
+              returnLabel="Back to the vision"
+              projectId={projectId}
               front={
-                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
+                <>
                   <h3 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wide mb-3">
                     Vision
                   </h3>
                   <p className="text-lg font-medium text-white leading-relaxed">
                     {strategy.vision}
                   </p>
-                </div>
+                </>
               }
               back={
-                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-                  <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
-                    Explainer
-                  </div>
-                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.visionExplainer || 'No explainer yet'}</p>
+                <>
+                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.visionExplainer || 'Not written yet'}</p>
                   {!readOnly && (
                     <div className="flex justify-end mt-3">
                       <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
@@ -257,7 +258,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                       </Button>
                     </div>
                   )}
-                </div>
+                </>
               }
               isEditing={editingCard?.type === 'vision'}
               onEditClick={() => startEditing('vision')}
@@ -286,22 +287,23 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             editingCard?.type === 'strategy' && 'relative z-50'
           )}>
             <FlipCard
+              cardClassName="bg-ds-teal rounded-lg shadow-sm"
+              cardType="strategy"
+              returnLabel="Back to the strategy"
+              projectId={projectId}
               front={
-                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
+                <>
                   <h3 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wide mb-3">
                     Strategy
                   </h3>
                   <p className="text-lg font-medium text-white leading-relaxed">
                     {strategy.strategy}
                   </p>
-                </div>
+                </>
               }
               back={
-                <div className="bg-ds-teal rounded-lg p-6 shadow-sm">
-                  <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
-                    Explainer
-                  </div>
-                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.strategyExplainer || 'No explainer yet'}</p>
+                <>
+                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.strategyExplainer || 'Not written yet'}</p>
                   {!readOnly && (
                     <div className="flex justify-end mt-3">
                       <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
@@ -310,7 +312,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                       </Button>
                     </div>
                   )}
-                </div>
+                </>
               }
               isEditing={editingCard?.type === 'strategy'}
               onEditClick={() => startEditing('strategy')}
@@ -365,8 +367,12 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     )}
                   >
                     <FlipCard
+                      cardClassName="bg-ds-teal rounded-xl shadow-sm"
+                      cardType="objective"
+                      returnLabel="Back to the objective"
+                      projectId={projectId}
                       front={
-                        <div className="bg-ds-teal rounded-xl p-6 shadow-sm">
+                        <>
                           {/* Numbered circle */}
                           <div className="flex items-center justify-center w-[26px] h-[26px] rounded-full border-[1.5px] border-white/30 text-xs font-semibold text-white mx-auto mb-3">
                             {index + 1}
@@ -409,13 +415,16 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                               </ul>
                             </div>
                           )}
-                        </div>
+                        </>
                       }
                       back={
-                        <div className="bg-ds-teal rounded-xl p-6 shadow-sm">
-                          <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-3">
-                            Explainer
+                        <>
+                          <div className="flex items-center justify-center w-[26px] h-[26px] rounded-full border-[1.5px] border-white/30 text-xs font-semibold text-white mx-auto mb-3">
+                            {index + 1}
                           </div>
+                          <p className="text-[15px] font-semibold text-ds-neon mb-3">
+                            {getObjectiveTitle(objective)}
+                          </p>
                           {objective.explanation ? (
                             <p className="text-[13px] text-white/90 leading-relaxed">{objective.explanation}</p>
                           ) : (
@@ -429,7 +438,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                               </Button>
                             </div>
                           )}
-                        </div>
+                        </>
                       }
                       isEditing={isEditingThis}
                       onEditClick={() => startEditing('objective', objective.id)}
