@@ -15,9 +15,9 @@ was labelled **"Explainer"** — a word naming the mechanism rather than promisi
 worth reading.
 
 Every card (vision, strategy, objective, opportunity, principle) now ends in a **cordoned
-disclosure strip**: full-bleed to the card edges, neon-on-teal, ~44px tall, labelled **"The
-thinking"**. **The strip is the only click target** — the card surface is no longer a button,
-which also means the prose can finally be selected and copied.
+disclosure strip**: full-bleed to the card edges, ~44px tall, label and icon centred together,
+reading **"The thinking"**. **The strip is the only click target** — the card surface is no
+longer a button, which also means the prose can finally be selected and copied.
 
 Consequences worth knowing:
 
@@ -32,6 +32,21 @@ Consequences worth knowing:
 - **Card height still tracks the visible face**, so a flip inside a grid reflows its row.
   Deliberate: sizing every card to its taller face costs more whitespace than the jump costs
   in stability.
+
+### Removed — the second flip component, which was dead (2026-08-27)
+
+`src/components/ObjectiveCard.tsx` was **orphaned** — nothing imported it — and it was the
+only consumer of `src/components/ui/flip-card.tsx`. Both deleted; git history is the archive.
+
+That dead pair is where the mobile story was worst: `ui/flip-card.tsx` flipped on
+`onMouseEnter`/`onMouseLeave` (no hover on touch) and pinned cards to a fixed `h-80`, clipping
+long explainers. None of it ever reached a user.
+
+How it got there: the 2026-03-26 Decision Stack rendering design introduced
+`components/FlipCard.tsx` as "the shared component used by all stack layers", but its
+files-affected list never named `ObjectiveCard.tsx`, so that one card was left behind on the
+December 2025 component and the duplication went unnoticed for five months. The crossfade
+itself was deliberate and stays.
 
 ### Added — `card_thinking_viewed` (2026-08-27)
 
