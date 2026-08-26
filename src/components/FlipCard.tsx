@@ -168,23 +168,28 @@ export function FlipCard({
             onClick={handleFlip}
             aria-expanded={flipped}
             className={cn(
-              'flex w-full shrink-0 items-center justify-between gap-2',
-              'border-t border-white/20 text-left',
-              'text-ds-neon hover:bg-white/10 focus-visible:bg-white/10',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ds-neon',
+              'flex w-full shrink-0 items-center justify-center gap-2',
+              'border-t border-white/20',
+              // Deliberately NOT neon: the headings are neon, and a neon strip
+              // competed with them. The border, the hover and the full-bleed
+              // shape carry the affordance — the label only has to name it.
+              // Stepped down by SIZE and WEIGHT, never by opacity: greying text
+              // out to signal hierarchy is a house no.
+              'text-white hover:bg-white/10 focus-visible:bg-white/10',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/40',
               'transition-colors',
               stripPadding,
             )}
           >
-            <span className="text-[13px] font-semibold">
+            <span className="text-xs font-medium">
               {flipped ? returnLabel : disclosureLabel}
             </span>
             <RotateCw
               className={cn(
-                'h-3.5 w-3.5 shrink-0 transition-transform duration-300',
+                'h-3 w-3 shrink-0 transition-transform duration-300',
                 flipped && '-rotate-180',
               )}
-              strokeWidth={2.5}
+              strokeWidth={2}
             />
           </button>
         </div>

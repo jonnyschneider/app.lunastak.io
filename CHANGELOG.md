@@ -19,6 +19,11 @@ disclosure strip**: full-bleed to the card edges, ~44px tall, label and icon cen
 reading **"The thinking"**. **The strip is the only click target** — the card surface is no
 longer a button, which also means the prose can finally be selected and copied.
 
+The strip is **not** neon. Neon is the heading colour, and a neon strip competed with the very
+headings it sits under. It steps down by **size and weight only** — full-strength white at
+12px medium — because greying text out to signal hierarchy is a house no. The border, the
+hover state and the full-bleed shape carry the affordance; the label only has to name it.
+
 Consequences worth knowing:
 
 - **`FlipCard` now owns the card shell** (background, radius, shadow, padding via a `size`
