@@ -10,29 +10,28 @@
  * Design doc: docs/_plans/2026-08-26-model-bump-measurement-protocol-design.md
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * PROVISIONAL SURFACE — expires at the Phase 4 decision (desk #15)
+ * STATUS after the Phase 4 ruling (2026-08-26) — decision record:
+ * Drive Test-Data/20260826-model-upgrade/decision.md
  *
- * Not all of this module is permanent. Each export below states what makes it
- * survive; if the condition is not met, DELETE it rather than leaving it.
+ *   modelFor()        PERMANENT. The ruling is a per-stage map, which is what this
+ *                     exists to serve. Env overrides stay first: they are how the next
+ *                     forced model migration gets tested without a code change, and how
+ *                     any arm of the experiment is reproduced.
  *
- *   modelFor()        Survives only if the decision is a per-stage model MAP.
- *                     If one model wins outright, this collapses back to a
- *                     const and the env-override plumbing goes.
+ *   effortFor()       PERMANENT. effort:low is adopted on the Opus stages — measured 30%
+ *                     cheaper and 34% faster than Opus at default effort.
  *
- *   maxTokensFor()    A WORKAROUND, not a fix. The real answer is re-tuning the
- *                     per-stage max_tokens ceilings, which were fitted to
- *                     sonnet-4-5's verbosity. Survives only until that happens.
- *
- *   effortFor()       Arm D sweep only. Survives only if effort tuning proves
- *                     to change the outcome.
- *
- *   timeoutFor()      Expected to be PERMANENT — thinking models genuinely need
- *                     longer than the 60s client default.
+ *   timeoutFor()      PERMANENT. Thinking models genuinely exceed the 60s client default.
  *
  *   stripUnsupportedParams()
- *                     Permanent while any 5-family model is in use. Note that
- *                     once the migration is complete the call sites should stop
- *                     passing `temperature` at all, leaving this a safety net.
+ *                     PERMANENT while any 5-family model is in use. Once no call site
+ *                     passes `temperature` at all this becomes a pure safety net.
+ *
+ *   maxTokensFor()    STILL A WORKAROUND — the one unresolved item. The real fix is
+ *                     re-tuning the per-stage max_tokens ceilings, which were fitted to
+ *                     sonnet-4-5's verbosity. Measured demand: continue_questioning needs
+ *                     ~459 against a shipped ceiling of 200; continue_confidence ~765
+ *                     against 300. Tracked in ARCHITECTURE → Known Compromises.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 

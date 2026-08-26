@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Consolidation — model-bump experiment closed out (2026-08-27)
+
+The Phase 4 revisit trigger fired and was actioned; the design doc is now closed.
+
+- **Phase 2 (replay pass) closed as moot** and `tools/experiment/replay.ts` **deleted**. It was
+  scoped for "n=3 on close calls"; Phase 3 produced no reliable quality signal, so there were no
+  close calls to resolve. Built and dry-run tested, never executed live. Git history is the
+  recovery path.
+- **`src/lib/model-config.ts` promoted out of provisional.** `modelFor()`, `effortFor()`,
+  `timeoutFor()` and `stripUnsupportedParams()` are permanent. `maxTokensFor()` remains the one
+  open workaround, now tracked on its own ARCHITECTURE Known Compromise carrying the measured
+  ceilings that would retire it (`continue_questioning` ~459 vs shipped 200;
+  `continue_confidence` ~765 vs 300).
+- **`src/lib/experiment/` kept deliberately.** `capture.ts` earned its place — it is what made a
+  production-shaped parse bug diagnosable from real traffic — and `pricing.ts` is useful
+  independent of the experiment. Containment ratchet retained: exactly one production import.
+
+
 ### Phase 4 — model ruling shipped (2026-08-26)
 
 The model-bump experiment closed with its pre-registered decision rule **inconclusive** (premise
