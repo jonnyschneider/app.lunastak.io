@@ -8,6 +8,32 @@
  * what production sends.
  *
  * Design doc: docs/_plans/2026-08-26-model-bump-measurement-protocol-design.md
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PROVISIONAL SURFACE — expires at the Phase 4 decision (desk #15)
+ *
+ * Not all of this module is permanent. Each export below states what makes it
+ * survive; if the condition is not met, DELETE it rather than leaving it.
+ *
+ *   modelFor()        Survives only if the decision is a per-stage model MAP.
+ *                     If one model wins outright, this collapses back to a
+ *                     const and the env-override plumbing goes.
+ *
+ *   maxTokensFor()    A WORKAROUND, not a fix. The real answer is re-tuning the
+ *                     per-stage max_tokens ceilings, which were fitted to
+ *                     sonnet-4-5's verbosity. Survives only until that happens.
+ *
+ *   effortFor()       Arm D sweep only. Survives only if effort tuning proves
+ *                     to change the outcome.
+ *
+ *   timeoutFor()      Expected to be PERMANENT — thinking models genuinely need
+ *                     longer than the 60s client default.
+ *
+ *   stripUnsupportedParams()
+ *                     Permanent while any 5-family model is in use. Note that
+ *                     once the migration is complete the call sites should stop
+ *                     passing `temperature` at all, leaving this a safety net.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /** The model that ships today. Arm A of the comparison — do not change during the experiment. */

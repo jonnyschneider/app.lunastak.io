@@ -234,6 +234,7 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 | Guest `User` row is deleted at transfer, destroying its token counters | Accepted — per-user token history starts at signup | **Revisit:** carry counters across on transfer |
 | `llm_token_usage` misses 10 of 26 LLM call sites (those without a `userId`), skewing cost dashboards toward the cheap stages | Documented in `docs/analytics/events.md`; exact per-stage cost comes from the local capture instrument | **Revisit:** alongside the quota/telemetry split |
 | Cross-component state (project deletion) | Window events | **Revisit:** proper state management |
+| **Provisional surface (model-bump experiment, 2026-08-26).** Parts of `src/lib/model-config.ts` and all of `src/lib/experiment/` are scaffolding, not settled design: `modelFor()` survives only if the decision is a per-stage model map; `maxTokensFor()` is a workaround pending re-tuned per-stage `max_tokens` ceilings; `effortFor()` is arm-D-only. Each is marked in-file with its survival condition | Marked rather than designed — the final shape depends on answers the experiment exists to produce. Containment ratcheted (`experiment-containment.test.ts`: exactly one production import) | **Revisit: at the Phase 4 decision (desk #15).** Consolidate in one pass: delete what did not earn its place, promote what did |
 
 ---
 
