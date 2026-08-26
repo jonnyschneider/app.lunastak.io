@@ -17,6 +17,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
+import { extractText } from '@/lib/extract-text'
 
 export interface CaptureInput {
   context: string
@@ -60,9 +61,7 @@ export function captureCall(input: CaptureInput): void {
       content?: Array<{ type?: string; text?: string }>
     }
 
-    const text = Array.isArray(res.content)
-      ? res.content.filter(b => b?.type === 'text').map(b => b?.text ?? '').join('')
-      : ''
+    const text = extractText(input.response)
 
     const record = {
       capturedAt: new Date().toISOString(),

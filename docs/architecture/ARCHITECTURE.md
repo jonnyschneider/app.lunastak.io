@@ -121,8 +121,20 @@ adaptive thinking a **`thinking` block is returned first** (verified live 2026-0
 `claude-sonnet-5` and `claude-opus-5` return `[thinking, text]` on realistic prompts), so a
 `content[0]?.type === 'text' ? … : ''` guard falls through to its fallback and **silently
 discards a good response** — no exception, just empty text and a stage that quietly does
-nothing. This was live across 25 call sites. Enforced by
-`src/lib/__tests__/content-block-access.test.ts`.
+nothing. This was live across 25 call sites.
+
+**`extractText()` is the single universal reader.** It lives in `src/lib/extract-text.ts`,
+deliberately standalone and side-effect free: `@/lib/claude` throws at import when
+`ANTHROPIC_API_KEY` is unset, so it cannot be imported by tests or pure code paths.
+`@/lib/claude` re-exports it for convenience. It joins **all** text blocks in order, ignores
+`thinking` / `redacted_thinking` / `tool_use`, and returns `''` rather than throwing on a
+malformed response — so `extractText(r) || fallback` also handles a genuinely empty answer,
+which the old ternary passed through as `''`.
+
+There must be exactly one implementation. Three separate hand-rolled variants existed at the
+point this was found (positional index, `.find(b => b.type === 'text')`, and inline
+`.filter().map().join()`); all now delegate. `src/lib/__tests__/content-block-access.test.ts`
+scans **both `src/` and `tools/`** and rejects all three shapes.
 
 ---
 

@@ -25,6 +25,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
 import Anthropic from '@anthropic-ai/sdk'
 import { costUsd } from '../../src/lib/experiment/pricing'
+import { extractText } from '../../src/lib/extract-text'
 import {
   stripUnsupportedParams,
   maxTokensFor,
@@ -152,10 +153,7 @@ async function main() {
           const res = await client.messages.create(request as never, { timeout: timeoutFor(model) })
           const latencyMs = Date.now() - startedAt
 
-          const text = res.content
-            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-            .map(b => b.text)
-            .join('')
+          const text = extractText(res)
 
           const truncated = res.stop_reason === 'max_tokens'
 

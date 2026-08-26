@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { extractText } from '@/lib/extract-text';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,8 +34,7 @@ Reply with ONLY the deprioritized side (2-4 words, no explanation).`,
       ],
     }, 'suggest_opposite');
 
-    const textBlock = message.content.find((block) => block.type === 'text');
-    const opposite = textBlock?.type === 'text' ? textBlock.text.trim() : '';
+    const opposite = extractText(message).trim();
 
     return NextResponse.json({ opposite });
   } catch (error) {
