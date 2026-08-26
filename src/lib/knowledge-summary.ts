@@ -9,6 +9,7 @@ import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
 import { StructuredProvocation } from '@/lib/types'
+import { extractText } from '@/lib/extract-text';
 
 // Dimension display names for prompts
 const DIMENSION_NAMES: Record<Tier1Dimension, string> = {
@@ -161,9 +162,7 @@ export async function generateKnowledgeSummary(
       temperature: 0.6,
     }, 'knowledge_summary')
 
-    const responseText = response.content[0]?.type === 'text'
-      ? response.content[0].text
-      : ''
+    const responseText = extractText(response)
 
     // Parse response
     const summary = extractXML(responseText, 'summary')?.trim() || ''

@@ -31,10 +31,13 @@ describe('modelFor', () => {
     process.env = { ...saved }
   })
 
-  it('defaults to the shipping control model when no override is set', () => {
+  it('defaults an unmapped stage to DEFAULT_MODEL when no override is set', () => {
+    // DEFAULT_MODEL moved from claude-sonnet-4-5-20250929 to claude-sonnet-5 on 2026-08-26
+    // (Phase 4 ruling). Mapped stages are covered in stage-model-map.test.ts; this asserts the
+    // fallback for anything NOT in the map.
     delete process.env.LUNASTAK_MODEL
-    expect(modelFor('strategy_generation')).toBe(DEFAULT_MODEL)
-    expect(DEFAULT_MODEL).toBe('claude-sonnet-4-5-20250929')
+    expect(modelFor('an_unmapped_stage')).toBe(DEFAULT_MODEL)
+    expect(DEFAULT_MODEL).toBe('claude-sonnet-5')
   })
 
   it('applies a global override to every context', () => {

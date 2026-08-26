@@ -9,6 +9,10 @@ import {
   timeoutFor,
   effortFor,
 } from '@/lib/model-config';
+import { captureCall } from '@/lib/experiment/capture';
+import { extractText } from '@/lib/extract-text';
+
+export { extractText };
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -30,6 +34,7 @@ export const anthropic = new Anthropic({
  */
 export const CLAUDE_MODEL = DEFAULT_MODEL;
 
+
 /**
  * Wrapper for Claude API calls with automatic truncation detection.
  * Logs a warning if the response was truncated due to max_tokens.
@@ -44,7 +49,7 @@ export async function createMessage(
   // means no call site can escape the per-stage model map, and the control arm
   // keeps sending exactly what production sends today.
   const model = modelFor(context);
-  const effort = effortFor(model);
+  const effort = effortFor(model, context);
 
   const resolved = stripUnsupportedParams({
     ...params,
@@ -57,9 +62,14 @@ export async function createMessage(
   });
 
   // Adaptive thinking can exceed the 60s client default on the heavy stages.
+  const startedAt = Date.now();
   const response = await anthropic.messages.create(resolved, {
     timeout: timeoutFor(model),
   });
+  const latencyMs = Date.now() - startedAt;
+
+  // Experiment capture — no-op unless LUNASTAK_CAPTURE_DIR is set, and never throws.
+  captureCall({ context: context ?? 'unknown', request: resolved, response, latencyMs });
 
   // Check for truncation
   if (response.stop_reason === 'max_tokens') {
@@ -93,6 +103,15 @@ export async function createMessage(
         promptTokens: String(response.usage.input_tokens),
         completionTokens: String(response.usage.output_tokens),
         model: response.model || resolved.model,
+        // Added 2026-08-26: the metrics half of experiment capture, which is
+        // safe in production because it carries no user content. Real
+        // per-stage volumes turn the model-bump cost projection into a real
+        // number rather than an extrapolation, and `truncated` is a permanent
+        // canary — it matters most immediately after a model change, when a
+        // max_tokens ceiling tuned for the old model starts cutting answers off.
+        latencyMs: String(latencyMs),
+        maxTokens: String(resolved.max_tokens),
+        truncated: String(response.stop_reason === 'max_tokens'),
       })
     }).catch(() => {})
   }

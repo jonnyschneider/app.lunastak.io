@@ -8,6 +8,7 @@ import { getExperimentVariant } from '@/lib/statsig';
 import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions';
+import { extractText } from '@/lib/extract-text';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
 
@@ -267,9 +268,7 @@ export async function POST(req: Request) {
       }, 'conversation_start', userId);
       console.log(`[Start API] Claude responded in ${Date.now() - claudeStart}ms (total: ${Date.now() - startTime}ms)`);
 
-      firstQuestion = response.content[0]?.type === 'text'
-        ? response.content[0].text
-        : 'What business challenge or opportunity are you working on right now?';
+      firstQuestion = extractText(response) || 'What business challenge or opportunity are you working on right now?';
     }
 
     // Save first message

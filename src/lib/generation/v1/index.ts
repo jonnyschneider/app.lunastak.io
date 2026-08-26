@@ -20,6 +20,7 @@ import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs';
 import { logStatsigEvent } from '@/lib/statsig';
+import { extractText } from '@/lib/extract-text';
 
 // Progress step type for streaming updates
 export type GenerationProgressStep =
@@ -205,7 +206,7 @@ export async function performGeneration(
   const latency = Date.now() - startTime;
   console.log(`[Generate v1] Claude API responded in ${latency}ms`);
 
-  const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
+  const content = extractText(response);
 
   const thoughts = extractXML(content, 'thoughts');
   const statementsXML = extractXML(content, 'statements');

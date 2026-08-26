@@ -23,6 +23,7 @@
     "regen:remote": "tsx scripts/regenerate-remote.ts",
     "pipeline": "tsx scripts/run-pipeline.ts",
     "backfill:extraction": "tsx scripts/backfill-extraction.ts",
+    "experiment:replay": "tsx tools/experiment/replay.ts",
     "bundle:export": "tsx tools/project-bundle/export.ts",
     "bundle:restore": "tsx tools/project-bundle/restore.ts",
     "bundle:validate": "tsx tools/project-bundle/validate.ts",

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import type { StrategyStatements } from '@/lib/types';
+import { extractText } from '@/lib/extract-text';
 
 interface ExtractBody {
   statements: StrategyStatements;
@@ -93,7 +94,7 @@ ${content}`,
     }, 'template_extraction');
 
     // Parse themes from JSON in response
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const text = extractText(response);
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     let themes: ThemeWithDimensions[] = [];
     if (jsonMatch) {

@@ -16,8 +16,18 @@ import * as path from 'path'
 
 const SRC = path.join(__dirname, '../..')
 
-/** The only files allowed to name a model. Shrink this set, never grow it. */
-const ALLOW = ['lib/model-config.ts']
+/**
+ * The only files allowed to name a model.
+ *
+ * The bar for entry is narrow: a file may name models when models ARE its
+ * subject (resolution, rate tables) — never to pick one at a call site, which
+ * is the bug this ratchet exists to prevent. Shrink this set where you can;
+ * grow it only with a reason written down.
+ */
+const ALLOW = [
+  'lib/model-config.ts',        // resolution — the one place a model is chosen
+  'lib/experiment/pricing.ts',  // $/MTok rate table, keyed by model prefix
+]
 
 const MODEL_LITERAL = /['"]claude-[a-z0-9-]+['"]/
 

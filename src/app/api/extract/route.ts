@@ -8,6 +8,7 @@ import { logStatsigEvent } from '@/lib/statsig';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 import { planPipeline, executePipeline } from '@/lib/pipeline';
 import { waitUntil } from '@vercel/functions';
+import { extractText } from '@/lib/extract-text';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -245,9 +246,7 @@ export async function POST(req: Request) {
           temperature: 0.3,
         }, 'extraction', conversation.userId);
 
-        const extractionContent = extractionResponse.content[0]?.type === 'text'
-          ? extractionResponse.content[0].text
-          : '';
+        const extractionContent = extractText(extractionResponse);
 
         const extractionXML = extractXML(extractionContent, 'extraction');
 
@@ -349,9 +348,7 @@ export async function POST(req: Request) {
           temperature: 0.3,
         }, 'extraction', conversation.userId);
 
-        const extractionContent = extractionResponse.content[0]?.type === 'text'
-          ? extractionResponse.content[0].text
-          : '';
+        const extractionContent = extractText(extractionResponse);
 
         const extractionXML = extractXML(extractionContent, 'extraction');
 
@@ -469,8 +466,7 @@ export async function POST(req: Request) {
           temperature: 0.3
         }, 'extraction', conversation.userId);
 
-        const extractionContent = extractionResponse.content[0]?.type === 'text'
-          ? extractionResponse.content[0].text : '';
+        const extractionContent = extractText(extractionResponse);
 
         const extractionXML = extractXML(extractionContent, 'extraction');
 
@@ -531,8 +527,7 @@ export async function POST(req: Request) {
             temperature: 0.5
           }, 'reflective_summary_prescriptive', conversation.userId);
 
-          const summaryContent = summaryResponse.content[0]?.type === 'text'
-            ? summaryResponse.content[0].text : '';
+          const summaryContent = extractText(summaryResponse);
 
           // Note: truncation is now automatically detected and logged by createMessage()
           if (summaryResponse.stop_reason !== 'end_turn') {

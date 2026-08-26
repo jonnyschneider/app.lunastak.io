@@ -6,6 +6,7 @@ import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
+import { extractText } from '@/lib/extract-text';
 
 const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
 
@@ -77,9 +78,7 @@ export async function fullSynthesis(
     temperature: 0.3
   }, 'full_synthesis')
 
-  const content = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : '{}'
+  const content = extractText(response) || '{}'
 
   try {
     const cleanedContent = extractJsonFromResponse(content)
