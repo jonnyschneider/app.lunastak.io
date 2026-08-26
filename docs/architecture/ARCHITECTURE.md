@@ -194,6 +194,7 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 | Statsig: stableID is per-origin, so `lunastak.io` and `app.lunastak.io` see the same physical visitor as two anonymous users until guest userID is created on app arrival | Accepted gap. Aggregate funnels are sufficient. See [Decision: Cross-Site Statsig Identity Stitching (2026-04-07)](#decision-cross-site-statsig-identity-stitching-2026-04-07). | **Revisit:** when running marketing A/B tests or per-user attribution analysis |
 | Claude: adds preamble to JSON responses | `extractJSON()` finds JSON within text | **Durable** |
 | Claude: silent truncation at `max_tokens` | `createMessage()` logs warning | **Revisit:** auto-retry with higher limit |
+| Claude 5 family: a too-tight `max_tokens` yields an **empty string**, not a partial answer — reasoning consumes the whole budget before the first visible token (measured 2026-08-26). Pre-5 models degrade to usable partial text | `maxTokensFor()` adds reasoning headroom for thinking models; see `src/lib/model-config.ts` | **Revisit:** re-tune the per-stage ceilings, and audit call sites that assume non-empty text |
 
 ### Application
 
