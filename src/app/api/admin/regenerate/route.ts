@@ -5,6 +5,7 @@ import { extractXML } from '@/lib/utils';
 import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
 import { logStatsigEvent } from '@/lib/statsig';
+import { extractText } from '@/lib/extract-text';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -181,7 +182,7 @@ export async function POST(req: Request) {
     const latency = Date.now() - startTime;
     console.log(`[Regenerate API] Claude responded in ${latency}ms`);
 
-    const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
+    const content = extractText(response);
 
     const thoughts = extractXML(content, 'thoughts');
     const statementsXML = extractXML(content, 'statements');

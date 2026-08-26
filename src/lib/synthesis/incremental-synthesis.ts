@@ -8,6 +8,7 @@ import { SynthesisResult, FragmentForSynthesis } from './types'
 import { DimensionalSynthesis } from '@prisma/client'
 import { extractJsonFromResponse } from './extract-json'
 import { StructuredProvocation } from '@/lib/types'
+import { extractText } from '@/lib/extract-text';
 
 const INCREMENTAL_SYNTHESIS_PROMPT = `You are updating strategic understanding for the dimension: **{dimension}**.
 
@@ -91,9 +92,7 @@ export async function incrementalSynthesis(
     temperature: 0.3
   }, 'incremental_synthesis')
 
-  const content = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : '{}'
+  const content = extractText(response) || '{}'
 
   try {
     const cleanedContent = extractJsonFromResponse(content)

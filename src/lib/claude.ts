@@ -10,6 +10,9 @@ import {
   effortFor,
 } from '@/lib/model-config';
 import { captureCall } from '@/lib/experiment/capture';
+import { extractText } from '@/lib/extract-text';
+
+export { extractText };
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -30,6 +33,7 @@ export const anthropic = new Anthropic({
  * this constant (enforced by tests/model-provenance).
  */
 export const CLAUDE_MODEL = DEFAULT_MODEL;
+
 
 /**
  * Wrapper for Claude API calls with automatic truncation detection.

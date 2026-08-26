@@ -108,6 +108,22 @@ const response = await createMessage({
 
 The wrapper provides automatic truncation detection, consistent logging, and a single point of control. A test in `src/lib/__tests__/claude-wrapper.test.ts` enforces this — only `src/lib/claude.ts` may call `anthropic.messages.create` directly.
 
+### ⚠ Reading the response: use `extractText()`, never `content[0]`
+
+```typescript
+import { extractText } from '@/lib/extract-text'
+const text = extractText(response)          // ✅
+const text = response.content[0].text       // ❌ loses the response on thinking models
+```
+
+`response.content[0]` is the text block only when the response has exactly one block. With
+adaptive thinking a **`thinking` block is returned first** (verified live 2026-08-26: both
+`claude-sonnet-5` and `claude-opus-5` return `[thinking, text]` on realistic prompts), so a
+`content[0]?.type === 'text' ? … : ''` guard falls through to its fallback and **silently
+discards a good response** — no exception, just empty text and a stage that quietly does
+nothing. This was live across 25 call sites. Enforced by
+`src/lib/__tests__/content-block-access.test.ts`.
+
 ---
 
 ## Analytics & Instrumentation

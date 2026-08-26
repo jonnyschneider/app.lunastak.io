@@ -8,6 +8,7 @@ import {
 } from '@/lib/types';
 import { Tier1Dimension } from '@/lib/constants/dimensions';
 import { DimensionTagInput } from '@/lib/fragments';
+import { extractText } from '@/lib/extract-text';
 
 // Map from inline dimension keys to strategic dimension names
 const INLINE_TO_STRATEGIC: Record<string, StrategicDimension> = {
@@ -108,9 +109,7 @@ export async function analyzeDimensionalCoverage(
     temperature: 0.2, // Lower temp for consistent tagging
   }, 'dimensional_analysis');
 
-  const content = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : '';
+  const content = extractText(response);
 
   // Parse response into DimensionalCoverage structure
   const coverage = parseDimensionalCoverageResponse(content, extractedContext, response.model);

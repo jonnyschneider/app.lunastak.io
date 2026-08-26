@@ -20,6 +20,7 @@ import type { StrategyStatements, Objective, Opportunity, SuccessMetric } from '
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
 import type { OpportunityGenerationOutputContract } from '@/lib/contracts/opportunity-generation'
 import type { PipelineResult } from './types'
+import { extractText } from '@/lib/extract-text';
 
 // --- Shared helpers ---
 
@@ -213,9 +214,7 @@ export async function runRefreshGeneration(
     temperature: 0.7,
   }, 'refresh_strategy_generation', userId)
 
-  const genContent = genResponse.content[0]?.type === 'text'
-    ? genResponse.content[0].text
-    : ''
+  const genContent = extractText(genResponse)
 
   const statementsXML = extractXML(genContent, 'statements')
   const objectivesXML = extractXML(statementsXML, 'objectives')
@@ -268,9 +267,7 @@ export async function runRefreshGeneration(
       temperature: 0.5,
     }, 'refresh_strategy_summary', userId)
 
-    changeSummary = summaryResponse.content[0]?.type === 'text'
-      ? summaryResponse.content[0].text.trim()
-      : null
+    changeSummary = extractText(summaryResponse).trim() || null
   } catch (summaryError) {
     console.error('[Pipeline] Change summary failed:', summaryError)
   }
@@ -382,7 +379,7 @@ export async function runInitialGeneration(
   const latency = Date.now() - claudeStartTime
 
   // Parse response
-  const content = response.content[0]?.type === 'text' ? response.content[0].text : ''
+  const content = extractText(response)
   const thoughts = extractXML(content, 'thoughts')
   const statementsXML = extractXML(content, 'statements')
   const objectivesXML = extractXML(statementsXML, 'objectives')
@@ -639,7 +636,7 @@ export async function runOpportunityGeneration(
     temperature: 0.7,
   }, 'opportunity_generation', userId)
 
-  const content = response.content[0]?.type === 'text' ? response.content[0].text : ''
+  const content = extractText(response)
 
   // Parse opportunities from XML
   const opportunities = parseOpportunitiesXML(content)

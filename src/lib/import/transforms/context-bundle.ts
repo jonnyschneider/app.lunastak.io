@@ -2,6 +2,7 @@ import type { EmergentThemeContract } from '@/lib/contracts/extraction'
 import type { ContextBundle } from '../types'
 import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
 import { extractXML } from '@/lib/utils'
+import { extractText } from '@/lib/extract-text';
 
 // Map bundle area keys (UPPER_CASE) to extraction dimension keys (lower_case)
 const AREA_TO_DIMENSION: Record<string, string> = {
@@ -131,7 +132,7 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
       temperature: 0.3,
     }, 'import_dimension_tagging')
 
-    const responseText = response.content[0]?.type === 'text' ? response.content[0].text : ''
+    const responseText = extractText(response)
     const taggingXML = extractXML(responseText, 'tagging')
 
     // Parse tags per chunk
