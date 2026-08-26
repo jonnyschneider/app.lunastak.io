@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMessage } from '@/lib/claude';
+import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     const message = await createMessage({
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_MODEL,
       max_tokens: 50,
       messages: [
         {

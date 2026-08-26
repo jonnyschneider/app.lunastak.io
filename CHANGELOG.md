@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Phase 0 — model-bump groundwork (2026-08-26)
+
+Prerequisite for the three-arm model comparison (desk #15). Behaviour-preserving
+for the shipping model; see `docs/_plans/2026-08-26-model-bump-measurement-protocol-design.md`.
+
+### Added
+
+- **`src/lib/model-config.ts`** — per-context model resolution (`modelFor`), sampling-param
+  compatibility (`supportsSamplingParams` / `stripUnsupportedParams`), and thinking-aware
+  request shaping (`maxTokensFor` / `timeoutFor` / `effortFor`). Any pipeline stage can be
+  pointed at any model via `LUNASTAK_MODEL` or `LUNASTAK_MODEL_<CONTEXT>` with no code change.
+- **Three ratchet tests** — `model-resolution` (17 cases), `model-provenance` (persisted
+  `modelUsed` must come from `response.model`, never the `CLAUDE_MODEL` constant), and
+  `model-literals` (model IDs confined to `model-config.ts`).
+
+### Changed
+
+- `@anthropic-ai/sdk` 0.17.2 → 0.120.0.
+- `createMessage()` now resolves the model per context, strips sampling params the resolved
+  model would reject (the Claude 5 family 400s on `temperature`/`top_p`/`top_k`), adds
+  reasoning headroom to `max_tokens` for models where thinking is adaptive by default, and
+  raises the request timeout for those models above the 60s client default.
+- `modelUsed` provenance now records `response.model` at all five persistence sites.
+
+### Fixed
+
+- **`suggest-opposite` was pinned to `claude-sonnet-4-20250514`** — a hardcoded literal that
+  bypassed `CLAUDE_MODEL`, leaving that endpoint a model generation behind the rest of the app.
+  Now routed through the resolver; the `model-literals` ratchet prevents a recurrence.
+
 ## [2.5.1] - 2026-07-05
 
 **Public share links — read-only Decision Stack via unguessable URL.**

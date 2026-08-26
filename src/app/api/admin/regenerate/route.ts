@@ -207,7 +207,7 @@ export async function POST(req: Request) {
         extractedContext: originalTrace.extractedContext as any,
         output: statements as any,
         claudeThoughts: thoughts,
-        modelUsed: CLAUDE_MODEL,
+        modelUsed: response.model,
         totalTokens: response.usage.input_tokens + response.usage.output_tokens,
         promptTokens: response.usage.input_tokens,
         completionTokens: response.usage.output_tokens,
