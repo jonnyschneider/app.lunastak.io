@@ -7,10 +7,8 @@ import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
 import { extractText } from '@/lib/extract-text';
-import {
-  PLAIN_LANGUAGE_TITLE_GUIDANCE,
-  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
-} from '@/lib/prompts/shared/plain-language'
+import { PLAIN_LANGUAGE_EXPLAINER_GUIDANCE } from '@/lib/prompts/shared/plain-language'
+import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
 import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
@@ -32,7 +30,7 @@ Synthesize these fragments into structured understanding:
 3. **Key Quotes** (3-5 quotes): Verbatim quotes that capture the essence. Use exact wording from fragments.
 
 4. **Gaps** (list of objects): What's missing? Each gap should have:
-   - "title": A punchy, attention-grabbing title (max 60 chars). The title rules below apply in full.
+   - "title": A punchy, attention-grabbing title (max 60 chars). A gap is something you don't yet know, so phrase it as a question. The title rules below apply.
    - "description": The full question or explanation of what's missing
 
 5. **Contradictions** (list): Are there conflicting fragments? Surface tensions, don't hide them.
@@ -46,7 +44,7 @@ Synthesize these fragments into structured understanding:
 
 ${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
 
-${PLAIN_LANGUAGE_TITLE_GUIDANCE}
+${QUESTION_TITLE_GUIDANCE}
 
 ${VOICE_CONSTRAINT}
 

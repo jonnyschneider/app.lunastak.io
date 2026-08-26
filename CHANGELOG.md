@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — question and gap titles get their own rules; thematic leads restored (2026-08-27)
+
+Refinement of the voice constraint after reading the full before/after across all four prose
+stages and both ingest paths (`voice-constraint-ab/` beside the model-bump experiment).
+
+**Question and gap titles were taking the wrong rule.** `PLAIN_LANGUAGE_TITLE_GUIDANCE` was
+applied wholesale to `suggested_questions` and synthesis `gaps`. It asks *"does it start with a
+verb or an outcome?"*, which is right for a commitment and wrong for a question — it converted
+`What would kill this fastest?` into `Test the smallest version first`, and
+`Who actually screws the kitchen to the wall?` into `Decide who installs the kitchen`. Titles
+also grew from 21–33 to 31–43 chars, costing the scannability that is a title's whole job.
+
+New `QUESTION_TITLE_GUIDANCE` (`prompts/shared/question-titles.ts`) scopes the rule: stay
+interrogative, six words or fewer, and explicitly **do not** open with a verb or an outcome.
+Re-measured — 20 of 20 gap titles are questions again, question titles are back to 21–35 chars,
+and the richer descriptions the voice constraint produced are kept. That was the point: the
+before/after choice was a false one once the cause was found.
+
+**Thematic leads restored to the knowledge summary.** The summary used to structure itself with
+short bold leads (`**The problem you've zeroed in on.**`) and lost them when the inline guidance
+was replaced. They are prompted back as a *shape*, not a fixed set — the model names the themes
+the material actually has. Re-measured: bundle-import produced "The problem you've zeroed in
+on. / Your answer, sketched. / What you've deliberately left open. / The tensions you've already
+named."; doc-upload produced a different, equally apt set.
+
+**Cost.** Dropping the title guidance from `full_synthesis` also trims the prompt on the stage
+that runs ten times per generation, where it had more than doubled.
+
+Em-dashes stayed at zero across all six re-run stages. Ratchet extended: the question/gap prompts
+must not import `PLAIN_LANGUAGE_TITLE_GUIDANCE`, and must interpolate `QUESTION_TITLE_GUIDANCE`.
+Verified to fail on reintroduction.
+
 ### Added — a voice constraint on generated prose (2026-08-27)
 
 Every prompt that generates prose now carries `VOICE_CONSTRAINT`

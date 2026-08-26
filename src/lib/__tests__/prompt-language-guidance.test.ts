@@ -13,6 +13,14 @@
  *    model-bump experiment, i.e. a property of the prompt layer. A prompt that
  *    generates prose without VOICE_CONSTRAINT reintroduces it.
  *
+ * 3. **Question and gap titles do not take the objective title rules.**
+ *    `PLAIN_LANGUAGE_TITLE_GUIDANCE` asks "does it start with a verb or an
+ *    outcome?", which is right for a commitment and wrong for a question — it
+ *    converted "What would kill this fastest?" into "Test the smallest version
+ *    first" and "Who actually screws the kitchen to the wall?" into "Decide who
+ *    installs the kitchen" (measured 2026-08-27, `voice-constraint-ab/`). The
+ *    question/gap prompts import `QUESTION_TITLE_GUIDANCE` instead.
+ *
  * The ALLOW set below only shrinks.
  */
 
@@ -58,6 +66,25 @@ describe('language guidance is imported, never re-inlined', () => {
 
     it(`${file} interpolates VOICE_CONSTRAINT`, () => {
       expect(read(file)).toContain('${VOICE_CONSTRAINT}')
+    })
+  }
+})
+
+/** Prompts whose only titles are questions or gaps. */
+const QUESTION_TITLE_FILES = [
+  'lib/knowledge-summary.ts',
+  'lib/synthesis/full-synthesis.ts',
+]
+
+describe('question and gap titles use their own rules', () => {
+  for (const file of QUESTION_TITLE_FILES) {
+    it(`${file} does not apply the objective title guidance`, () => {
+      expect(read(file), 'objective/opportunity title rules turn questions into instructions')
+        .not.toContain('PLAIN_LANGUAGE_TITLE_GUIDANCE')
+    })
+
+    it(`${file} interpolates QUESTION_TITLE_GUIDANCE`, () => {
+      expect(read(file)).toContain('${QUESTION_TITLE_GUIDANCE}')
     })
   }
 })

@@ -10,10 +10,8 @@ import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
 import { StructuredProvocation } from '@/lib/types'
 import { extractText } from '@/lib/extract-text';
-import {
-  PLAIN_LANGUAGE_TITLE_GUIDANCE,
-  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
-} from '@/lib/prompts/shared/plain-language'
+import { PLAIN_LANGUAGE_EXPLAINER_GUIDANCE } from '@/lib/prompts/shared/plain-language'
+import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
 import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 // Dimension display names for prompts
@@ -46,14 +44,13 @@ Guidelines:
 - Write in second person ("You've shared that...", "Your strategy focuses on...")
 - Be specific - reference actual details from the fragments
 - Organize by themes that emerged, not rigidly by dimensions
+- Lead each theme with a short bold phrase drawn from what is actually there, so the summary can be skimmed ("**The problem you've zeroed in on.**", "**Your answer.**", "**What you haven't decided.**"). Two to four of them. These are examples of the shape, NOT a set to reuse — name the themes this material actually has.
 - Keep it concise (150-300 words)
 - End on a concrete, encouraging note about what would be worth exploring next
 
 ${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
 
-${PLAIN_LANGUAGE_TITLE_GUIDANCE}
-
-Question titles (in suggested_questions and dimension_gaps) are titles: the title rules above apply to them in full.
+${QUESTION_TITLE_GUIDANCE}
 
 ${VOICE_CONSTRAINT}
 
