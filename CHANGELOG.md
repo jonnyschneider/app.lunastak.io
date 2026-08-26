@@ -33,6 +33,13 @@ for the shipping model; see `docs/_plans/2026-08-26-model-bump-measurement-proto
 
 ### Fixed
 
+- **`docs/analytics/events.md` corrected** — the `llm_token_usage` row documented `value` as
+  `<model>` and metadata as `inputTokens`/`outputTokens`; the code emits a *number* (input +
+  output) and `promptTokens`/`completionTokens`. Pre-existing drift; a dashboard built from the
+  old description would have filtered on fields that were never emitted. Also documents a
+  coverage gap found while correcting it: the event sits inside `if (userId)` and **10 of 26
+  `createMessage` call sites pass no `userId`**, so token-burn dashboards and `User` counters
+  understate real usage — unevenly, since several unmetered stages are the expensive ones.
 - **`suggest-opposite` was pinned to `claude-sonnet-4-20250514`** — a hardcoded literal that
   bypassed `CLAUDE_MODEL`, leaving that endpoint a model generation behind the rest of the app.
   Now routed through the resolver; the `model-literals` ratchet prevents a recurrence.

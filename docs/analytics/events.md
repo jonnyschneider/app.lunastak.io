@@ -103,7 +103,34 @@ Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `llm_token_usage` | server | `<model>` | `inputTokens`, `outputTokens`, `context`, … | Fired on every Claude API call from `src/lib/claude.ts`. Drives token-burn dashboards and per-context cost analysis. |
+| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
+
+### `llm_token_usage` — corrections and a coverage gap
+
+**Doc/code drift corrected 2026-08-26.** The row above previously documented `value` as
+`<model>` and metadata as `inputTokens`/`outputTokens`. Neither matched the code: `value` is a
+number (input + output tokens), and the token keys are `promptTokens`/`completionTokens`. A
+dashboard built from the old description would have filtered on fields that were never emitted.
+
+Note this event deviates from the `value` convention at the top of this file — it carries a
+number rather than a "what kind / where from" string. Filter by model via `metadata.model`.
+
+**Added 2026-08-26:** `latencyMs`, `maxTokens`, `truncated`. `truncated` is `"true"` when the
+response hit `stop_reason: max_tokens` — a canary that matters most immediately after a model
+change, when a ceiling tuned for the previous model starts cutting answers off. No user content
+is carried; prompt/response capture is a local-only instrument (`src/lib/experiment/capture.ts`,
+hard-gated out of production).
+
+**⚠ Coverage gap — the event does not fire on every LLM call.** It sits inside
+`if (userId && response.usage)`, and **10 of 26 `createMessage` call sites pass no `userId`**:
+`extraction`, `knowledge_summary`, `full_synthesis`, `incremental_synthesis`,
+`document_extraction`, `dimensional_analysis`, `reflective_summary_prescriptive`,
+`template_extraction`, `import_dimension_tagging`, `suggest_opposite`.
+
+Those calls emit no event and no `User` token increment. Several are among the most expensive
+stages in the pipeline, so **token-burn dashboards and per-user counters understate real usage,
+and understate it unevenly** — the heavy stages are the ones missing. Do not treat either as a
+complete cost picture until this is closed.
 
 ---
 
