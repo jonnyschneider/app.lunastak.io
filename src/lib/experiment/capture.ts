@@ -1,0 +1,76 @@
+/**
+ * Stage capture for the model-bump experiment (Phase 1).
+ *
+ * Records each pipeline stage's RESOLVED request and its response, so Phase 2
+ * can replay the identical payload against the other arms in isolation — the
+ * only way to attribute a quality difference to a stage rather than to better
+ * input arriving from upstream.
+ *
+ * Two hard rules, both tested:
+ *   1. OFF unless LUNASTAK_CAPTURE_DIR is set. This writes prompts — and
+ *      therefore user content — to disk.
+ *   2. It NEVER throws. Losing a user's paid generation to a capture failure
+ *      would be far worse than losing the measurement.
+ *
+ * Design: docs/_plans/2026-08-26-model-bump-measurement-protocol-design.md
+ */
+
+import * as fs from 'fs'
+import * as path from 'path'
+
+export interface CaptureInput {
+  context: string
+  /** The request as actually sent, post-resolution — replayable verbatim. */
+  request: unknown
+  response: unknown
+  latencyMs: number
+}
+
+export function isCaptureEnabled(): boolean {
+  return Boolean(process.env.LUNASTAK_CAPTURE_DIR)
+}
+
+/** Monotonic suffix so two calls in the same millisecond can't collide. */
+let seq = 0
+
+export function captureCall(input: CaptureInput): void {
+  try {
+    const dir = process.env.LUNASTAK_CAPTURE_DIR
+    if (!dir) return
+
+    const res = (input.response ?? {}) as {
+      model?: string
+      stop_reason?: string
+      usage?: { input_tokens?: number; output_tokens?: number }
+      content?: Array<{ type?: string; text?: string }>
+    }
+
+    const text = Array.isArray(res.content)
+      ? res.content.filter(b => b?.type === 'text').map(b => b?.text ?? '').join('')
+      : ''
+
+    const record = {
+      capturedAt: new Date().toISOString(),
+      context: input.context,
+      model: res.model ?? null,
+      request: input.request,
+      text,
+      inputTokens: res.usage?.input_tokens ?? 0,
+      outputTokens: res.usage?.output_tokens ?? 0,
+      latencyMs: input.latencyMs,
+      stopReason: res.stop_reason ?? null,
+      // A truncated output is not a quality signal — it's a config failure, and
+      // the protocol says such a stage is invalid for that arm.
+      truncated: res.stop_reason === 'max_tokens',
+    }
+
+    fs.mkdirSync(dir, { recursive: true })
+
+    seq += 1
+    const name = `${Date.now()}-${String(seq).padStart(4, '0')}-${input.context}.json`
+    fs.writeFileSync(path.join(dir, name), JSON.stringify(record, null, 2))
+  } catch (err) {
+    // Best-effort by contract. Never let measurement break the product.
+    console.warn('[capture] failed, continuing:', err instanceof Error ? err.message : err)
+  }
+}

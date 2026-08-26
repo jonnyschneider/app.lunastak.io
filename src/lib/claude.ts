@@ -9,6 +9,7 @@ import {
   timeoutFor,
   effortFor,
 } from '@/lib/model-config';
+import { captureCall } from '@/lib/experiment/capture';
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -57,9 +58,14 @@ export async function createMessage(
   });
 
   // Adaptive thinking can exceed the 60s client default on the heavy stages.
+  const startedAt = Date.now();
   const response = await anthropic.messages.create(resolved, {
     timeout: timeoutFor(model),
   });
+  const latencyMs = Date.now() - startedAt;
+
+  // Experiment capture — no-op unless LUNASTAK_CAPTURE_DIR is set, and never throws.
+  captureCall({ context: context ?? 'unknown', request: resolved, response, latencyMs });
 
   // Check for truncation
   if (response.stop_reason === 'max_tokens') {
