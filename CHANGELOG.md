@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — a voice constraint on generated prose (2026-08-27)
+
+Every prompt that generates prose now carries `VOICE_CONSTRAINT`
+(`prompts/shared/voice.ts`). It targets **cadence**, which is a different category from the
+vocabulary rules in `plain-language.ts`, and both now apply.
+
+**Why this was missing.** The model-bump experiment measured the Claude-ish register as a
+*constant* across all four model arms: em-dash density 10.9–15.4 per 1k words, comparable
+rule-of-three and sentence-length variance. Constant across models means it is a property of the
+prompt layer. Everything that had shipped on language targeted jargon ("paradox", "wallet
+share"); nothing anywhere constrained voice. Vision and Strategy carried no language rule at all,
+deliberately, on a rationale about jargon that was never a decision about tone — and they are the
+artefacts where the voice read worst. They are not exempt from this one.
+
+Named tics, each with a rewrite pair: em-dash asides, the rule of three, balanced "not X, but Y"
+and "either X or Y" framing, sentimental closers, hedges, abstract nouns doing a verb's job, and
+uniform sentence length.
+
+**Measured, not argued.** The shipping arm's captured `strategy_generation` and
+`opportunity_generation` requests were re-sent with the same model, effort, `max_tokens` and
+input, changing only the prompt (two independent runs):
+
+| | before | after |
+|---|---|---|
+| em-dashes per 1k words | 14.0 (13 total) | **0.0 (0 total)** |
+| "not X, but Y" | 1 | 0 |
+| sentence-length sd | 11.3 | 10.2–12.0 |
+| rule-of-three | 5 | 5–6 |
+
+Em-dashes went to zero on both runs and output quality held. **The rule of three did not
+move** — and on reading, the remaining matches are genuine enumerations of three real parties
+("the architect, the builder and the homeowner"), not rhetorical triads, which did drop. The
+regex cannot tell the two apart, so that row is not evidence either way.
+
+Cost: ~+600 input tokens per generation call. Latency unchanged.
+
+**Also fixed: two drifted copy-pastes.** `knowledge-summary.ts` and `synthesis/full-synthesis.ts`
+each carried an inlined, shortened paraphrase of the plain-language guidance instead of importing
+it. Both now import the shared constants, so the guidance has one definition again.
+
 ### Fixed — model provenance recorded the plan's model, not the model that answered (2026-08-27)
 
 `pipeline/generation.ts` recorded `modelUsed: model` at **six** sites, where `model` is a

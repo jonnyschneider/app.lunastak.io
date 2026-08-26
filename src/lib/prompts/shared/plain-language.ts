@@ -11,6 +11,11 @@
  *
  * If a smart non-specialist can't read the title once and know what it means,
  * it has failed at its job.
+ *
+ * SCOPE: this file governs VOCABULARY only. Cadence, balance and flourish are
+ * a separate category and live in `voice.ts`, which applies to every artefact
+ * including Vision and Strategy. Both constraints apply; neither substitutes
+ * for the other.
  */
 
 export const PLAIN_LANGUAGE_TITLE_GUIDANCE = `## Plain-Language Constraint (for titles)

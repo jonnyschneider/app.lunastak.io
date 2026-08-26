@@ -15,6 +15,7 @@ import {
   PLAIN_LANGUAGE_TITLE_GUIDANCE,
   PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
 } from '@/lib/prompts/shared/plain-language'
+import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import type { StrategyStatements, Objective, Opportunity, SuccessMetric } from '@/lib/types'
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
@@ -87,6 +88,8 @@ ${VISION_GUIDELINES}
 ${STRATEGY_GUIDELINES}
 
 ${OBJECTIVE_GUIDELINES}
+
+${VOICE_CONSTRAINT}
 
 Output format:
 <statements>
@@ -541,6 +544,8 @@ Generate 3-5 strategic opportunities. Each opportunity must:
 ${PLAIN_LANGUAGE_TITLE_GUIDANCE}
 
 ${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
+
+${VOICE_CONSTRAINT}
 
 The UI renders the belief as: "We believe [action] will [outcome]"
 So action and outcome must read naturally after those lead-in words. Keep each to 8-20 words.

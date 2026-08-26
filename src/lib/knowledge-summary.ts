@@ -10,6 +10,11 @@ import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
 import { StructuredProvocation } from '@/lib/types'
 import { extractText } from '@/lib/extract-text';
+import {
+  PLAIN_LANGUAGE_TITLE_GUIDANCE,
+  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
+} from '@/lib/prompts/shared/plain-language'
+import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 // Dimension display names for prompts
 const DIMENSION_NAMES: Record<Tier1Dimension, string> = {
@@ -42,12 +47,15 @@ Guidelines:
 - Be specific - reference actual details from the fragments
 - Organize by themes that emerged, not rigidly by dimensions
 - Keep it concise (150-300 words)
-- End on an encouraging note
+- End on a concrete, encouraging note about what would be worth exploring next
 
-Plain-language constraint:
-- Use words an operator would say in a standup, not framework vocabulary lifted from the source (avoid academic terms like "paradox", "apex", "cornered resource", "wallet share", "lifecycle", "cohort").
-- Define specialist terms on first use with a short appositive ("Classiche, our certification program for older Ferraris" — not just "Classiche").
-- Question titles (in suggested_questions, dimension_gaps) follow the same rule: ≤8 words ideal, plain language, would survive being shared without context.
+${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
+
+${PLAIN_LANGUAGE_TITLE_GUIDANCE}
+
+Question titles (in suggested_questions and dimension_gaps) are titles: the title rules above apply to them in full.
+
+${VOICE_CONSTRAINT}
 
 Format your response:
 <summary>

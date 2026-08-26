@@ -7,6 +7,11 @@ import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
 import { extractText } from '@/lib/extract-text';
+import {
+  PLAIN_LANGUAGE_TITLE_GUIDANCE,
+  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
+} from '@/lib/prompts/shared/plain-language'
+import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
 
@@ -27,7 +32,7 @@ Synthesize these fragments into structured understanding:
 3. **Key Quotes** (3-5 quotes): Verbatim quotes that capture the essence. Use exact wording from fragments.
 
 4. **Gaps** (list of objects): What's missing? Each gap should have:
-   - "title": A punchy, attention-grabbing title (max 60 chars). Plain operational language — what an operator would say in a standup, not framework vocabulary from the source. ≤8 words ideal. Avoid academic terms like "paradox", "apex", "cohort", "lifecycle". Define specialist terms on first use ("Classiche, our certification program for older Ferraris").
+   - "title": A punchy, attention-grabbing title (max 60 chars). The title rules below apply in full.
    - "description": The full question or explanation of what's missing
 
 5. **Contradictions** (list): Are there conflicting fragments? Surface tensions, don't hide them.
@@ -38,6 +43,12 @@ Synthesize these fragments into structured understanding:
    - HIGH: 5+ fragments, clear themes, few gaps
    - MEDIUM: 3-5 fragments, some gaps remain
    - LOW: <3 fragments or significant gaps
+
+${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
+
+${PLAIN_LANGUAGE_TITLE_GUIDANCE}
+
+${VOICE_CONSTRAINT}
 
 IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
 

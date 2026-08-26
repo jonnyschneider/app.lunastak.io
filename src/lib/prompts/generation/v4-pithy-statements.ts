@@ -2,6 +2,7 @@
 import { PromptVersion } from '../types'
 import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '../shared/objectives'
 import { VISION_GUIDELINES, VISION_XML_FORMAT, STRATEGY_GUIDELINES, STRATEGY_XML_FORMAT } from '../shared/vision-strategy'
+import { VOICE_CONSTRAINT } from '../shared/voice'
 
 export const GENERATION_PITHY_STATEMENTS_V4: PromptVersion = {
   id: 'v4-pithy-statements',
@@ -33,12 +34,11 @@ ${STRATEGY_GUIDELINES}
 
 ${OBJECTIVE_GUIDELINES}
 
+${VOICE_CONSTRAINT}
+
 ## Tone
 
-Write like a manifesto, not a business plan.
-Make it human. Make it feel something.
-Better to be disagreeable and memorable than safe and forgotten.
-Use THEIR words from the themes - make it feel like them, not like a consultant wrote it.
+Write with conviction. A statement becomes memorable by naming a real choice this business has made. It never becomes memorable by reaching for a flourish. Use THEIR words from the themes so the statements sound like this business talking.
 
 ## Output Format
 
