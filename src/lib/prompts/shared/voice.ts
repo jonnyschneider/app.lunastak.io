@@ -17,6 +17,13 @@
  * explanations, descriptions, summaries. Unlike the jargon rule, it is NOT
  * relaxed for Vision and Strategy: those are the artefacts where the voice
  * reads worst, precisely because they were the only ones left unconstrained.
+ *
+ * A "vary sentence length" rule was here and was CUT (2026-08-27). It did not
+ * work — variance fell in 7 of 10 measured comparisons, the opposite of what it
+ * asked for, most likely because banning em-dash asides removes exactly the long
+ * compound sentences that created the variance. It is also the wrong rule for
+ * this surface: rhythm is a longform concern, and almost every field here is a
+ * few sentences at most. Do not add it back without evidence it moves the number.
  */
 
 export const VOICE_CONSTRAINT = `## Voice Constraint (all generated text)
@@ -45,6 +52,4 @@ Write the way an operator explains a decision to a colleague. The constructions 
 
 **Abstract nouns doing a verb's job.** Give the sentence a concrete subject that acts.
 - ✗ "The alignment of incentives drives the transformation of the operating model."
-- ✓ "Pay store managers on retention and they will run the stores differently."
-
-**Vary sentence length.** A short sentence after two long ones carries more weight than any adjective. Do not write every sentence to the same measure.`
+- ✓ "Pay store managers on retention and they will run the stores differently."`

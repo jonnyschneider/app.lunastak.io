@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — the "vary sentence length" rule (2026-08-27)
+
+Cut from `VOICE_CONSTRAINT`. It did not work: sentence-length variance **fell in 7 of 10**
+measured comparisons, the opposite of what the rule asked for. Most likely it was fighting the
+em-dash rule, which removes exactly the long compound sentences that produced the variance.
+
+It was also the wrong rule for this surface. Rhythm is a longform concern; almost every field
+Lunastak generates is a few sentences at most, so the rule was paying tokens on every prose call
+to ask for something the artefact has no room to express. A note in `voice.ts` records why, so it
+does not get added back on intuition.
+
+**Objectives, 4 → 3: accepted, not a regression.** The earlier pass flagged strategy generating
+three objectives where it had generated four. Reviewed and kept — less is more, and a tighter
+stack is the better artefact.
+
 ### Changed — question and gap titles get their own rules; thematic leads restored (2026-08-27)
 
 Refinement of the voice constraint after reading the full before/after across all four prose
