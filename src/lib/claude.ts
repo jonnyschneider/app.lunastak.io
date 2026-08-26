@@ -49,7 +49,7 @@ export async function createMessage(
   // means no call site can escape the per-stage model map, and the control arm
   // keeps sending exactly what production sends today.
   const model = modelFor(context);
-  const effort = effortFor(model);
+  const effort = effortFor(model, context);
 
   const resolved = stripUnsupportedParams({
     ...params,

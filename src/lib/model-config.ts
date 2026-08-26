@@ -36,8 +36,42 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-/** The model that ships today. Arm A of the comparison — do not change during the experiment. */
-export const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929'
+/**
+ * The default model for any stage not named in STAGE_MODELS.
+ *
+ * Changed 2026-08-26 from claude-sonnet-4-5-20250929 by the Phase 4 ruling. The prior incumbent
+ * remains reachable via LUNASTAK_MODEL for reproducing the experiment's control arm.
+ */
+export const DEFAULT_MODEL = 'claude-sonnet-5'
+
+/**
+ * Per-stage model map — the shipped Phase 4 ruling (2026-08-26).
+ *
+ * Decision record: Drive Test-Data/20260826-model-upgrade/decision.md
+ *
+ * Opus 5 earns its cost on intricate knowledge work; everything else is extraction, tagging or
+ * prose from already-structured data and runs on the default. Measured projection: 1.49x the
+ * prior cost at LOWER latency (706s vs 791s on the reference workload).
+ *
+ * NOT in this map, deliberately: `full_synthesis`. It is 21 calls and the largest single cost
+ * line; moving it here takes the map from 1.49x to 2.14x. It is an intermediate artefact users
+ * rarely read. Flip it deliberately or not at all.
+ */
+export const STAGE_MODELS: Record<string, string> = {
+  strategy_generation: 'claude-opus-5',
+  refresh_strategy_generation: 'claude-opus-5',
+  opportunity_generation: 'claude-opus-5',
+}
+
+/**
+ * Per-stage reasoning effort. Low effort on the Opus stages is where the saving comes from:
+ * measured 30% cheaper and 34% faster than Opus at default effort, with no truncations.
+ */
+export const STAGE_EFFORT: Record<string, Effort> = {
+  strategy_generation: 'low',
+  refresh_strategy_generation: 'low',
+  opportunity_generation: 'low',
+}
 
 /**
  * Model-ID prefixes that REJECT sampling params.
@@ -72,7 +106,9 @@ export function modelFor(context?: string): string {
     const perContext = process.env[`LUNASTAK_MODEL_${context.toUpperCase()}`]
     if (perContext) return perContext
   }
-  return process.env.LUNASTAK_MODEL || DEFAULT_MODEL
+  if (process.env.LUNASTAK_MODEL) return process.env.LUNASTAK_MODEL
+  if (context && STAGE_MODELS[context]) return STAGE_MODELS[context]
+  return DEFAULT_MODEL
 }
 
 /** Whether this model accepts temperature/top_p/top_k. */
@@ -154,13 +190,18 @@ const VALID_EFFORTS: Effort[] = ['low', 'medium', 'high', 'xhigh', 'max']
  * valid level AND the model supports it — the control model would 400 on an
  * effort parameter, and so would a typo'd level.
  */
-export function effortFor(model: string): Effort | undefined {
-  const effort = process.env.LUNASTAK_EFFORT
-  if (!effort) return undefined
+export function effortFor(model: string, context?: string): Effort | undefined {
   if (!thinksByDefault(model)) return undefined
-  if (!VALID_EFFORTS.includes(effort as Effort)) {
-    console.warn(`[model-config] Ignoring invalid LUNASTAK_EFFORT="${effort}" (expected one of ${VALID_EFFORTS.join(', ')})`)
-    return undefined
+
+  const envEffort = process.env.LUNASTAK_EFFORT
+  if (envEffort) {
+    if (!VALID_EFFORTS.includes(envEffort as Effort)) {
+      console.warn(`[model-config] Ignoring invalid LUNASTAK_EFFORT="${envEffort}" (expected one of ${VALID_EFFORTS.join(', ')})`)
+      return undefined
+    }
+    return envEffort as Effort
   }
-  return effort as Effort
+
+  if (context && STAGE_EFFORT[context]) return STAGE_EFFORT[context]
+  return undefined
 }

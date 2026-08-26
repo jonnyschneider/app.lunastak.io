@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Phase 4 — model ruling shipped (2026-08-26)
+
+The model-bump experiment closed with its pre-registered decision rule **inconclusive** (premise
+falsified, deciding instrument failed calibration). Full record: Drive
+`05-Initiatives/Lunastak/Test-Data/20260826-model-upgrade/decision.md`.
+
+### Changed
+
+- **Per-stage model map.** `strategy_generation`, `refresh_strategy_generation` and
+  `opportunity_generation` now run on **`claude-opus-5` at `effort: low`**; everything else runs
+  on **`claude-sonnet-5`** (`DEFAULT_MODEL`, changed from `claude-sonnet-4-5-20250929`).
+  Measured projection: **1.49× prior cost at LOWER latency** (706s vs 791s on the reference
+  workload); a live check put `strategy_generation` at 29s against the previous 172s.
+  `full_synthesis` deliberately stays on Sonnet 5 — moving it takes the map to 2.14×.
+- Env overrides are unchanged and still take precedence, so any experiment arm — including the
+  previous incumbent — is reproducible without a code change.
+
+### Fixed
+
+- **`extractXML` no longer discards content over a mis-closed tag.** A model closed `<strategy>`
+  with `</objectives>`; the strict `<tag>…</tag>` match returned `''` and the app persisted an
+  **empty strategy** while the complete, correct content sat in the response — silent, no
+  exception, `stop_reason: end_turn` at 26% of the token ceiling. Tag imbalance occurred in **8
+  of 40** XML-bearing responses across **all four** model arms, so this is a property of
+  prompting for XML rather than of any model. The parser now recovers by walking nesting depth to
+  the first unmatched closing tag, warns with the exact malformation, and never swallows the
+  following section or invents absent content. Verified against the real failed response: 693
+  characters of strategy recovered. Prod impact checked read-only — ~1–2 stacks of 95, none
+  recent.
+
+
 ### Phase 0 — model-bump groundwork (2026-08-26)
 
 Prerequisite for the three-arm model comparison (desk #15). Behaviour-preserving
