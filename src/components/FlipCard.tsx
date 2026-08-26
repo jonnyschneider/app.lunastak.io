@@ -2,21 +2,46 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { Pencil } from 'lucide-react'
+import { Pencil, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { logAndFlush } from '@/components/StatsigProvider'
+
+/** Which stack layer this card renders — used as the analytics `value`. */
+export type FlipCardType =
+  | 'vision'
+  | 'strategy'
+  | 'objective'
+  | 'opportunity'
+  | 'principle'
 
 interface FlipCardProps {
+  /** Front face content only — the shell (background, radius, padding) is owned by FlipCard. */
   front: React.ReactNode
+  /** Back face content only. */
   back: React.ReactNode
   editForm?: React.ReactNode
   isEditing?: boolean
   onEditClick?: () => void
   className?: string
-  /** Additional classes for the card container in both front and back states */
+  /** Chrome for the card shell: background, radius, shadow, min-height. */
   cardClassName?: string
-  /** Hide the edit button on the back (e.g. for read-only views) */
+  /** Content density. `sm` is for the tighter principle tiles. */
+  size?: 'default' | 'sm'
+  /** Label on the disclosure strip while the front is showing. */
+  disclosureLabel?: string
+  /** Label on the disclosure strip while the back is showing. */
+  returnLabel?: string
+  /** Stack layer, for the disclosure analytics event. */
+  cardType?: FlipCardType
+  projectId?: string
+  /** Hide the edit button FlipCard renders on the back. */
   hideEditButton?: boolean
 }
+
+const SIZES = {
+  default: { content: 'p-6', strip: 'px-6 py-3' },
+  sm: { content: 'p-4', strip: 'px-4 py-2.5' },
+} as const
 
 export function FlipCard({
   front,
@@ -26,6 +51,11 @@ export function FlipCard({
   onEditClick,
   className,
   cardClassName,
+  size = 'default',
+  disclosureLabel = 'The thinking',
+  returnLabel = 'Back',
+  cardType,
+  projectId,
   hideEditButton = false,
 }: FlipCardProps) {
   const [flipped, setFlipped] = useState(false)
@@ -39,10 +69,19 @@ export function FlipCard({
     prevIsEditing.current = isEditing
   }, [isEditing])
 
-  const handleCardClick = useCallback(() => {
+  const handleFlip = useCallback(() => {
     if (isEditing) return // Don't flip while editing
-    setFlipped(prev => !prev)
-  }, [isEditing])
+    setFlipped(prev => {
+      const next = !prev
+      // Only the reveal is interesting — returning to the front is not a read.
+      if (next && cardType) {
+        logAndFlush('card_thinking_viewed', cardType, {
+          ...(projectId ? { projectId } : {}),
+        })
+      }
+      return next
+    })
+  }, [isEditing, cardType, projectId])
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -59,54 +98,95 @@ export function FlipCard({
     )
   }
 
+  const { content: contentPadding, strip: stripPadding } = SIZES[size]
+
+  const backFace = (
+    <>
+      {back}
+      {!hideEditButton && onEditClick && (
+        <div className="flex justify-end mt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleEditClick}
+            className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5"
+          >
+            <Pencil className="h-3 w-3" />
+            <span className="text-xs">Edit</span>
+          </Button>
+        </div>
+      )}
+    </>
+  )
+
   return (
     <>
-      {/* Print: show both sides, no animation */}
+      {/* Print: show both sides, no animation, no strip */}
       <div className={cn('hidden print:block', className)}>
-        <div className={cardClassName}>{front}</div>
-        <div className={cn(cardClassName, 'mt-2 border-t pt-2')}>{back}</div>
+        <div className={cn(cardClassName, contentPadding)}>{front}</div>
+        <div className={cn(cardClassName, contentPadding, 'mt-2 border-t pt-2')}>{back}</div>
       </div>
 
       {/* Interactive version */}
-      <div
-        className={cn('cursor-pointer print:hidden', className)}
-        onClick={handleCardClick}
-      >
-        <div className="relative">
-          {/* Front */}
-          <div
-            className={cn(
-              'transition-opacity duration-150 ease-in-out',
-              flipped ? 'opacity-0 absolute inset-0 pointer-events-none' : 'opacity-100',
-              cardClassName,
-            )}
-          >
-            {front}
+      <div className={cn('print:hidden', className)}>
+        <div className={cn('flex flex-col overflow-hidden', cardClassName)}>
+          {/*
+           * The card sizes to whichever face is showing. A flip inside a grid
+           * therefore reflows the row — accepted deliberately, because sizing
+           * every card to its taller face costs more whitespace than the jump
+           * costs in stability.
+           */}
+          <div className="relative flex-1">
+            <div
+              aria-hidden={flipped}
+              className={cn(
+                'transition-opacity duration-150 ease-in-out',
+                contentPadding,
+                flipped ? 'opacity-0 absolute inset-0 pointer-events-none' : 'opacity-100',
+              )}
+            >
+              {front}
+            </div>
+            <div
+              aria-hidden={!flipped}
+              className={cn(
+                'transition-opacity duration-150 ease-in-out',
+                contentPadding,
+                flipped ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none',
+              )}
+            >
+              {backFace}
+            </div>
           </div>
 
-          {/* Back */}
-          <div
+          {/*
+           * The disclosure strip is the ONLY click target. The whole card used to
+           * be the button, which is why nothing on it ever looked like one.
+           */}
+          <button
+            type="button"
+            onClick={handleFlip}
+            aria-expanded={flipped}
             className={cn(
-              'transition-opacity duration-150 ease-in-out',
-              flipped ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none',
-              cardClassName,
+              'flex w-full shrink-0 items-center justify-between gap-2',
+              'border-t border-white/20 text-left',
+              'text-ds-neon hover:bg-white/10 focus-visible:bg-white/10',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ds-neon',
+              'transition-colors',
+              stripPadding,
             )}
           >
-            {back}
-            {!hideEditButton && onEditClick && (
-              <div className="flex justify-end mt-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleEditClick}
-                  className="text-white/60 hover:text-white hover:bg-white/10 gap-1.5"
-                >
-                  <Pencil className="h-3 w-3" />
-                  <span className="text-xs">Edit</span>
-                </Button>
-              </div>
-            )}
-          </div>
+            <span className="text-[13px] font-semibold">
+              {flipped ? returnLabel : disclosureLabel}
+            </span>
+            <RotateCw
+              className={cn(
+                'h-3.5 w-3.5 shrink-0 transition-transform duration-300',
+                flipped && '-rotate-180',
+              )}
+              strokeWidth={2.5}
+            />
+          </button>
         </div>
       </div>
     </>

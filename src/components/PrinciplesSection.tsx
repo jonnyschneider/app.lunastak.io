@@ -339,8 +339,12 @@ export function PrinciplesSection({
               return (
                 <div key={principle.id} className={isEditingThis ? 'col-span-full' : ''}>
                   <FlipCard
+                    cardClassName="bg-ds-teal rounded-lg shadow-sm min-h-[120px]"
+                    size="sm"
+                    cardType="principle"
+                    projectId={projectId}
                     front={
-                      <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px] flex items-center justify-center">
+                      <div className="flex h-full items-center justify-center">
                         <div className="text-center space-y-1.5">
                           <p className="text-[13px] font-semibold text-ds-neon">{principle.priority}</p>
                           <p className="text-[13px] font-semibold uppercase tracking-wider text-white/70">even over</p>
@@ -349,10 +353,8 @@ export function PrinciplesSection({
                       </div>
                     }
                     back={
-                      <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
-                        <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-2">
-                          Explainer
-                        </div>
+                      <>
+                        <p className="text-[13px] font-semibold text-ds-neon mb-2">{principle.priority}</p>
                         {principle.context ? (
                           <p className="text-[13px] text-white/90 leading-relaxed">{principle.context}</p>
                         ) : (
@@ -366,7 +368,7 @@ export function PrinciplesSection({
                             </Button>
                           </div>
                         )}
-                      </div>
+                      </>
                     }
                     isEditing={isEditingThis}
                     onEditClick={() => onStartEditing?.(principle.id)}

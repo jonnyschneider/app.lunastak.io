@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — the card explainers got an affordance (2026-08-27)
+
+The best prose in a Decision Stack lives on the back of each card, and nothing on the front
+ever said so. The whole card was the button, so no part of it looked like one, and the back
+was labelled **"Explainer"** — a word naming the mechanism rather than promising anything
+worth reading.
+
+Every card (vision, strategy, objective, opportunity, principle) now ends in a **cordoned
+disclosure strip**: full-bleed to the card edges, neon-on-teal, ~44px tall, labelled **"The
+thinking"**. **The strip is the only click target** — the card surface is no longer a button,
+which also means the prose can finally be selected and copied.
+
+Consequences worth knowing:
+
+- **`FlipCard` now owns the card shell** (background, radius, shadow, padding via a `size`
+  token). Chrome used to be duplicated inside every `front`/`back` node at each call site,
+  which is why the strip could not be full-bleed until it moved. All five call sites pass
+  content only.
+- **Backs carry their card's identity.** A flipped card used to render an anonymous
+  paragraph — in the objectives grid you could not tell which objective you were reading
+  while its siblings still showed their numbers. Vision/Strategy repeat the layer label,
+  objectives repeat number + title, opportunities the title, principles the priority.
+- **Card height still tracks the visible face**, so a flip inside a grid reflows its row.
+  Deliberate: sizing every card to its taller face costs more whitespace than the jump costs
+  in stability.
+
+### Added — `card_thinking_viewed` (2026-08-27)
+
+Flips were **completely uninstrumented**, so the discovery rate for this prose has never been
+known. The strip now fires `card_thinking_viewed` on the reveal only (flipping back is not a
+second read), with the stack layer as `value`. Catalogued in `docs/analytics/events.md`.
+
+**There is no before-number.** This measures the new affordance, not the improvement over the
+old one — that comparison is unavailable and will stay unavailable.
+
+
 ### Fixed — model provenance recorded the plan's model, not the model that answered (2026-08-27)
 
 `pipeline/generation.ts` recorded `modelUsed: model` at **six** sites, where `model` is a
