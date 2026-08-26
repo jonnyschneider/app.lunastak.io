@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — incremental synthesis was generating unconstrained prose (2026-08-27)
+
+`update-synthesis.ts` chooses between `fullSynthesis` and `incrementalSynthesis`. Only the full
+path carried the language and voice guidance. Both write the same user-facing `summary` and the
+same `gaps[].title`, and full synthesis only runs when there is no existing summary, the synthesis
+is 30+ days stale, or the fragment heuristic trips — so **for an established project the
+incremental path is the common one**, and it was unconstrained.
+
+Found by pricing the constraint rather than by a test: the ratchet added with it checks a
+hard-coded list of four files, so a fifth prose stage was invisible to it. It was an inventory,
+not an invariant.
+
 ### Removed — the "vary sentence length" rule (2026-08-27)
 
 Cut from `VOICE_CONSTRAINT`. It did not work: sentence-length variance **fell in 7 of 10**
