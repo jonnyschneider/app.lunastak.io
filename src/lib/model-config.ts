@@ -71,3 +71,70 @@ export function stripUnsupportedParams<T extends { model: string }>(params: T): 
   }
   return out
 }
+
+/**
+ * Models where thinking is adaptive by default, i.e. omitting the `thinking`
+ * parameter still spends reasoning tokens out of `max_tokens`.
+ *
+ * This is the same trap hub hit in catchup/extract.py: max_tokens is a budget
+ * SHARED with reasoning you never see, so a ceiling sized against the visible
+ * answer truncates before the answer is emitted.
+ */
+const THINKS_BY_DEFAULT = REJECTS_SAMPLING_PARAMS
+
+/** Default reasoning headroom added on top of a stage's visible-output budget. */
+const DEFAULT_THINKING_HEADROOM = 4000
+
+/** Request timeout for thinking models. The 60s client default is too tight for adaptive thinking. */
+const THINKING_TIMEOUT_MS = 300_000
+const DEFAULT_TIMEOUT_MS = 60_000
+
+function thinksByDefault(model: string): boolean {
+  return THINKS_BY_DEFAULT.some(prefix => model.startsWith(prefix))
+}
+
+/**
+ * The max_tokens to actually send.
+ *
+ * For thinking models, the stage's configured ceiling is treated as the
+ * VISIBLE-output budget and reasoning headroom is added on top — so the
+ * comparison is like-for-like on what the user sees, rather than handing the
+ * thinking arms a 30-token budget they must spend reasoning inside.
+ *
+ * The control model is returned untouched.
+ */
+export function maxTokensFor(model: string, requested: number): number {
+  if (!thinksByDefault(model)) return requested
+
+  const headroom = process.env.LUNASTAK_THINKING_HEADROOM
+    ? Number(process.env.LUNASTAK_THINKING_HEADROOM)
+    : DEFAULT_THINKING_HEADROOM
+
+  return headroom + requested
+}
+
+/** Per-request timeout in ms. Thinking models get materially longer. */
+export function timeoutFor(model: string): number {
+  return thinksByDefault(model) ? THINKING_TIMEOUT_MS : DEFAULT_TIMEOUT_MS
+}
+
+export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+
+const VALID_EFFORTS: Effort[] = ['low', 'medium', 'high', 'xhigh', 'max']
+
+/**
+ * Reasoning effort, when explicitly requested for this run (arm D of the
+ * experiment sweeps this). Returns undefined unless LUNASTAK_EFFORT is set to a
+ * valid level AND the model supports it — the control model would 400 on an
+ * effort parameter, and so would a typo'd level.
+ */
+export function effortFor(model: string): Effort | undefined {
+  const effort = process.env.LUNASTAK_EFFORT
+  if (!effort) return undefined
+  if (!thinksByDefault(model)) return undefined
+  if (!VALID_EFFORTS.includes(effort as Effort)) {
+    console.warn(`[model-config] Ignoring invalid LUNASTAK_EFFORT="${effort}" (expected one of ${VALID_EFFORTS.join(', ')})`)
+    return undefined
+  }
+  return effort as Effort
+}

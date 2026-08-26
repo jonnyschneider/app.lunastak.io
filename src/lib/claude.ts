@@ -1,7 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages';
 import { prisma } from '@/lib/db';
-import { DEFAULT_MODEL, modelFor, stripUnsupportedParams } from '@/lib/model-config';
+import {
+  DEFAULT_MODEL,
+  modelFor,
+  stripUnsupportedParams,
+  maxTokensFor,
+  timeoutFor,
+  effortFor,
+} from '@/lib/model-config';
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -36,9 +43,23 @@ export async function createMessage(
   // the resolved model would reject. Doing this at the single wrapper seam
   // means no call site can escape the per-stage model map, and the control arm
   // keeps sending exactly what production sends today.
-  const resolved = stripUnsupportedParams({ ...params, model: modelFor(context) });
+  const model = modelFor(context);
+  const effort = effortFor(model);
 
-  const response = await anthropic.messages.create(resolved);
+  const resolved = stripUnsupportedParams({
+    ...params,
+    model,
+    // Thinking models spend reasoning tokens out of max_tokens, so the stage's
+    // configured ceiling is treated as the visible-output budget and headroom
+    // is added on top. The control model is untouched.
+    max_tokens: maxTokensFor(model, params.max_tokens),
+    ...(effort ? { output_config: { effort } } : {}),
+  });
+
+  // Adaptive thinking can exceed the 60s client default on the heavy stages.
+  const response = await anthropic.messages.create(resolved, {
+    timeout: timeoutFor(model),
+  });
 
   // Check for truncation
   if (response.stop_reason === 'max_tokens') {
@@ -46,7 +67,7 @@ export async function createMessage(
       `[Claude] Response truncated due to max_tokens limit`,
       context ? `(${context})` : '',
       {
-        max_tokens: params.max_tokens,
+        max_tokens: resolved.max_tokens,
         output_tokens: response.usage?.output_tokens,
         stop_reason: response.stop_reason,
       }

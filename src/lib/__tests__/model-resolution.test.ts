@@ -14,7 +14,15 @@
  *    exactly.
  */
 
-import { modelFor, supportsSamplingParams, stripUnsupportedParams, DEFAULT_MODEL } from '@/lib/model-config'
+import {
+  modelFor,
+  supportsSamplingParams,
+  stripUnsupportedParams,
+  maxTokensFor,
+  timeoutFor,
+  effortFor,
+  DEFAULT_MODEL,
+} from '@/lib/model-config'
 
 describe('modelFor', () => {
   const saved = { ...process.env }
@@ -115,5 +123,53 @@ describe('stripUnsupportedParams', () => {
 
     stripUnsupportedParams(input)
     expect((input as { temperature?: number }).temperature).toBe(0.7)
+  })
+})
+
+describe('thinking-aware request shaping', () => {
+  const saved = { ...process.env }
+  afterEach(() => { process.env = { ...saved } })
+
+  it('leaves the control model’s max_tokens untouched', () => {
+    expect(maxTokensFor('claude-sonnet-4-5-20250929', 30)).toBe(30)
+    expect(maxTokensFor('claude-sonnet-4-5-20250929', 4000)).toBe(4000)
+  })
+
+  it('adds reasoning headroom for models with adaptive thinking on by default', () => {
+    // max_tokens is a shared budget with thinking tokens on the 5 family, so a
+    // ceiling sized against the visible answer (30! 50! 200!) truncates before
+    // the answer is ever emitted.
+    expect(maxTokensFor('claude-opus-5', 30)).toBeGreaterThan(1000)
+    expect(maxTokensFor('claude-sonnet-5', 200)).toBeGreaterThan(1000)
+  })
+
+  it('preserves the visible-output budget on top of the headroom', () => {
+    const headroom = maxTokensFor('claude-opus-5', 0)
+    expect(maxTokensFor('claude-opus-5', 4000)).toBe(headroom + 4000)
+  })
+
+  it('lets the headroom be tuned per run', () => {
+    process.env.LUNASTAK_THINKING_HEADROOM = '1000'
+    expect(maxTokensFor('claude-opus-5', 200)).toBe(1200)
+  })
+
+  it('gives thinking models a longer request timeout than the 60s default', () => {
+    expect(timeoutFor('claude-sonnet-4-5-20250929')).toBe(60_000)
+    expect(timeoutFor('claude-opus-5')).toBeGreaterThan(60_000)
+  })
+
+  it('only sets effort when explicitly asked, and only where supported', () => {
+    delete process.env.LUNASTAK_EFFORT
+    expect(effortFor('claude-opus-5')).toBeUndefined()
+
+    process.env.LUNASTAK_EFFORT = 'low'
+    expect(effortFor('claude-opus-5')).toBe('low')
+    // The control model has no effort parameter — sending one would 400.
+    expect(effortFor('claude-sonnet-4-5-20250929')).toBeUndefined()
+  })
+
+  it('ignores an invalid effort level rather than sending a 400', () => {
+    process.env.LUNASTAK_EFFORT = 'ludicrous'
+    expect(effortFor('claude-opus-5')).toBeUndefined()
   })
 })
