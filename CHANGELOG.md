@@ -15,14 +15,28 @@ was labelled **"Explainer"** — a word naming the mechanism rather than promisi
 worth reading.
 
 Every card (vision, strategy, objective, opportunity, principle) now ends in a **cordoned
-disclosure strip**: full-bleed to the card edges, ~44px tall, label and icon centred together,
-reading **"The thinking"**. **The strip is the only click target** — the card surface is no
-longer a button, which also means the prose can finally be selected and copied.
+disclosure strip**, full-bleed to the card edges. **The strip is the only click target** — the
+card surface is no longer a button, which also means the prose can finally be selected and
+copied.
+
+Three signals do the work, each carrying something the others do not:
+
+- **The label names the destination, with a verb.** `See the thinking` on the front,
+  `Back to the vision` (`…the strategy`, `…the objective`, …) on the back. A bare noun was
+  tried and failed: `The vision` on the back reads as a *caption for the face you are already
+  looking at*, which is the exact opposite of an invitation.
+- **Colour is the state.** The back sits a step lighter than the front, so you can never be
+  unsure which face you are on — and the strip's hover **previews the destination's colour**:
+  light from the dark front, dark from the lighter back.
+- **Dots say which of two.** `●○` / `○●`, centred under the label. Filled vs hollow, so the
+  signal is shape rather than a dimmed tint.
 
 The strip is **not** neon. Neon is the heading colour, and a neon strip competed with the very
 headings it sits under. It steps down by **size and weight only** — full-strength white at
-12px medium — because greying text out to signal hierarchy is a house no. The border, the
-hover state and the full-bleed shape carry the affordance; the label only has to name it.
+12px medium — because greying text out to signal hierarchy is a house no.
+
+A rotate icon was tried and **removed**: once colour carries state and the label names the
+destination, a glyph is a third signal saying nothing the other two do not.
 
 Consequences worth knowing:
 
@@ -30,10 +44,11 @@ Consequences worth knowing:
   token). Chrome used to be duplicated inside every `front`/`back` node at each call site,
   which is why the strip could not be full-bleed until it moved. All five call sites pass
   content only.
-- **Backs carry their card's identity.** A flipped card used to render an anonymous
-  paragraph — in the objectives grid you could not tell which objective you were reading
-  while its siblings still showed their numbers. Vision/Strategy repeat the layer label,
-  objectives repeat number + title, opportunities the title, principles the priority.
+- **Backs carry their card's identity, where identity is ambiguous.** A flipped card used to
+  render an anonymous paragraph — in the objectives grid you could not tell which objective
+  you were reading while its siblings still showed their numbers. Objectives repeat number +
+  title, opportunities the title, principles the priority. **Vision and Strategy do not**: the
+  strip already names the layer, so a heading there was pure repetition.
 - **Card height still tracks the visible face**, so a flip inside a grid reflows its row.
   Deliberate: sizing every card to its taller face costs more whitespace than the jump costs
   in stability.

@@ -342,6 +342,7 @@ export function PrinciplesSection({
                     cardClassName="bg-ds-teal rounded-lg shadow-sm min-h-[120px]"
                     size="sm"
                     cardType="principle"
+                    returnLabel="Back to the principle"
                     projectId={projectId}
                     front={
                       <div className="flex h-full items-center justify-center">

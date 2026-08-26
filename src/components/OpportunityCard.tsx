@@ -46,6 +46,7 @@ export function OpportunityCard({
     <FlipCard
       cardClassName="bg-ds-teal rounded-xl shadow-sm min-h-[120px]"
       cardType="opportunity"
+      returnLabel="Back to the opportunity"
       projectId={projectId}
       front={
         <>

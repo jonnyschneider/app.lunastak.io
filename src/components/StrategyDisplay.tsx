@@ -235,6 +235,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             <FlipCard
               cardClassName="bg-ds-teal rounded-lg shadow-sm"
               cardType="vision"
+              returnLabel="Back to the vision"
               projectId={projectId}
               front={
                 <>
@@ -248,9 +249,6 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               }
               back={
                 <>
-                  <h3 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wide mb-3">
-                    Vision
-                  </h3>
                   <p className="text-[13px] text-white/90 leading-relaxed">{strategy.visionExplainer || 'Not written yet'}</p>
                   {!readOnly && (
                     <div className="flex justify-end mt-3">
@@ -291,6 +289,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
             <FlipCard
               cardClassName="bg-ds-teal rounded-lg shadow-sm"
               cardType="strategy"
+              returnLabel="Back to the strategy"
               projectId={projectId}
               front={
                 <>
@@ -304,9 +303,6 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
               }
               back={
                 <>
-                  <h3 className="text-[13px] font-semibold text-ds-neon uppercase tracking-wide mb-3">
-                    Strategy
-                  </h3>
                   <p className="text-[13px] text-white/90 leading-relaxed">{strategy.strategyExplainer || 'Not written yet'}</p>
                   {!readOnly && (
                     <div className="flex justify-end mt-3">
@@ -373,6 +369,7 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                     <FlipCard
                       cardClassName="bg-ds-teal rounded-xl shadow-sm"
                       cardType="objective"
+                      returnLabel="Back to the objective"
                       projectId={projectId}
                       front={
                         <>
