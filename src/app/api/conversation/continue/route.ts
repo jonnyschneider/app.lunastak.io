@@ -5,6 +5,7 @@ import { extractXML } from '@/lib/utils';
 import { ConversationPhase } from '@/lib/types';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
+import { extractText } from '@/lib/extract-text';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
           messages: [{ role: 'user', content: `Summarize this conversation in 3-6 words as a title. Output ONLY the title, nothing else.\n\n${titleMessages}` }],
           temperature: 0.3,
         }, 'conversation_title', conversation.userId)
-        const title = titleResponse.content[0]?.type === 'text' ? titleResponse.content[0].text.trim().replace(/^["']|["']$/g, '') : null
+        const title = extractText(titleResponse).trim().replace(/^["']|["']$/g, '') || null
         if (title) {
           await prisma.conversation.update({ where: { id: conversationId }, data: { title } })
           console.log(`[Continue API] Auto-titled conversation: "${title}"`)
@@ -223,9 +224,7 @@ Return only the question, no preamble.`;
     temperature: 0.7
   }, 'continue_initial', conversation!.userId);
 
-  const firstQuestion = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : 'Tell me more about your business.';
+  const firstQuestion = extractText(response) || 'Tell me more about your business.';
   console.log(`[Continue API - INITIAL] Claude responded in ${Date.now() - startTime}ms`);
 
   // Save question
@@ -339,7 +338,7 @@ Return your assessment:
     temperature: 0.3
   }, 'continue_confidence', conversation!.userId);
 
-  const confidenceContent = confidenceResponse.content[0]?.type === 'text' ? confidenceResponse.content[0].text : '';
+  const confidenceContent = extractText(confidenceResponse);
 
   const assessmentXML = extractXML(confidenceContent, 'assessment');
   const confidenceScore = extractXML(assessmentXML, 'confidence') || 'MEDIUM';
@@ -464,9 +463,7 @@ async function continueQuestioning(
     temperature: 0.7
   }, 'continue_questioning', conversation!.userId);
 
-  const nextQuestion = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : 'Tell me more.';
+  const nextQuestion = extractText(response) || 'Tell me more.';
 
   // Save question
   await prisma.message.create({
@@ -518,9 +515,7 @@ async function offerEarlyExit(
     temperature: 0.7,
   }, 'continue_early_exit', conversation!.userId);
 
-  const suggestedQuestion = response.content[0]?.type === 'text'
-    ? response.content[0].text
-    : 'What else would you like to explore?';
+  const suggestedQuestion = extractText(response) || 'What else would you like to explore?';
 
   const exitMessage = `I have what I need to create your strategy.`;
 

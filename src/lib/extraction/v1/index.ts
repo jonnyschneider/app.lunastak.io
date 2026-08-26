@@ -24,6 +24,7 @@ import { updateAllSyntheses } from '@/lib/synthesis';
 import { logStatsigEvent } from '@/lib/statsig';
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary';
 import { runBackgroundTasks } from '@/lib/background-tasks';
+import { extractText } from '@/lib/extract-text';
 
 // Progress step type for streaming updates
 export type ExtractionProgressStep =
@@ -248,8 +249,7 @@ export async function performExtraction(
     temperature: 0.3
   }, 'extraction');
 
-  const extractionContent = extractionResponse.content[0]?.type === 'text'
-    ? extractionResponse.content[0].text : '';
+  const extractionContent = extractText(extractionResponse);
 
   const extractionXML = extractXML(extractionContent, 'extraction');
 
@@ -307,8 +307,7 @@ export async function performExtraction(
       temperature: 0.5
     }, 'reflective_summary_prescriptive');
 
-    const summaryContent = summaryResponse.content[0]?.type === 'text'
-      ? summaryResponse.content[0].text : '';
+    const summaryContent = extractText(summaryResponse);
 
     const summaryXML = extractXML(summaryContent, 'summary');
 

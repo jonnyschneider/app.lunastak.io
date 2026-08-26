@@ -5,6 +5,115 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed — model provenance recorded the plan's model, not the model that answered (2026-08-27)
+
+`pipeline/generation.ts` recorded `modelUsed: model` at **six** sites, where `model` is a
+parameter carrying `CLAUDE_MODEL` down from `planPipeline()`. The model that actually serves a
+request is resolved per stage inside `createMessage()`, so the plan's value is only ever the
+*intended* model. Result: `Trace` and `DecisionStackSnapshot` rows named the wrong model.
+
+Caught by a deployed-preview smoke — the trace said `claude-sonnet-5` while `claude-opus-5` had
+served the request (proved by output tokens and latency matching the measured Opus-low profile,
+not Sonnet 5's). All six now record `<response>.model`.
+
+**The ratchet that should have caught this is also fixed.** The previous version forbade the
+literal `modelUsed: CLAUDE_MODEL`; these six spelled the same bug as `modelUsed: model` and
+sailed past. It now checks the **property** — `modelUsed` must be assigned from something ending
+in `.model`, an explicit non-LLM marker, or a checked pass-through — rather than blacklisting a
+name. Verified to fail on reintroduction.
+
+This is the provenance any future model comparison depends on, and it would have poisoned it
+silently.
+
+
+### Consolidation — model-bump experiment closed out (2026-08-27)
+
+The Phase 4 revisit trigger fired and was actioned; the design doc is now closed.
+
+- **Phase 2 (replay pass) closed as moot** and `tools/experiment/replay.ts` **deleted**. It was
+  scoped for "n=3 on close calls"; Phase 3 produced no reliable quality signal, so there were no
+  close calls to resolve. Built and dry-run tested, never executed live. Git history is the
+  recovery path.
+- **`src/lib/model-config.ts` promoted out of provisional.** `modelFor()`, `effortFor()`,
+  `timeoutFor()` and `stripUnsupportedParams()` are permanent. `maxTokensFor()` remains the one
+  open workaround, now tracked on its own ARCHITECTURE Known Compromise carrying the measured
+  ceilings that would retire it (`continue_questioning` ~459 vs shipped 200;
+  `continue_confidence` ~765 vs 300).
+- **`src/lib/experiment/` kept deliberately.** `capture.ts` earned its place — it is what made a
+  production-shaped parse bug diagnosable from real traffic — and `pricing.ts` is useful
+  independent of the experiment. Containment ratchet retained: exactly one production import.
+
+
+### Phase 4 — model ruling shipped (2026-08-26)
+
+The model-bump experiment closed with its pre-registered decision rule **inconclusive** (premise
+falsified, deciding instrument failed calibration). Full record: Drive
+`05-Initiatives/Lunastak/Test-Data/20260826-model-upgrade/decision.md`.
+
+### Changed
+
+- **Per-stage model map.** `strategy_generation`, `refresh_strategy_generation` and
+  `opportunity_generation` now run on **`claude-opus-5` at `effort: low`**; everything else runs
+  on **`claude-sonnet-5`** (`DEFAULT_MODEL`, changed from `claude-sonnet-4-5-20250929`).
+  Measured projection: **1.49× prior cost at LOWER latency** (706s vs 791s on the reference
+  workload); a live check put `strategy_generation` at 29s against the previous 172s.
+  `full_synthesis` deliberately stays on Sonnet 5 — moving it takes the map to 2.14×.
+- Env overrides are unchanged and still take precedence, so any experiment arm — including the
+  previous incumbent — is reproducible without a code change.
+
+### Fixed
+
+- **`extractXML` no longer discards content over a mis-closed tag.** A model closed `<strategy>`
+  with `</objectives>`; the strict `<tag>…</tag>` match returned `''` and the app persisted an
+  **empty strategy** while the complete, correct content sat in the response — silent, no
+  exception, `stop_reason: end_turn` at 26% of the token ceiling. Tag imbalance occurred in **8
+  of 40** XML-bearing responses across **all four** model arms, so this is a property of
+  prompting for XML rather than of any model. The parser now recovers by walking nesting depth to
+  the first unmatched closing tag, warns with the exact malformation, and never swallows the
+  following section or invents absent content. Verified against the real failed response: 693
+  characters of strategy recovered. Prod impact checked read-only — ~1–2 stacks of 95, none
+  recent.
+
+
+### Phase 0 — model-bump groundwork (2026-08-26)
+
+Prerequisite for the three-arm model comparison (desk #15). Behaviour-preserving
+for the shipping model; see `docs/_plans/2026-08-26-model-bump-measurement-protocol-design.md`.
+
+### Added
+
+- **`src/lib/model-config.ts`** — per-context model resolution (`modelFor`), sampling-param
+  compatibility (`supportsSamplingParams` / `stripUnsupportedParams`), and thinking-aware
+  request shaping (`maxTokensFor` / `timeoutFor` / `effortFor`). Any pipeline stage can be
+  pointed at any model via `LUNASTAK_MODEL` or `LUNASTAK_MODEL_<CONTEXT>` with no code change.
+- **Three ratchet tests** — `model-resolution` (17 cases), `model-provenance` (persisted
+  `modelUsed` must come from `response.model`, never the `CLAUDE_MODEL` constant), and
+  `model-literals` (model IDs confined to `model-config.ts`).
+
+### Changed
+
+- `@anthropic-ai/sdk` 0.17.2 → 0.120.0.
+- `createMessage()` now resolves the model per context, strips sampling params the resolved
+  model would reject (the Claude 5 family 400s on `temperature`/`top_p`/`top_k`), adds
+  reasoning headroom to `max_tokens` for models where thinking is adaptive by default, and
+  raises the request timeout for those models above the 60s client default.
+- `modelUsed` provenance now records `response.model` at all five persistence sites.
+
+### Fixed
+
+- **`docs/analytics/events.md` corrected** — the `llm_token_usage` row documented `value` as
+  `<model>` and metadata as `inputTokens`/`outputTokens`; the code emits a *number* (input +
+  output) and `promptTokens`/`completionTokens`. Pre-existing drift; a dashboard built from the
+  old description would have filtered on fields that were never emitted. Also documents a
+  coverage gap found while correcting it: the event sits inside `if (userId)` and **10 of 26
+  `createMessage` call sites pass no `userId`**, so token-burn dashboards and `User` counters
+  understate real usage — unevenly, since several unmetered stages are the expensive ones.
+- **`suggest-opposite` was pinned to `claude-sonnet-4-20250514`** — a hardcoded literal that
+  bypassed `CLAUDE_MODEL`, leaving that endpoint a model generation behind the rest of the app.
+  Now routed through the resolver; the `model-literals` ratchet prevents a recurrence.
+
 ## [2.5.1] - 2026-07-05
 
 **Public share links — read-only Decision Stack via unguessable URL.**

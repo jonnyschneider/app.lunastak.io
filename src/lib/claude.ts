@@ -1,6 +1,18 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages';
 import { prisma } from '@/lib/db';
+import {
+  DEFAULT_MODEL,
+  modelFor,
+  stripUnsupportedParams,
+  maxTokensFor,
+  timeoutFor,
+  effortFor,
+} from '@/lib/model-config';
+import { captureCall } from '@/lib/experiment/capture';
+import { extractText } from '@/lib/extract-text';
+
+export { extractText };
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -14,7 +26,14 @@ export const anthropic = new Anthropic({
   timeout: 60_000, // 1 minute timeout (was 3 min which caused 2+ min delays on retry)
 });
 
-export const CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
+/**
+ * The default model. Call sites still pass `model: CLAUDE_MODEL`, but the value
+ * that actually reaches the API is resolved per-context inside createMessage()
+ * — see `@/lib/model-config`. For provenance, record `response.model`, never
+ * this constant (enforced by tests/model-provenance).
+ */
+export const CLAUDE_MODEL = DEFAULT_MODEL;
+
 
 /**
  * Wrapper for Claude API calls with automatic truncation detection.
@@ -25,7 +44,32 @@ export async function createMessage(
   context?: string, // Optional context for logging (e.g., 'reflective_summary', 'generation')
   userId?: string | null // Optional userId for token tracking
 ) {
-  const response = await anthropic.messages.create(params);
+  // Resolve the model for this pipeline stage, then drop any sampling params
+  // the resolved model would reject. Doing this at the single wrapper seam
+  // means no call site can escape the per-stage model map, and the control arm
+  // keeps sending exactly what production sends today.
+  const model = modelFor(context);
+  const effort = effortFor(model, context);
+
+  const resolved = stripUnsupportedParams({
+    ...params,
+    model,
+    // Thinking models spend reasoning tokens out of max_tokens, so the stage's
+    // configured ceiling is treated as the visible-output budget and headroom
+    // is added on top. The control model is untouched.
+    max_tokens: maxTokensFor(model, params.max_tokens),
+    ...(effort ? { output_config: { effort } } : {}),
+  });
+
+  // Adaptive thinking can exceed the 60s client default on the heavy stages.
+  const startedAt = Date.now();
+  const response = await anthropic.messages.create(resolved, {
+    timeout: timeoutFor(model),
+  });
+  const latencyMs = Date.now() - startedAt;
+
+  // Experiment capture — no-op unless LUNASTAK_CAPTURE_DIR is set, and never throws.
+  captureCall({ context: context ?? 'unknown', request: resolved, response, latencyMs });
 
   // Check for truncation
   if (response.stop_reason === 'max_tokens') {
@@ -33,7 +77,7 @@ export async function createMessage(
       `[Claude] Response truncated due to max_tokens limit`,
       context ? `(${context})` : '',
       {
-        max_tokens: params.max_tokens,
+        max_tokens: resolved.max_tokens,
         output_tokens: response.usage?.output_tokens,
         stop_reason: response.stop_reason,
       }
@@ -58,7 +102,16 @@ export async function createMessage(
         context: context || 'unknown',
         promptTokens: String(response.usage.input_tokens),
         completionTokens: String(response.usage.output_tokens),
-        model: params.model || '',
+        model: response.model || resolved.model,
+        // Added 2026-08-26: the metrics half of experiment capture, which is
+        // safe in production because it carries no user content. Real
+        // per-stage volumes turn the model-bump cost projection into a real
+        // number rather than an extrapolation, and `truncated` is a permanent
+        // canary — it matters most immediately after a model change, when a
+        // max_tokens ceiling tuned for the old model starts cutting answers off.
+        latencyMs: String(latencyMs),
+        maxTokens: String(resolved.max_tokens),
+        truncated: String(response.stop_reason === 'max_tokens'),
       })
     }).catch(() => {})
   }

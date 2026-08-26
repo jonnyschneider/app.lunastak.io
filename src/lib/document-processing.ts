@@ -12,6 +12,7 @@ import { Strategy } from 'unstructured-client/sdk/models/shared'
 import { extractXML } from '@/lib/utils'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { EmergentThemeContract } from '@/lib/contracts/extraction'
+import { extractText } from '@/lib/extract-text';
 
 const unstructured = new UnstructuredClient({
   security: {
@@ -192,9 +193,7 @@ export async function processDocument(
       temperature: 0.3,
     }, 'document_extraction')
 
-    const extractionContent = extractionResponse.content[0]?.type === 'text'
-      ? extractionResponse.content[0].text
-      : ''
+    const extractionContent = extractText(extractionResponse)
 
     const extractionXML = extractXML(extractionContent, 'extraction')
     const themes = parseDocumentThemes(extractionXML)
