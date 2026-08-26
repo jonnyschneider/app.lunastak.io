@@ -296,7 +296,7 @@ export async function runRefreshGeneration(
       } as any,
       output: newStatements as any,
       claudeThoughts: `Incremental refresh based on ${delta.newFragmentCount} new and ${delta.removedFragmentCount} removed fragments.`,
-      modelUsed: model,
+      modelUsed: genResponse.model,
       totalTokens: genResponse.usage.input_tokens + genResponse.usage.output_tokens,
       promptTokens: genResponse.usage.input_tokens,
       completionTokens: genResponse.usage.output_tokens,
@@ -315,7 +315,7 @@ export async function runRefreshGeneration(
 
   // Post-snapshot with metadata
   await captureSnapshot(projectId, 'post_refresh', {
-    modelUsed: model,
+    modelUsed: genResponse.model,
     promptTokens: genResponse.usage.input_tokens,
     completionTokens: genResponse.usage.output_tokens,
     changeSummary: changeSummary ?? undefined,
@@ -438,7 +438,7 @@ export async function runInitialGeneration(
       } as any,
       output: statements as any,
       claudeThoughts: thoughts,
-      modelUsed: model,
+      modelUsed: response.model,
       totalTokens: response.usage.input_tokens + response.usage.output_tokens,
       promptTokens: response.usage.input_tokens,
       completionTokens: response.usage.output_tokens,
@@ -457,7 +457,7 @@ export async function runInitialGeneration(
 
   // Post-snapshot with metadata
   await captureSnapshot(projectId, 'post_generation', {
-    modelUsed: model,
+    modelUsed: response.model,
     promptTokens: response.usage.input_tokens,
     completionTokens: response.usage.output_tokens,
     latencyMs: latency,
@@ -472,7 +472,7 @@ export async function runInitialGeneration(
     conversationId: traceConversationId,
     experimentVariant: experimentVariant || undefined,
     fragmentIds: fragments.map(f => f.id),
-    modelUsed: model,
+    modelUsed: response.model,
     promptTokens: response.usage.input_tokens,
     completionTokens: response.usage.output_tokens,
     latencyMs: latency,
@@ -652,7 +652,7 @@ export async function runOpportunityGeneration(
 
   // Post-snapshot with metadata
   await captureSnapshot(projectId, 'post_opportunities', {
-    modelUsed: model,
+    modelUsed: response.model,
     promptTokens: response.usage.input_tokens,
     completionTokens: response.usage.output_tokens,
   })

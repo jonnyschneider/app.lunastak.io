@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — model provenance recorded the plan's model, not the model that answered (2026-08-27)
+
+`pipeline/generation.ts` recorded `modelUsed: model` at **six** sites, where `model` is a
+parameter carrying `CLAUDE_MODEL` down from `planPipeline()`. The model that actually serves a
+request is resolved per stage inside `createMessage()`, so the plan's value is only ever the
+*intended* model. Result: `Trace` and `DecisionStackSnapshot` rows named the wrong model.
+
+Caught by a deployed-preview smoke — the trace said `claude-sonnet-5` while `claude-opus-5` had
+served the request (proved by output tokens and latency matching the measured Opus-low profile,
+not Sonnet 5's). All six now record `<response>.model`.
+
+**The ratchet that should have caught this is also fixed.** The previous version forbade the
+literal `modelUsed: CLAUDE_MODEL`; these six spelled the same bug as `modelUsed: model` and
+sailed past. It now checks the **property** — `modelUsed` must be assigned from something ending
+in `.model`, an explicit non-LLM marker, or a checked pass-through — rather than blacklisting a
+name. Verified to fail on reintroduction.
+
+This is the provenance any future model comparison depends on, and it would have poisoned it
+silently.
+
+
 ### Consolidation — model-bump experiment closed out (2026-08-27)
 
 The Phase 4 revisit trigger fired and was actioned; the design doc is now closed.
