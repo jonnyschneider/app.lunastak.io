@@ -237,7 +237,7 @@ export async function performGeneration(
       dimensionalCoverage: dimensionalCoverage as any,
       output: statements as any,
       claudeThoughts: thoughts,
-      modelUsed: CLAUDE_MODEL,
+      modelUsed: response.model,
       totalTokens: response.usage.input_tokens + response.usage.output_tokens,
       promptTokens: response.usage.input_tokens,
       completionTokens: response.usage.output_tokens,
@@ -253,7 +253,7 @@ export async function performGeneration(
       await captureSnapshot(conversation.projectId, 'pre_generation')
       await writeStrategyToStack(conversation.projectId, statements)
       await captureSnapshot(conversation.projectId, 'post_generation', {
-        modelUsed: CLAUDE_MODEL,
+        modelUsed: response.model,
         promptTokens: response.usage.input_tokens,
         completionTokens: response.usage.output_tokens,
         latencyMs: latency,
@@ -273,7 +273,7 @@ export async function performGeneration(
         conversationId,
         experimentVariant: conversation.experimentVariant || undefined,
         fragmentIds,
-        modelUsed: CLAUDE_MODEL,
+        modelUsed: response.model,
         promptTokens: response.usage.input_tokens,
         completionTokens: response.usage.output_tokens,
         latencyMs: latency,

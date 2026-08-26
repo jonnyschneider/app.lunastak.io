@@ -113,7 +113,7 @@ export async function analyzeDimensionalCoverage(
     : '';
 
   // Parse response into DimensionalCoverage structure
-  const coverage = parseDimensionalCoverageResponse(content, extractedContext);
+  const coverage = parseDimensionalCoverageResponse(content, extractedContext, response.model);
 
   return coverage;
 }
@@ -178,7 +178,8 @@ Output format:
 
 function parseDimensionalCoverageResponse(
   xml: string,
-  extractedContext: EmergentExtractedContext
+  extractedContext: EmergentExtractedContext,
+  modelUsed: string
 ): DimensionalCoverage {
   // Extract <dimensional_coverage> block
   const coverageRegex = /<dimensional_coverage>([\s\S]*?)<\/dimensional_coverage>/;
@@ -245,7 +246,7 @@ function parseDimensionalCoverageResponse(
       primaryDimensions,
     },
     analysisTimestamp: new Date().toISOString(),
-    modelUsed: CLAUDE_MODEL,
+    modelUsed,
   };
 }
 
