@@ -2,6 +2,11 @@
 
 Reference list of every custom Statsig event emitted by the app. Dashboards built on these events live in Statsig itself ("Lunastak v2" board).
 
+> **Before changing instrumentation, read
+> [ARCHITECTURE.md → Analytics & Instrumentation](../architecture/ARCHITECTURE.md#analytics--instrumentation).**
+> It covers the identity model (guests are real `User` rows, deleted on conversion), why
+> `apiCallCount` is a **quota** rather than telemetry, and the LLM-call coverage gap below.
+
 ## Event metadata conventions
 
 - **`value`** — Statsig's primary tag (passed as the second arg to `logEvent`). Used as the per-event "what kind / where from" string. Filterable in Statsig as the event value column.

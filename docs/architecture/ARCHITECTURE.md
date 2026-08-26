@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-08-26
 
 ---
 
@@ -110,6 +110,65 @@ The wrapper provides automatic truncation detection, consistent logging, and a s
 
 ---
 
+## Analytics & Instrumentation
+
+**Canonical event reference: [`docs/analytics/events.md`](../analytics/events.md).** Every
+custom Statsig event and its metadata is listed there. Update it in the same commit as any
+change to an event's name, value or metadata — dashboards on the "Lunastak v2" board are built
+from it, and drift means someone filters on a field that was never emitted.
+
+### Identity model (read before touching any per-user counter)
+
+Every project has a `userId` — `Project.userId` is non-null. There is no anonymous path:
+
+- A visitor who starts without signing in gets a **real `User` row** created by
+  `createGuestUser()`, identified by a synthetic email (`isGuestUser()` recognises the pattern)
+  and a `guestUserId` cookie.
+- On signup, `transferGuestToUser()` moves projects, conversations, fragments and dismissals to
+  the authenticated user, then **deletes the guest `User` row**
+  (`src/lib/transfer-session.ts`).
+
+**Consequence:** per-user counters on the guest row do not survive conversion. A converted
+user's `totalPromptTokens` / `totalCompletionTokens` count post-signup activity only. Any
+analysis of "tokens per user" silently excludes every user's pre-signup work.
+
+### ⚠ `apiCallCount` is a QUOTA, not telemetry
+
+`GUEST_API_LIMIT = 20` (`src/lib/projects.ts`). `checkAndIncrementGuestApiCalls()` blocks a
+guest once `apiCallCount` reaches it. **`createMessage()` also increments the same field** on
+every call that passes a `userId`.
+
+So the field is written from two places and means two things. The rule that follows:
+
+> **Adding telemetry must never add an `apiCallCount` increment.** Metering more call sites
+> would consume guests' allowance faster and could wall them mid-flow — a product change
+> wearing the costume of an instrumentation fix.
+
+Separating quota from telemetry (a dedicated counter for each) is unbuilt work; until then,
+treat the metered/unmetered split as **product surface**, not an oversight to tidy up.
+
+### Telemetry coverage gap
+
+`llm_token_usage` fires inside `if (userId && response.usage)`, and **10 of 26 `createMessage`
+call sites pass no `userId`** — including `extraction`, `knowledge_summary`, `full_synthesis`,
+`incremental_synthesis` and `document_extraction`. Those emit no event and no counter increment.
+
+Token-burn dashboards and per-user counters therefore **understate real usage, and understate it
+unevenly**, since several unmetered stages are among the most expensive. Do not treat either as
+a complete cost picture. For exact per-stage cost, use the local capture instrument
+(`src/lib/experiment/capture.ts` + `npm run experiment:replay`), which records every call
+regardless of metering.
+
+### Prompt/response capture is local-only
+
+`src/lib/experiment/capture.ts` writes resolved requests and responses to disk for model
+comparison. It is **hard-gated off in production** (`NODE_ENV === 'production'` returns false
+regardless of `LUNASTAK_CAPTURE_DIR`) because the payloads are user content and a serverless
+filesystem is ephemeral anyway. The safe half — context, model, tokens, latency, truncation —
+rides on `llm_token_usage` instead.
+
+---
+
 ## Schema Change Policy
 
 The Prisma schema (`prisma/schema.prisma`) is a protected boundary. Before modifying:
@@ -142,6 +201,9 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 |-----------|----------|--------|
 | Synthesis race conditions | Sequential: synthesis → then knowledge summary | **Revisit:** parallel with coordination |
 | Guest-to-auth duplicate projects | Merge guest data, delete guest project | **Revisit:** proper session-to-user binding |
+| `apiCallCount` serves as both the guest quota and LLM call telemetry, written from two places | Documented; metering more call sites is a product change, not a fix. See [Analytics & Instrumentation](#analytics--instrumentation) | **Revisit:** split into separate quota and telemetry counters |
+| Guest `User` row is deleted at transfer, destroying its token counters | Accepted — per-user token history starts at signup | **Revisit:** carry counters across on transfer |
+| `llm_token_usage` misses 10 of 26 LLM call sites (those without a `userId`), skewing cost dashboards toward the cheap stages | Documented in `docs/analytics/events.md`; exact per-stage cost comes from the local capture instrument | **Revisit:** alongside the quota/telemetry split |
 | Cross-component state (project deletion) | Window events | **Revisit:** proper state management |
 
 ---
