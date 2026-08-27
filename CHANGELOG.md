@@ -7,6 +7,360 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-08-27
+
+### Documented — the Generate Strategy CTA is green on purpose (2026-08-27)
+
+The "Generate Strategy" button has carried a hardcoded `bg-green-600` since v1.4.2 — the
+only green in a mulberry product. The 2026-04-02 preview UAT filed it as a FAIL ("green
+instead of mulberry primary") and left it "investigating". Tonight's UAT hit it again, we
+changed it to the `bg-primary` token, and looking at it on preview immediately showed why
+it was green in the first place.
+
+The button renders inside the chat transcript, where user messages are
+`bg-primary text-primary-foreground`. In the token colour, the most important action in the
+whole flow is the same colour as a user's own chat bubble — so it reads as part of the
+conversation rather than as a control. Being the one thing in that column that is NOT
+bubble-coloured is exactly what makes it legible as a button.
+
+Reverted to green and the reason is now written at the call site, so it does not get
+"fixed" a third time. Guarded by `cta-colour-tokens.test.ts`: no `<Button>` may carry a
+hardcoded Tailwind palette background except the entries in a shrinking ALLOW set, each
+carrying its reason. Two entries — this button, and the guest-banner "Create Account" CTA
+whose orange sits inside a deliberate amber warning Alert.
+
+The lesson is about the record, not the colour: "investigating" in a UAT is not a finding.
+Had the original note named the constraint instead of the symptom, five months and two
+sessions would not have gone into rediscovering it.
+
+### Changed — edit moved onto the card disclosure strip (2026-08-27)
+
+Editing a card meant pressing "See the thinking" and then pressing Edit on the back.
+Backwards: editing is a front-face intent, and the flip exists for reading the reasoning,
+not for acting on it. Edit now sits on the strip beside the disclosure label, one press
+from either face.
+
+The strip was a single `<button>`, so the edit control is a SIBLING of the flip control —
+a button cannot nest inside a button — absolutely positioned so the page dots stay
+optically centred. The dots are the only which-of-two signal on the card and must not
+shift on every card that happens to allow editing. Edit carries its own hover chip so
+hovering it reads as "edit" rather than as the strip previewing a flip it will not do.
+
+FlipCard now owns the affordance instead of each caller rendering its own copy: the
+`hideEditButton` prop is gone (every caller passed it, so FlipCard's built-in button was
+dead code) and five duplicated Edit buttons collapsed into one. Net −20 lines with the
+feature added. Read-only stacks are guarded by the presence of `onEditClick` rather than
+by a `!readOnly` check inside each back face, so a caller cannot forget it.
+
+Opportunity cards keep Delete on the back. A destructive action belongs one level deeper
+than a corrective one, and promoting both would make deletion a peer of editing.
+
+### Fixed — raw XML no longer leaks into generated prose (2026-08-27)
+
+Found in the preview UAT of this branch: an objective rendered on the card front as
+"…where we are going.`</explanation>`". The model emitted a stray, unmatched
+`</explanation>` immediately before the true `</statement>`; `extractXML`'s strict
+`<tag>(.*?)</tag>` match SUCCEEDED and returned the inner text verbatim, so the markup was
+persisted into `objective` and `pithy` and shown to the user. Silent — no exception, no
+warning, and the full 508-test suite passed with it live.
+
+Third variant in a family: mis-closed tag (26 Aug) and missing `<objectives>` wrapper
+(27 Aug) both make the strict match FAIL, so the tolerant recovery path caught them. This
+one corrupts a match that succeeds, which is why the existing net missed it.
+
+`extractXML` now drops closing tags with no matching opening tag inside the captured span,
+and warns when it does. Legitimately nested markup survives — `extractObjectivesXML` reads
+`<objective>` blocks out of an extracted `<objectives>` region. Fixed at the parser rather
+than by leaning on prompt shape, same call as the objectives-parse fix.
+
+Not a regression of this branch — `extractXML`'s strict path predates it — but unmasked by
+it: before the objectives-parse fix, objective statements never persisted, so the leak had
+no surface. Scanned before shipping: 0 leaks across 95 production stacks and 308 production
+objectives, so no backfill is needed.
+
+### Added — prompt caching on the six prose stages (2026-08-27)
+
+Each stage's static prompt (task framing + output format) now lives in `prompts/stages/`
+and is sent as its `system` block, byte-identical on every call, marked
+`cache_control: {type:'ephemeral'}`. Call sites assemble only the variable payload.
+
+Measured with `count_tokens`, system-only: `strategy_generation` 3365, `refresh_strategy_generation`
+3226, `opportunity_generation` 2009, `knowledge_summary` 1935, `full_synthesis` 1858,
+`incremental_synthesis` 1664 — all clear of Anthropic's 1024 floor. `refresh_strategy_summary`
+and `reflective_summary_prescriptive` measure 835 and are deliberately left uncached.
+
+On `full_synthesis` — 61% of workload cost, 10–21 calls per generation — the prefix is
+written once and read 9–20 times at 0.1×: **~78% off the static half** of that stage.
+
+**Verified hitting, not assumed.** All six write on the first call and read on the second.
+That check exists because a cache that never hits is invisible from output — same text, same
+latency profile, quietly full price — so `cached` / `cacheWriteTokens` / `cacheReadTokens`
+ship on `llm_token_usage` alongside the feature rather than after it.
+
+Two ratchets: a cacheable stage must carry a checked-in `count_tokens` measurement (an
+estimate cannot back the flag), and its block cannot drift >5% without a re-measure.
+
+A separate finding from the same work: splitting the prompt this way also **fixed**
+`strategy_generation`'s objectives parse, below — the format spec now sits in a fixed
+position rather than after a variable-length payload.
+
+### Fixed — strategy generation was persisting ZERO objectives (2026-08-27)
+
+Both initial and refresh generation parsed objectives through
+`extractXML(statementsXML, 'objectives')`. Models routinely emit bare `<objective>`
+siblings directly under `<statements>`, with **no `<objectives>` wrapper at all** — so that
+returned empty, `isOKRFormat` went false, the legacy branch split an empty string, and the
+Decision Stack persisted with an empty objectives layer while three to five complete
+objectives sat in the response. No exception, no truncation, `stop_reason: end_turn`.
+
+Measured on the shipped prompt: **0 of 16 responses parsed**, across BOTH `claude-opus-5`
+@ `effort:low` and `claude-sonnet-4-5` — so not a property of the 2026-08-26 model bump,
+and older than it.
+
+Invisible to every previous measurement because they all scored the TEXT, not the parse: a
+flat grep for `<objective>` finds the blocks wherever they sit, and a human reading raw XML
+counts them fine. Only the nested parse sees none. This is why the CHANGELOG above records
+strategy generation producing four objectives and then three — those observations were real,
+and the objectives still never reached the database.
+
+`extractObjectivesXML()` recovers the unwrapped shape. Against the real captured failures:
+0/16 → 15/16, with correctly-wrapped responses unchanged. The remaining one omitted the
+`<objective>` wrappers too; recovering that would mean inferring where each objective
+begins, which fabricates commitments rather than reading them, so it is deliberately left
+to the fallback and pinned by a test.
+
+Sibling of the 2026-08-26 mis-closed-tag recovery and the synthesis JSON control-character
+fix: three instances of the same family — malformed model output that degrades silently
+instead of failing.
+
+### Changed — voice is governed at the LLM call seam, not at 26 call sites (2026-08-27)
+
+⚠ **Not yet measured against the voice harness. Do not release before Phase 1 findings.**
+
+Language and voice guidance used to be pasted into prompt strings by hand. It reached 5 sites;
+there are 26. A stage was governed only if its author remembered the guidance existed, and
+nothing told them when they forgot — which is how `incremental-synthesis.ts` shipped
+unconstrained, above.
+
+Guidance now lives in one exhaustive stage table (`src/lib/llm/policy.ts`) and is injected as the
+`system` block by `createMessage()`. **Call sites cannot pass `model`, `max_tokens` or `system`**
+— those are stage decisions. That last one is the guarantee: there is no call-site expression
+that produces an ungoverned request.
+
+Two stages gain guidance for the first time: `refresh_strategy_summary` (which sat twenty lines
+below governed refresh generation, in the same file, writing user-facing prose, carrying nothing)
+and `reflective_summary_prescriptive` (Luna's Thinking tab).
+
+Titleless prose summaries get their own `summary` bundle (explainer + voice, no title rules).
+They started on `question-gap`, which handed `refresh_strategy_summary` 334 tokens of
+interrogative-**title** rules against a 300-token output budget — telling a stage at length how to
+write something it does not emit. Caught at the Phase 1 gate before it was baselined.
+
+Conversational stages are classified onto an explicitly **empty** `chat` bundle, with the reason
+recorded in code. The voice constraint was measured on prose artefacts, not on 30–300 token chat
+turns; filling that slot needs its own A/B. Classified, not forgotten.
+
+The enforcement changed shape too. The old ratchet listed four filenames and had never been
+updated with `incremental-synthesis.ts` — the very file whose omission proved a list was the
+wrong tool. The replacement iterates the policy table, so a stage is covered the moment it is
+classified, and the type system already forces classification: an unclassified context is a
+compile error, and so is a stage missing from the table.
+
+### Added — prompt provenance on every LLM call (2026-08-27)
+
+`promptHash` — sha256 of the resolved system block plus user content, first 16 hex chars —
+stamped on `llm_token_usage` and on the local capture record. Answers "which prompt produced this
+output" for all 20 stages. Because guidance is part of the system block, the hash moves when the
+guidance moves, so a prompt change becomes visible in the cost data. Carries no user content.
+
+Inherits the existing `llm_token_usage` coverage gap (10 of 26 sites pass no `userId`) —
+documented in `docs/analytics/events.md` rather than quietly accepted.
+
+### Removed — the versioned prompt registry, and four orphaned LLM call sites (2026-08-27)
+
+The registry never had a consumer. It arrived as item 4 of 4 in a latency plan that specified
+`scripts/backtest.ts` and `scripts/eval-report.ts`; neither was ever created, on any branch. At
+retirement it had 1 adopter across 26 call sites, 3 dead versions, an entry flagged `current:
+true` that was never called, and metadata read only by a module with zero importers.
+
+Recovery tag `prompt-registry-final`; tombstone at
+`docs/architecture/retired-prompt-registry.md`.
+
+Deleted alongside it: `src/lib/extraction/v1/`, `src/lib/generation/v1/`, `src/lib/evaluation/`,
+and `analyzeDimensionalCoverage()` — all without importers. `dimensional_analysis` is no longer a
+stage. Removing the duplicate `strategy_generation` path made the refactor materially less risky.
+
+Also removed 13 tests that asserted locally-defined literals and never called production code.
+
+### Fixed — incremental synthesis was generating unconstrained prose (2026-08-27)
+
+`update-synthesis.ts` chooses between `fullSynthesis` and `incrementalSynthesis`. Only the full
+path carried the language and voice guidance. Both write the same user-facing `summary` and the
+same `gaps[].title`, and full synthesis only runs when there is no existing summary, the synthesis
+is 30+ days stale, or the fragment heuristic trips — so **for an established project the
+incremental path is the common one**, and it was unconstrained.
+
+Found by pricing the constraint rather than by a test: the ratchet added with it checks a
+hard-coded list of four files, so a fifth prose stage was invisible to it. It was an inventory,
+not an invariant.
+
+### Removed — the "vary sentence length" rule (2026-08-27)
+
+Cut from `VOICE_CONSTRAINT`. It did not work: sentence-length variance **fell in 7 of 10**
+measured comparisons, the opposite of what the rule asked for. Most likely it was fighting the
+em-dash rule, which removes exactly the long compound sentences that produced the variance.
+
+It was also the wrong rule for this surface. Rhythm is a longform concern; almost every field
+Lunastak generates is a few sentences at most, so the rule was paying tokens on every prose call
+to ask for something the artefact has no room to express. A note in `voice.ts` records why, so it
+does not get added back on intuition.
+
+**Objectives, 4 → 3: accepted, not a regression.** The earlier pass flagged strategy generating
+three objectives where it had generated four. Reviewed and kept — less is more, and a tighter
+stack is the better artefact.
+
+### Changed — question and gap titles get their own rules; thematic leads restored (2026-08-27)
+
+Refinement of the voice constraint after reading the full before/after across all four prose
+stages and both ingest paths (`voice-constraint-ab/` beside the model-bump experiment).
+
+**Question and gap titles were taking the wrong rule.** `PLAIN_LANGUAGE_TITLE_GUIDANCE` was
+applied wholesale to `suggested_questions` and synthesis `gaps`. It asks *"does it start with a
+verb or an outcome?"*, which is right for a commitment and wrong for a question — it converted
+`What would kill this fastest?` into `Test the smallest version first`, and
+`Who actually screws the kitchen to the wall?` into `Decide who installs the kitchen`. Titles
+also grew from 21–33 to 31–43 chars, costing the scannability that is a title's whole job.
+
+New `QUESTION_TITLE_GUIDANCE` (`prompts/shared/question-titles.ts`) scopes the rule: stay
+interrogative, six words or fewer, and explicitly **do not** open with a verb or an outcome.
+Re-measured — 20 of 20 gap titles are questions again, question titles are back to 21–35 chars,
+and the richer descriptions the voice constraint produced are kept. That was the point: the
+before/after choice was a false one once the cause was found.
+
+**Thematic leads restored to the knowledge summary.** The summary used to structure itself with
+short bold leads (`**The problem you've zeroed in on.**`) and lost them when the inline guidance
+was replaced. They are prompted back as a *shape*, not a fixed set — the model names the themes
+the material actually has. Re-measured: bundle-import produced "The problem you've zeroed in
+on. / Your answer, sketched. / What you've deliberately left open. / The tensions you've already
+named."; doc-upload produced a different, equally apt set.
+
+**Cost.** Dropping the title guidance from `full_synthesis` also trims the prompt on the stage
+that runs ten times per generation, where it had more than doubled.
+
+Em-dashes stayed at zero across all six re-run stages. Ratchet extended: the question/gap prompts
+must not import `PLAIN_LANGUAGE_TITLE_GUIDANCE`, and must interpolate `QUESTION_TITLE_GUIDANCE`.
+Verified to fail on reintroduction.
+
+### Added — a voice constraint on generated prose (2026-08-27)
+
+Every prompt that generates prose now carries `VOICE_CONSTRAINT`
+(`prompts/shared/voice.ts`). It targets **cadence**, which is a different category from the
+vocabulary rules in `plain-language.ts`, and both now apply.
+
+**Why this was missing.** The model-bump experiment measured the Claude-ish register as a
+*constant* across all four model arms: em-dash density 10.9–15.4 per 1k words, comparable
+rule-of-three and sentence-length variance. Constant across models means it is a property of the
+prompt layer. Everything that had shipped on language targeted jargon ("paradox", "wallet
+share"); nothing anywhere constrained voice. Vision and Strategy carried no language rule at all,
+deliberately, on a rationale about jargon that was never a decision about tone — and they are the
+artefacts where the voice read worst. They are not exempt from this one.
+
+Named tics, each with a rewrite pair: em-dash asides, the rule of three, balanced "not X, but Y"
+and "either X or Y" framing, sentimental closers, hedges, abstract nouns doing a verb's job, and
+uniform sentence length.
+
+**Measured, not argued.** The shipping arm's captured `strategy_generation` and
+`opportunity_generation` requests were re-sent with the same model, effort, `max_tokens` and
+input, changing only the prompt (two independent runs):
+
+| | before | after |
+|---|---|---|
+| em-dashes per 1k words | 14.0 (13 total) | **0.0 (0 total)** |
+| "not X, but Y" | 1 | 0 |
+| sentence-length sd | 11.3 | 10.2–12.0 |
+| rule-of-three | 5 | 5–6 |
+
+Em-dashes went to zero on both runs and output quality held. **The rule of three did not
+move** — and on reading, the remaining matches are genuine enumerations of three real parties
+("the architect, the builder and the homeowner"), not rhetorical triads, which did drop. The
+regex cannot tell the two apart, so that row is not evidence either way.
+
+Cost: ~+600 input tokens per generation call. Latency unchanged.
+
+**Also fixed: two drifted copy-pastes.** `knowledge-summary.ts` and `synthesis/full-synthesis.ts`
+each carried an inlined, shortened paraphrase of the plain-language guidance instead of importing
+it. Both now import the shared constants, so the guidance has one definition again.
+### Changed — the card explainers got an affordance (2026-08-27)
+
+The best prose in a Decision Stack lives on the back of each card, and nothing on the front
+ever said so. The whole card was the button, so no part of it looked like one, and the back
+was labelled **"Explainer"** — a word naming the mechanism rather than promising anything
+worth reading.
+
+Every card (vision, strategy, objective, opportunity, principle) now ends in a **cordoned
+disclosure strip**, full-bleed to the card edges. **The strip is the only click target** — the
+card surface is no longer a button, which also means the prose can finally be selected and
+copied.
+
+Three signals do the work, each carrying something the others do not:
+
+- **The label names the destination, with a verb.** `See the thinking` on the front,
+  `Back to the vision` (`…the strategy`, `…the objective`, …) on the back. A bare noun was
+  tried and failed: `The vision` on the back reads as a *caption for the face you are already
+  looking at*, which is the exact opposite of an invitation.
+- **Colour is the state.** The back sits a step lighter than the front, so you can never be
+  unsure which face you are on — and the strip's hover **previews the destination's colour**:
+  light from the dark front, dark from the lighter back.
+- **Dots say which of two.** `●○` / `○●`, centred under the label. Filled vs hollow, so the
+  signal is shape rather than a dimmed tint.
+
+The strip is **not** neon. Neon is the heading colour, and a neon strip competed with the very
+headings it sits under. It steps down by **size and weight only** — full-strength white at
+12px medium — because greying text out to signal hierarchy is a house no.
+
+A rotate icon was tried and **removed**: once colour carries state and the label names the
+destination, a glyph is a third signal saying nothing the other two do not.
+
+Consequences worth knowing:
+
+- **`FlipCard` now owns the card shell** (background, radius, shadow, padding via a `size`
+  token). Chrome used to be duplicated inside every `front`/`back` node at each call site,
+  which is why the strip could not be full-bleed until it moved. All five call sites pass
+  content only.
+- **Backs carry their card's identity, where identity is ambiguous.** A flipped card used to
+  render an anonymous paragraph — in the objectives grid you could not tell which objective
+  you were reading while its siblings still showed their numbers. Objectives repeat number +
+  title, opportunities the title, principles the priority. **Vision and Strategy do not**: the
+  strip already names the layer, so a heading there was pure repetition.
+- **Card height still tracks the visible face**, so a flip inside a grid reflows its row.
+  Deliberate: sizing every card to its taller face costs more whitespace than the jump costs
+  in stability.
+
+### Removed — the second flip component, which was dead (2026-08-27)
+
+`src/components/ObjectiveCard.tsx` was **orphaned** — nothing imported it — and it was the
+only consumer of `src/components/ui/flip-card.tsx`. Both deleted; git history is the archive.
+
+That dead pair is where the mobile story was worst: `ui/flip-card.tsx` flipped on
+`onMouseEnter`/`onMouseLeave` (no hover on touch) and pinned cards to a fixed `h-80`, clipping
+long explainers. None of it ever reached a user.
+
+How it got there: the 2026-03-26 Decision Stack rendering design introduced
+`components/FlipCard.tsx` as "the shared component used by all stack layers", but its
+files-affected list never named `ObjectiveCard.tsx`, so that one card was left behind on the
+December 2025 component and the duplication went unnoticed for five months. The crossfade
+itself was deliberate and stays.
+
+### Added — `card_thinking_viewed` (2026-08-27)
+
+Flips were **completely uninstrumented**, so the discovery rate for this prose has never been
+known. The strip now fires `card_thinking_viewed` on the reveal only (flipping back is not a
+second read), with the stack layer as `value`. Catalogued in `docs/analytics/events.md`.
+
+**There is no before-number.** This measures the new affordance, not the improvement over the
+old one — that comparison is unavailable and will stay unavailable.
+
+
 ### Fixed — model provenance recorded the plan's model, not the model that answered (2026-08-27)
 
 `pipeline/generation.ts` recorded `modelUsed: model` at **six** sites, where `model` is a

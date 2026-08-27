@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { UnstructuredClient } from 'unstructured-client'
 import { Strategy } from 'unstructured-client/sdk/models/shared'
 import { extractXML } from '@/lib/utils'
@@ -187,8 +187,6 @@ export async function processDocument(
       .replace('{uploadContext}', uploadContext || 'No additional context provided')
 
     const extractionResponse = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 7500,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
     }, 'document_extraction')

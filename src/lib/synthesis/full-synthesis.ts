@@ -2,46 +2,11 @@
  * Full synthesis - creates synthesis from all fragments
  */
 
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
 import { extractText } from '@/lib/extract-text';
-
-const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
-
-You have {count} fragments captured from conversations. Your task is to synthesize these into a coherent understanding.
-
-## Fragments:
-
-{fragments}
-
-## Your Task:
-
-Synthesize these fragments into structured understanding:
-
-1. **Summary** (2-3 paragraphs): What do we understand about {dimension}? Use the leader's authentic voice where possible.
-
-2. **Key Themes** (3-7 themes): What are the main ideas? Each theme should be a short phrase or sentence.
-
-3. **Key Quotes** (3-5 quotes): Verbatim quotes that capture the essence. Use exact wording from fragments.
-
-4. **Gaps** (list of objects): What's missing? Each gap should have:
-   - "title": A punchy, attention-grabbing title (max 60 chars). Plain operational language — what an operator would say in a standup, not framework vocabulary from the source. ≤8 words ideal. Avoid academic terms like "paradox", "apex", "cohort", "lifecycle". Define specialist terms on first use ("Classiche, our certification program for older Ferraris").
-   - "description": The full question or explanation of what's missing
-
-5. **Contradictions** (list): Are there conflicting fragments? Surface tensions, don't hide them.
-
-6. **Subdimensions** (emergent): Are there natural groupings or sub-categories within these fragments? Only include if clearly evident.
-
-7. **Confidence** (HIGH | MEDIUM | LOW): How comprehensive is this understanding?
-   - HIGH: 5+ fragments, clear themes, few gaps
-   - MEDIUM: 3-5 fragments, some gaps remain
-   - LOW: <3 fragments or significant gaps
-
-IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
-
-{"summary": "...", "keyThemes": ["...", "..."], "keyQuotes": ["...", "..."], "gaps": [{"title": "Short title", "description": "Full question or explanation"}], "contradictions": ["...", "..."], "subdimensions": null, "confidence": "MEDIUM"}`
 
 export async function fullSynthesis(
   dimension: Tier1Dimension,
@@ -66,14 +31,19 @@ export async function fullSynthesis(
     .map((f, i) => `### Fragment ${i + 1}\nType: ${f.contentType}\nConfidence: ${f.confidence || 'unknown'}\n\n${f.content}`)
     .join('\n\n---\n\n')
 
-  const prompt = FULL_SYNTHESIS_PROMPT
-    .replace(/{dimension}/g, dimension.replace(/_/g, ' '))
-    .replace('{count}', String(fragments.length))
-    .replace('{fragments}', fragmentsText)
+  // The user message carries ONLY what varies per call. The task framing and
+  // output format live in the stage's system block (prompts/stages/full-synthesis.ts)
+  // so the prefix is identical across all 10-21 calls in a generation and can be
+  // cached. The dimension name and fragment count used to open the prompt, which
+  // is precisely why no prefix was stable.
+  const prompt = [
+    `Dimension: ${dimension.replace(/_/g, ' ')}`,
+    `Fragments: ${fragments.length}`,
+    '',
+    fragmentsText,
+  ].join('\n')
 
   const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.3
   }, 'full_synthesis')

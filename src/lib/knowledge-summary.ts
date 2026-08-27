@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
 import { StructuredProvocation } from '@/lib/types'
@@ -25,63 +25,6 @@ const DIMENSION_NAMES: Record<Tier1Dimension, string> = {
   RISKS_CONSTRAINTS: 'Risks & Constraints',
   STRATEGIC_INTENT: 'Strategic Intent',
 }
-
-const KNOWLEDGE_SUMMARY_PROMPT = `You are summarizing accumulated strategic knowledge for a user named {userName} who is building their business strategy with an AI coach named Luna.
-
-Here are the strategic fragments (insights) that have been extracted from their conversations and documents:
-
-{fragments}
-
-COVERED DIMENSIONS: {coveredDimensions}
-GAP DIMENSIONS (not yet explored): {gapDimensions}
-
-Write a warm, conversational summary of what Luna knows about their strategy so far. This summary will be displayed to the user and also used to give Luna context in future conversations.
-
-Guidelines:
-- Write in second person ("You've shared that...", "Your strategy focuses on...")
-- Be specific - reference actual details from the fragments
-- Organize by themes that emerged, not rigidly by dimensions
-- Keep it concise (150-300 words)
-- End on an encouraging note
-
-Plain-language constraint:
-- Use words an operator would say in a standup, not framework vocabulary lifted from the source (avoid academic terms like "paradox", "apex", "cornered resource", "wallet share", "lifecycle", "cohort").
-- Define specialist terms on first use with a short appositive ("Classiche, our certification program for older Ferraris" — not just "Classiche").
-- Question titles (in suggested_questions, dimension_gaps) follow the same rule: ≤8 words ideal, plain language, would survive being shared without context.
-
-Format your response:
-<summary>
-Your conversational summary here
-</summary>
-
-<suggested_questions>
-For each question, provide a punchy title (max 60 chars) and fuller description:
-<question>
-<title>Short, attention-grabbing title</title>
-<description>The full thought-provoking question about a gap or area to explore further</description>
-</question>
-<question>
-<title>Another punchy title</title>
-<description>Another question that could deepen their strategic thinking</description>
-</question>
-<question>
-<title>Third provocative title</title>
-<description>A third question connecting different aspects of their strategy</description>
-</question>
-</suggested_questions>
-
-<dimension_gaps>
-For each gap dimension listed above, generate ONE specific question that:
-- References what you DO know about their business (from covered dimensions)
-- Frames the gap in context of their specific situation
-- Would help deepen understanding of that dimension
-
-Format each with a punchy title and fuller description:
-<gap dimension="DIMENSION_NAME">
-<title>Short, attention-grabbing title (max 60 chars)</title>
-<description>Your contextual question here as a fuller explanation</description>
-</gap>
-</dimension_gaps>`
 
 interface KnowledgeSummaryResult {
   summary: string
@@ -148,16 +91,21 @@ export async function generateKnowledgeSummary(
     .map(d => `${d} (${DIMENSION_NAMES[d]})`)
     .join(', ') || 'None - great coverage!'
 
-  const prompt = KNOWLEDGE_SUMMARY_PROMPT
-    .replace('{userName}', userName)
-    .replace('{fragments}', fragmentsText)
-    .replace('{coveredDimensions}', coveredDimensionsList)
-    .replace('{gapDimensions}', gapDimensionsList)
+  // Payload only — guidelines and output format are the stage's system block
+  // (prompts/stages/knowledge-summary.ts), identical on every call.
+  const prompt = [
+    `User: ${userName}`,
+    '',
+    'Strategic fragments extracted from their conversations and documents:',
+    '',
+    fragmentsText,
+    '',
+    `COVERED DIMENSIONS: ${coveredDimensionsList}`,
+    `GAP DIMENSIONS (not yet explored): ${gapDimensionsList}`,
+  ].join('\n')
 
   try {
     const response = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 2000, // Increased for dimension gaps
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.6,
     }, 'knowledge_summary')

@@ -2,6 +2,13 @@
 /**
  * Shared vision/strategy format guidelines and XML templates.
  * Used by both generation (v4-pithy-statements) and refresh-strategy prompts.
+ *
+ * Vision and Strategy are deliberately exempt from the JARGON rules in
+ * `plain-language.ts` (they are board-facing and can carry conceptual
+ * vocabulary). They are NOT exempt from `voice.ts` — the two prompts that
+ * compose these blocks each include VOICE_CONSTRAINT once. See the rationale
+ * in voice.ts: unconstrained tone is exactly why these two artefacts read
+ * worst in the 2026-08-26 measurements.
  */
 
 export const VISION_GUIDELINES = `## Vision Guidelines

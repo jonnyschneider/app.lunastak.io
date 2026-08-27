@@ -1,6 +1,6 @@
 import type { EmergentThemeContract } from '@/lib/contracts/extraction'
 import type { ContextBundle } from '../types'
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { extractXML } from '@/lib/utils'
 import { extractText } from '@/lib/extract-text';
 
@@ -126,7 +126,6 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
       .join('\n\n---\n\n')
 
     const response = await createMessage({
-      model: CLAUDE_MODEL,
       max_tokens: Math.max(4000, batchChunks.length * 150),
       messages: [{ role: 'user', content: DIMENSION_TAGGING_PROMPT.replace('{chunks}', batchText) }],
       temperature: 0.3,

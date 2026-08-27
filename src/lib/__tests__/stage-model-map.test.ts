@@ -11,7 +11,8 @@
  * tested without a code change, and how any arm of the experiment can be reproduced.
  */
 
-import { modelFor, effortFor, DEFAULT_MODEL, STAGE_MODELS } from '@/lib/model-config'
+import { modelFor, effortFor, DEFAULT_MODEL } from '@/lib/model-config'
+import { LLM_POLICY } from '@/lib/llm/policy'
 
 describe('shipped stage map', () => {
   const saved = { ...process.env }
@@ -34,7 +35,7 @@ describe('shipped stage map', () => {
   })
 
   it('routes mechanical stages to Sonnet 5', () => {
-    for (const stage of ['extraction', 'document_extraction', 'dimensional_analysis',
+    for (const stage of ['extraction', 'document_extraction',
                          'import_dimension_tagging', 'knowledge_summary', 'conversation_title',
                          'suggest_opposite', 'continue_questioning']) {
       expect(modelFor(stage)).toBe('claude-sonnet-5')
@@ -68,7 +69,13 @@ describe('shipped stage map', () => {
   })
 
   it('exposes the map so cost can be re-derived without reading code', () => {
-    expect(Object.keys(STAGE_MODELS).sort()).toEqual(
+    // The map moved into LLM_POLICY (2026-08-27) so every stage is forced to
+    // declare a model decision. Same three stages carry a non-default model.
+    const named = Object.entries(LLM_POLICY)
+      .filter(([, p]) => p.model !== undefined)
+      .map(([ctx]) => ctx)
+      .sort()
+    expect(named).toEqual(
       ['opportunity_generation', 'refresh_strategy_generation', 'strategy_generation'])
   })
 })

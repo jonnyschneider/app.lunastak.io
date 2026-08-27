@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ChevronDown, ChevronUp, ArrowUpDown, Trash2, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowUpDown, Trash2 } from 'lucide-react';
 import { FlipCard } from './FlipCard';
 import type { Principle } from '@/lib/types';
 
@@ -339,8 +339,13 @@ export function PrinciplesSection({
               return (
                 <div key={principle.id} className={isEditingThis ? 'col-span-full' : ''}>
                   <FlipCard
+                    cardClassName="bg-ds-teal rounded-lg shadow-sm min-h-[120px]"
+                    size="sm"
+                    cardType="principle"
+                    returnLabel="Back to the principle"
+                    projectId={projectId}
                     front={
-                      <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px] flex items-center justify-center">
+                      <div className="flex h-full items-center justify-center">
                         <div className="text-center space-y-1.5">
                           <p className="text-[13px] font-semibold text-ds-neon">{principle.priority}</p>
                           <p className="text-[13px] font-semibold uppercase tracking-wider text-white/70">even over</p>
@@ -349,28 +354,17 @@ export function PrinciplesSection({
                       </div>
                     }
                     back={
-                      <div className="bg-ds-teal rounded-lg p-4 shadow-sm min-h-[120px]">
-                        <div className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-ds-neon text-ds-teal rounded mb-2">
-                          Explainer
-                        </div>
+                      <>
+                        <p className="text-[13px] font-semibold text-ds-neon mb-2">{principle.priority}</p>
                         {principle.context ? (
                           <p className="text-[13px] text-white/90 leading-relaxed">{principle.context}</p>
                         ) : (
                           <p className="text-[13px] text-white/40 italic">No context yet</p>
                         )}
-                        {!readOnly && (
-                          <div className="flex justify-end mt-3">
-                            <Button size="sm" onClick={(e) => { e.stopPropagation(); onStartEditing?.(principle.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                              <Pencil className="h-3 w-3" />
-                              <span className="text-[13px]">Edit</span>
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                      </>
                     }
                     isEditing={isEditingThis}
-                    onEditClick={() => onStartEditing?.(principle.id)}
-                    hideEditButton
+                    onEditClick={readOnly ? undefined : () => onStartEditing?.(principle.id)}
                     editForm={
                       <PrincipleEditForm
                         principle={principle}

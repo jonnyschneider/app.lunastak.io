@@ -91,6 +91,7 @@ Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`
 | `cta_version_history` | client | `overflow-menu` | `projectId`, userType | User opened version history. |
 | `version_history_downloaded` | client | `version-history` | `projectId`, `version`, userType | User downloaded a specific version snapshot. |
 | `tab_switch` | client | `decision-stack` \| `knowledgebase` | `projectId`, userType | User switched tabs in the project view. |
+| `card_thinking_viewed` | client | `vision` \| `strategy` \| `objective` \| `opportunity` \| `principle` | `projectId`, userType | User revealed the back of a Decision Stack card via the "The thinking" strip. Fires on the **reveal only** — flipping back is not a second read. Segment by `value` to see which layers people actually read. **No pre-2026-08-27 baseline exists** — the flip was completely uninstrumented before the disclosure strip shipped, so this measures the new affordance, not the improvement over the old one. |
 | `cta_build_strategy` | client | `first-time` | `projectId`, userType | User started the build-strategy path from first-time empty state. (Note: `FirstTimeEmptyState` is currently orphaned; this event may not fire in production.) |
 | `cta_complete_template` | client | `review` \| `early-exit` | `projectId`, userType | User completed (or early-exited) the template flow. (Template page is orphaned.) |
 
@@ -108,7 +109,7 @@ Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
+| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptHash`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated`, `cached`, `cacheWriteTokens`, `cacheReadTokens` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
 
 ### `llm_token_usage` — corrections and a coverage gap
 
@@ -126,11 +127,43 @@ change, when a ceiling tuned for the previous model starts cutting answers off. 
 is carried; prompt/response capture is a local-only instrument (`src/lib/experiment/capture.ts`,
 hard-gated out of production).
 
+**Added 2026-08-27:** `promptHash` — the first 16 hex chars of a sha256 over the resolved
+`system` block plus the serialised user content. It answers "which prompt produced this output"
+for **all 20 stages**, which is what the retired prompt registry promised for three and never
+delivered ([retired-prompt-registry.md](../architecture/retired-prompt-registry.md)). A hash
+carries no user content, so it is production-safe.
+
+Two things follow from how it is computed. It changes when the guidance changes, because the
+guidance is now part of the `system` block — that is the point, and it is how a prompt change
+becomes visible in the cost data. And it changes per call for stages whose user message carries
+the payload, so it identifies a *resolved request*, not a prompt template. To group by template,
+group by `context`.
+
+**Added 2026-08-27 with prompt caching:** `cached` (whether this stage ships its system
+block as a cached prefix), `cacheWriteTokens` (`cache_creation_input_tokens`) and
+`cacheReadTokens` (`cache_read_input_tokens`).
+
+These exist because **a cache that silently never hits looks exactly like one that works** —
+same output, same latency profile, quietly full price. Nothing else distinguishes the two
+from outside, so they shipped with the feature rather than after it. Six stages are cached:
+the four generation/synthesis prose stages plus `knowledge_summary` and
+`incremental_synthesis`, each measured ≥1024 tokens.
+
+A healthy cached stage shows one call with `cacheWriteTokens > 0` followed by calls with
+`cacheReadTokens > 0`. **`cached: true` with `cacheReadTokens` persistently 0 means the
+prefix is being rewritten every call** — the failure this instrumentation exists to catch.
+
+**⚠ `promptHash` inherits the coverage gap below.** The hash is durable only where the event
+fires. `captureCall()` records it regardless, locally.
+
 **⚠ Coverage gap — the event does not fire on every LLM call.** It sits inside
 `if (userId && response.usage)`, and **10 of 26 `createMessage` call sites pass no `userId`**:
 `extraction`, `knowledge_summary`, `full_synthesis`, `incremental_synthesis`,
-`document_extraction`, `dimensional_analysis`, `reflective_summary_prescriptive`,
+`document_extraction`, `reflective_summary_prescriptive`,
 `template_extraction`, `import_dimension_tagging`, `suggest_opposite`.
+
+(`dimensional_analysis` was on this list until 2026-08-27, when the orphaned
+`analyzeDimensionalCoverage()` that owned it was deleted. The stage no longer exists.)
 
 Those calls emit no event and no `User` token increment. Several are among the most expensive
 stages in the pipeline, so **token-burn dashboards and per-user counters understate real usage,

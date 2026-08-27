@@ -314,6 +314,7 @@ export function OpportunitySection({
                 onDelete={handleDelete}
                 compact={compact}
                 readOnly={readOnly}
+                projectId={projectId}
               />
             );
           })}

@@ -19,11 +19,59 @@ export function getObjectiveTitle(objective: Pick<Objective, 'title' | 'objectiv
   return words.slice(0, 5).join(' ') + '...';
 }
 
+/**
+ * Remove closing tags that have no matching opening tag inside `region`.
+ *
+ * Real failure 2026-08-27 (preview UAT, PR #30): a model emitted a stray, unmatched
+ * </explanation> immediately before the true </statement>. The strict match below SUCCEEDED
+ * and returned the inner text verbatim, so "…where we are going.</explanation>" was persisted
+ * and rendered on the card front. Silent — no exception, no warning.
+ *
+ * Third variant of the same family as the mis-closed tag (2026-08-26) and the missing
+ * <objectives> wrapper (2026-08-27). The difference that hid it: those two make the strict
+ * match FAIL, so the tolerant path caught them. This one corrupts a match that succeeds.
+ *
+ * Only UNMATCHED closers are dropped. Nested well-formed markup must survive —
+ * extractObjectivesXML reads <objective> blocks out of an extracted <objectives> region.
+ */
+function dropStrayClosingTags(region: string, tag: string): string {
+  const tagRe = /<(\/?)([a-zA-Z_][\w-]*)>/g;
+  const open: string[] = [];
+  const strays: Array<[number, number]> = [];
+  let m: RegExpExecArray | null;
+
+  while ((m = tagRe.exec(region)) !== null) {
+    if (m[1] === '/') {
+      const at = open.lastIndexOf(m[2]);
+      // No opening tag for this closer inside the region — it is model noise, not content.
+      if (at === -1) strays.push([m.index, m.index + m[0].length]);
+      // Pop the match and anything left unclosed inside it.
+      else open.length = at;
+    } else {
+      open.push(m[2]);
+    }
+  }
+
+  if (strays.length === 0) return region;
+
+  let out = '';
+  let prev = 0;
+  for (const [start, end] of strays) {
+    out += region.slice(prev, start);
+    prev = end;
+  }
+  out += region.slice(prev);
+
+  const dropped = strays.map(([s, e]) => region.slice(s, e)).join(' ');
+  console.warn(`[extractXML] dropped stray closing tag(s) from <${tag}>: ${dropped} — model emitted markup with no matching opening tag`);
+  return out.trim();
+}
+
 export function extractXML(text: string, tag: string): string {
   // Fast path: well-formed <tag>…</tag>. Unchanged behaviour.
   const pattern = new RegExp(`<${tag}>(.*?)</${tag}>`, 's');
   const match = text.match(pattern);
-  if (match) return match[1].trim();
+  if (match) return dropStrayClosingTags(match[1].trim(), tag);
 
   // Tolerant path: the opening tag is present but its closing tag is missing or WRONG.
   //
@@ -82,6 +130,33 @@ export function extractAllXML(text: string, tag: string): string[] {
  * - New simplified OMTM format (omtm + aspiration)
  * - Legacy key_results format (for backwards compatibility)
  */
+/**
+ * The objectives section of a <statements> block, tolerating a missing wrapper.
+ *
+ * Measured 2026-08-27: models routinely emit bare <objective> siblings directly
+ * under <statements>, with no <objectives> element at all — on the pre-split
+ * generation prompt, 0 of 16 responses carried the wrapper, across BOTH
+ * claude-opus-5 @ effort:low and claude-sonnet-4-5. Not a property of one model.
+ *
+ * `extractXML(statements,'objectives')` is right to return '' — the element is
+ * genuinely absent. The bug was downstream: callers read that '' as "legacy
+ * format", split it on newlines, and produced ZERO objectives while three to
+ * five complete ones sat in the response. Silent, every time.
+ *
+ * Sibling of the 2026-08-26 mis-closed-tag recovery in extractXML: same family
+ * (malformed structure the app must survive), different malformation.
+ *
+ * Returns '' when there are genuinely no objectives — never invents one.
+ */
+export function extractObjectivesXML(statementsXML: string): string {
+  const wrapped = extractXML(statementsXML, 'objectives')
+  if (wrapped.includes('<objective>')) return wrapped
+  // No usable wrapper. parseOKRObjectives reads <objective> blocks and ignores
+  // everything else, so handing it the statements block cannot pull vision or
+  // strategy prose into an objective.
+  return statementsXML.includes('<objective>') ? statementsXML : ''
+}
+
 export function parseOKRObjectives(objectivesXML: string): Objective[] {
   const objectiveBlocks = extractAllXML(objectivesXML, 'objective');
 
