@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { TrendingUp, Trash2 } from 'lucide-react';
 import { SuccessMetric } from '@/lib/types';
 import { getObjectiveTitle } from '@/lib/utils';
 import { FlipCard } from './FlipCard';
@@ -158,23 +158,23 @@ export function OpportunityCard({
             <p className="text-sm text-white/90 leading-relaxed">{description}</p>
           )}
 
-          {/* Actions */}
+          {/*
+           * Edit moved to the disclosure strip (2026-08-27) so it is reachable
+           * from either face. Delete stays here, behind the flip: a destructive
+           * action belongs one level deeper than a corrective one, and putting
+           * both on the strip would make deletion a peer of editing.
+           */}
           {!readOnly && (
             <div className="flex justify-end gap-2 mt-3">
               <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onDelete(id); }} className="text-white/40 hover:text-red-400 hover:bg-white/10 gap-1.5">
                 <Trash2 className="h-3 w-3" />
                 <span className="text-sm">Delete</span>
               </Button>
-              <Button size="sm" onClick={(e) => { e.stopPropagation(); onEdit(id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                <Pencil className="h-3 w-3" />
-                <span className="text-sm">Edit</span>
-              </Button>
             </div>
           )}
         </>
       }
-      onEditClick={() => onEdit(id)}
-      hideEditButton
+      onEditClick={readOnly ? undefined : () => onEdit(id)}
     />
   );
 }

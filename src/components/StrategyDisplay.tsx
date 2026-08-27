@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Plus, TrendingUp, Pencil, Flag } from 'lucide-react';
+import { Plus, TrendingUp, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { StrategyStatements, Objective } from '@/lib/types';
@@ -248,21 +248,10 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 </>
               }
               back={
-                <>
-                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.visionExplainer || 'Not written yet'}</p>
-                  {!readOnly && (
-                    <div className="flex justify-end mt-3">
-                      <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('vision'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                        <Pencil className="h-3 w-3" />
-                        <span className="text-[13px]">Edit</span>
-                      </Button>
-                    </div>
-                  )}
-                </>
+                <p className="text-[13px] text-white/90 leading-relaxed">{strategy.visionExplainer || 'Not written yet'}</p>
               }
               isEditing={editingCard?.type === 'vision'}
-              onEditClick={() => startEditing('vision')}
-              hideEditButton
+              onEditClick={readOnly ? undefined : () => startEditing('vision')}
               editForm={
                 <div className="bg-white rounded-lg p-6 shadow-lg border">
                   <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide mb-3">
@@ -302,21 +291,10 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                 </>
               }
               back={
-                <>
-                  <p className="text-[13px] text-white/90 leading-relaxed">{strategy.strategyExplainer || 'Not written yet'}</p>
-                  {!readOnly && (
-                    <div className="flex justify-end mt-3">
-                      <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('strategy'); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                        <Pencil className="h-3 w-3" />
-                        <span className="text-[13px]">Edit</span>
-                      </Button>
-                    </div>
-                  )}
-                </>
+                <p className="text-[13px] text-white/90 leading-relaxed">{strategy.strategyExplainer || 'Not written yet'}</p>
               }
               isEditing={editingCard?.type === 'strategy'}
-              onEditClick={() => startEditing('strategy')}
-              hideEditButton
+              onEditClick={readOnly ? undefined : () => startEditing('strategy')}
               editForm={
                 <div className="bg-white rounded-lg p-6 shadow-lg border">
                   <h3 className="text-xs font-semibold text-ds-teal uppercase tracking-wide mb-3">
@@ -430,19 +408,10 @@ export default function StrategyDisplay({ strategy, conversationId, traceId, pro
                           ) : (
                             <p className="text-[13px] text-white/40 italic">No explanation yet</p>
                           )}
-                          {!readOnly && (
-                            <div className="flex justify-end mt-3">
-                              <Button size="sm" onClick={(e) => { e.stopPropagation(); startEditing('objective', objective.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                                <Pencil className="h-3 w-3" />
-                                <span className="text-[13px]">Edit</span>
-                              </Button>
-                            </div>
-                          )}
                         </>
                       }
                       isEditing={isEditingThis}
-                      onEditClick={() => startEditing('objective', objective.id)}
-                      hideEditButton
+                      onEditClick={readOnly ? undefined : () => startEditing('objective', objective.id)}
                       editForm={
                         <ObjectiveInlineEditor
                           objective={objective}

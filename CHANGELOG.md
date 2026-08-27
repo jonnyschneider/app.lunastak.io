@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — edit moved onto the card disclosure strip (2026-08-27)
+
+Editing a card meant pressing "See the thinking" and then pressing Edit on the back.
+Backwards: editing is a front-face intent, and the flip exists for reading the reasoning,
+not for acting on it. Edit now sits on the strip beside the disclosure label, one press
+from either face.
+
+The strip was a single `<button>`, so the edit control is a SIBLING of the flip control —
+a button cannot nest inside a button — absolutely positioned so the page dots stay
+optically centred. The dots are the only which-of-two signal on the card and must not
+shift on every card that happens to allow editing. Edit carries its own hover chip so
+hovering it reads as "edit" rather than as the strip previewing a flip it will not do.
+
+FlipCard now owns the affordance instead of each caller rendering its own copy: the
+`hideEditButton` prop is gone (every caller passed it, so FlipCard's built-in button was
+dead code) and five duplicated Edit buttons collapsed into one. Net −20 lines with the
+feature added. Read-only stacks are guarded by the presence of `onEditClick` rather than
+by a `!readOnly` check inside each back face, so a caller cannot forget it.
+
+Opportunity cards keep Delete on the back. A destructive action belongs one level deeper
+than a corrective one, and promoting both would make deletion a peer of editing.
+
 ### Fixed — raw XML no longer leaks into generated prose (2026-08-27)
 
 Found in the preview UAT of this branch: an objective rendered on the card front as

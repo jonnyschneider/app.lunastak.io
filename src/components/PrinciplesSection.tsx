@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ChevronDown, ChevronUp, ArrowUpDown, Trash2, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowUpDown, Trash2 } from 'lucide-react';
 import { FlipCard } from './FlipCard';
 import type { Principle } from '@/lib/types';
 
@@ -361,19 +361,10 @@ export function PrinciplesSection({
                         ) : (
                           <p className="text-[13px] text-white/40 italic">No context yet</p>
                         )}
-                        {!readOnly && (
-                          <div className="flex justify-end mt-3">
-                            <Button size="sm" onClick={(e) => { e.stopPropagation(); onStartEditing?.(principle.id); }} className="bg-white text-ds-teal hover:bg-white/90 gap-1.5">
-                              <Pencil className="h-3 w-3" />
-                              <span className="text-[13px]">Edit</span>
-                            </Button>
-                          </div>
-                        )}
                       </>
                     }
                     isEditing={isEditingThis}
-                    onEditClick={() => onStartEditing?.(principle.id)}
-                    hideEditButton
+                    onEditClick={readOnly ? undefined : () => onStartEditing?.(principle.id)}
                     editForm={
                       <PrincipleEditForm
                         principle={principle}
