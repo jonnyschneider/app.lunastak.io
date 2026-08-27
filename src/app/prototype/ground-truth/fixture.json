@@ -1,0 +1,733 @@
+{
+  "generatedFrom": "captures/A-control (2026-08-26 model-upgrade), first synthesis run",
+  "note": "Real full_synthesis output on the joinery memo. Receipts are heuristically derived from the source fragments, not emitted by the model — see pre-registered question 3.",
+  "itemCount": 56,
+  "withReceipt": 54,
+  "withEvidenceReceipt": 28,
+  "groups": [
+    {
+      "dimension": "Business Model Economics",
+      "themeCount": 5,
+      "fragmentCount": 2
+    },
+    {
+      "dimension": "Strategic Intent",
+      "themeCount": 5,
+      "fragmentCount": 3
+    },
+    {
+      "dimension": "Capabilities Assets",
+      "themeCount": 6,
+      "fragmentCount": 1
+    },
+    {
+      "dimension": "Value Proposition",
+      "themeCount": 6,
+      "fragmentCount": 3
+    },
+    {
+      "dimension": "Problem Opportunity",
+      "themeCount": 6,
+      "fragmentCount": 2
+    },
+    {
+      "dimension": "Competitive Landscape",
+      "themeCount": 5,
+      "fragmentCount": 2
+    },
+    {
+      "dimension": "Risks Constraints",
+      "themeCount": 5,
+      "fragmentCount": 4
+    },
+    {
+      "dimension": "Go To Market",
+      "themeCount": 6,
+      "fragmentCount": 3
+    },
+    {
+      "dimension": "Customer Market",
+      "themeCount": 6,
+      "fragmentCount": 3
+    },
+    {
+      "dimension": "Product Experience",
+      "themeCount": 6,
+      "fragmentCount": 3
+    }
+  ],
+  "items": [
+    {
+      "id": "0001-1",
+      "statement": "Positioning above mass-market quality, below premium pricing",
+      "receipt": "Aiming above the IKEA/Caboodle ceiling on design quality while promising costs far below a full architect engagement",
+      "receiptSource": "claim",
+      "group": "Business Model Economics",
+      "source": {
+        "capture": "1787715224580-0001-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:44.579Z"
+      }
+    },
+    {
+      "id": "0001-2",
+      "statement": "Revenue model deliberately unresolved pending market validation",
+      "receipt": "Revenue model deliberately unresolved",
+      "receiptSource": "claim",
+      "group": "Business Model Economics",
+      "source": {
+        "capture": "1787715224580-0001-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:44.579Z"
+      }
+    },
+    {
+      "id": "0001-3",
+      "statement": "Multiple potential customer types: architect, builder, or homeowner",
+      "receipt": "Who pays is explicitly open — could be architect, builder or homeowner depending on circumstance",
+      "receiptSource": "evidence",
+      "group": "Business Model Economics",
+      "source": {
+        "capture": "1787715224580-0001-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:44.579Z"
+      }
+    },
+    {
+      "id": "0001-4",
+      "statement": "Pricing structure undecided: project-based vs seat-based vs subscription",
+      "receipt": "Possibly project-based rather than seat-based",
+      "receiptSource": "evidence",
+      "group": "Business Model Economics",
+      "source": {
+        "capture": "1787715224580-0001-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:44.579Z"
+      }
+    },
+    {
+      "id": "0001-5",
+      "statement": "Strategic deferral of monetization decisions until demand confirmed",
+      "receipt": "Decision consciously deferred until demand and feasibility are confirmed",
+      "receiptSource": "evidence",
+      "group": "Business Model Economics",
+      "source": {
+        "capture": "1787715224580-0001-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:44.579Z"
+      }
+    },
+    {
+      "id": "0002-1",
+      "statement": "At diligence stage, not commitment stage",
+      "receipt": "At the diligence stage, not the commitment stage",
+      "receiptSource": "claim",
+      "group": "Strategic Intent",
+      "source": {
+        "capture": "1787715225997-0002-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:45.997Z"
+      }
+    },
+    {
+      "id": "0002-2",
+      "statement": "Deliberate restraint on solution thinking before market confirmation",
+      "receipt": "Explicit instruction to self not to get too far into solution thinking before confirming the market",
+      "receiptSource": "evidence",
+      "group": "Strategic Intent",
+      "source": {
+        "capture": "1787715225997-0002-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:45.997Z"
+      }
+    },
+    {
+      "id": "0002-3",
+      "statement": "Core thesis: professional intermediaries migrating to SaaS-enabled self-service",
+      "receipt": "Draws on a long-running thesis: work once done by professional intermediaries has migrated to SaaS-enabled self-service — travel via Airbnb, Booking.com and airline aggregators replacing Flight Centre consultants; accounting and tax prep via MYOB and Xero; freight and logistics; HR and hiring",
+      "receiptSource": "evidence",
+      "group": "Strategic Intent",
+      "source": {
+        "capture": "1787715225997-0002-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:45.997Z"
+      }
+    },
+    {
+      "id": "0002-4",
+      "statement": "Strategic tension between full integrated-build (attractive) and standalone-kitchen (de-risked)",
+      "receipt": "Most drawn to the full integrated-build version, but the standalone-kitchen segment is the easier de-risking start — and may be a different business against a much wider competitive field",
+      "receiptSource": "claim",
+      "group": "Strategic Intent",
+      "source": {
+        "capture": "1787715225997-0002-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:45.997Z"
+      }
+    },
+    {
+      "id": "0002-5",
+      "statement": "Standalone-kitchen may be a different business with wider competition",
+      "receipt": "Most drawn to the full integrated-build version, but the standalone-kitchen segment is the easier de-risking start — and may be a different business against a much wider competitive field",
+      "receiptSource": "claim",
+      "group": "Strategic Intent",
+      "source": {
+        "capture": "1787715225997-0002-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:45.997Z"
+      }
+    },
+    {
+      "id": "0003-1",
+      "statement": "Founder-domain fit across software, design and cabinet making",
+      "receipt": "Founder-domain fit across software, design and cabinet making",
+      "receiptSource": "claim",
+      "group": "Capabilities Assets",
+      "source": {
+        "capture": "1787715227652-0003-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:47.652Z"
+      }
+    },
+    {
+      "id": "0003-2",
+      "statement": "Long software technology career combined with lifelong physical design interest",
+      "receipt": "Long career in software technology, plus recent years working with a range of startup companies",
+      "receiptSource": "evidence",
+      "group": "Capabilities Assets",
+      "source": {
+        "capture": "1787715227652-0003-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:47.652Z"
+      }
+    },
+    {
+      "id": "0003-3",
+      "statement": "Direct hands-on experience across design, specification and installation",
+      "receipt": "Founder-domain fit across software, design and cabinet making",
+      "receiptSource": "claim",
+      "group": "Capabilities Assets",
+      "source": {
+        "capture": "1787715227652-0003-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:47.652Z"
+      }
+    },
+    {
+      "id": "0003-4",
+      "statement": "Two home renovations as first-hand source material",
+      "receipt": "Two home renovations in the last ten years as direct source material",
+      "receiptSource": "evidence",
+      "group": "Capabilities Assets",
+      "source": {
+        "capture": "1787715227652-0003-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:47.652Z"
+      }
+    },
+    {
+      "id": "0003-5",
+      "statement": "Solo founder with no team, capital or tech assets currently in place",
+      "receipt": "No team, capital, tech assets or IP position described.",
+      "receiptSource": "evidence",
+      "group": "Capabilities Assets",
+      "source": {
+        "capture": "1787715227652-0003-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:47.652Z"
+      }
+    },
+    {
+      "id": "0003-6",
+      "statement": "Confidence in ability to execute SaaS-based services business",
+      "receipt": "Observation that spinning up a SaaS-based services business is not especially difficult and many such businesses do fine",
+      "receiptSource": "evidence",
+      "group": "Capabilities Assets",
+      "source": {
+        "capture": "1787715227652-0003-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:47.652Z"
+      }
+    },
+    {
+      "id": "0004-1",
+      "statement": "Architect-quality design at fraction of architect cost (80% benefit, orders of magnitude cheaper)",
+      "receipt": "For the homeowner: an architect-quality design outcome at a fraction of full architect cost, competitive quotes, and an advocate on quality",
+      "receiptSource": "evidence",
+      "group": "Value Proposition",
+      "source": {
+        "capture": "1787715230709-0004-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.709Z"
+      }
+    },
+    {
+      "id": "0004-2",
+      "statement": "Above IKEA/Caboodle quality ceiling—interesting materials, not commodity finishes",
+      "receipt": "Aimed above the IKEA/Caboodle ceiling — interesting materials, sourced from different places, integral to the project design, not Laminex with ABS edging",
+      "receiptSource": "evidence",
+      "group": "Value Proposition",
+      "source": {
+        "capture": "1787715230709-0004-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.709Z"
+      }
+    },
+    {
+      "id": "0004-3",
+      "statement": "Early, commitment-free joinery feasibility and pricing while design still flexible",
+      "receipt": "Early, commitment-free joinery feasibility and price, plus a manufacture-ready specification",
+      "receiptSource": "claim",
+      "group": "Value Proposition",
+      "source": {
+        "capture": "1787715230709-0004-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.709Z"
+      }
+    },
+    {
+      "id": "0004-4",
+      "statement": "Manufacture-ready specification in format wholesale shops already use",
+      "receipt": "Produce a specification complete enough to manufacture from, in a format the wholesale shops already produce in",
+      "receiptSource": "evidence",
+      "group": "Value Proposition",
+      "source": {
+        "capture": "1787715230709-0004-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.709Z"
+      }
+    },
+    {
+      "id": "0004-5",
+      "statement": "Transparency in joinery numbers versus current builder opacity",
+      "receipt": "Value depends on making the joinery number credible and transparent early, but today builders deliberately keep joinery estimates opaque to clients to protect margin",
+      "receiptSource": "claim",
+      "group": "Value Proposition",
+      "source": {
+        "capture": "1787715230709-0004-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.709Z"
+      }
+    },
+    {
+      "id": "0004-6",
+      "statement": "Homeowner advocacy on quality plus competitive quotes",
+      "receipt": "For the homeowner: an architect-quality design outcome at a fraction of full architect cost, competitive quotes, and an advocate on quality",
+      "receiptSource": "evidence",
+      "group": "Value Proposition",
+      "source": {
+        "capture": "1787715230709-0004-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.709Z"
+      }
+    },
+    {
+      "id": "0005-1",
+      "statement": "Detail gap between architect design and manufacturable joinery discovered too late",
+      "receipt": "The detail gap between architect design and manufacturable joinery is discovered too late",
+      "receiptSource": "claim",
+      "group": "Problem Opportunity",
+      "source": {
+        "capture": "1787715230749-0005-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.748Z"
+      }
+    },
+    {
+      "id": "0005-2",
+      "statement": "Cabinet maker is first party who can produce real numbers but only involved at pricing",
+      "receipt": "The cabinet maker is the first party who can produce a real number, and only gets involved at pricing",
+      "receiptSource": "evidence",
+      "group": "Problem Opportunity",
+      "source": {
+        "capture": "1787715230749-0005-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.748Z"
+      }
+    },
+    {
+      "id": "0005-3",
+      "statement": "Predictable failure sequence: design, price shock, blame, shopping around, unpaid rework, delay",
+      "receipt": "Typical failure sequence: architect produces the big idea, cabinet maker prices it, it is unaffordable, blame lands on the architect, client shops it around, client eventually discovers the design itself is what is expensive, rework follows, architect and cabinet maker collaborate on scope reductions they are largely unpaid for, project is delayed, all parties worse off",
+      "receiptSource": "evidence",
+      "group": "Problem Opportunity",
+      "source": {
+        "capture": "1787715230749-0005-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.748Z"
+      }
+    },
+    {
+      "id": "0005-4",
+      "statement": "Joinery is large line item (quarter of renovation) carried as provisional sum",
+      "receipt": "Joinery is a large, poorly-estimated line item and the hardest trade for builders to schedule",
+      "receiptSource": "claim",
+      "group": "Problem Opportunity",
+      "source": {
+        "capture": "1787715230749-0005-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.748Z"
+      }
+    },
+    {
+      "id": "0005-5",
+      "statement": "Cabinet makers absorb schedule slip and structural cost of unpaid specification work",
+      "receipt": "Cabinet makers are one of the last trades in the sequence, so they absorb accumulated schedule slip; good ones are not idle and waiting for work",
+      "receiptSource": "evidence",
+      "group": "Problem Opportunity",
+      "source": {
+        "capture": "1787715230749-0005-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.748Z"
+      }
+    },
+    {
+      "id": "0005-6",
+      "statement": "Opportunity to provide design-and-feasibility role earlier without commitment",
+      "receipt": "Reframed opportunity: provide the cabinet maker's design-and-feasibility role earlier in the process, with no commitment required from any party",
+      "receiptSource": "evidence",
+      "group": "Problem Opportunity",
+      "source": {
+        "capture": "1787715230749-0005-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.748Z"
+      }
+    },
+    {
+      "id": "0006-1",
+      "statement": "The primary professional incumbent is estimation by analogy, not a software product",
+      "receipt": "The incumbent is estimation by analogy, not a product",
+      "receiptSource": "claim",
+      "group": "Competitive Landscape",
+      "source": {
+        "capture": "1787715230902-0006-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.902Z"
+      }
+    },
+    {
+      "id": "0006-2",
+      "statement": "Professional estimates are opaque summary line items, not detailed specifications",
+      "receipt": "Output is summary line items, roughly a one-pager per room of joinery, and not fully transparent to the client.",
+      "receiptSource": "evidence",
+      "group": "Competitive Landscape",
+      "source": {
+        "capture": "1787715230902-0006-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.902Z"
+      }
+    },
+    {
+      "id": "0006-3",
+      "statement": "Flat-pack systems offer accessibility but cap out below genuinely custom results",
+      "receipt": "Flat-pack incumbents cap out below a genuinely custom result",
+      "receiptSource": "claim",
+      "group": "Competitive Landscape",
+      "source": {
+        "capture": "1787715230902-0006-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.902Z"
+      }
+    },
+    {
+      "id": "0006-4",
+      "statement": "Consumers in flat-pack models take on design responsibility with limited experience",
+      "receipt": "In that model the consumer takes on responsibility for design, and sometimes manufacture and installation, with limited experience",
+      "receiptSource": "evidence",
+      "group": "Competitive Landscape",
+      "source": {
+        "capture": "1787715230902-0006-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.902Z"
+      }
+    },
+    {
+      "id": "0006-5",
+      "statement": "A gap exists between opaque professional estimates and limited flat-pack outcomes",
+      "receipt": null,
+      "receiptSource": null,
+      "group": "Competitive Landscape",
+      "source": {
+        "capture": "1787715230902-0006-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:50.902Z"
+      }
+    },
+    {
+      "id": "0007-1",
+      "statement": "Design leakage — customers shopping the spec themselves",
+      "receipt": "Design leakage — the customer shops the spec themselves",
+      "receiptSource": "claim",
+      "group": "Risks Constraints",
+      "source": {
+        "capture": "1787715231868-0007-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:51.868Z"
+      }
+    },
+    {
+      "id": "0007-2",
+      "statement": "Wholesale manufacturers win, joinery trade loses",
+      "receipt": "The cabinet maker / joinery trade LOSES — today they either build cabinets or sub-contract boxes to the same wholesalers, plus install, and carry the design, quoting and architect-wrangling burden.",
+      "receiptSource": "evidence",
+      "group": "Risks Constraints",
+      "source": {
+        "capture": "1787715231868-0007-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:51.868Z"
+      }
+    },
+    {
+      "id": "0007-3",
+      "statement": "Install layer risks deskilling and quality degradation",
+      "receipt": "The joinery trade is disintermediated, and the install layer may degrade as a result",
+      "receiptSource": "claim",
+      "group": "Risks Constraints",
+      "source": {
+        "capture": "1787715231868-0007-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:51.868Z"
+      }
+    },
+    {
+      "id": "0007-4",
+      "statement": "Self-installation has real quality traps despite being possible",
+      "receipt": "Self-installation has real quality traps",
+      "receiptSource": "claim",
+      "group": "Risks Constraints",
+      "source": {
+        "capture": "1787715231868-0007-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:51.868Z"
+      }
+    },
+    {
+      "id": "0007-5",
+      "statement": "Model depends on competent install while disintermediating installers",
+      "receipt": "The wholesale manufacturer gains manufacture-ready jobs while the joinery trade that currently feeds and installs them is cut out — but the model still depends on competent install, which the same disintermediation may degrade",
+      "receiptSource": "claim",
+      "group": "Risks Constraints",
+      "source": {
+        "capture": "1787715231868-0007-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:51.868Z"
+      }
+    },
+    {
+      "id": "0008-1",
+      "statement": "Fundamental reframe from consumer self-service to architect/builder-led motion",
+      "receipt": "The memo's original framing was consumer self-service replacing professionals; the reframe puts architects and builders in the driver's seat, which is close to the opposite motion",
+      "receiptSource": "claim",
+      "group": "Go To Market",
+      "source": {
+        "capture": "1787715232480-0008-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:52.480Z"
+      }
+    },
+    {
+      "id": "0008-2",
+      "statement": "Builders and architects as primary distribution channels, not yet designed",
+      "receipt": "Channel implied through builders and architects, not yet designed",
+      "receiptSource": "claim",
+      "group": "Go To Market",
+      "source": {
+        "capture": "1787715232480-0008-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:52.480Z"
+      }
+    },
+    {
+      "id": "0008-3",
+      "statement": "Value depends on joinery cost transparency, but builders keep estimates opaque to protect margin",
+      "receipt": "Value depends on making the joinery number credible and transparent early, but today builders deliberately keep joinery estimates opaque to clients to protect margin",
+      "receiptSource": "claim",
+      "group": "Go To Market",
+      "source": {
+        "capture": "1787715232480-0008-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:52.480Z"
+      }
+    },
+    {
+      "id": "0008-4",
+      "statement": "Builders can route clients away from expensive specialist kitchen companies",
+      "receipt": "A builder could advise a client without an architect that a specialist kitchen design-supply-install company is expensive and creates coordination and liability headaches, then route them to this service",
+      "receiptSource": "evidence",
+      "group": "Go To Market",
+      "source": {
+        "capture": "1787715232480-0008-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:52.480Z"
+      }
+    },
+    {
+      "id": "0008-5",
+      "statement": "Design-and-build firms less likely to engage since architect work already paid for",
+      "receipt": "Builders doing design-and-build with their own architect partnerships are seen as less likely to engage, since that work is the architect's domain and already paid for by the client",
+      "receiptSource": "evidence",
+      "group": "Go To Market",
+      "source": {
+        "capture": "1787715232480-0008-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:52.480Z"
+      }
+    },
+    {
+      "id": "0008-6",
+      "statement": "No acquisition, pricing-to-channel, or partnership motion defined",
+      "receipt": "No acquisition, pricing-to-channel, or partnership motion described.",
+      "receiptSource": "evidence",
+      "group": "Go To Market",
+      "source": {
+        "capture": "1787715232480-0008-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:52.480Z"
+      }
+    },
+    {
+      "id": "0009-1",
+      "statement": "The buyer identity is unsettled: homeowner, architect, or builder",
+      "receipt": "Users may be professionals (architect, builder) rather than the homeowner; direct-to-consumer remains on the table, not resolved either way",
+      "receiptSource": "evidence",
+      "group": "Customer Market",
+      "source": {
+        "capture": "1787715233465-0009-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:53.465Z"
+      }
+    },
+    {
+      "id": "0009-2",
+      "statement": "Original consumer self-service framing has been reframed to put professionals in the driver's seat",
+      "receipt": "The memo's original framing was consumer self-service replacing professionals; the reframe puts architects and builders in the driver's seat, which is close to the opposite motion",
+      "receiptSource": "claim",
+      "group": "Customer Market",
+      "source": {
+        "capture": "1787715233465-0009-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:53.465Z"
+      }
+    },
+    {
+      "id": "0009-3",
+      "statement": "Target is joinery inside a larger build, not standalone kitchens",
+      "receipt": "Target is joinery inside a larger build, not standalone kitchens — but the buyer is unsettled",
+      "receiptSource": "claim",
+      "group": "Customer Market",
+      "source": {
+        "capture": "1787715233465-0009-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:53.465Z"
+      }
+    },
+    {
+      "id": "0009-4",
+      "statement": "Standalone kitchen segment is easier de-risking but may be a different business",
+      "receipt": "Segment 3 (standalone kitchen) judged the easiest de-risking start but possibly a different business facing a much wider field of existing solutions",
+      "receiptSource": "evidence",
+      "group": "Customer Market",
+      "source": {
+        "capture": "1787715233465-0009-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:53.465Z"
+      }
+    },
+    {
+      "id": "0009-5",
+      "statement": "Most drawn to full integrated-build version despite de-risking logic",
+      "receipt": "Most drawn to the full integrated-build version, but the standalone-kitchen segment is the easier de-risking start — and may be a different business against a much wider competitive field",
+      "receiptSource": "claim",
+      "group": "Customer Market",
+      "source": {
+        "capture": "1787715233465-0009-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:53.465Z"
+      }
+    },
+    {
+      "id": "0009-6",
+      "statement": "Segment definition shifted from absence of architect to build context",
+      "receipt": "Segment 1 initially chosen as target, then reframed: the problem is present even when an architect IS involved, so the segment is defined by the build context rather than by absence of an architect",
+      "receiptSource": "evidence",
+      "group": "Customer Market",
+      "source": {
+        "capture": "1787715233465-0009-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:53.465Z"
+      }
+    },
+    {
+      "id": "0010-1",
+      "statement": "Iterative, expert-supported design tool producing manufacture-ready specifications",
+      "receipt": "Design tool to manufacture-ready spec, then bid out to wholesalers",
+      "receiptSource": "claim",
+      "group": "Product Experience",
+      "source": {
+        "capture": "1787715234668-0010-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:54.668Z"
+      }
+    },
+    {
+      "id": "0010-2",
+      "statement": "Bid-based marketplace connecting completed specs to wholesale manufacturers",
+      "receipt": null,
+      "receiptSource": null,
+      "group": "Product Experience",
+      "source": {
+        "capture": "1787715234668-0010-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:54.668Z"
+      }
+    },
+    {
+      "id": "0010-3",
+      "statement": "Direct integration with professional workflows (Revit) and manufacturing systems (Mosaic CAD)",
+      "receipt": "Professional version likely needs to sit in the architect's workflow — integration or import/export with tools like Revit",
+      "receiptSource": "evidence",
+      "group": "Product Experience",
+      "source": {
+        "capture": "1787715234668-0010-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:54.668Z"
+      }
+    },
+    {
+      "id": "0010-4",
+      "statement": "Quality guarantees and consumer advocacy as value-adds",
+      "receipt": "Possible quality guarantees and an advocacy role on the consumer's behalf",
+      "receiptSource": "evidence",
+      "group": "Product Experience",
+      "source": {
+        "capture": "1787715234668-0010-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:54.668Z"
+      }
+    },
+    {
+      "id": "0010-5",
+      "statement": "Disintermediation of joinery trade while maintaining dependency on skilled installation",
+      "receipt": "The wholesale manufacturer gains manufacture-ready jobs while the joinery trade that currently feeds and installs them is cut out — but the model still depends on competent install, which the same disintermediation may degrade",
+      "receiptSource": "claim",
+      "group": "Product Experience",
+      "source": {
+        "capture": "1787715234668-0010-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:54.668Z"
+      }
+    },
+    {
+      "id": "0010-6",
+      "statement": "Tension between solution detail and intent to avoid premature solution thinking",
+      "receipt": "Explicit intent not to get ahead into solution thinking, alongside a fairly detailed solution already sketched (design tool, bidding marketplace, Revit integration, quality guarantees)",
+      "receiptSource": "claim",
+      "group": "Product Experience",
+      "source": {
+        "capture": "1787715234668-0010-full_synthesis.json",
+        "model": "claude-sonnet-4-5-20250929",
+        "capturedAt": "2026-08-26T03:33:54.668Z"
+      }
+    }
+  ]
+}
