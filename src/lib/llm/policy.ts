@@ -34,6 +34,7 @@ import {
 } from '@/lib/prompts/shared/plain-language'
 import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
 import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
+import { FULL_SYNTHESIS_SYSTEM } from '@/lib/prompts/stages/full-synthesis'
 
 export type LlmContext =
   | 'strategy_generation' | 'refresh_strategy_generation' | 'refresh_strategy_summary'
@@ -60,7 +61,15 @@ export interface Policy {
    */
   maxTokens: number | 'per-call'
   guidance: GuidanceBundle
-  /** Static system block. Phase 1: guidance only. Phase 2: task + format + guidance. */
+  /**
+   * The stage's static prompt — task framing and output format, everything that
+   * does not vary per call. Phase 2 moves these in so the whole block can serve
+   * as a cache prefix, leaving only the payload in the user message.
+   *
+   * May contain a `{guidance}` placeholder marking where the bundle belongs.
+   * Without one the bundle is appended, which is fine for a stage with no
+   * trailing format instruction to protect.
+   */
   system?: string
   /** Phase 2. Only set where the system block is measured >= 1024 tokens. */
   cacheable?: boolean
@@ -138,7 +147,7 @@ export const LLM_POLICY: Record<LlmContext, Policy> = {
   // refresh_strategy_summary sat twenty lines below governed refresh generation,
   // in the same file, writing user-facing prose, and carried nothing.
   refresh_strategy_summary:         { maxTokens: 300,  guidance: 'summary' },
-  full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap' },
+  full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap', system: FULL_SYNTHESIS_SYSTEM },
   incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap' },
   knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap' },
   // Luna's Thinking tab — strengths/emerging/opportunities, not questions.
@@ -165,6 +174,9 @@ export const LLM_POLICY: Record<LlmContext, Policy> = {
   admin_regenerate:        { maxTokens: 1000, guidance: 'none' },
 }
 
+/** Marks where a stage prompt wants its guidance bundle placed. */
+export const GUIDANCE_SLOT = '{guidance}'
+
 /**
  * The full static system block for a stage, or undefined when there is nothing
  * to send.
@@ -174,7 +186,16 @@ export const LLM_POLICY: Record<LlmContext, Policy> = {
  */
 export function systemFor(context: LlmContext): string | undefined {
   const policy = LLM_POLICY[context]
-  const parts = [policy.system, GUIDANCE[policy.guidance]].filter(Boolean)
+  const guidance = GUIDANCE[policy.guidance]
+
+  if (policy.system?.includes(GUIDANCE_SLOT)) {
+    // Function form, not a string replacement: guidance is prose that may
+    // contain `$&` / `$'`, which String.replace would treat as substitution
+    // patterns and silently mangle.
+    return policy.system.replace(GUIDANCE_SLOT, () => guidance).trim()
+  }
+
+  const parts = [policy.system, guidance].filter(Boolean)
   return parts.length ? parts.join('\n\n') : undefined
 }
 

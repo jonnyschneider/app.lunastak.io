@@ -36,7 +36,7 @@ import { createHash } from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import { describe, it, expect } from 'vitest'
-import { LLM_POLICY, systemFor, guidanceBlock, type LlmContext, type GuidanceBundle } from '@/lib/llm/policy'
+import { LLM_POLICY, systemFor, guidanceBlock, GUIDANCE_SLOT, type LlmContext, type GuidanceBundle } from '@/lib/llm/policy'
 import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 import {
   PLAIN_LANGUAGE_TITLE_GUIDANCE,
@@ -111,6 +111,39 @@ describe('chat stages are classified but deliberately unauthored', () => {
     // real transcripts first. The voice constraint was measured on prose
     // artefacts, not on 30-300 token conversational turns.
     expect(guidanceBlock('chat')).toBe('')
+  })
+})
+
+/**
+ * No resolved system block ships an unsubstituted placeholder.
+ *
+ * Phase 2 moves each stage's static prompt into `policy.system`, where a
+ * `{guidance}` slot marks where the bundle belongs. A typo in that token — or a
+ * `{fragments}` left behind when the payload moved to the user message — does
+ * not throw. It ships a literal brace token to the model and reads as an
+ * instruction about nothing. Cheap to assert, invisible otherwise.
+ */
+describe('no stage ships an unsubstituted placeholder', () => {
+  const SUSPECT = /\{(guidance|fragments|dimension|count|themes|userName)\}/
+
+  for (const [ctx] of entries) {
+    it(`${ctx} resolves every placeholder`, () => {
+      const system = systemFor(ctx)
+      if (!system) return
+      const hit = system.match(SUSPECT)
+      expect(hit?.[0], `${ctx} shipped a literal ${hit?.[0]} in its system block`).toBeUndefined()
+    })
+  }
+
+  it('the slot token is what the stage prompts actually use', () => {
+    // Guards a rename of GUIDANCE_SLOT that silently stops matching.
+    const withSlot = entries.filter(([, p]) => p.system?.includes(GUIDANCE_SLOT))
+    expect(withSlot.length, 'no stage uses the guidance slot — did the token change?')
+      .toBeGreaterThan(0)
+    for (const [ctx] of withSlot) {
+      expect(systemFor(ctx)).not.toContain(GUIDANCE_SLOT)
+      expect(systemFor(ctx)).toContain(VOICE_CONSTRAINT)
+    }
   })
 })
 
