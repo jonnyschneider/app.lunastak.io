@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — voice is governed at the LLM call seam, not at 26 call sites (2026-08-27)
+
+⚠ **Not yet measured against the voice harness. Do not release before Phase 1 findings.**
+
+Language and voice guidance used to be pasted into prompt strings by hand. It reached 5 sites;
+there are 26. A stage was governed only if its author remembered the guidance existed, and
+nothing told them when they forgot — which is how `incremental-synthesis.ts` shipped
+unconstrained, above.
+
+Guidance now lives in one exhaustive stage table (`src/lib/llm/policy.ts`) and is injected as the
+`system` block by `createMessage()`. **Call sites cannot pass `model`, `max_tokens` or `system`**
+— those are stage decisions. That last one is the guarantee: there is no call-site expression
+that produces an ungoverned request.
+
+Two stages gain guidance for the first time: `refresh_strategy_summary` (which sat twenty lines
+below governed refresh generation, in the same file, writing user-facing prose, carrying nothing)
+and `reflective_summary_prescriptive` (Luna's Thinking tab).
+
+Conversational stages are classified onto an explicitly **empty** `chat` bundle, with the reason
+recorded in code. The voice constraint was measured on prose artefacts, not on 30–300 token chat
+turns; filling that slot needs its own A/B. Classified, not forgotten.
+
+The enforcement changed shape too. The old ratchet listed four filenames and had never been
+updated with `incremental-synthesis.ts` — the very file whose omission proved a list was the
+wrong tool. The replacement iterates the policy table, so a stage is covered the moment it is
+classified, and the type system already forces classification: an unclassified context is a
+compile error, and so is a stage missing from the table.
+
+### Added — prompt provenance on every LLM call (2026-08-27)
+
+`promptHash` — sha256 of the resolved system block plus user content, first 16 hex chars —
+stamped on `llm_token_usage` and on the local capture record. Answers "which prompt produced this
+output" for all 20 stages. Because guidance is part of the system block, the hash moves when the
+guidance moves, so a prompt change becomes visible in the cost data. Carries no user content.
+
+Inherits the existing `llm_token_usage` coverage gap (10 of 26 sites pass no `userId`) —
+documented in `docs/analytics/events.md` rather than quietly accepted.
+
+### Removed — the versioned prompt registry, and four orphaned LLM call sites (2026-08-27)
+
+The registry never had a consumer. It arrived as item 4 of 4 in a latency plan that specified
+`scripts/backtest.ts` and `scripts/eval-report.ts`; neither was ever created, on any branch. At
+retirement it had 1 adopter across 26 call sites, 3 dead versions, an entry flagged `current:
+true` that was never called, and metadata read only by a module with zero importers.
+
+Recovery tag `prompt-registry-final`; tombstone at
+`docs/architecture/retired-prompt-registry.md`.
+
+Deleted alongside it: `src/lib/extraction/v1/`, `src/lib/generation/v1/`, `src/lib/evaluation/`,
+and `analyzeDimensionalCoverage()` — all without importers. `dimensional_analysis` is no longer a
+stage. Removing the duplicate `strategy_generation` path made the refactor materially less risky.
+
+Also removed 13 tests that asserted locally-defined literals and never called production code.
+
 ### Fixed — incremental synthesis was generating unconstrained prose (2026-08-27)
 
 `update-synthesis.ts` chooses between `fullSynthesis` and `incrementalSynthesis`. Only the full
