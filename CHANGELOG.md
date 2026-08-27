@@ -7,6 +7,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — prompt caching on the six prose stages (2026-08-27)
+
+Each stage's static prompt (task framing + output format) now lives in `prompts/stages/`
+and is sent as its `system` block, byte-identical on every call, marked
+`cache_control: {type:'ephemeral'}`. Call sites assemble only the variable payload.
+
+Measured with `count_tokens`, system-only: `strategy_generation` 3365, `refresh_strategy_generation`
+3226, `opportunity_generation` 2009, `knowledge_summary` 1935, `full_synthesis` 1858,
+`incremental_synthesis` 1664 — all clear of Anthropic's 1024 floor. `refresh_strategy_summary`
+and `reflective_summary_prescriptive` measure 835 and are deliberately left uncached.
+
+On `full_synthesis` — 61% of workload cost, 10–21 calls per generation — the prefix is
+written once and read 9–20 times at 0.1×: **~78% off the static half** of that stage.
+
+**Verified hitting, not assumed.** All six write on the first call and read on the second.
+That check exists because a cache that never hits is invisible from output — same text, same
+latency profile, quietly full price — so `cached` / `cacheWriteTokens` / `cacheReadTokens`
+ship on `llm_token_usage` alongside the feature rather than after it.
+
+Two ratchets: a cacheable stage must carry a checked-in `count_tokens` measurement (an
+estimate cannot back the flag), and its block cannot drift >5% without a re-measure.
+
+A separate finding from the same work: splitting the prompt this way also **fixed**
+`strategy_generation`'s objectives parse, below — the format spec now sits in a fixed
+position rather than after a variable-length payload.
+
+### Fixed — strategy generation was persisting ZERO objectives (2026-08-27)
+
+Both initial and refresh generation parsed objectives through
+`extractXML(statementsXML, 'objectives')`. Models routinely emit bare `<objective>`
+siblings directly under `<statements>`, with **no `<objectives>` wrapper at all** — so that
+returned empty, `isOKRFormat` went false, the legacy branch split an empty string, and the
+Decision Stack persisted with an empty objectives layer while three to five complete
+objectives sat in the response. No exception, no truncation, `stop_reason: end_turn`.
+
+Measured on the shipped prompt: **0 of 16 responses parsed**, across BOTH `claude-opus-5`
+@ `effort:low` and `claude-sonnet-4-5` — so not a property of the 2026-08-26 model bump,
+and older than it.
+
+Invisible to every previous measurement because they all scored the TEXT, not the parse: a
+flat grep for `<objective>` finds the blocks wherever they sit, and a human reading raw XML
+counts them fine. Only the nested parse sees none. This is why the CHANGELOG above records
+strategy generation producing four objectives and then three — those observations were real,
+and the objectives still never reached the database.
+
+`extractObjectivesXML()` recovers the unwrapped shape. Against the real captured failures:
+0/16 → 15/16, with correctly-wrapped responses unchanged. The remaining one omitted the
+`<objective>` wrappers too; recovering that would mean inferring where each objective
+begins, which fabricates commitments rather than reading them, so it is deliberately left
+to the fallback and pinned by a test.
+
+Sibling of the 2026-08-26 mis-closed-tag recovery and the synthesis JSON control-character
+fix: three instances of the same family — malformed model output that degrades silently
+instead of failing.
+
+### Changed — voice is governed at the LLM call seam, not at 26 call sites (2026-08-27)
+
+⚠ **Not yet measured against the voice harness. Do not release before Phase 1 findings.**
+
+Language and voice guidance used to be pasted into prompt strings by hand. It reached 5 sites;
+there are 26. A stage was governed only if its author remembered the guidance existed, and
+nothing told them when they forgot — which is how `incremental-synthesis.ts` shipped
+unconstrained, above.
+
+Guidance now lives in one exhaustive stage table (`src/lib/llm/policy.ts`) and is injected as the
+`system` block by `createMessage()`. **Call sites cannot pass `model`, `max_tokens` or `system`**
+— those are stage decisions. That last one is the guarantee: there is no call-site expression
+that produces an ungoverned request.
+
+Two stages gain guidance for the first time: `refresh_strategy_summary` (which sat twenty lines
+below governed refresh generation, in the same file, writing user-facing prose, carrying nothing)
+and `reflective_summary_prescriptive` (Luna's Thinking tab).
+
+Titleless prose summaries get their own `summary` bundle (explainer + voice, no title rules).
+They started on `question-gap`, which handed `refresh_strategy_summary` 334 tokens of
+interrogative-**title** rules against a 300-token output budget — telling a stage at length how to
+write something it does not emit. Caught at the Phase 1 gate before it was baselined.
+
+Conversational stages are classified onto an explicitly **empty** `chat` bundle, with the reason
+recorded in code. The voice constraint was measured on prose artefacts, not on 30–300 token chat
+turns; filling that slot needs its own A/B. Classified, not forgotten.
+
+The enforcement changed shape too. The old ratchet listed four filenames and had never been
+updated with `incremental-synthesis.ts` — the very file whose omission proved a list was the
+wrong tool. The replacement iterates the policy table, so a stage is covered the moment it is
+classified, and the type system already forces classification: an unclassified context is a
+compile error, and so is a stage missing from the table.
+
+### Added — prompt provenance on every LLM call (2026-08-27)
+
+`promptHash` — sha256 of the resolved system block plus user content, first 16 hex chars —
+stamped on `llm_token_usage` and on the local capture record. Answers "which prompt produced this
+output" for all 20 stages. Because guidance is part of the system block, the hash moves when the
+guidance moves, so a prompt change becomes visible in the cost data. Carries no user content.
+
+Inherits the existing `llm_token_usage` coverage gap (10 of 26 sites pass no `userId`) —
+documented in `docs/analytics/events.md` rather than quietly accepted.
+
+### Removed — the versioned prompt registry, and four orphaned LLM call sites (2026-08-27)
+
+The registry never had a consumer. It arrived as item 4 of 4 in a latency plan that specified
+`scripts/backtest.ts` and `scripts/eval-report.ts`; neither was ever created, on any branch. At
+retirement it had 1 adopter across 26 call sites, 3 dead versions, an entry flagged `current:
+true` that was never called, and metadata read only by a module with zero importers.
+
+Recovery tag `prompt-registry-final`; tombstone at
+`docs/architecture/retired-prompt-registry.md`.
+
+Deleted alongside it: `src/lib/extraction/v1/`, `src/lib/generation/v1/`, `src/lib/evaluation/`,
+and `analyzeDimensionalCoverage()` — all without importers. `dimensional_analysis` is no longer a
+stage. Removing the duplicate `strategy_generation` path made the refactor materially less risky.
+
+Also removed 13 tests that asserted locally-defined literals and never called production code.
+
 ### Fixed — incremental synthesis was generating unconstrained prose (2026-08-27)
 
 `update-synthesis.ts` chooses between `fullSynthesis` and `incrementalSynthesis`. Only the full

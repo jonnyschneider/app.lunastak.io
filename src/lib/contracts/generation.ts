@@ -109,7 +109,13 @@ export function validateGenerationOutput(data: unknown): data is GenerationOutpu
   if (!statements || typeof statements !== 'object') return false;
   if (typeof statements.vision !== 'string' || !statements.vision) return false;
   if (typeof statements.strategy !== 'string' || !statements.strategy) return false;
+  // An EMPTY objectives array is not a valid Decision Stack — it is the exact
+  // signature of the 2026-08-27 parse failure, where the model omitted the
+  // <objectives> wrapper and generation persisted a stack with no objectives
+  // layer at all while 3-5 complete objectives sat in the response. The
+  // contract used to accept it, so the shape that broke was a shape it allowed.
   if (!Array.isArray(statements.objectives)) return false;
+  if (statements.objectives.length === 0) return false;
 
   return true;
 }

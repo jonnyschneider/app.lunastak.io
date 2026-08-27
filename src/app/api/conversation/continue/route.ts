@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { ConversationPhase } from '@/lib/types';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
@@ -79,8 +79,6 @@ export async function POST(req: Request) {
       const titleMessages = conversation.messages.slice(0, 6).map(m => `${m.role}: ${m.content.slice(0, 100)}`).join('\n')
       try {
         const titleResponse = await createMessage({
-          model: CLAUDE_MODEL,
-          max_tokens: 30,
           messages: [{ role: 'user', content: `Summarize this conversation in 3-6 words as a title. Output ONLY the title, nothing else.\n\n${titleMessages}` }],
           temperature: 0.3,
         }, 'conversation_title', conversation.userId)
@@ -215,8 +213,6 @@ Return only the question, no preamble.`;
   const startTime = Date.now();
   console.log('[Continue API - INITIAL] Calling Claude API for first question...');
   const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 200,
     messages: [{
       role: 'user',
       content: prompt
@@ -329,8 +325,6 @@ Return your assessment:
 </assessment>`;
 
   const confidenceResponse = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 300,
     messages: [{
       role: 'user',
       content: CONFIDENCE_PROMPT.replace('{conversation}', conversationHistory)
@@ -454,8 +448,6 @@ async function continueQuestioning(
 
   const startTime = Date.now();
   const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 200,
     messages: [{
       role: 'user',
       content: prompt
@@ -509,8 +501,6 @@ async function offerEarlyExit(
     : `Based on this conversation, suggest ONE follow-up question to deepen understanding. Return ONLY the question.\n\n${conversationHistory}`;
 
   const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 150,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
   }, 'continue_early_exit', conversation!.userId);

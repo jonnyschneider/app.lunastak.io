@@ -82,6 +82,33 @@ export function extractAllXML(text: string, tag: string): string[] {
  * - New simplified OMTM format (omtm + aspiration)
  * - Legacy key_results format (for backwards compatibility)
  */
+/**
+ * The objectives section of a <statements> block, tolerating a missing wrapper.
+ *
+ * Measured 2026-08-27: models routinely emit bare <objective> siblings directly
+ * under <statements>, with no <objectives> element at all — on the pre-split
+ * generation prompt, 0 of 16 responses carried the wrapper, across BOTH
+ * claude-opus-5 @ effort:low and claude-sonnet-4-5. Not a property of one model.
+ *
+ * `extractXML(statements,'objectives')` is right to return '' — the element is
+ * genuinely absent. The bug was downstream: callers read that '' as "legacy
+ * format", split it on newlines, and produced ZERO objectives while three to
+ * five complete ones sat in the response. Silent, every time.
+ *
+ * Sibling of the 2026-08-26 mis-closed-tag recovery in extractXML: same family
+ * (malformed structure the app must survive), different malformation.
+ *
+ * Returns '' when there are genuinely no objectives — never invents one.
+ */
+export function extractObjectivesXML(statementsXML: string): string {
+  const wrapped = extractXML(statementsXML, 'objectives')
+  if (wrapped.includes('<objective>')) return wrapped
+  // No usable wrapper. parseOKRObjectives reads <objective> blocks and ignores
+  // everything else, so handing it the statements block cannot pull vision or
+  // strategy prose into an objective.
+  return statementsXML.includes('<objective>') ? statementsXML : ''
+}
+
 export function parseOKRObjectives(objectivesXML: string): Objective[] {
   const objectiveBlocks = extractAllXML(objectivesXML, 'objective');
 

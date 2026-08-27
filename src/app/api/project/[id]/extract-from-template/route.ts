@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage } from '@/lib/claude';
 import { createFragmentsFromThemes, ThemeWithDimensions } from '@/lib/fragments';
 import type { StrategyStatements } from '@/lib/types';
 import { extractText } from '@/lib/extract-text';
@@ -56,8 +56,6 @@ ${principlesText}
   try {
     // Extract themes using Claude
     const response = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 2048,
       messages: [
         {
           role: 'user',

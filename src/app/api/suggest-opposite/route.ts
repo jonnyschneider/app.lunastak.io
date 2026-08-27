@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage } from '@/lib/claude';
 import { extractText } from '@/lib/extract-text';
 
 export async function POST(request: NextRequest) {
@@ -11,8 +11,6 @@ export async function POST(request: NextRequest) {
     }
 
     const message = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 50,
       messages: [
         {
           role: 'user',
