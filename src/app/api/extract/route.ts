@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
@@ -240,8 +240,6 @@ export async function POST(req: Request) {
           : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
 
         const extractionResponse = await createMessage({
-          model: CLAUDE_MODEL,
-          max_tokens: 2000,
           messages: [{ role: 'user', content: extractionPrompt }],
           temperature: 0.3,
         }, 'extraction', conversation.userId);
@@ -342,8 +340,6 @@ export async function POST(req: Request) {
           : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
 
         const extractionResponse = await createMessage({
-          model: CLAUDE_MODEL,
-          max_tokens: 2000,
           messages: [{ role: 'user', content: extractionPrompt }],
           temperature: 0.3,
         }, 'extraction', conversation.userId);
@@ -457,8 +453,6 @@ export async function POST(req: Request) {
           : EXTRACTION_PROMPT.replace('{conversation}', conversationHistory);
 
         const extractionResponse = await createMessage({
-          model: CLAUDE_MODEL,
-          max_tokens: 2000, // Increased for inline dimensions
           messages: [{
             role: 'user',
             content: extractionPrompt
@@ -518,8 +512,6 @@ export async function POST(req: Request) {
           sendProgress({ step: 'generating_summary' });
 
           const summaryResponse = await createMessage({
-            model: CLAUDE_MODEL,
-            max_tokens: 2000,
             messages: [{
               role: 'user',
               content: REFLECTIVE_SUMMARY_PROMPT.replace('{conversation}', conversationHistory)

@@ -11,6 +11,7 @@ import {
 } from '@/lib/model-config';
 import { captureCall } from '@/lib/experiment/capture';
 import { extractText } from '@/lib/extract-text';
+import { LLM_POLICY, systemFor, type LlmContext } from '@/lib/llm/policy';
 
 export { extractText };
 
@@ -27,23 +28,62 @@ export const anthropic = new Anthropic({
 });
 
 /**
- * The default model. Call sites still pass `model: CLAUDE_MODEL`, but the value
- * that actually reaches the API is resolved per-context inside createMessage()
- * — see `@/lib/model-config`. For provenance, record `response.model`, never
- * this constant (enforced by tests/model-provenance).
+ * The default model.
+ *
+ * Call sites no longer pass a model at all — `createMessage()` resolves it
+ * per-stage from `LLM_POLICY`. This survives only as the value `PipelinePlan`
+ * stamps on its steps (`lib/pipeline/plan.ts`), which is descriptive metadata,
+ * not a request parameter.
+ *
+ * For provenance, record `response.model`, never this constant (enforced by
+ * tests/model-provenance).
  */
 export const CLAUDE_MODEL = DEFAULT_MODEL;
 
 
 /**
- * Wrapper for Claude API calls with automatic truncation detection.
- * Logs a warning if the response was truncated due to max_tokens.
+ * The single seam every Claude API call passes through.
+ *
+ * Everything about a request that is a STAGE decision — model, reasoning
+ * effort, visible-output budget, and the voice/language guidance governing the
+ * output — is resolved here from `LLM_POLICY`, not supplied by the caller.
+ * Call sites pass the payload (`messages`) and name their stage; they cannot
+ * pass `model`, `max_tokens` or `system`, because those are not theirs to
+ * choose.
+ *
+ * That last one is the point of the whole exercise. `system` being
+ * seam-assembled and not settable by callers is what makes the guarantee hold:
+ * **there is no call-site expression that produces an ungoverned request.**
+ * Guidance used to be pasted into prompt strings by hand and reached 5 of 26
+ * sites; a stage was governed only if its author remembered. Now a stage is
+ * governed because it was classified, and it cannot compile unclassified.
+ *
+ * Also detects and logs truncation.
  */
 export async function createMessage(
-  params: MessageCreateParamsNonStreaming,
-  context?: string, // Optional context for logging (e.g., 'reflective_summary', 'generation')
+  params: Omit<MessageCreateParamsNonStreaming, 'model' | 'max_tokens' | 'system'>
+    & { max_tokens?: number }, // only honoured when policy.maxTokens === 'per-call'
+  context: LlmContext,
   userId?: string | null // Optional userId for token tracking
 ) {
+  const policy = LLM_POLICY[context];
+
+  // Visible-output budget. A 'per-call' stage computes its own and MUST pass
+  // one — falling back to a default here would silently truncate a batch sized
+  // for more. Exactly one stage (import_dimension_tagging) is 'per-call'.
+  let maxTokens: number;
+  if (policy.maxTokens === 'per-call') {
+    if (params.max_tokens === undefined) {
+      throw new Error(
+        `[Claude] context "${context}" is declared maxTokens: 'per-call' but no max_tokens was passed`
+      );
+    }
+    maxTokens = params.max_tokens;
+  } else {
+    // Not 'per-call': the policy is the authority and any passed value is ignored.
+    maxTokens = policy.maxTokens;
+  }
+
   // Resolve the model for this pipeline stage, then drop any sampling params
   // the resolved model would reject. Doing this at the single wrapper seam
   // means no call site can escape the per-stage model map, and the control arm
@@ -51,13 +91,18 @@ export async function createMessage(
   const model = modelFor(context);
   const effort = effortFor(model, context);
 
+  // The governed guidance. Omitted entirely when empty — an empty `system`
+  // string is not the same request as no system block.
+  const system = systemFor(context);
+
   const resolved = stripUnsupportedParams({
     ...params,
     model,
     // Thinking models spend reasoning tokens out of max_tokens, so the stage's
     // configured ceiling is treated as the visible-output budget and headroom
     // is added on top. The control model is untouched.
-    max_tokens: maxTokensFor(model, params.max_tokens),
+    max_tokens: maxTokensFor(model, maxTokens),
+    ...(system ? { system } : {}),
     ...(effort ? { output_config: { effort } } : {}),
   });
 
@@ -69,13 +114,13 @@ export async function createMessage(
   const latencyMs = Date.now() - startedAt;
 
   // Experiment capture — no-op unless LUNASTAK_CAPTURE_DIR is set, and never throws.
-  captureCall({ context: context ?? 'unknown', request: resolved, response, latencyMs });
+  captureCall({ context, request: resolved, response, latencyMs });
 
   // Check for truncation
   if (response.stop_reason === 'max_tokens') {
     console.warn(
       `[Claude] Response truncated due to max_tokens limit`,
-      context ? `(${context})` : '',
+      `(${context})`,
       {
         max_tokens: resolved.max_tokens,
         output_tokens: response.usage?.output_tokens,
@@ -99,7 +144,7 @@ export async function createMessage(
     // Statsig event for token burn dashboards
     import('@/lib/statsig').then(({ logStatsigEvent }) => {
       logStatsigEvent(userId, 'llm_token_usage', response.usage.input_tokens + response.usage.output_tokens, {
-        context: context || 'unknown',
+        context,
         promptTokens: String(response.usage.input_tokens),
         completionTokens: String(response.usage.output_tokens),
         model: response.model || resolved.model,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
 import { StrategyStatements, ExtractedContextVariant, isEmergentContext } from '@/lib/types';
 import { convertLegacyObjectives } from '@/lib/placeholders';
@@ -170,8 +170,6 @@ export async function POST(req: Request) {
     const startTime = Date.now();
 
     const response = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 1000,
       messages: [{
         role: 'user',
         content: prompt

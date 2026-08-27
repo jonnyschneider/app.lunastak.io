@@ -5,16 +5,13 @@ import { convertLegacyObjectives } from '@/lib/placeholders'
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
 import { notifySlackStrategyGenerated } from '@/lib/notifications'
-import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
+import { OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
 import {
-  VISION_GUIDELINES, VISION_XML_FORMAT,
-  STRATEGY_GUIDELINES, STRATEGY_XML_FORMAT,
+  VISION_XML_FORMAT,
+  STRATEGY_XML_FORMAT,
 } from '@/lib/prompts/shared/vision-strategy'
 import {
-  PLAIN_LANGUAGE_TITLE_GUIDANCE,
-  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE,
 } from '@/lib/prompts/shared/plain-language'
-import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import type { StrategyStatements, Objective, Opportunity, SuccessMetric } from '@/lib/types'
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
@@ -43,14 +40,6 @@ Each layer answers a different question:
 
 1. Analyze the themes to identify what's strong, what's emerging, what needs exploration
 2. Generate a Decision Stack that feels authentic to this business
-
-${VISION_GUIDELINES}
-
-${STRATEGY_GUIDELINES}
-
-${OBJECTIVE_GUIDELINES}
-
-${VOICE_CONSTRAINT}
 
 ## Tone
 
@@ -124,14 +113,6 @@ Objectives:
 Produce a COMPLETE REPLACEMENT strategy that reflects the current state of understanding. Your output replaces the previous strategy entirely — do not concatenate or append new text onto the old text.
 
 Be conservative: if the vision still holds, output it unchanged. If an objective is still valid, keep it as-is. Only modify what the new insights warrant. But every field must be a clean, self-contained statement — not old text with new text bolted on.
-
-${VISION_GUIDELINES}
-
-${STRATEGY_GUIDELINES}
-
-${OBJECTIVE_GUIDELINES}
-
-${VOICE_CONSTRAINT}
 
 Output format:
 <statements>
@@ -253,8 +234,6 @@ export async function runRefreshGeneration(
     .replace('{archived_fragments_content}', archivedContent)
 
   const genResponse = await createMessage({
-    model,
-    max_tokens: 3000,
     messages: [{ role: 'user', content: updatePrompt }],
     temperature: 0.7,
   }, 'refresh_strategy_generation', userId)
@@ -306,8 +285,6 @@ export async function runRefreshGeneration(
       .replace('{new_fragments_summary}', delta.newFragmentSummaries.join('; '))
 
     const summaryResponse = await createMessage({
-      model,
-      max_tokens: 300,
       messages: [{ role: 'user', content: summaryPrompt }],
       temperature: 0.5,
     }, 'refresh_strategy_summary', userId)
@@ -415,8 +392,6 @@ export async function runInitialGeneration(
   // Call Claude API
   const claudeStartTime = Date.now()
   const response = await createMessage({
-    model,
-    max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
   }, 'strategy_generation', userId)
@@ -582,12 +557,6 @@ Generate 3-5 strategic opportunities. Each opportunity must:
 - Have a clear title and description (2-3 sentences)
 - Include exactly ONE success metric with a belief hypothesis
 
-${PLAIN_LANGUAGE_TITLE_GUIDANCE}
-
-${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
-
-${VOICE_CONSTRAINT}
-
 The UI renders the belief as: "We believe [action] will [outcome]"
 So action and outcome must read naturally after those lead-in words. Keep each to 8-20 words.
 
@@ -676,8 +645,6 @@ export async function runOpportunityGeneration(
 
   // Call Claude
   const response = await createMessage({
-    model,
-    max_tokens: 6000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
   }, 'opportunity_generation', userId)

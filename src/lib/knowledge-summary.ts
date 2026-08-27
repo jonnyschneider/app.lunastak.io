@@ -5,14 +5,11 @@
  */
 
 import { prisma } from '@/lib/db'
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { extractXML } from '@/lib/utils'
 import { StructuredProvocation } from '@/lib/types'
 import { extractText } from '@/lib/extract-text';
-import { PLAIN_LANGUAGE_EXPLAINER_GUIDANCE } from '@/lib/prompts/shared/plain-language'
-import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
-import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 // Dimension display names for prompts
 const DIMENSION_NAMES: Record<Tier1Dimension, string> = {
@@ -47,12 +44,6 @@ Guidelines:
 - Lead each theme with a short bold phrase drawn from what is actually there, so the summary can be skimmed ("**The problem you've zeroed in on.**", "**Your answer.**", "**What you haven't decided.**"). Two to four of them. These are examples of the shape, NOT a set to reuse — name the themes this material actually has.
 - Keep it concise (150-300 words)
 - End on a concrete, encouraging note about what would be worth exploring next
-
-${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
-
-${QUESTION_TITLE_GUIDANCE}
-
-${VOICE_CONSTRAINT}
 
 Format your response:
 <summary>
@@ -161,8 +152,6 @@ export async function generateKnowledgeSummary(
 
   try {
     const response = await createMessage({
-      model: CLAUDE_MODEL,
-      max_tokens: 2000, // Increased for dimension gaps
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.6,
     }, 'knowledge_summary')

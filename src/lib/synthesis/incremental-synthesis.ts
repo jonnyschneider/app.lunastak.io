@@ -2,16 +2,13 @@
  * Incremental synthesis - merges new fragments into existing synthesis
  */
 
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { DimensionalSynthesis } from '@prisma/client'
 import { extractJsonFromResponse } from './extract-json'
 import { StructuredProvocation } from '@/lib/types'
 import { extractText } from '@/lib/extract-text';
-import { PLAIN_LANGUAGE_EXPLAINER_GUIDANCE } from '@/lib/prompts/shared/plain-language'
-import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
-import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 const INCREMENTAL_SYNTHESIS_PROMPT = `You are updating strategic understanding for the dimension: **{dimension}**.
 
@@ -46,12 +43,6 @@ These new fragments have been added since the last synthesis. Update the existin
    - "description": The full question or explanation of what's missing
 5. **Surfacing contradictions** if new fragments conflict with existing understanding
 6. **Re-assessing confidence** based on new information
-
-${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
-
-${QUESTION_TITLE_GUIDANCE}
-
-${VOICE_CONSTRAINT}
 
 IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
 
@@ -95,8 +86,6 @@ export async function incrementalSynthesis(
     .replace('{newFragments}', newFragmentsText)
 
   const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.3
   }, 'incremental_synthesis')

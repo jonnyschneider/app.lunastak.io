@@ -2,14 +2,11 @@
  * Full synthesis - creates synthesis from all fragments
  */
 
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude'
+import { createMessage } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
 import { extractText } from '@/lib/extract-text';
-import { PLAIN_LANGUAGE_EXPLAINER_GUIDANCE } from '@/lib/prompts/shared/plain-language'
-import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
-import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 
 const FULL_SYNTHESIS_PROMPT = `You are synthesizing strategic understanding for the dimension: **{dimension}**.
 
@@ -41,12 +38,6 @@ Synthesize these fragments into structured understanding:
    - HIGH: 5+ fragments, clear themes, few gaps
    - MEDIUM: 3-5 fragments, some gaps remain
    - LOW: <3 fragments or significant gaps
-
-${PLAIN_LANGUAGE_EXPLAINER_GUIDANCE}
-
-${QUESTION_TITLE_GUIDANCE}
-
-${VOICE_CONSTRAINT}
 
 IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
 
@@ -81,8 +72,6 @@ export async function fullSynthesis(
     .replace('{fragments}', fragmentsText)
 
   const response = await createMessage({
-    model: CLAUDE_MODEL,
-    max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.3
   }, 'full_synthesis')

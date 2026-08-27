@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { createMessage, CLAUDE_MODEL } from '@/lib/claude';
+import { createMessage } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
 import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
@@ -258,8 +258,6 @@ export async function POST(req: Request) {
       // Generate first question
       const claudeStart = Date.now();
       const response = await createMessage({
-        model: CLAUDE_MODEL,
-        max_tokens: 200,
         messages: [{
           role: 'user',
           content: prompt
