@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — the Generate Strategy CTA is mulberry, not green (2026-08-27)
+
+The primary "Generate Strategy" button carried a hardcoded `bg-green-600` from v1.4.2 — the
+only green in the app, in a mulberry product. It was flagged as a FAIL in the 2026-04-02
+preview UAT and recorded as "button colour: investigating", which named the symptom but not
+the override, so nothing ever failed on it and it shipped for five more months.
+
+Now it takes `bg-primary` from the default Button variant, keeping only size and weight as
+overrides. Guarded by `cta-colour-tokens.test.ts`: no `<Button>` may carry a hardcoded
+Tailwind palette background, with a shrinking ALLOW set. The one entry is the guest-banner
+"Create Account" CTA, whose orange sits inside a deliberate amber warning Alert — kept as
+found and documented rather than restyled.
+
 ### Changed — edit moved onto the card disclosure strip (2026-08-27)
 
 Editing a card meant pressing "See the thinking" and then pressing Edit on the back.

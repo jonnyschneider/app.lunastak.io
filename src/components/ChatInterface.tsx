@@ -136,7 +136,15 @@ export default function ChatInterface({
                   logAndFlush('cta_generate_strategy', 'early-exit')
                   onGenerateStrategy?.()
                 }}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base font-semibold"
+                /*
+                 * Size and weight only — the colour comes from the default
+                 * Button variant (bg-primary, the mulberry CTA). This carried
+                 * a hardcoded bg-green-600 from v1.4.2 until 2026-08-27: the
+                 * only green in the app, flagged in the 2026-04-02 UAT and
+                 * left unfixed because the note said "investigating" rather
+                 * than naming the override.
+                 */
+                className="px-8 py-3 text-base font-semibold"
               >
                 Generate Strategy
               </Button>
