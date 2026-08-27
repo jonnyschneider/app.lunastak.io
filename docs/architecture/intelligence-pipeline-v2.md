@@ -451,10 +451,20 @@ and stacks persisted with an empty objectives layer. 0 of 16 pre-split responses
 across two model generations — so not the 2026-08-26 model bump. Fixed independently at the
 parser (`extractObjectivesXML`) rather than relying on the prompt shape.
 
-**Still unmeasured:** `incremental_synthesis`, `refresh_strategy_generation`,
-`refresh_strategy_summary` and `reflective_summary_prescriptive`. These only run mid-pipeline
-so the arm-D corpus never captured them; a derived-input harness (`derived.ts`) is written and
-validated but **blocked on Anthropic API credits**.
+**The four mid-pipeline stages** (`incremental_synthesis`, `refresh_strategy_generation`,
+`refresh_strategy_summary`, `reflective_summary_prescriptive`) have no captured requests —
+they only run once a prior stack or synthesis exists — so they were measured on DERIVED
+inputs (`harness/derived.ts`): real material assembled into the right shape rather than
+produced by the pipeline. All four clean; `refresh_strategy_generation` parsed objectives in
+both arms. See `findings-phase2-derived-stages.md`.
+
+**One confirmed drift:** gap titles lengthen when a `question-gap` stage is split —
+`full_synthesis` 51%→39% inside the 21–35ch band, `incremental_synthesis` 83%→40%. Titles stay
+100% interrogative and within the 60-char cap, so this is mild scannability loss, not a
+breakdown. Two independent stages moving together makes it a pattern worth one cheap
+experiment on the title rule wording.
+
+**Still outstanding:** an end-to-end UAT on Preview, which needs a human driving the app.
 
 **Architecture impact:** New `src/lib/llm/` and `src/lib/prompts/stages/` layers; `src/lib/prompts/`
 registry removed (tag `prompt-registry-final`). `ARCHITECTURE.md` → Prompt System rewritten.
