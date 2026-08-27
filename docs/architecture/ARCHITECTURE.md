@@ -67,7 +67,15 @@ src/lib/prompts/shared/      # The guidance constants the bundles compose:
 └── vision-strategy.ts       #   VISION_GUIDELINES, STRATEGY_GUIDELINES, + XML formats
 ```
 
-Stage prompts live at their call sites; only the *shared* guidance is centralised.
+Each stage's **static** prompt (task framing + output format) lives in
+`prompts/stages/` and is referenced by its policy entry, so the whole block is
+byte-identical on every call and can serve as a **cached prefix**. Call sites assemble only
+the variable payload. Six stages are cached, each measured ≥1024 tokens with `count_tokens`;
+`cache_control: {type:'ephemeral'}` is applied at the seam, and `cacheWriteTokens` /
+`cacheReadTokens` on `llm_token_usage` are what prove it is actually hitting.
+
+A stage prompt marks where its guidance belongs with a `{guidance}` slot, so the output-format
+instruction can stay last rather than being buried under the bundle.
 
 **Six guidance bundles**, selected per artefact type — applying the wrong one to the wrong
 artefact is a real bug this shape prevents (`09a1050`):
@@ -90,6 +98,7 @@ artefact is a real bug this shape prevents (`09a1050`):
 | `system` not settable by callers | a call site hand-rolling its own guidance | compile |
 | Guidance test, **derived from `LLM_POLICY`** | a resolved system block missing its declared guidance | test |
 | Cache-floor test | a guidance trim that silently disables prompt caching | test |
+| Cacheable-stage measurement test | `cacheable: true` set from an estimate rather than count_tokens | test |
 | Content-hash ratchet | any edit to a measured guidance constant | test |
 
 The guidance test iterates the policy table rather than a hand-maintained file list, so a new

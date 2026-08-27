@@ -36,7 +36,7 @@ import { createHash } from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import { describe, it, expect } from 'vitest'
-import { LLM_POLICY, systemFor, guidanceBlock, GUIDANCE_SLOT, type LlmContext, type GuidanceBundle } from '@/lib/llm/policy'
+import { LLM_POLICY, systemFor, guidanceBlock, isCacheable, GUIDANCE_SLOT, type LlmContext, type GuidanceBundle } from '@/lib/llm/policy'
 import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 import {
   PLAIN_LANGUAGE_TITLE_GUIDANCE,
@@ -383,6 +383,68 @@ describe('guidance bundles stay above the prompt-cache floor', () => {
     it(`${bundle} carries an honest provenance label`, () => {
       // A derived number must never be promoted to a caching decision.
       if (m.cacheable) expect(m.measured).toBe('count_tokens')
+    })
+  }
+})
+
+/**
+ * CACHEABLE STAGES stay above the floor — and no stage claims to be cacheable
+ * without having been measured.
+ *
+ * Two ways prompt caching dies silently, both guarded here:
+ *
+ * 1. A block is trimmed below 1024 tokens. Caching switches off; output is
+ *    identical; the bill quietly goes back to full price. Verified live
+ *    2026-08-27: all six write then read the cache.
+ * 2. Someone adds `cacheable: true` to a new stage from a ratio estimate. Being
+ *    wrong is invisible — an uncached prefix looks exactly like a cached one.
+ *
+ * Token counts are system-only: Anthropic count_tokens minus the 7-token
+ * message overhead, claude-sonnet-5/opus-5 per the stage's model, 2026-08-27.
+ * Re-measure and update both numbers in the same commit; do not widen the
+ * tolerance.
+ */
+const MEASURED_STAGE_BLOCKS: Record<string, { tokens: number; chars: number }> = {
+  strategy_generation:         { tokens: 3365, chars: 9160 },
+  refresh_strategy_generation: { tokens: 3226, chars: 8797 },
+  opportunity_generation:      { tokens: 2009, chars: 5486 },
+  knowledge_summary:           { tokens: 1935, chars: 5610 },
+  full_synthesis:              { tokens: 1858, chars: 5080 },
+  incremental_synthesis:       { tokens: 1664, chars: 4648 },
+}
+
+describe('cacheable stages stay above the prompt-cache floor', () => {
+  const cacheable = entries.filter(([ctx]) => isCacheable(ctx))
+
+  it('every cacheable stage has a checked-in measurement', () => {
+    const unmeasured = cacheable.map(([ctx]) => ctx).filter(ctx => !MEASURED_STAGE_BLOCKS[ctx])
+    expect(
+      unmeasured,
+      `declared cacheable without a count_tokens measurement: ${unmeasured.join(', ')}. ` +
+      `A ratio estimate cannot back this flag — if it is wrong the cache never hits ` +
+      `and looks exactly like one that works.`,
+    ).toEqual([])
+  })
+
+  it('nothing is measured that is not actually cacheable', () => {
+    const stale = Object.keys(MEASURED_STAGE_BLOCKS).filter(ctx => !isCacheable(ctx as LlmContext))
+    expect(stale, `measured but no longer cacheable: ${stale.join(', ')}`).toEqual([])
+  })
+
+  for (const [ctx, m] of Object.entries(MEASURED_STAGE_BLOCKS)) {
+    it(`${ctx} measured clear of the ${CACHE_FLOOR_TOKENS}-token floor`, () => {
+      expect(m.tokens).toBeGreaterThan(CACHE_FLOOR_TOKENS)
+    })
+
+    it(`${ctx} has not drifted from its measured size`, () => {
+      const actual = systemFor(ctx as LlmContext)!.length
+      const drift = Math.abs(actual - m.chars) / m.chars
+      expect(
+        drift,
+        `${ctx} system block is ${actual} chars against a measured ${m.chars} ` +
+        `(${(drift * 100).toFixed(1)}% drift, ${m.tokens} tok, floor ${CACHE_FLOOR_TOKENS}). ` +
+        `Re-measure with count_tokens and update MEASURED_STAGE_BLOCKS.`,
+      ).toBeLessThanOrEqual(TOLERANCE)
     })
   }
 })

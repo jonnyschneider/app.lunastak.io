@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — prompt caching on the six prose stages (2026-08-27)
+
+Each stage's static prompt (task framing + output format) now lives in `prompts/stages/`
+and is sent as its `system` block, byte-identical on every call, marked
+`cache_control: {type:'ephemeral'}`. Call sites assemble only the variable payload.
+
+Measured with `count_tokens`, system-only: `strategy_generation` 3365, `refresh_strategy_generation`
+3226, `opportunity_generation` 2009, `knowledge_summary` 1935, `full_synthesis` 1858,
+`incremental_synthesis` 1664 — all clear of Anthropic's 1024 floor. `refresh_strategy_summary`
+and `reflective_summary_prescriptive` measure 835 and are deliberately left uncached.
+
+On `full_synthesis` — 61% of workload cost, 10–21 calls per generation — the prefix is
+written once and read 9–20 times at 0.1×: **~78% off the static half** of that stage.
+
+**Verified hitting, not assumed.** All six write on the first call and read on the second.
+That check exists because a cache that never hits is invisible from output — same text, same
+latency profile, quietly full price — so `cached` / `cacheWriteTokens` / `cacheReadTokens`
+ship on `llm_token_usage` alongside the feature rather than after it.
+
+Two ratchets: a cacheable stage must carry a checked-in `count_tokens` measurement (an
+estimate cannot back the flag), and its block cannot drift >5% without a re-measure.
+
+A separate finding from the same work: splitting the prompt this way also **fixed**
+`strategy_generation`'s objectives parse, below — the format spec now sits in a fixed
+position rather than after a variable-length payload.
+
 ### Fixed — strategy generation was persisting ZERO objectives (2026-08-27)
 
 Both initial and refresh generation parsed objectives through

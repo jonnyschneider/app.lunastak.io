@@ -12,7 +12,7 @@ import {
 } from '@/lib/model-config';
 import { captureCall } from '@/lib/experiment/capture';
 import { extractText } from '@/lib/extract-text';
-import { LLM_POLICY, systemFor, type LlmContext } from '@/lib/llm/policy';
+import { LLM_POLICY, systemFor, isCacheable, type LlmContext } from '@/lib/llm/policy';
 
 export { extractText };
 
@@ -96,6 +96,12 @@ export async function createMessage(
   // string is not the same request as no system block.
   const system = systemFor(context);
 
+  // Cached prefix. The system block is identical on every call to a stage, so
+  // on full_synthesis (10-21 calls per generation) all but the first read it at
+  // 0.1x instead of paying 1x. Only set where the block was MEASURED >= 1024
+  // tokens — see LLM_POLICY.
+  const cached = isCacheable(context);
+
   const resolved = stripUnsupportedParams({
     ...params,
     model,
@@ -103,7 +109,13 @@ export async function createMessage(
     // configured ceiling is treated as the visible-output budget and headroom
     // is added on top. The control model is untouched.
     max_tokens: maxTokensFor(model, maxTokens),
-    ...(system ? { system } : {}),
+    ...(system
+      ? {
+          system: cached
+            ? [{ type: 'text' as const, text: system, cache_control: { type: 'ephemeral' as const } }]
+            : system,
+        }
+      : {}),
     ...(effort ? { output_config: { effort } } : {}),
   });
 
@@ -111,8 +123,11 @@ export async function createMessage(
   // stages — the retired prompt registry promised that for three and never
   // delivered it (docs/architecture/retired-prompt-registry.md). A hash carries
   // no user content, so it is safe to ship to production telemetry.
+  // Hashed from the system TEXT, not the resolved field — that field becomes a
+  // block array when caching is on, and provenance must not shift just because
+  // a stage flipped `cacheable`. The same prompt hashes the same either way.
   const promptHash = createHash('sha256')
-    .update((typeof resolved.system === 'string' ? resolved.system : '') + JSON.stringify(resolved.messages))
+    .update((system ?? '') + JSON.stringify(resolved.messages))
     .digest('hex')
     .slice(0, 16);
 
@@ -172,6 +187,13 @@ export async function createMessage(
         latencyMs: String(latencyMs),
         maxTokens: String(resolved.max_tokens),
         truncated: String(response.stop_reason === 'max_tokens'),
+        // Added 2026-08-27 with prompt caching. A cache that silently never
+        // hits looks EXACTLY like one that works — same output, same latency
+        // profile, quietly full price. These two fields are the only way to
+        // tell from outside, so they ship with the feature rather than after it.
+        cached: String(cached),
+        cacheWriteTokens: String(response.usage.cache_creation_input_tokens ?? 0),
+        cacheReadTokens: String(response.usage.cache_read_input_tokens ?? 0),
       })
     }).catch(() => {})
   }

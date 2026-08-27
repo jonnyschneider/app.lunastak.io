@@ -109,7 +109,7 @@ Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptHash`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
+| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptHash`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated`, `cached`, `cacheWriteTokens`, `cacheReadTokens` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
 
 ### `llm_token_usage` — corrections and a coverage gap
 
@@ -138,6 +138,20 @@ guidance is now part of the `system` block — that is the point, and it is how 
 becomes visible in the cost data. And it changes per call for stages whose user message carries
 the payload, so it identifies a *resolved request*, not a prompt template. To group by template,
 group by `context`.
+
+**Added 2026-08-27 with prompt caching:** `cached` (whether this stage ships its system
+block as a cached prefix), `cacheWriteTokens` (`cache_creation_input_tokens`) and
+`cacheReadTokens` (`cache_read_input_tokens`).
+
+These exist because **a cache that silently never hits looks exactly like one that works** —
+same output, same latency profile, quietly full price. Nothing else distinguishes the two
+from outside, so they shipped with the feature rather than after it. Six stages are cached:
+the four generation/synthesis prose stages plus `knowledge_summary` and
+`incremental_synthesis`, each measured ≥1024 tokens.
+
+A healthy cached stage shows one call with `cacheWriteTokens > 0` followed by calls with
+`cacheReadTokens > 0`. **`cached: true` with `cacheReadTokens` persistently 0 means the
+prefix is being rewritten every call** — the failure this instrumentation exists to catch.
 
 **⚠ `promptHash` inherits the coverage gap below.** The hash is durable only where the event
 fires. `captureCall()` records it regardless, locally.

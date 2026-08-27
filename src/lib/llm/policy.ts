@@ -78,7 +78,17 @@ export interface Policy {
    * trailing format instruction to protect.
    */
   system?: string
-  /** Phase 2. Only set where the system block is measured >= 1024 tokens. */
+  /**
+   * Send this stage's system block as a cached prefix.
+   *
+   * Only set where the block has been MEASURED with count_tokens at >= 1024
+   * tokens (Anthropic's minimum). A ratio estimate must never back this flag:
+   * being wrong means the cache silently never hits, which from the outside
+   * looks exactly like one that works.
+   *
+   * Measured 2026-08-27, system-only token counts (count_tokens minus the
+   * 7-token message overhead).
+   */
   cacheable?: boolean
 }
 
@@ -144,19 +154,19 @@ const GUIDANCE: Record<GuidanceBundle, string> = {
  */
 export const LLM_POLICY: Record<LlmContext, Policy> = {
   // --- Commitments: vision, strategy, objectives ---
-  strategy_generation:         { model: 'claude-opus-5', effort: 'low', maxTokens: 4000, guidance: 'commitment', system: STRATEGY_GENERATION_SYSTEM },
-  refresh_strategy_generation: { model: 'claude-opus-5', effort: 'low', maxTokens: 3000, guidance: 'commitment', system: REFRESH_STRATEGY_GENERATION_SYSTEM },
+  strategy_generation:         { model: 'claude-opus-5', effort: 'low', maxTokens: 4000, guidance: 'commitment', system: STRATEGY_GENERATION_SYSTEM, cacheable: true },  // 3365 tok, measured
+  refresh_strategy_generation: { model: 'claude-opus-5', effort: 'low', maxTokens: 3000, guidance: 'commitment', system: REFRESH_STRATEGY_GENERATION_SYSTEM, cacheable: true },  // 3226 tok, measured
 
   // --- Opportunities ---
-  opportunity_generation:      { model: 'claude-opus-5', effort: 'low', maxTokens: 6000, guidance: 'opportunity', system: OPPORTUNITY_GENERATION_SYSTEM },
+  opportunity_generation:      { model: 'claude-opus-5', effort: 'low', maxTokens: 6000, guidance: 'opportunity', system: OPPORTUNITY_GENERATION_SYSTEM, cacheable: true },  // 2009 tok, measured
 
   // --- Prose over synthesised knowledge: summaries, syntheses, gaps ---
   // refresh_strategy_summary sat twenty lines below governed refresh generation,
   // in the same file, writing user-facing prose, and carried nothing.
   refresh_strategy_summary:         { maxTokens: 300,  guidance: 'summary' },
-  full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap', system: FULL_SYNTHESIS_SYSTEM },
-  incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap', system: INCREMENTAL_SYNTHESIS_SYSTEM },
-  knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap', system: KNOWLEDGE_SUMMARY_SYSTEM },
+  full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap', system: FULL_SYNTHESIS_SYSTEM, cacheable: true },  // 1858 tok, measured
+  incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap', system: INCREMENTAL_SYNTHESIS_SYSTEM, cacheable: true },  // 1664 tok, measured
+  knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap', system: KNOWLEDGE_SUMMARY_SYSTEM, cacheable: true },  // 1935 tok, measured
   // Luna's Thinking tab — strengths/emerging/opportunities, not questions.
   // Moved off question-gap 2026-08-27 with refresh_strategy_summary (O-3).
   reflective_summary_prescriptive:  { maxTokens: 2000, guidance: 'summary' },
@@ -204,6 +214,11 @@ export function systemFor(context: LlmContext): string | undefined {
 
   const parts = [policy.system, guidance].filter(Boolean)
   return parts.length ? parts.join('\n\n') : undefined
+}
+
+/** Whether this stage's system block ships as a cached prefix. */
+export function isCacheable(context: LlmContext): boolean {
+  return Boolean(LLM_POLICY[context].cacheable && systemFor(context))
 }
 
 /** Exposed for the guidance and cache-floor ratchets. Not for call sites. */
