@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — raw XML no longer leaks into generated prose (2026-08-27)
+
+Found in the preview UAT of this branch: an objective rendered on the card front as
+"…where we are going.`</explanation>`". The model emitted a stray, unmatched
+`</explanation>` immediately before the true `</statement>`; `extractXML`'s strict
+`<tag>(.*?)</tag>` match SUCCEEDED and returned the inner text verbatim, so the markup was
+persisted into `objective` and `pithy` and shown to the user. Silent — no exception, no
+warning, and the full 508-test suite passed with it live.
+
+Third variant in a family: mis-closed tag (26 Aug) and missing `<objectives>` wrapper
+(27 Aug) both make the strict match FAIL, so the tolerant recovery path caught them. This
+one corrupts a match that succeeds, which is why the existing net missed it.
+
+`extractXML` now drops closing tags with no matching opening tag inside the captured span,
+and warns when it does. Legitimately nested markup survives — `extractObjectivesXML` reads
+`<objective>` blocks out of an extracted `<objectives>` region. Fixed at the parser rather
+than by leaning on prompt shape, same call as the objectives-parse fix.
+
+Not a regression of this branch — `extractXML`'s strict path predates it — but unmasked by
+it: before the objectives-parse fix, objective statements never persisted, so the leak had
+no surface. Scanned before shipping: 0 leaks across 95 production stacks and 308 production
+objectives, so no backfill is needed.
+
 ### Added — prompt caching on the six prose stages (2026-08-27)
 
 Each stage's static prompt (task framing + output format) now lives in `prompts/stages/`
