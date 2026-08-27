@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages';
 import { prisma } from '@/lib/db';
@@ -106,6 +107,15 @@ export async function createMessage(
     ...(effort ? { output_config: { effort } } : {}),
   });
 
+  // Prompt provenance. Answers "which prompt produced this output" for all 20
+  // stages — the retired prompt registry promised that for three and never
+  // delivered it (docs/architecture/retired-prompt-registry.md). A hash carries
+  // no user content, so it is safe to ship to production telemetry.
+  const promptHash = createHash('sha256')
+    .update((typeof resolved.system === 'string' ? resolved.system : '') + JSON.stringify(resolved.messages))
+    .digest('hex')
+    .slice(0, 16);
+
   // Adaptive thinking can exceed the 60s client default on the heavy stages.
   const startedAt = Date.now();
   const response = await anthropic.messages.create(resolved, {
@@ -114,7 +124,7 @@ export async function createMessage(
   const latencyMs = Date.now() - startedAt;
 
   // Experiment capture — no-op unless LUNASTAK_CAPTURE_DIR is set, and never throws.
-  captureCall({ context, request: resolved, response, latencyMs });
+  captureCall({ context, request: resolved, response, latencyMs, promptHash });
 
   // Check for truncation
   if (response.stop_reason === 'max_tokens') {
@@ -145,6 +155,11 @@ export async function createMessage(
     import('@/lib/statsig').then(({ logStatsigEvent }) => {
       logStatsigEvent(userId, 'llm_token_usage', response.usage.input_tokens + response.usage.output_tokens, {
         context,
+        // Known limit, stated rather than hidden: this event fires only inside
+        // `if (userId && response.usage)`, and 10 of 26 call sites pass no
+        // userId — so the durable hash inherits the existing telemetry gap.
+        // captureCall() records it regardless, locally.
+        promptHash,
         promptTokens: String(response.usage.input_tokens),
         completionTokens: String(response.usage.output_tokens),
         model: response.model || resolved.model,

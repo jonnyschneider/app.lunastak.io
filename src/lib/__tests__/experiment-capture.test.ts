@@ -70,13 +70,14 @@ describe('captureCall', () => {
       request: { model: 'claude-opus-5', max_tokens: 4000, messages: [] },
       response: sampleResponse,
       latencyMs: 1234,
+      promptHash: 'deadbeefdeadbeef',
     })
     expect(fs.readdirSync(dir)).toHaveLength(0)
   })
 
   it('records the resolved request so it can be replayed verbatim', () => {
     const request = { model: 'claude-opus-5', max_tokens: 4000, messages: [{ role: 'user', content: 'hi' }] }
-    captureCall({ context: 'strategy_generation', request, response: sampleResponse, latencyMs: 1234 })
+    captureCall({ context: 'strategy_generation', request, response: sampleResponse, latencyMs: 1234, promptHash: 'deadbeefdeadbeef' })
 
     const files = fs.readdirSync(dir)
     expect(files).toHaveLength(1)
@@ -87,7 +88,7 @@ describe('captureCall', () => {
   })
 
   it('records the metrics the comparison is scored on', () => {
-    captureCall({ context: 'extraction', request: { model: 'claude-opus-5', max_tokens: 2000, messages: [] }, response: sampleResponse, latencyMs: 987 })
+    captureCall({ context: 'extraction', request: { model: 'claude-opus-5', max_tokens: 2000, messages: [] }, response: sampleResponse, latencyMs: 987, promptHash: 'deadbeefdeadbeef' })
 
     const rec = JSON.parse(fs.readFileSync(path.join(dir, fs.readdirSync(dir)[0]), 'utf8'))
     expect(rec.model).toBe('claude-opus-5')
@@ -104,6 +105,7 @@ describe('captureCall', () => {
       request: { model: 'claude-opus-5', max_tokens: 30, messages: [] },
       response: { ...sampleResponse, stop_reason: 'max_tokens' },
       latencyMs: 100,
+      promptHash: 'deadbeefdeadbeef',
     })
 
     const rec = JSON.parse(fs.readFileSync(path.join(dir, fs.readdirSync(dir)[0]), 'utf8'))
@@ -112,8 +114,8 @@ describe('captureCall', () => {
 
   it('does not collide when several calls share a context', () => {
     const req = { model: 'claude-opus-5', max_tokens: 2000, messages: [] }
-    captureCall({ context: 'extraction', request: req, response: sampleResponse, latencyMs: 1 })
-    captureCall({ context: 'extraction', request: req, response: sampleResponse, latencyMs: 2 })
+    captureCall({ context: 'extraction', request: req, response: sampleResponse, latencyMs: 1, promptHash: 'deadbeefdeadbeef' })
+    captureCall({ context: 'extraction', request: req, response: sampleResponse, latencyMs: 2, promptHash: 'deadbeefdeadbeef' })
 
     expect(fs.readdirSync(dir)).toHaveLength(2)
   })
@@ -125,6 +127,7 @@ describe('captureCall', () => {
       request: { model: 'claude-opus-5', max_tokens: 2000, messages: [] },
       response: sampleResponse,
       latencyMs: 1,
+      promptHash: 'deadbeefdeadbeef',
     })).not.toThrow()
   })
 
@@ -135,6 +138,7 @@ describe('captureCall', () => {
       request: { model: 'claude-opus-5', max_tokens: 4000, messages: [{ role: 'user', content: 'private user content' }] },
       response: sampleResponse,
       latencyMs: 1,
+      promptHash: 'deadbeefdeadbeef',
     })
     expect(fs.readdirSync(dir)).toHaveLength(0)
   })
@@ -145,6 +149,7 @@ describe('captureCall', () => {
       request: { model: 'claude-opus-5', max_tokens: 2000, messages: [] },
       response: {} as never,
       latencyMs: 1,
+      promptHash: 'deadbeefdeadbeef',
     })).not.toThrow()
   })
 })

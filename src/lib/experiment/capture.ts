@@ -25,6 +25,12 @@ export interface CaptureInput {
   request: unknown
   response: unknown
   latencyMs: number
+  /**
+   * Provenance stamp for the resolved prompt — sha256 of the system block plus
+   * the serialised user content, first 16 hex chars. Recorded here regardless
+   * of userId, unlike the Statsig event.
+   */
+  promptHash: string
 }
 
 /**
@@ -66,6 +72,7 @@ export function captureCall(input: CaptureInput): void {
     const record = {
       capturedAt: new Date().toISOString(),
       context: input.context,
+      promptHash: input.promptHash,
       model: res.model ?? null,
       request: input.request,
       text,

@@ -109,7 +109,7 @@ Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
+| `llm_token_usage` | server | total tokens (**number**: input + output) | `context`, `promptHash`, `promptTokens`, `completionTokens`, `model`, `latencyMs`, `maxTokens`, `truncated` | Fired from `src/lib/claude.ts` on Claude API calls **that pass a `userId`** — see the coverage gap below. Drives token-burn dashboards and per-context cost analysis. |
 
 ### `llm_token_usage` — corrections and a coverage gap
 
@@ -127,11 +127,29 @@ change, when a ceiling tuned for the previous model starts cutting answers off. 
 is carried; prompt/response capture is a local-only instrument (`src/lib/experiment/capture.ts`,
 hard-gated out of production).
 
+**Added 2026-08-27:** `promptHash` — the first 16 hex chars of a sha256 over the resolved
+`system` block plus the serialised user content. It answers "which prompt produced this output"
+for **all 20 stages**, which is what the retired prompt registry promised for three and never
+delivered ([retired-prompt-registry.md](../architecture/retired-prompt-registry.md)). A hash
+carries no user content, so it is production-safe.
+
+Two things follow from how it is computed. It changes when the guidance changes, because the
+guidance is now part of the `system` block — that is the point, and it is how a prompt change
+becomes visible in the cost data. And it changes per call for stages whose user message carries
+the payload, so it identifies a *resolved request*, not a prompt template. To group by template,
+group by `context`.
+
+**⚠ `promptHash` inherits the coverage gap below.** The hash is durable only where the event
+fires. `captureCall()` records it regardless, locally.
+
 **⚠ Coverage gap — the event does not fire on every LLM call.** It sits inside
 `if (userId && response.usage)`, and **10 of 26 `createMessage` call sites pass no `userId`**:
 `extraction`, `knowledge_summary`, `full_synthesis`, `incremental_synthesis`,
-`document_extraction`, `dimensional_analysis`, `reflective_summary_prescriptive`,
+`document_extraction`, `reflective_summary_prescriptive`,
 `template_extraction`, `import_dimension_tagging`, `suggest_opposite`.
+
+(`dimensional_analysis` was on this list until 2026-08-27, when the orphaned
+`analyzeDimensionalCoverage()` that owned it was deleted. The stage no longer exists.)
 
 Those calls emit no event and no `User` token increment. Several are among the most expensive
 stages in the pipeline, so **token-burn dashboards and per-user counters understate real usage,

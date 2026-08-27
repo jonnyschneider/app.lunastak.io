@@ -91,3 +91,49 @@ describe('the system block is seam-assembled', () => {
     expect(create.mock.calls[0][0]).not.toHaveProperty('system')
   })
 })
+
+/**
+ * promptHash — the provenance stamp that replaced the prompt registry.
+ *
+ * It hashes the RESOLVED request (system block + user content), so it changes
+ * when the guidance changes. That is the property that makes it useful: a
+ * prompt edit becomes visible in the cost data instead of being invisible.
+ */
+describe('promptHash provenance', () => {
+  let hashes: string[]
+
+  const call = async (context: Parameters<Awaited<ReturnType<typeof load>>>[1], content: string) => {
+    const createMessage = await load()
+    await createMessage({ messages: [{ role: 'user', content }] }, context)
+    const { captureCall } = await import('@/lib/experiment/capture')
+    const calls = (captureCall as ReturnType<typeof vi.fn>).mock.calls
+    return calls[calls.length - 1][0].promptHash as string
+  }
+
+  beforeEach(async () => {
+    create.mockReset()
+    create.mockResolvedValue(okResponse)
+    const { captureCall } = await import('@/lib/experiment/capture')
+    ;(captureCall as ReturnType<typeof vi.fn>).mockClear()
+    hashes = []
+  })
+
+  it('is stable for the same resolved request', async () => {
+    hashes.push(await call('full_synthesis', 'same input'))
+    hashes.push(await call('full_synthesis', 'same input'))
+    expect(hashes[0]).toBe(hashes[1])
+    expect(hashes[0]).toMatch(/^[0-9a-f]{16}$/)
+  })
+
+  it('differs when the user content differs', async () => {
+    hashes.push(await call('full_synthesis', 'input one'))
+    hashes.push(await call('full_synthesis', 'input two'))
+    expect(hashes[0]).not.toBe(hashes[1])
+  })
+
+  it('differs across stages with the same user content — the guidance is in the hash', async () => {
+    hashes.push(await call('full_synthesis', 'identical')) // question-gap guidance
+    hashes.push(await call('extraction', 'identical'))     // no guidance at all
+    expect(hashes[0]).not.toBe(hashes[1])
+  })
+})
