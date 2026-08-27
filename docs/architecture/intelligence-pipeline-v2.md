@@ -458,11 +458,12 @@ inputs (`harness/derived.ts`): real material assembled into the right shape rath
 produced by the pipeline. All four clean; `refresh_strategy_generation` parsed objectives in
 both arms. See `findings-phase2-derived-stages.md`.
 
-**One confirmed drift:** gap titles lengthen when a `question-gap` stage is split —
+**One confirmed drift, ACCEPTED:** gap titles lengthen when a `question-gap` stage is split —
 `full_synthesis` 51%→39% inside the 21–35ch band, `incremental_synthesis` 83%→40%. Titles stay
-100% interrogative and within the 60-char cap, so this is mild scannability loss, not a
-breakdown. Two independent stages moving together makes it a pattern worth one cheap
-experiment on the title rule wording.
+100% interrogative, none breaches the 60-char cap, and ~34ch is about six words, inside the
+"≤8 words ideal" rule. **Ruled fine as-is (Jonny, 2026-08-27); the title rules are not being
+changed.** The 21–35ch band was an observed range from the voice arc, never a specified
+constraint — recorded here so it is not re-opened as a regression.
 
 **Still outstanding:** an end-to-end UAT on Preview, which needs a human driving the app.
 
