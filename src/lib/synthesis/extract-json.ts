@@ -91,7 +91,6 @@ export function extractJsonFromResponse(content: string): string {
       depth--
       if (depth === 0) {
         endIndex = i
-        out.length = out.length // terminated at the closing brace
         break
       }
     }
