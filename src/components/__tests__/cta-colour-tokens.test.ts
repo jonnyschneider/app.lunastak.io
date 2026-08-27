@@ -15,6 +15,14 @@ import { join } from 'node:path'
 
 /** Files permitted a hardcoded palette colour, each for a stated reason. */
 const ALLOW = new Set<string>([
+  // "Generate Strategy" is green ON PURPOSE. It renders inside the chat
+  // transcript, where user messages are `bg-primary text-primary-foreground` —
+  // so the token colour would make the flow's most important action look like
+  // another chat bubble. Verified on preview 2026-08-27: mulberry reads as
+  // conversation, not as a control. This is the entry the 2026-04-02 UAT was
+  // missing when it filed the green as a defect.
+  'src/components/ChatInterface.tsx',
+
   // The "Create Account" CTA sits INSIDE a deliberate amber warning Alert
   // (border-amber-200 / bg-amber-50 / text-amber-800), so its orange reads as
   // part of that warning surface rather than as a stray brand colour. Kept as

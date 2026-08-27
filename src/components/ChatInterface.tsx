@@ -137,14 +137,22 @@ export default function ChatInterface({
                   onGenerateStrategy?.()
                 }}
                 /*
-                 * Size and weight only — the colour comes from the default
-                 * Button variant (bg-primary, the mulberry CTA). This carried
-                 * a hardcoded bg-green-600 from v1.4.2 until 2026-08-27: the
-                 * only green in the app, flagged in the 2026-04-02 UAT and
-                 * left unfixed because the note said "investigating" rather
-                 * than naming the override.
+                 * DELIBERATELY green, and deliberately NOT the mulberry CTA token.
+                 *
+                 * This button sits inside the chat transcript, where user messages
+                 * render as `bg-primary text-primary-foreground` (see the message
+                 * bubble above). Give this the default Button variant and it comes
+                 * out in exactly that colour — so the single most important action
+                 * in the flow reads as another chat bubble instead of a control.
+                 * Tried on preview 2026-08-27 and reverted on sight.
+                 *
+                 * The 2026-04-02 UAT logged the green as a FAIL ("green instead of
+                 * mulberry primary") and left it "investigating". That was the wrong
+                 * call: being the one thing in the column that is not bubble-coloured
+                 * is what makes this legible as a button. Kept, with the reason
+                 * written down, so it does not get "fixed" a third time.
                  */
-                className="px-8 py-3 text-base font-semibold"
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base font-semibold"
               >
                 Generate Strategy
               </Button>

@@ -7,18 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed — the Generate Strategy CTA is mulberry, not green (2026-08-27)
+## [2.6.0] - 2026-08-27
 
-The primary "Generate Strategy" button carried a hardcoded `bg-green-600` from v1.4.2 — the
-only green in the app, in a mulberry product. It was flagged as a FAIL in the 2026-04-02
-preview UAT and recorded as "button colour: investigating", which named the symptom but not
-the override, so nothing ever failed on it and it shipped for five more months.
+### Documented — the Generate Strategy CTA is green on purpose (2026-08-27)
 
-Now it takes `bg-primary` from the default Button variant, keeping only size and weight as
-overrides. Guarded by `cta-colour-tokens.test.ts`: no `<Button>` may carry a hardcoded
-Tailwind palette background, with a shrinking ALLOW set. The one entry is the guest-banner
-"Create Account" CTA, whose orange sits inside a deliberate amber warning Alert — kept as
-found and documented rather than restyled.
+The "Generate Strategy" button has carried a hardcoded `bg-green-600` since v1.4.2 — the
+only green in a mulberry product. The 2026-04-02 preview UAT filed it as a FAIL ("green
+instead of mulberry primary") and left it "investigating". Tonight's UAT hit it again, we
+changed it to the `bg-primary` token, and looking at it on preview immediately showed why
+it was green in the first place.
+
+The button renders inside the chat transcript, where user messages are
+`bg-primary text-primary-foreground`. In the token colour, the most important action in the
+whole flow is the same colour as a user's own chat bubble — so it reads as part of the
+conversation rather than as a control. Being the one thing in that column that is NOT
+bubble-coloured is exactly what makes it legible as a button.
+
+Reverted to green and the reason is now written at the call site, so it does not get
+"fixed" a third time. Guarded by `cta-colour-tokens.test.ts`: no `<Button>` may carry a
+hardcoded Tailwind palette background except the entries in a shrinking ALLOW set, each
+carrying its reason. Two entries — this button, and the guest-banner "Create Account" CTA
+whose orange sits inside a deliberate amber warning Alert.
+
+The lesson is about the record, not the colour: "investigating" in a UAT is not a finding.
+Had the original note named the constraint instead of the symptom, five months and two
+sessions would not have gone into rediscovering it.
 
 ### Changed — edit moved onto the card disclosure strip (2026-08-27)
 
