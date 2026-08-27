@@ -410,6 +410,55 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
 
+### 2026-08-27: Govern voice at the LLM call seam; split stage prompts into a cached prefix
+
+**Context:** Voice and language guidance was pasted into prompt strings by hand. It reached 5
+of 26 call sites — a stage was governed only if its author remembered, and nothing said when
+they forgot. `incremental-synthesis.ts` shipped ungoverned within a day and was caught by
+pricing a prompt, not by a test: the ratchet checked a hard-coded list of four files. An
+inventory, not an invariant.
+
+**Change:** Two phases on one branch.
+
+*Phase 1 — governance.* One exhaustive `Record<LlmContext, Policy>` (`src/lib/llm/policy.ts`)
+carries model, effort, `max_tokens`, guidance bundle and system block for all 20 stages.
+`createMessage()` assembles `system` from it; call sites cannot pass `model`, `max_tokens` or
+`system`. An unclassified stage is a compile error. The versioned prompt registry was retired
+(no consumer was ever built) and replaced by a `promptHash` provenance stamp covering all 20
+stages. Guidance collapses to four bundles plus an explicit `none`; conversational stages sit
+on a deliberately empty `chat` bundle pending their own A/B.
+
+*Phase 2 — caching.* Each cacheable stage's static prompt moved to `prompts/stages/` and is
+sent as its `system` block with `cache_control: {type:'ephemeral'}`; user messages carry only
+the payload. Six stages measured ≥1024 tokens with `count_tokens` and are cached.
+
+**Evidence:** Drive `Test-Data/2026-08-27-seam-consolidation/` — `findings-phase1.md`,
+`findings-phase2-full-synthesis.md`, `findings-phase2-remaining-stages.md`,
+`findings-strategy-generation-objectives-bug.md`. Harness:
+`voice-constraint-ab/harness/abpos-v4.ts`, `derived.ts`, `counttokens.ts`, `cachecheck.ts`.
+
+**Result:** Phase 1 measured clean — em-dashes held at 0, gap titles 100% interrogative and
+slightly *better* inside the scannability band. Phase 2 on `full_synthesis` (20 pairs): prose
+volume flat at −1.8%, output tokens −35.9% (reasoning the model no longer spends), and
+cross-dimension similarity −3.6%, disproving the worry that dropping the dimension name from
+the framing would blur dimension identity. All six cached stages verified writing then reading
+the cache — checked because an uncached prefix is indistinguishable from a cached one except
+on the bill.
+
+The split also **fixed a standing production bug**: `strategy_generation` emitted bare
+`<objective>` siblings with no `<objectives>` wrapper, so the nested parse returned nothing
+and stacks persisted with an empty objectives layer. 0 of 16 pre-split responses parsed,
+across two model generations — so not the 2026-08-26 model bump. Fixed independently at the
+parser (`extractObjectivesXML`) rather than relying on the prompt shape.
+
+**Still unmeasured:** `incremental_synthesis`, `refresh_strategy_generation`,
+`refresh_strategy_summary` and `reflective_summary_prescriptive`. These only run mid-pipeline
+so the arm-D corpus never captured them; a derived-input harness (`derived.ts`) is written and
+validated but **blocked on Anthropic API credits**.
+
+**Architecture impact:** New `src/lib/llm/` and `src/lib/prompts/stages/` layers; `src/lib/prompts/`
+registry removed (tag `prompt-registry-final`). `ARCHITECTURE.md` → Prompt System rewritten.
+
 ### 2026-02-15: Normalise initial generation to read from fragments (DB) instead of extractedContext (JSON)
 
 **Context:** Initial generation (`runInitialGeneration`) received `extractedContext` JSON passed from the client, while refresh generation read from fragments in DB. Same data, different wrappers — an unnecessary divergence that complicated the pipeline and kept the `/api/generate` route alive as a separate entry point.
