@@ -5,7 +5,6 @@ import { convertLegacyObjectives } from '@/lib/placeholders'
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
 import { notifySlackStrategyGenerated } from '@/lib/notifications'
-import { getCurrentPrompt } from '@/lib/prompts'
 import { OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
 import {
   VISION_GUIDELINES, VISION_XML_FORMAT,
@@ -22,6 +21,49 @@ import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strat
 import type { OpportunityGenerationOutputContract } from '@/lib/contracts/opportunity-generation'
 import type { PipelineResult } from './types'
 import { extractText } from '@/lib/extract-text';
+
+/**
+ * Initial strategy generation. Inlined 2026-08-27 from the retired prompt
+ * registry entry `v4-pithy-statements` (2026-02-11), its only adopter.
+ * See docs/retired-prompt-registry.md; recovery tag `prompt-registry-final`.
+ */
+const GENERATION_PROMPT = `Generate compelling strategy statements based on the emergent themes from our conversation.
+
+EMERGENT THEMES:
+{themes}
+
+## The Decision Stack
+
+Each layer answers a different question:
+- **Vision:** "Where are we going?" - Aspirational, customer-centric, future-focused
+- **Strategy:** "How will we get there?" - Coherent set of choices to achieve the vision
+- **Objectives:** "What matters now?" - SMART, outcome-focused, balanced
+
+## Your Task
+
+1. Analyze the themes to identify what's strong, what's emerging, what needs exploration
+2. Generate a Decision Stack that feels authentic to this business
+
+${VISION_GUIDELINES}
+
+${STRATEGY_GUIDELINES}
+
+${OBJECTIVE_GUIDELINES}
+
+${VOICE_CONSTRAINT}
+
+## Tone
+
+Write with conviction. A statement becomes memorable by naming a real choice this business has made. It never becomes memorable by reaching for a flourish. Use THEIR words from the themes so the statements sound like this business talking.
+
+## Output Format
+
+<thoughts>Your analysis of the themes - what's strong, what's emerging, what to build on. Reference specific themes.</thoughts>
+<statements>
+  ${VISION_XML_FORMAT}
+  ${STRATEGY_XML_FORMAT}
+  ${OBJECTIVE_XML_FORMAT}
+</statements>`
 
 // --- Shared helpers ---
 
@@ -365,11 +407,10 @@ export async function runInitialGeneration(
   }
 
   // Build prompt from fragments — same data as extractedContext.themes, read from DB
-  const generationPrompt = getCurrentPrompt('generation')
   const themesText = fragments
     .map(f => f.content)
     .join('\n\n')
-  const prompt = generationPrompt.template.replace('{themes}', themesText)
+  const prompt = GENERATION_PROMPT.replace('{themes}', themesText)
 
   // Call Claude API
   const claudeStartTime = Date.now()

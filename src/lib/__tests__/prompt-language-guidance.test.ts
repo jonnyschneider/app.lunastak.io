@@ -33,7 +33,6 @@ const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8')
 
 /** Every prompt that generates user-facing prose. */
 const PROSE_PROMPT_FILES = [
-  'lib/prompts/generation/v4-pithy-statements.ts',
   'lib/pipeline/generation.ts',
   'lib/knowledge-summary.ts',
   'lib/synthesis/full-synthesis.ts',

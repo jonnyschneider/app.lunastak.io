@@ -49,19 +49,54 @@ src/lib/pipeline/
 
 ### Prompt System
 
-Versioned prompts with shared format constants:
+Every LLM stage is classified in one exhaustive policy table. Voice and language guidance is
+resolved from it at the `createMessage()` seam and injected as the `system` block — call sites
+cannot supply their own, so **there is no call-site expression that produces an ungoverned
+request.**
 
 ```
-src/lib/prompts/
-├── shared/
-│   ├── objectives.ts        # OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT
-│   └── vision-strategy.ts   # VISION_GUIDELINES, VISION_XML_FORMAT, etc.
-├── generation/
-│   └── v4-pithy-statements.ts  # Current generation prompt
-├── extraction/
-│   └── v1-emergent.ts
-└── index.ts                 # getCurrentPrompt() resolver
+src/lib/llm/policy.ts        # LLM_POLICY: Record<LlmContext, Policy> — model, effort,
+                             # maxTokens, guidance bundle, system block, per stage.
+                             # systemFor(context) is the only sanctioned way to build a
+                             # system block.
+src/lib/prompts/shared/      # The guidance constants the bundles compose:
+├── voice.ts                 #   VOICE_CONSTRAINT
+├── plain-language.ts        #   PLAIN_LANGUAGE_TITLE_GUIDANCE, ..._EXPLAINER_GUIDANCE
+├── question-titles.ts       #   QUESTION_TITLE_GUIDANCE
+├── objectives.ts            #   OBJECTIVE_GUIDELINES, OBJECTIVE_XML_FORMAT
+└── vision-strategy.ts       #   VISION_GUIDELINES, STRATEGY_GUIDELINES, + XML formats
 ```
+
+Stage prompts live at their call sites; only the *shared* guidance is centralised.
+
+**Five guidance bundles**, selected per artefact type — applying the wrong one to the wrong
+artefact is a real bug this shape prevents (`09a1050`):
+
+| Bundle | Composition | Applied to |
+|---|---|---|
+| `commitment` | vision + strategy + objectives + voice | strategy generation, refresh generation |
+| `opportunity` | plain-language title + explainer + voice | opportunity generation |
+| `question-gap` | plain-language explainer + question titles + voice | the synthesis/summary stages |
+| `chat` | *deliberately empty, pending an A/B* | conversational turns |
+| `none` | — | structured extraction (XML/JSON), where guidance is cost and parse risk |
+
+**Enforcement is by type and test, not by author recall:**
+
+| Mechanism | Catches | When |
+|---|---|---|
+| `Record<LlmContext, Policy>` exhaustiveness | a new stage with no classification | compile |
+| `context: LlmContext` required | an unclassified or typo'd context string | compile |
+| `system` not settable by callers | a call site hand-rolling its own guidance | compile |
+| Guidance test, **derived from `LLM_POLICY`** | a resolved system block missing its declared guidance | test |
+| Cache-floor test | a guidance trim that silently disables prompt caching | test |
+
+The guidance test iterates the policy table rather than a hand-maintained file list, so a new
+stage is covered the moment it is classified. The predecessor was an inventory of four
+filenames; it missed `incremental-synthesis.ts` and stayed wrong after the fix.
+
+**The versioned prompt registry was retired 2026-08-27** — its backtest consumer was never
+built. See [retired-prompt-registry.md](retired-prompt-registry.md). Prompt provenance is now a
+`promptHash` stamped on every call at the seam.
 
 ### Data Model
 
