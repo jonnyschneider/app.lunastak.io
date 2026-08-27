@@ -35,6 +35,13 @@ import {
 import { QUESTION_TITLE_GUIDANCE } from '@/lib/prompts/shared/question-titles'
 import { VOICE_CONSTRAINT } from '@/lib/prompts/shared/voice'
 import { FULL_SYNTHESIS_SYSTEM } from '@/lib/prompts/stages/full-synthesis'
+import { INCREMENTAL_SYNTHESIS_SYSTEM } from '@/lib/prompts/stages/incremental-synthesis'
+import { KNOWLEDGE_SUMMARY_SYSTEM } from '@/lib/prompts/stages/knowledge-summary'
+import {
+  STRATEGY_GENERATION_SYSTEM,
+  REFRESH_STRATEGY_GENERATION_SYSTEM,
+  OPPORTUNITY_GENERATION_SYSTEM,
+} from '@/lib/prompts/stages/generation'
 
 export type LlmContext =
   | 'strategy_generation' | 'refresh_strategy_generation' | 'refresh_strategy_summary'
@@ -137,19 +144,19 @@ const GUIDANCE: Record<GuidanceBundle, string> = {
  */
 export const LLM_POLICY: Record<LlmContext, Policy> = {
   // --- Commitments: vision, strategy, objectives ---
-  strategy_generation:         { model: 'claude-opus-5', effort: 'low', maxTokens: 4000, guidance: 'commitment' },
-  refresh_strategy_generation: { model: 'claude-opus-5', effort: 'low', maxTokens: 3000, guidance: 'commitment' },
+  strategy_generation:         { model: 'claude-opus-5', effort: 'low', maxTokens: 4000, guidance: 'commitment', system: STRATEGY_GENERATION_SYSTEM },
+  refresh_strategy_generation: { model: 'claude-opus-5', effort: 'low', maxTokens: 3000, guidance: 'commitment', system: REFRESH_STRATEGY_GENERATION_SYSTEM },
 
   // --- Opportunities ---
-  opportunity_generation:      { model: 'claude-opus-5', effort: 'low', maxTokens: 6000, guidance: 'opportunity' },
+  opportunity_generation:      { model: 'claude-opus-5', effort: 'low', maxTokens: 6000, guidance: 'opportunity', system: OPPORTUNITY_GENERATION_SYSTEM },
 
   // --- Prose over synthesised knowledge: summaries, syntheses, gaps ---
   // refresh_strategy_summary sat twenty lines below governed refresh generation,
   // in the same file, writing user-facing prose, and carried nothing.
   refresh_strategy_summary:         { maxTokens: 300,  guidance: 'summary' },
   full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap', system: FULL_SYNTHESIS_SYSTEM },
-  incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap' },
-  knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap' },
+  incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap', system: INCREMENTAL_SYNTHESIS_SYSTEM },
+  knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap', system: KNOWLEDGE_SUMMARY_SYSTEM },
   // Luna's Thinking tab — strengths/emerging/opportunities, not questions.
   // Moved off question-gap 2026-08-27 with refresh_strategy_summary (O-3).
   reflective_summary_prescriptive:  { maxTokens: 2000, guidance: 'summary' },

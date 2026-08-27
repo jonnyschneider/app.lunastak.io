@@ -5,13 +5,6 @@ import { convertLegacyObjectives } from '@/lib/placeholders'
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
 import { notifySlackStrategyGenerated } from '@/lib/notifications'
-import { OBJECTIVE_XML_FORMAT } from '@/lib/prompts/shared/objectives'
-import {
-  VISION_XML_FORMAT,
-  STRATEGY_XML_FORMAT,
-} from '@/lib/prompts/shared/vision-strategy'
-import {
-} from '@/lib/prompts/shared/plain-language'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import type { StrategyStatements, Objective, Opportunity, SuccessMetric } from '@/lib/types'
 import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strategy'
@@ -24,36 +17,6 @@ import { extractText } from '@/lib/extract-text';
  * registry entry `v4-pithy-statements` (2026-02-11), its only adopter.
  * See docs/retired-prompt-registry.md; recovery tag `prompt-registry-final`.
  */
-const GENERATION_PROMPT = `Generate compelling strategy statements based on the emergent themes from our conversation.
-
-EMERGENT THEMES:
-{themes}
-
-## The Decision Stack
-
-Each layer answers a different question:
-- **Vision:** "Where are we going?" - Aspirational, customer-centric, future-focused
-- **Strategy:** "How will we get there?" - Coherent set of choices to achieve the vision
-- **Objectives:** "What matters now?" - SMART, outcome-focused, balanced
-
-## Your Task
-
-1. Analyze the themes to identify what's strong, what's emerging, what needs exploration
-2. Generate a Decision Stack that feels authentic to this business
-
-## Tone
-
-Write with conviction. A statement becomes memorable by naming a real choice this business has made. It never becomes memorable by reaching for a flourish. Use THEIR words from the themes so the statements sound like this business talking.
-
-## Output Format
-
-<thoughts>Your analysis of the themes - what's strong, what's emerging, what to build on. Reference specific themes.</thoughts>
-<statements>
-  ${VISION_XML_FORMAT}
-  ${STRATEGY_XML_FORMAT}
-  ${OBJECTIVE_XML_FORMAT}
-</statements>`
-
 // --- Shared helpers ---
 
 /**
@@ -90,36 +53,6 @@ function parseVisionStrategy(statementsXML: string): {
 }
 
 // --- Prompts for refresh strategy ---
-
-const STRATEGY_UPDATE_PROMPT = `You are Luna, refining a business strategy based on new insights.
-
-## Current Strategy
-Vision: {current_vision}
-Strategy: {current_strategy}
-Objectives:
-{current_objectives}
-
-## Strategic Context (Dimensional Syntheses)
-{dimensional_summaries}
-
-## What's New (since last strategy)
-{new_fragments_content}
-
-## What's Been Removed
-{archived_fragments_content}
-
----
-
-Produce a COMPLETE REPLACEMENT strategy that reflects the current state of understanding. Your output replaces the previous strategy entirely — do not concatenate or append new text onto the old text.
-
-Be conservative: if the vision still holds, output it unchanged. If an objective is still valid, keep it as-is. Only modify what the new insights warrant. But every field must be a clean, self-contained statement — not old text with new text bolted on.
-
-Output format:
-<statements>
-  ${VISION_XML_FORMAT}
-  ${STRATEGY_XML_FORMAT}
-  ${OBJECTIVE_XML_FORMAT}
-</statements>`
 
 const CHANGE_SUMMARY_PROMPT = `Compare these two versions of a business strategy and summarize what changed and why.
 
@@ -225,13 +158,23 @@ export async function runRefreshGeneration(
     : 'No insights removed.'
 
   // Generate updated strategy
-  const updatePrompt = STRATEGY_UPDATE_PROMPT
-    .replace('{current_vision}', previousStatements.vision)
-    .replace('{current_strategy}', previousStatements.strategy)
-    .replace('{current_objectives}', currentObjectives)
-    .replace('{dimensional_summaries}', dimensionalSummaries)
-    .replace('{new_fragments_content}', newFragmentsContent)
-    .replace('{archived_fragments_content}', archivedContent)
+  // Payload only — instructions and output format are the stage's system block.
+  const updatePrompt = [
+    '## Current Strategy',
+    `Vision: ${previousStatements.vision}`,
+    `Strategy: ${previousStatements.strategy}`,
+    'Objectives:',
+    currentObjectives,
+    '',
+    '## Strategic Context (Dimensional Syntheses)',
+    dimensionalSummaries,
+    '',
+    "## What's New (since last strategy)",
+    newFragmentsContent,
+    '',
+    "## What's Been Removed",
+    archivedContent,
+  ].join('\n')
 
   const genResponse = await createMessage({
     messages: [{ role: 'user', content: updatePrompt }],
@@ -387,7 +330,8 @@ export async function runInitialGeneration(
   const themesText = fragments
     .map(f => f.content)
     .join('\n\n')
-  const prompt = GENERATION_PROMPT.replace('{themes}', themesText)
+  // Payload only — framing, tone and output format are the stage's system block.
+  const prompt = `EMERGENT THEMES:\n${themesText}`
 
   // Call Claude API
   const claudeStartTime = Date.now()
@@ -536,59 +480,6 @@ export async function runInitialGeneration(
 
 // --- Opportunity Generation ---
 
-const OPPORTUNITY_GENERATION_PROMPT = `You are Luna, a strategic AI coach. Generate actionable opportunities based on the user's strategic direction and accumulated knowledge.
-
-## Strategic Direction
-Vision: {vision}
-Strategy: {strategy}
-Objectives:
-{objectives}
-
-## Strategic Context (Dimensional Syntheses)
-{dimensional_summaries}
-
-## Knowledge Base (Active Fragments)
-{fragments_content}
-
----
-
-Generate 3-5 strategic opportunities. Each opportunity must:
-- Map to one or more existing objectives (by ID)
-- Have a clear title and description (2-3 sentences)
-- Include exactly ONE success metric with a belief hypothesis
-
-The UI renders the belief as: "We believe [action] will [outcome]"
-So action and outcome must read naturally after those lead-in words. Keep each to 8-20 words.
-
-BAD action: "We believe systematizing cultural transmission through structured onboarding and manager development will preserve pricing discipline"
-GOOD action: "codifying the cultural playbook into manager onboarding"
-
-BAD outcome: "Store managers demonstrate consistent cultural fluency in member-first trade-offs, independent of direct mentorship"
-GOOD outcome: "preserve pricing discipline as the org scales beyond founder reach"
-
-Success metric fields must be concise — communicating intent, not forensic precision.
-- signal: ONE metric name (5-15 words). NOT a comma-separated list.
-- baseline: Current state in 5-15 words
-- target: Desired state in 5-15 words
-
-Output format:
-<opportunities>
-  <opportunity>
-    <title>Short initiative name</title>
-    <description>What we're doing and why</description>
-    <objective_ids>obj-1, obj-2</objective_ids>
-    <metrics>
-      <metric>
-        <action>completing phrase after "We believe" (8-20 words, no leading "We believe")</action>
-        <outcome>completing phrase after "will" (8-20 words, no leading "will")</outcome>
-        <signal>one metric name</signal>
-        <baseline>current state</baseline>
-        <target>desired state</target>
-      </metric>
-    </metrics>
-  </opportunity>
-</opportunities>`
-
 /**
  * Generate opportunities from fragments + syntheses + decision stack.
  */
@@ -636,12 +527,20 @@ export async function runOpportunityGeneration(
     ? fragments.map(f => `- [${f.contentType}] ${f.content}`).join('\n')
     : 'No fragments yet.'
 
-  const prompt = OPPORTUNITY_GENERATION_PROMPT
-    .replace('{vision}', statements.vision)
-    .replace('{strategy}', statements.strategy)
-    .replace('{objectives}', objectivesText)
-    .replace('{dimensional_summaries}', dimensionalSummaries)
-    .replace('{fragments_content}', fragmentsContent)
+  // Payload only — instructions and output format are the stage's system block.
+  const prompt = [
+    '## Strategic Direction',
+    `Vision: ${statements.vision}`,
+    `Strategy: ${statements.strategy}`,
+    'Objectives:',
+    objectivesText,
+    '',
+    '## Strategic Context (Dimensional Syntheses)',
+    dimensionalSummaries,
+    '',
+    '## Knowledge Base (Active Fragments)',
+    fragmentsContent,
+  ].join('\n')
 
   // Call Claude
   const response = await createMessage({

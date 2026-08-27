@@ -163,6 +163,11 @@ const PARAPHRASE_TELLS = [
 ]
 
 const PROMPT_LAYER = [
+  // Phase 2 moved the stage prompts here; the call sites keep only payload assembly.
+  'lib/prompts/stages/full-synthesis.ts',
+  'lib/prompts/stages/incremental-synthesis.ts',
+  'lib/prompts/stages/knowledge-summary.ts',
+  'lib/prompts/stages/generation.ts',
   'lib/pipeline/generation.ts',
   'lib/knowledge-summary.ts',
   'lib/synthesis/full-synthesis.ts',
@@ -190,6 +195,54 @@ describe('the voice constraint does not commit the tics it bans', () => {
       .split('\n')
       .filter(l => l.includes('—') && !l.trimStart().startsWith('- ✗'))
     expect(offenders, `em-dash outside a ✗ example:\n${offenders.join('\n')}`).toEqual([])
+  })
+})
+
+/**
+ * The guidance constants are never interpolated into a prompt string again.
+ *
+ * The seam supplies guidance now. A `${VOICE_CONSTRAINT}` back in a prompt
+ * template does not fail anything — it sends the block TWICE, once in the
+ * system block and once in the user message. That is invisible in output and
+ * shows up only as a quietly larger bill.
+ *
+ * This was checked once by hand when the call sites were migrated (Task 1.5).
+ * A one-time grep is not a ratchet: the whole premise of this design is that
+ * guidance creeps back into prompt strings when nothing is watching. Every
+ * Phase 2 stage conversion is another chance to reintroduce it.
+ *
+ * Exempt: `prompts/shared/` (the definition) and `llm/policy.ts` (the one
+ * sanctioned composer). `prompts/stages/` is NOT exempt — stage prompts mark
+ * their guidance with the `{guidance}` slot, never by interpolation.
+ */
+describe('guidance is never re-interpolated into a prompt', () => {
+  const EXEMPT = [/prompts\/shared\//, /llm\/policy\.ts$/, /__tests__\//]
+  const NAMES = [
+    'VOICE_CONSTRAINT', 'PLAIN_LANGUAGE_TITLE_GUIDANCE', 'PLAIN_LANGUAGE_EXPLAINER_GUIDANCE',
+    'QUESTION_TITLE_GUIDANCE', 'VISION_GUIDELINES', 'STRATEGY_GUIDELINES', 'OBJECTIVE_GUIDELINES',
+  ]
+
+  const walk = (dir: string, out: string[] = []): string[] => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name)
+      if (e.isDirectory()) { if (!['node_modules', '.next'].includes(e.name)) walk(full, out) }
+      else if (/\.tsx?$/.test(e.name)) out.push(full)
+    }
+    return out
+  }
+
+  it('no prompt template interpolates a guidance constant', () => {
+    const violations: string[] = []
+    for (const file of walk(SRC)) {
+      const rel = path.relative(SRC, file)
+      if (EXEMPT.some(re => re.test(rel))) continue
+      const src = fs.readFileSync(file, 'utf8')
+      for (const name of NAMES) {
+        if (src.includes('${' + name + '}')) violations.push(`${rel}: \${${name}}`)
+      }
+    }
+    expect(violations, `guidance re-inlined — the seam already sends it:\n${violations.join('\n')}`)
+      .toEqual([])
   })
 })
 
