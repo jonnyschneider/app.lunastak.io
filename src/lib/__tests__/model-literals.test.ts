@@ -25,9 +25,18 @@ const SRC = path.join(__dirname, '../..')
  * grow it only with a reason written down.
  */
 const ALLOW = [
-  'lib/model-config.ts',        // resolution — the one place a model is chosen
+  'lib/llm/policy.ts',          // the per-stage table — where a stage's model IS the subject
+  'lib/model-config.ts',        // resolution — reads the table, applies env overrides
   'lib/experiment/pricing.ts',  // $/MTok rate table, keyed by model prefix
 ]
+
+/*
+ * `lib/llm/policy.ts` added 2026-08-27. STAGE_MODELS moved out of model-config
+ * and into the exhaustive policy table, so the per-stage map now lives there.
+ * This is the opposite of the bug the ratchet guards: policy.ts IS the map a
+ * call site would otherwise bypass. model-config still owns resolution — env
+ * override precedence, sampling-param stripping, headroom, timeouts.
+ */
 
 const MODEL_LITERAL = /['"]claude-[a-z0-9-]+['"]/
 
