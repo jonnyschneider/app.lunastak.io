@@ -46,7 +46,7 @@ export type LlmContext =
   | 'extraction' | 'document_extraction' | 'template_extraction' | 'import_dimension_tagging'
   | 'admin_regenerate'
 
-export type GuidanceBundle = 'commitment' | 'opportunity' | 'question-gap' | 'chat' | 'none'
+export type GuidanceBundle = 'commitment' | 'opportunity' | 'question-gap' | 'summary' | 'chat' | 'none'
 
 export interface Policy {
   /** undefined = DEFAULT_MODEL. Env overrides still win, resolved in model-config. */
@@ -83,6 +83,20 @@ const GUIDANCE: Record<GuidanceBundle, string> = {
   commitment:     [VISION_GUIDELINES, STRATEGY_GUIDELINES, OBJECTIVE_GUIDELINES, VOICE_CONSTRAINT].join('\n\n'),
   opportunity:    [PLAIN_LANGUAGE_TITLE_GUIDANCE, PLAIN_LANGUAGE_EXPLAINER_GUIDANCE, VOICE_CONSTRAINT].join('\n\n'),
   'question-gap': [PLAIN_LANGUAGE_EXPLAINER_GUIDANCE, QUESTION_TITLE_GUIDANCE, VOICE_CONSTRAINT].join('\n\n'),
+
+  /**
+   * Prose summaries that carry NO titles.
+   *
+   * Added 2026-08-27, resolving design O-3 before it got baselined. Both stages
+   * on this bundle started on `question-gap`, which was wrong in a way the
+   * measurement made obvious: it hands a titleless prose change-summary 334
+   * tokens of interrogative-TITLE rules — against, in the case of
+   * refresh_strategy_summary, a 300-token output budget. The stage was being
+   * told at length how to write things it does not emit.
+   *
+   * Explainer vocabulary and voice still apply; the title rules do not.
+   */
+  summary: [PLAIN_LANGUAGE_EXPLAINER_GUIDANCE, VOICE_CONSTRAINT].join('\n\n'),
 
   /**
    * DELIBERATELY EMPTY. Do not fill this in without running an A/B first.
@@ -123,14 +137,13 @@ export const LLM_POLICY: Record<LlmContext, Policy> = {
   // --- Prose over synthesised knowledge: summaries, syntheses, gaps ---
   // refresh_strategy_summary sat twenty lines below governed refresh generation,
   // in the same file, writing user-facing prose, and carried nothing.
-  refresh_strategy_summary:         { maxTokens: 300,  guidance: 'question-gap' },
+  refresh_strategy_summary:         { maxTokens: 300,  guidance: 'summary' },
   full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap' },
   incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap' },
   knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap' },
-  // Luna's Thinking tab. Starts on question-gap; its output is
-  // strengths/emerging/opportunities rather than questions, so revisit if the
-  // before/after shows title drift (design O-3).
-  reflective_summary_prescriptive:  { maxTokens: 2000, guidance: 'question-gap' },
+  // Luna's Thinking tab — strengths/emerging/opportunities, not questions.
+  // Moved off question-gap 2026-08-27 with refresh_strategy_summary (O-3).
+  reflective_summary_prescriptive:  { maxTokens: 2000, guidance: 'summary' },
 
   // --- Conversational turns. Classified, awaiting an A/B. See GUIDANCE.chat. ---
   conversation_start:     { maxTokens: 200, guidance: 'chat' },

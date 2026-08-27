@@ -69,14 +69,15 @@ src/lib/prompts/shared/      # The guidance constants the bundles compose:
 
 Stage prompts live at their call sites; only the *shared* guidance is centralised.
 
-**Five guidance bundles**, selected per artefact type — applying the wrong one to the wrong
+**Six guidance bundles**, selected per artefact type — applying the wrong one to the wrong
 artefact is a real bug this shape prevents (`09a1050`):
 
 | Bundle | Composition | Applied to |
 |---|---|---|
 | `commitment` | vision + strategy + objectives + voice | strategy generation, refresh generation |
 | `opportunity` | plain-language title + explainer + voice | opportunity generation |
-| `question-gap` | plain-language explainer + question titles + voice | the synthesis/summary stages |
+| `question-gap` | plain-language explainer + question titles + voice | full/incremental synthesis, knowledge summary |
+| `summary` | plain-language explainer + voice (**no title rules**) | refresh change-summary, reflective summary |
 | `chat` | *deliberately empty, pending an A/B* | conversational turns |
 | `none` | — | structured extraction (XML/JSON), where guidance is cost and parse risk |
 
@@ -89,6 +90,7 @@ artefact is a real bug this shape prevents (`09a1050`):
 | `system` not settable by callers | a call site hand-rolling its own guidance | compile |
 | Guidance test, **derived from `LLM_POLICY`** | a resolved system block missing its declared guidance | test |
 | Cache-floor test | a guidance trim that silently disables prompt caching | test |
+| Content-hash ratchet | any edit to a measured guidance constant | test |
 
 The guidance test iterates the policy table rather than a hand-maintained file list, so a new
 stage is covered the moment it is classified. The predecessor was an inventory of four

@@ -32,6 +32,7 @@
  *    cache-floor block at the bottom — that one guards cost, not quality.
  */
 
+import { createHash } from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import { describe, it, expect } from 'vitest'
@@ -68,6 +69,15 @@ describe('every governed stage resolves the guidance it declares', () => {
         expect(system).toContain(PLAIN_LANGUAGE_EXPLAINER_GUIDANCE)
         // 09a1050 — objective title rules turn questions into instructions.
         expect(system, 'objective title rules must not reach question/gap titles')
+          .not.toContain(PLAIN_LANGUAGE_TITLE_GUIDANCE)
+      }
+
+      if (policy.guidance === 'summary') {
+        expect(system).toContain(PLAIN_LANGUAGE_EXPLAINER_GUIDANCE)
+        // The whole point of this bundle: no title rules on titleless prose.
+        expect(system, 'summary stages emit no titles')
+          .not.toContain(QUESTION_TITLE_GUIDANCE)
+        expect(system, 'summary stages emit no titles')
           .not.toContain(PLAIN_LANGUAGE_TITLE_GUIDANCE)
       }
 
@@ -165,19 +175,29 @@ describe('the voice constraint does not commit the tics it bans', () => {
  * sized for the CACHE floor and is far too loose to notice a line going
  * missing — one deleted example is ~1.5% of `question-gap`.
  *
- * So: exact lengths. Any edit fails, deliberately, and the failure tells you
- * what it costs. If the edit is intentional, re-run the harness and update the
- * number in the same commit — that is the whole point.
+ * WHY A HASH AND NOT A LENGTH. This started as an exact character count, which
+ * is wrong in both directions: it false-positives on a whitespace reflow that
+ * changes nothing, and — the real problem — it false-NEGATIVES on any
+ * same-length edit. Swap one ✗ example for another of equal length and a length
+ * check is blind to it, which is precisely the edit someone would make. A hash
+ * pins the content; a length pins only the size of it. Same maintenance cost:
+ * one number either way.
+ *
+ * Any edit fails, deliberately, including a typo fix. If the edit is intended,
+ * re-run the harness and update the hash in the same commit — that is the point.
+ * Truncated to 12 chars for legibility; collisions are not the threat model.
  */
-const MEASURED_CONSTANTS: Record<string, number> = {
-  VOICE_CONSTRAINT: 1630,
-  PLAIN_LANGUAGE_TITLE_GUIDANCE: 1263,
-  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE: 632,
-  QUESTION_TITLE_GUIDANCE: 972,
-  VISION_GUIDELINES: 1065,
-  STRATEGY_GUIDELINES: 414,
-  OBJECTIVE_GUIDELINES: 3763,
+const MEASURED_CONSTANTS: Record<string, string> = {
+  VOICE_CONSTRAINT: 'c08fc08d3c5d',
+  PLAIN_LANGUAGE_TITLE_GUIDANCE: 'fdcf930a6481',
+  PLAIN_LANGUAGE_EXPLAINER_GUIDANCE: '14e056e9e094',
+  QUESTION_TITLE_GUIDANCE: 'd56d684afc63',
+  VISION_GUIDELINES: 'bdf1bfaad003',
+  STRATEGY_GUIDELINES: '05aa317f4a09',
+  OBJECTIVE_GUIDELINES: '97239676b087',
 }
+
+const contentHash = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 12)
 
 describe('the measured guidance constants have not been edited unnoticed', () => {
   const actual: Record<string, string> = {
@@ -193,11 +213,10 @@ describe('the measured guidance constants have not been edited unnoticed', () =>
   for (const [name, expected] of Object.entries(MEASURED_CONSTANTS)) {
     it(`${name} is unchanged since it was measured`, () => {
       expect(
-        actual[name].length,
-        `${name} changed (${actual[name].length} chars, was ${expected}). This content was ` +
-        `measured in voice-constraint-ab/ on 2026-08-27. If the edit is deliberate: re-run the ` +
-        `harness, confirm em-dash density and gap-title shape still hold, and update this ` +
-        `number in the same commit.`,
+        contentHash(actual[name]),
+        `${name} changed. This content was measured in voice-constraint-ab/ on ` +
+        `2026-08-27. If the edit is deliberate: re-run the harness, confirm em-dash ` +
+        `density and gap-title shape still hold, and update this hash in the same commit.`,
       ).toBe(expected)
     })
   }
@@ -224,17 +243,33 @@ describe('the measured guidance constants have not been edited unnoticed', () =>
  * the result still clears 1024, and update both numbers here in the same commit.
  * Do not simply widen the tolerance.
  */
-const MEASURED: Record<Exclude<GuidanceBundle, 'chat' | 'none'>, { tokens: number; chars: number }> = {
-  commitment:     { tokens: 2548, chars: 6878 },
-  opportunity:    { tokens: 1319, chars: 3529 },
-  'question-gap': { tokens: 1169, chars: 3238 },
+interface BundleSize {
+  /** Anthropic count_tokens, claude-sonnet-5. `derived` where noted. */
+  tokens: number
+  chars: number
+  /** Whether this bundle is expected to be a cacheable prefix at all. */
+  cacheable: boolean
+  measured: 'count_tokens' | 'derived-from-ratio'
+}
+
+const MEASURED: Record<Exclude<GuidanceBundle, 'chat' | 'none'>, BundleSize> = {
+  commitment:     { tokens: 2548, chars: 6878, cacheable: true,  measured: 'count_tokens' },
+  opportunity:    { tokens: 1319, chars: 3529, cacheable: true,  measured: 'count_tokens' },
+  'question-gap': { tokens: 1169, chars: 3238, cacheable: true,  measured: 'count_tokens' },
+  // Added 2026-08-27. NOT count_tokens-measured — 2264 chars at the ~2.7
+  // chars/token ratio the three above establish, so ~838 tokens. It sits
+  // BELOW the 1024 floor by design and is not a caching candidate, so an
+  // exact count buys nothing today. Phase 2 re-measures every block with
+  // count_tokens before any cacheable flag is set; do not promote this to
+  // cacheable on a derived number.
+  summary:        { tokens: 838,  chars: 2264, cacheable: false, measured: 'derived-from-ratio' },
 }
 
 const CACHE_FLOOR_TOKENS = 1024
 const TOLERANCE = 0.05
 
 describe('guidance bundles stay above the prompt-cache floor', () => {
-  for (const [bundle, m] of Object.entries(MEASURED) as [keyof typeof MEASURED, { tokens: number; chars: number }][]) {
+  for (const [bundle, m] of Object.entries(MEASURED) as [keyof typeof MEASURED, BundleSize][]) {
     it(`${bundle} has not drifted from its measured size`, () => {
       const actual = guidanceBlock(bundle).length
       const drift = Math.abs(actual - m.chars) / m.chars
@@ -246,8 +281,22 @@ describe('guidance bundles stay above the prompt-cache floor', () => {
       ).toBeLessThanOrEqual(TOLERANCE)
     })
 
-    it(`${bundle} measured clear of the ${CACHE_FLOOR_TOKENS}-token floor`, () => {
-      expect(m.tokens).toBeGreaterThan(CACHE_FLOOR_TOKENS)
+    it(`${bundle} sits on the expected side of the ${CACHE_FLOOR_TOKENS}-token floor`, () => {
+      if (m.cacheable) {
+        expect(m.tokens, `${bundle} is a caching candidate and must clear the floor`)
+          .toBeGreaterThan(CACHE_FLOOR_TOKENS)
+      } else {
+        // Not a failure — a bundle can be legitimately too small to cache.
+        // Asserted so that a bundle GROWING past the floor is noticed and
+        // considered, rather than sitting there uncached by accident.
+        expect(m.tokens, `${bundle} has grown past the cache floor — reconsider cacheable`)
+          .toBeLessThan(CACHE_FLOOR_TOKENS)
+      }
+    })
+
+    it(`${bundle} carries an honest provenance label`, () => {
+      // A derived number must never be promoted to a caching decision.
+      if (m.cacheable) expect(m.measured).toBe('count_tokens')
     })
   }
 })

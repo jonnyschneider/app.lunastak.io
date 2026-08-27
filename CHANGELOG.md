@@ -25,6 +25,11 @@ Two stages gain guidance for the first time: `refresh_strategy_summary` (which s
 below governed refresh generation, in the same file, writing user-facing prose, carrying nothing)
 and `reflective_summary_prescriptive` (Luna's Thinking tab).
 
+Titleless prose summaries get their own `summary` bundle (explainer + voice, no title rules).
+They started on `question-gap`, which handed `refresh_strategy_summary` 334 tokens of
+interrogative-**title** rules against a 300-token output budget — telling a stage at length how to
+write something it does not emit. Caught at the Phase 1 gate before it was baselined.
+
 Conversational stages are classified onto an explicitly **empty** `chat` bundle, with the reason
 recorded in code. The voice constraint was measured on prose artefacts, not on 30–300 token chat
 turns; filling that slot needs its own A/B. Classified, not forgotten.
