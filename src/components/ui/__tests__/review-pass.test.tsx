@@ -158,6 +158,137 @@ describe('ReviewPass', () => {
     expect(screen.getByText(/3 of 3/)).toBeInTheDocument()
   })
 
+  describe('list layout', () => {
+    function listSetup(props: Partial<React.ComponentProps<typeof ReviewPass>> = {}) {
+      const onRule = vi.fn().mockResolvedValue(undefined)
+      const onBatchEnd = vi.fn()
+      render(
+        <ReviewPass
+          layout="list"
+          items={items}
+          copy={copy}
+          onRule={onRule}
+          onBatchEnd={onBatchEnd}
+          {...props}
+        />
+      )
+      return { onRule, onBatchEnd, user: userEvent.setup() }
+    }
+
+    it('shows the whole batch at once', () => {
+      listSetup({ batchSize: 10 })
+      expect(screen.getByText('Builders keep estimates opaque')).toBeInTheDocument()
+      expect(screen.getByText('The buyer identity is unsettled')).toBeInTheDocument()
+      expect(screen.getByText('Joinery is a quarter of a renovation')).toBeInTheDocument()
+    })
+
+    it('shows only one batch, not the whole set', () => {
+      listSetup({ batchSize: 2 })
+      expect(screen.getByText('Builders keep estimates opaque')).toBeInTheDocument()
+      expect(screen.queryByText('Joinery is a quarter of a renovation')).not.toBeInTheDocument()
+    })
+
+    it('labels the three verdict columns once, not per row', () => {
+      listSetup({ batchSize: 10 })
+      expect(screen.getAllByText('Not quite right')).toHaveLength(1)
+    })
+
+    it('gives every row the same three choices', () => {
+      listSetup({ batchSize: 10 })
+      expect(screen.getAllByRole('radio', { name: 'Yes' })).toHaveLength(3)
+      expect(screen.getAllByRole('radio', { name: 'No' })).toHaveLength(3)
+      expect(screen.getAllByRole('radio', { name: 'Not quite right' })).toHaveLength(3)
+    })
+
+    it('rules a row in place without advancing anything', async () => {
+      const { onRule, user } = listSetup({ batchSize: 10 })
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[1])
+      await waitFor(() => expect(onRule).toHaveBeenCalledWith('b', 'yes', undefined))
+      // Every row is still on screen; nothing moved.
+      expect(screen.getByText('Builders keep estimates opaque')).toBeInTheDocument()
+      expect(screen.getAllByRole('radio', { name: 'Yes' })[1]).toBeChecked()
+    })
+
+    it('lets a ruling be changed, and re-reports it', async () => {
+      const { onRule, user } = listSetup({ batchSize: 10 })
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[0])
+      await waitFor(() => expect(onRule).toHaveBeenCalledWith('a', 'yes', undefined))
+      await user.click(screen.getAllByRole('radio', { name: 'No' })[0])
+      await waitFor(() => expect(onRule).toHaveBeenCalledWith('a', 'no', undefined))
+      expect(screen.getAllByRole('radio', { name: 'No' })[0]).toBeChecked()
+    })
+
+    it('rows can be ruled in any order, and skipped', async () => {
+      const { onRule, user } = listSetup({ batchSize: 10 })
+      await user.click(screen.getAllByRole('radio', { name: 'No' })[2])
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[0])
+      await waitFor(() => expect(onRule).toHaveBeenCalledTimes(2))
+      expect(onRule.mock.calls.map((c) => c[0])).toEqual(['c', 'a'])
+    })
+
+    it('groups rows under their dimension', () => {
+      listSetup({ batchSize: 10 })
+      expect(screen.getByText('Go To Market')).toBeInTheDocument()
+      expect(screen.getByText('Customer & Market')).toBeInTheDocument()
+    })
+
+    it('opens a row receipt in place, and reports the reveal', async () => {
+      const onReveal = vi.fn()
+      const { user } = listSetup({ batchSize: 10, onReveal })
+      expect(screen.queryByText(/provisional sum/)).not.toBeInTheDocument()
+      await user.click(screen.getAllByRole('button', { name: /because you said/i })[0])
+      expect(screen.getByText(/provisional sum/)).toBeInTheDocument()
+      expect(onReveal).toHaveBeenCalledWith('a')
+    })
+
+    it("carries a per-row remark through with that row's verdict", async () => {
+      const { onRule, user } = listSetup({ batchSize: 10 })
+      await user.click(screen.getAllByRole('button', { name: 'something else?' })[1])
+      await user.type(screen.getByRole('textbox'), 'More like they want to export from it')
+      await user.click(screen.getAllByRole('radio', { name: 'Not quite right' })[1])
+      await waitFor(() =>
+        expect(onRule).toHaveBeenCalledWith('b', 'not_quite', 'More like they want to export from it')
+      )
+    })
+
+    it('reports progress only when the batch is fully ruled', async () => {
+      const { onBatchEnd, user } = listSetup({ batchSize: 2 })
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[0])
+      await waitFor(() => expect(onBatchEnd).not.toHaveBeenCalled())
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[1])
+      await waitFor(() =>
+        expect(onBatchEnd).toHaveBeenCalledWith({ reviewed: 2, total: 3, remaining: 1, complete: false })
+      )
+    })
+
+    it('lets a partly-ruled batch be finished early, counting only what was ruled', async () => {
+      const { onBatchEnd, user } = listSetup({ batchSize: 2 })
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[0])
+      await user.click(screen.getByRole('button', { name: /done with these/i }))
+      await waitFor(() =>
+        expect(onBatchEnd).toHaveBeenCalledWith({ reviewed: 1, total: 3, remaining: 2, complete: false })
+      )
+    })
+
+    it('moves to the next batch on keep going', async () => {
+      const { user } = listSetup({ batchSize: 2 })
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[0])
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[1])
+      await user.click(await screen.findByRole('button', { name: /keep going/i }))
+      expect(screen.getByText('Joinery is a quarter of a renovation')).toBeInTheDocument()
+      expect(screen.queryByText('Builders keep estimates opaque')).not.toBeInTheDocument()
+    })
+
+    it('surfaces a failed ruling on the row and leaves it unruled', async () => {
+      const onRule = vi.fn().mockRejectedValue(new Error('offline'))
+      listSetup({ batchSize: 10, onRule })
+      const user = userEvent.setup()
+      await user.click(screen.getAllByRole('radio', { name: 'Yes' })[0])
+      await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+      expect(screen.getAllByRole('radio', { name: 'Yes' })[0]).not.toBeChecked()
+    })
+  })
+
   it('renders nothing to rule when handed an empty list', () => {
     render(<ReviewPass items={[]} copy={copy} onRule={vi.fn()} onBatchEnd={vi.fn()} />)
     expect(screen.queryByRole('button', { name: /^Yes$/ })).not.toBeInTheDocument()

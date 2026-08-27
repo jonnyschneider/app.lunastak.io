@@ -2,7 +2,12 @@
 
 import * as React from 'react'
 
-import { ReviewPass, type ReviewItem, type ReviewProgress, type Verdict } from '@/components/ui/review-pass'
+import {
+  ReviewPass,
+  type ReviewItem,
+  type ReviewProgress,
+  type Verdict,
+} from '@/components/ui/review-pass'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -17,6 +22,8 @@ interface Ruling {
   receiptRevealed: boolean
   /** Seconds spent on the item — question 1's real cost. */
   seconds: number
+  /** Which layout this ruling was made under, so the two can be compared. */
+  layout: Layout
   at: string
 }
 
@@ -30,7 +37,14 @@ export interface Fixture {
   items: (ReviewItem & { receiptSource: 'evidence' | 'claim' | null })[]
 }
 
+type Layout = 'card' | 'list'
+
 const STORAGE_KEY = 'prototype:ground-truth:v1'
+
+const LAYOUT_BLURB: Record<Layout, string> = {
+  card: 'One at a time — full attention per item, but 56 of them is a long walk.',
+  list: 'Ten at a time — same three choices on every row, ruled in any order, skippable.',
+}
 
 const COPY = {
   intro: 'Confirm your ground truths',
@@ -46,6 +60,7 @@ const VERDICT_LABEL: Record<Verdict, string> = {
 
 export function GroundTruthPreflight({ fixture }: { fixture: Fixture }) {
   const [started, setStarted] = React.useState(false)
+  const [layout, setLayout] = React.useState<Layout>('list')
   const [rulings, setRulings] = React.useState<Ruling[]>([])
   const [progress, setProgress] = React.useState<ReviewProgress | null>(null)
   const [stopped, setStopped] = React.useState(false)
@@ -64,20 +79,28 @@ export function GroundTruthPreflight({ fixture }: { fixture: Fixture }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        const parsed = JSON.parse(saved) as { rulings: Ruling[]; debrief?: string }
+        const parsed = JSON.parse(saved) as {
+          rulings: Ruling[]
+          debrief?: string
+          layout?: Layout
+        }
         if (parsed.rulings?.length) {
           setRulings(parsed.rulings)
           setDebrief(parsed.debrief ?? '')
         }
+        if (parsed.layout) setLayout(parsed.layout)
       }
     } catch {
       /* a corrupt prototype cache is not worth handling */
     }
   }, [])
 
-  const persist = React.useCallback((next: Ruling[], nextDebrief: string) => {
+  const persist = React.useCallback((next: Ruling[], nextDebrief: string, nextLayout: Layout) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ rulings: next, debrief: nextDebrief }))
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ rulings: next, debrief: nextDebrief, layout: nextLayout })
+      )
     } catch {
       /* ignore */
     }
@@ -94,16 +117,18 @@ export function GroundTruthPreflight({ fixture }: { fixture: Fixture }) {
         remark,
         receiptRevealed: revealed.current.has(id),
         seconds: Math.round((Date.now() - itemStart.current) / 100) / 10,
+        layout,
         at: new Date().toISOString(),
       }
       itemStart.current = Date.now()
       setRulings((prev) => {
-        const next = [...prev, ruling]
-        persist(next, debrief)
+        // Re-ruling a row in list layout replaces, rather than double-counts.
+        const next = [...prev.filter((r) => r.id !== id), ruling]
+        persist(next, debrief, layout)
         return next
       })
     },
-    [byId, debrief, persist]
+    [byId, debrief, layout, persist]
   )
 
   // The remaining items to walk — so a resumed pass does not re-ask what was ruled.
@@ -135,6 +160,32 @@ export function GroundTruthPreflight({ fixture }: { fixture: Fixture }) {
               Skip for now
             </button>
           </div>
+
+          {/* Prototype-only: the two layouts are the thing being compared. */}
+          <div className="space-y-2 border-t pt-4">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+                Layout
+              </span>
+              {(['list', 'card'] as Layout[]).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    setLayout(option)
+                    persist(rulings, debrief, option)
+                  }}
+                  className={
+                    layout === option
+                      ? 'rounded-md border border-foreground/30 bg-muted px-2 py-1 text-xs font-medium'
+                      : 'rounded-md border border-transparent px-2 py-1 text-xs text-muted-foreground hover:bg-muted'
+                  }
+                >
+                  {option === 'list' ? 'Ten at a time' : 'One at a time'}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">{LAYOUT_BLURB[layout]}</p>
+          </div>
           {rulings.length > 0 && (
             <p className="text-xs text-muted-foreground">
               {rulings.length} already ruled in a previous sitting — the walk resumes where it
@@ -155,7 +206,7 @@ export function GroundTruthPreflight({ fixture }: { fixture: Fixture }) {
           debrief={debrief}
           onDebrief={(v) => {
             setDebrief(v)
-            persist(rulings, v)
+            persist(rulings, v, layout)
           }}
           onReset={() => {
             localStorage.removeItem(STORAGE_KEY)
@@ -175,6 +226,7 @@ export function GroundTruthPreflight({ fixture }: { fixture: Fixture }) {
     <Shell fixture={fixture} rulings={rulings}>
       <div className="rounded-lg border p-6">
         <ReviewPass
+          layout={layout}
           items={remaining}
           copy={COPY}
           onRule={onRule}
@@ -339,6 +391,8 @@ function Findings({
         )}
       </Question>
 
+      <LayoutComparison rulings={rulings} />
+
       <Question n={5} title="Grouping — does walking by dimension feel coherent?">
         Walked {groupsTouched.size} dimensions in fixture order:{' '}
         {Array.from(groupsTouched).join(' → ') || '—'}.
@@ -375,6 +429,56 @@ function Findings({
           Start over
         </button>
       </div>
+    </div>
+  )
+}
+
+/** Prototype-only: the cost of each layout, side by side. */
+function LayoutComparison({ rulings }: { rulings: Ruling[] }) {
+  const rows = (['list', 'card'] as Layout[]).map((layout) => {
+    const mine = rulings.filter((r) => r.layout === layout)
+    const secs = mine.map((r) => r.seconds).sort((a, b) => a - b)
+    return {
+      layout,
+      count: mine.length,
+      median: secs.length ? secs[Math.floor(secs.length / 2)] : 0,
+      revealed: mine.filter((r) => r.receiptRevealed).length,
+      remarks: mine.filter((r) => r.remark).length,
+    }
+  })
+
+  return (
+    <div className="rounded-lg border p-6">
+      <h3 className="text-sm font-semibold">
+        <span className="mr-2 font-mono text-muted-foreground">A/B</span>
+        Layout — what did ten-at-a-time actually cost or save?
+      </h3>
+      <table className="mt-3 w-full text-sm">
+        <thead>
+          <tr className="text-left font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            <th className="pb-1 font-normal">Layout</th>
+            <th className="pb-1 font-normal">Ruled</th>
+            <th className="pb-1 font-normal">Median</th>
+            <th className="pb-1 font-normal">Receipts</th>
+            <th className="pb-1 font-normal">Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.layout} className="border-t">
+              <td className="py-1.5">{r.layout === 'list' ? 'Ten at a time' : 'One at a time'}</td>
+              <td className="py-1.5">{r.count || '—'}</td>
+              <td className="py-1.5">{r.count ? `${r.median}s` : '—'}</td>
+              <td className="py-1.5">{r.count ? r.revealed : '—'}</td>
+              <td className="py-1.5">{r.count ? r.remarks : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Speed is the obvious axis. The one that matters is whether the compact layout drops the
+        receipt and remark rates — the two signals the whole design is buying.
+      </p>
     </div>
   )
 }
