@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — strategy generation was persisting ZERO objectives (2026-08-27)
+
+Both initial and refresh generation parsed objectives through
+`extractXML(statementsXML, 'objectives')`. Models routinely emit bare `<objective>`
+siblings directly under `<statements>`, with **no `<objectives>` wrapper at all** — so that
+returned empty, `isOKRFormat` went false, the legacy branch split an empty string, and the
+Decision Stack persisted with an empty objectives layer while three to five complete
+objectives sat in the response. No exception, no truncation, `stop_reason: end_turn`.
+
+Measured on the shipped prompt: **0 of 16 responses parsed**, across BOTH `claude-opus-5`
+@ `effort:low` and `claude-sonnet-4-5` — so not a property of the 2026-08-26 model bump,
+and older than it.
+
+Invisible to every previous measurement because they all scored the TEXT, not the parse: a
+flat grep for `<objective>` finds the blocks wherever they sit, and a human reading raw XML
+counts them fine. Only the nested parse sees none. This is why the CHANGELOG above records
+strategy generation producing four objectives and then three — those observations were real,
+and the objectives still never reached the database.
+
+`extractObjectivesXML()` recovers the unwrapped shape. Against the real captured failures:
+0/16 → 15/16, with correctly-wrapped responses unchanged. The remaining one omitted the
+`<objective>` wrappers too; recovering that would mean inferring where each objective
+begins, which fabricates commitments rather than reading them, so it is deliberately left
+to the fallback and pinned by a test.
+
+Sibling of the 2026-08-26 mis-closed-tag recovery and the synthesis JSON control-character
+fix: three instances of the same family — malformed model output that degrades silently
+instead of failing.
+
 ### Changed — voice is governed at the LLM call seam, not at 26 call sites (2026-08-27)
 
 ⚠ **Not yet measured against the voice harness. Do not release before Phase 1 findings.**

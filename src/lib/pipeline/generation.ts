@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { createMessage } from '@/lib/claude'
-import { extractXML, parseOKRObjectives } from '@/lib/utils'
+import { extractXML, parseOKRObjectives, extractObjectivesXML } from '@/lib/utils'
 import { convertLegacyObjectives } from '@/lib/placeholders'
 import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
@@ -184,7 +184,7 @@ export async function runRefreshGeneration(
   const genContent = extractText(genResponse)
 
   const statementsXML = extractXML(genContent, 'statements')
-  const objectivesXML = extractXML(statementsXML, 'objectives')
+  const objectivesXML = extractObjectivesXML(statementsXML)
 
   // Parse vision/strategy using shared helper (detects headline/elaboration format)
   const { vision, visionElaboration, strategy, strategyElaboration } =
@@ -345,7 +345,7 @@ export async function runInitialGeneration(
   const content = extractText(response)
   const thoughts = extractXML(content, 'thoughts')
   const statementsXML = extractXML(content, 'statements')
-  const objectivesXML = extractXML(statementsXML, 'objectives')
+  const objectivesXML = extractObjectivesXML(statementsXML)
 
   // Detect format: OKR (has <objective> tags) vs legacy (numbered list)
   const isOKRFormat = objectivesXML.includes('<objective>')

@@ -185,6 +185,13 @@ export async function POST(req: Request) {
     const thoughts = extractXML(content, 'thoughts');
     const statementsXML = extractXML(content, 'statements');
 
+    // NOTE (2026-08-27): this legacy newline-split path does not benefit from
+    // extractObjectivesXML — handing it the statements block would split raw XML
+    // into "objectives". It therefore still yields nothing when the model omits
+    // the <objectives> wrapper, which is most of the time. Left as-is
+    // deliberately: this endpoint is curl-only, nothing in src/ fetches it, and
+    // its fate is deferred (design O-1). Fixing it means porting it to the OKR
+    // parse the live paths use — a behaviour change to an unreachable route.
     const objectiveStrings = extractXML(statementsXML, 'objectives')
       .split('\n')
       .filter(line => line.trim().length > 0);
