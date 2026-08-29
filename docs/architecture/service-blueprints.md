@@ -424,10 +424,26 @@ custom cabinet makers"*. Against one that is punchy and asserts an invention as 
 **Applies to:** task 6; audit Finding 2.
 The one real residue. A grounded premise and an invented one are typographically identical on the
 card. The fix is narrow — a line requiring a gap to condition only on something present in the
-fragments — but **do not add it yet**: removing the four unread synthesis fields narrows the ask
-first, and may reduce premise invention on its own. Adding instruction before measuring is the
-pattern that has twice made things worse in this codebase.
-**Sequence:** remove dead fields → re-measure invention in `gaps` → only then consider the rule.
+fragments.
+
+**⚠ Measured 2026-08-29 — the prerequisite is done and the hypothesis was falsified.** This was
+deferred on the theory that removing the four unread fields would narrow the ask and might reduce
+premise invention on its own. A/B on the A-control captures (10 dimensions × 2 repeats × 2 arms,
+field set the only variable) says otherwise:
+
+| metric | BEFORE (7 outputs) | AFTER (3 outputs) |
+|---|---|---|
+| motive asserted in gaps | **3** | **3** |
+| "margin" in gaps | 8 | 9 |
+| total gaps | 76 | **87 (+14%)** |
+| output tokens | 24,276 | 20,303 (−16%) |
+
+Invention is unchanged, and **gap volume rose 14%** — removing outputs appears to redistribute
+effort into the ones that remain, and what remains is the field that reaches the user as an action.
+
+**This is now unblocked and un-self-resolved.** Needs its own ruling. Note the balloon-squeeze when
+considering any further removal: narrowing the ask does not reduce what the model makes up, it
+relocates where it puts it.
 
 ### Deep-dive card has no grounding check — `accepted-debt`
 **Applies to:** task 6.
