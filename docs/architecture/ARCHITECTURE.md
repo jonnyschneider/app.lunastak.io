@@ -209,7 +209,7 @@ scans **both `src/` and `tools/`** and rejects all three shapes.
 
 ## Analytics & Instrumentation
 
-**Canonical event reference: [`docs/analytics/events.md`](../analytics/events.md).** Every
+**Canonical event reference: [`docs/architecture/analytics-events.md`](analytics-events.md).** Every
 custom Statsig event and its metadata is listed there. Update it in the same commit as any
 change to an event's name, value or metadata — dashboards on the "Lunastak v2" board are built
 from it, and drift means someone filters on a field that was never emitted.
@@ -301,7 +301,7 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 | Guest-to-auth duplicate projects | Merge guest data, delete guest project | **Revisit:** proper session-to-user binding |
 | `apiCallCount` serves as both the guest quota and LLM call telemetry, written from two places | Documented; metering more call sites is a product change, not a fix. See [Analytics & Instrumentation](#analytics--instrumentation) | **Revisit:** split into separate quota and telemetry counters |
 | Guest `User` row is deleted at transfer, destroying its token counters | Accepted — per-user token history starts at signup | **Revisit:** carry counters across on transfer |
-| `llm_token_usage` misses 10 of 26 LLM call sites (those without a `userId`), skewing cost dashboards toward the cheap stages | Documented in `docs/analytics/events.md`; exact per-stage cost comes from the local capture instrument | **Revisit:** alongside the quota/telemetry split |
+| `llm_token_usage` misses 10 of 26 LLM call sites (those without a `userId`), skewing cost dashboards toward the cheap stages | Documented in `docs/architecture/analytics-events.md`; exact per-stage cost comes from the local capture instrument | **Revisit:** alongside the quota/telemetry split |
 | Cross-component state (project deletion) | Window events | **Revisit:** proper state management |
 | **`max_tokens` ceilings were fitted to sonnet-4-5's verbosity** and are too tight for thinking models, which spend reasoning tokens from the same budget. `maxTokensFor()` adds headroom as a workaround; measured demand is `continue_questioning` ~459 against a shipped ceiling of 200, and `continue_confidence` ~765 against 300 | Headroom at the `createMessage()` seam (`src/lib/model-config.ts`). The rest of that module's surface was promoted to permanent at the Phase 4 ruling; this is the one item that remains a workaround | **Revisit:** re-tune the per-stage ceilings to the measured demand, then delete the headroom |
 
