@@ -8,13 +8,7 @@ import { StructuredProvocation } from '@/lib/types'
 export interface SynthesisResult {
   summary: string
   keyThemes: string[]
-  keyQuotes: string[]
   gaps: StructuredProvocation[]
-  contradictions: string[]
-  subdimensions: Record<string, {
-    summary: string
-    fragmentIds: string[]
-  }> | null
   confidence: 'HIGH' | 'MEDIUM' | 'LOW'
 }
 

@@ -22,10 +22,7 @@ export async function incrementalSynthesis(
     return {
       summary: existingSynthesis.summary || '',
       keyThemes: existingSynthesis.keyThemes,
-      keyQuotes: existingSynthesis.keyQuotes,
       gaps: existingGaps,
-      contradictions: existingSynthesis.contradictions,
-      subdimensions: existingSynthesis.subdimensions as SynthesisResult['subdimensions'],
       confidence: existingSynthesis.confidence as 'HIGH' | 'MEDIUM' | 'LOW'
     }
   }
@@ -81,10 +78,7 @@ export async function incrementalSynthesis(
     return {
       summary: existingSynthesis.summary || '',
       keyThemes: existingSynthesis.keyThemes,
-      keyQuotes: existingSynthesis.keyQuotes,
       gaps: existingGaps,
-      contradictions: existingSynthesis.contradictions,
-      subdimensions: existingSynthesis.subdimensions as SynthesisResult['subdimensions'],
       confidence: existingSynthesis.confidence as 'HIGH' | 'MEDIUM' | 'LOW'
     }
   }

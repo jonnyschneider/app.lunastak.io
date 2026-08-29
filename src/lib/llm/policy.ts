@@ -164,8 +164,8 @@ export const LLM_POLICY: Record<LlmContext, Policy> = {
   // refresh_strategy_summary sat twenty lines below governed refresh generation,
   // in the same file, writing user-facing prose, and carried nothing.
   refresh_strategy_summary:         { maxTokens: 300,  guidance: 'summary' },
-  full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap', system: FULL_SYNTHESIS_SYSTEM, cacheable: true },  // 1858 tok, measured
-  incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap', system: INCREMENTAL_SYNTHESIS_SYSTEM, cacheable: true },  // 1664 tok, measured
+  full_synthesis:                   { maxTokens: 4000, guidance: 'question-gap', system: FULL_SYNTHESIS_SYSTEM, cacheable: true },  // 1690 tok, measured
+  incremental_synthesis:            { maxTokens: 4000, guidance: 'question-gap', system: INCREMENTAL_SYNTHESIS_SYSTEM, cacheable: true },  // 1576 tok, measured
   knowledge_summary:                { maxTokens: 2000, guidance: 'question-gap', system: KNOWLEDGE_SUMMARY_SYSTEM, cacheable: true },  // 1935 tok, measured
   // Luna's Thinking tab — strengths/emerging/opportunities, not questions.
   // Moved off question-gap 2026-08-27 with refresh_strategy_summary (O-3).
