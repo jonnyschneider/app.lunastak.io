@@ -82,7 +82,6 @@ async function initializeSynthesisRecords(projectId: string): Promise<void> {
     projectId,
     dimension,
     summary: null,
-    keyThemes: [],
     gaps: [],
     confidence: 'LOW' as const,
     fragmentCount: 0,

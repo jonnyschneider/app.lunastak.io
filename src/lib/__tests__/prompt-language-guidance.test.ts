@@ -403,7 +403,7 @@ describe('guidance bundles stay above the prompt-cache floor', () => {
  * message overhead, claude-sonnet-5/opus-5 per the stage's model, 2026-08-27.
  * full_synthesis and incremental_synthesis re-measured 2026-08-29 after the
  * unread output fields were removed from both prompts — both stay well clear
- * of the floor (1690 and 1576 against 1024), so caching is unaffected.
+ * of the floor (1633 and 1538 against 1024), so caching is unaffected.
  * Re-measure and update both numbers in the same commit; do not widen the
  * tolerance.
  */
@@ -412,8 +412,8 @@ const MEASURED_STAGE_BLOCKS: Record<string, { tokens: number; chars: number }> =
   refresh_strategy_generation: { tokens: 3226, chars: 8797 },
   opportunity_generation:      { tokens: 2009, chars: 5486 },
   knowledge_summary:           { tokens: 1935, chars: 5610 },
-  full_synthesis:              { tokens: 1690, chars: 4649 },
-  incremental_synthesis:       { tokens: 1576, chars: 4415 },
+  full_synthesis:              { tokens: 1633, chars: 4513 },
+  incremental_synthesis:       { tokens: 1538, chars: 4321 },
 }
 
 describe('cacheable stages stay above the prompt-cache floor', () => {

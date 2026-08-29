@@ -151,7 +151,6 @@ export async function GET(
       select: {
         dimension: true,
         summary: true,
-        keyThemes: true,
         gaps: true,
         confidence: true,
         fragmentCount: true,
@@ -228,7 +227,6 @@ export async function GET(
     const syntheses = dimensionalSyntheses.map(s => ({
       dimension: s.dimension,
       summary: s.summary,
-      keyThemes: s.keyThemes,
       gaps: s.gaps,
       confidence: s.confidence,
       fragmentCount: s.fragmentCount,

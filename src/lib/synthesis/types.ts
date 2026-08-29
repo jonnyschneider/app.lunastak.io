@@ -7,7 +7,6 @@ import { StructuredProvocation } from '@/lib/types'
 
 export interface SynthesisResult {
   summary: string
-  keyThemes: string[]
   gaps: StructuredProvocation[]
   confidence: 'HIGH' | 'MEDIUM' | 'LOW'
 }

@@ -31,9 +31,7 @@ Synthesize these fragments into structured understanding:
 
 1. **Summary** (2-3 paragraphs): What do we understand about this dimension? Use the leader's authentic voice where possible.
 
-2. **Key Themes** (3-7 themes): What are the main ideas? Each theme should be a short phrase or sentence.
-
-3. **Gaps** (list of objects): What's missing? Each gap should have:
+2. **Gaps** (list of objects): What's missing? Each gap should have:
    - "title": A punchy, attention-grabbing title (max 60 chars). A gap is something you don't yet know, so phrase it as a question. The title rules below apply.
    - "description": The full question or explanation of what's missing
 
@@ -46,4 +44,4 @@ Synthesize these fragments into structured understanding:
 
 IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
 
-{"summary": "...", "keyThemes": ["...", "..."], "gaps": [{"title": "Short title", "description": "Full question or explanation"}], "confidence": "MEDIUM"}`
+{"summary": "...", "gaps": [{"title": "Short title", "description": "Full question or explanation"}], "confidence": "MEDIUM"}`

@@ -8,6 +8,12 @@
  * prompt asked for "existing + new" while the payload never supplied the
  * existing ones.
  *
+ * `keyThemes` was read — but only by the incremental path, which is ~13% of
+ * synthesis runs, while the field was produced on 100% of them. A 10-dimension
+ * A/B on real capture data (2026-08-29) measured continuity against the prior
+ * summary at 98% with it and 98% without, gaps 68 vs 70, and 10% fewer output
+ * tokens without it. `summary` is doing the continuity work.
+ *
  * If a consumer is ever built for one of these, delete its entry here first —
  * that forces the field back through review rather than reappearing by drift.
  */
@@ -17,7 +23,7 @@ import { INCREMENTAL_SYNTHESIS_SYSTEM } from '@/lib/prompts/stages/incremental-s
 import * as fs from 'fs'
 import * as path from 'path'
 
-const UNREAD = ['keyQuotes', 'contradictions', 'subdimensions'] as const
+const UNREAD = ['keyQuotes', 'contradictions', 'subdimensions', 'keyThemes'] as const
 
 const SRC = path.resolve(__dirname, '../..')
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8')
@@ -32,7 +38,7 @@ describe('synthesis asks only for fields something reads', () => {
   })
 
   it('the full-synthesis prompt still requests what IS read', () => {
-    for (const field of ['summary', 'keyThemes', 'gaps', 'confidence']) {
+    for (const field of ['summary', 'gaps', 'confidence']) {
       expect(FULL_SYNTHESIS_SYSTEM).toContain(field)
     }
   })

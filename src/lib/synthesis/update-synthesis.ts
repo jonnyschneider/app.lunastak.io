@@ -91,7 +91,6 @@ export async function updateDimensionalSynthesis(
       where: { id: existingSynthesis.id },
       data: {
         summary: null,
-        keyThemes: [],
         gaps: [],
         confidence: 'LOW',
         fragmentCount: 0,
@@ -135,7 +134,6 @@ export async function updateDimensionalSynthesis(
     where: { id: existingSynthesis.id },
     data: {
       summary: result.summary || null,
-      keyThemes: result.keyThemes,
       gaps: result.gaps as unknown as Parameters<typeof prisma.dimensionalSynthesis.update>[0]['data']['gaps'],
       confidence: result.confidence,
       fragmentCount: allFragments.length,

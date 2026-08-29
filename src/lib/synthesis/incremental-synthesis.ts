@@ -21,7 +21,6 @@ export async function incrementalSynthesis(
   if (newFragments.length === 0) {
     return {
       summary: existingSynthesis.summary || '',
-      keyThemes: existingSynthesis.keyThemes,
       gaps: existingGaps,
       confidence: existingSynthesis.confidence as 'HIGH' | 'MEDIUM' | 'LOW'
     }
@@ -45,9 +44,6 @@ export async function incrementalSynthesis(
     '',
     'Summary:',
     existingSynthesis.summary || 'No summary yet',
-    '',
-    'Key Themes:',
-    existingSynthesis.keyThemes.map(t => `- ${t}`).join('\n') || 'None',
     '',
     'Gaps:',
     existingGapsText,
@@ -77,7 +73,6 @@ export async function incrementalSynthesis(
     // Return existing synthesis unchanged on error
     return {
       summary: existingSynthesis.summary || '',
-      keyThemes: existingSynthesis.keyThemes,
       gaps: existingGaps,
       confidence: existingSynthesis.confidence as 'HIGH' | 'MEDIUM' | 'LOW'
     }

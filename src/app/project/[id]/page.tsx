@@ -148,7 +148,6 @@ interface StrategyOutputSummary {
 interface DimensionalSynthesis {
   dimension: string
   summary: string | null
-  keyThemes: string[]
   gaps: StructuredProvocation[]
   confidence: string
   fragmentCount: number

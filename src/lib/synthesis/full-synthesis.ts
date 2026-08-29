@@ -15,7 +15,6 @@ export async function fullSynthesis(
   if (fragments.length === 0) {
     return {
       summary: '',
-      keyThemes: [],
       gaps: [{
         title: 'No insights yet',
         description: `No fragments captured yet for ${dimension.replace(/_/g, ' ').toLowerCase()}`
@@ -55,7 +54,6 @@ export async function fullSynthesis(
     console.error('[Synthesis] Failed to parse response:', content)
     return {
       summary: '',
-      keyThemes: [],
       gaps: [{
         title: 'Synthesis failed',
         description: 'Could not parse LLM response - please try again'

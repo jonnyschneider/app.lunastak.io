@@ -131,3 +131,32 @@ When schema changes affect data contracts, update these files:
 |---------|------|---------|
 | 1.5.0 | 2025-01-07 | Projects, Documents, Multi-Session, UserDismissal |
 | 1.4.x | Prior | Base schema with Conversation, Fragment, Trace, etc. |
+
+## 2026-08-29 — Drop four unread `DimensionalSynthesis` columns
+
+**Change:** `DimensionalSynthesis` loses `keyThemes`, `keyQuotes`, `contradictions`
+and `subdimensions`.
+
+```sql
+ALTER TABLE "DimensionalSynthesis"
+  DROP COLUMN "keyThemes", DROP COLUMN "keyQuotes",
+  DROP COLUMN "contradictions", DROP COLUMN "subdimensions";
+```
+
+**Why:** all four were produced by every synthesis call and read by nothing.
+`keyQuotes`, `contradictions` and `subdimensions` had no consumer at all.
+`keyThemes` was read only by the incremental synthesis path — ~13% of synthesis
+runs, while the field was produced on 100% of them — and a 10-dimension A/B on
+real capture data measured continuity against the prior summary at 98% with it
+and 98% without, with 10% fewer output tokens. `summary` carries the continuity.
+
+Together the four were 37% of `full_synthesis` output, and that stage is ~61% of
+workload cost.
+
+**Ordering — this is a destructive migration.** The code that stopped reading and
+writing these columns must be **deployed everywhere first**. Dropping them while
+an older deployment is live would 500 on every synthesis read. Apply dev →
+preview → prod only after the corresponding code is live in each.
+
+**Recovery:** the data is not recoverable after the drop. It was never read by
+any user-facing surface, so there is nothing to migrate or backfill.

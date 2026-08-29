@@ -32,7 +32,6 @@ interface Synthesis {
   id: string;
   dimension: string;
   summary: string | null;
-  keyThemes: string[];
   gaps: string[];
   confidence: string;
   fragmentCount: number;
@@ -359,22 +358,8 @@ export default function ExtractionPage() {
                           {syn.summary ? (
                             <div className="space-y-2">
                               <p className="text-muted-foreground line-clamp-2">{syn.summary}</p>
-                              {(syn.keyThemes.length > 0 || syn.gaps.length > 0) && (
+                              {syn.gaps.length > 0 && (
                                 <Accordion type="single" collapsible className="w-full">
-                                  {syn.keyThemes.length > 0 && (
-                                    <AccordionItem value="themes" className="border-none">
-                                      <AccordionTrigger className="text-xs py-1 hover:no-underline">
-                                        Key Themes ({syn.keyThemes.length})
-                                      </AccordionTrigger>
-                                      <AccordionContent className="pt-1">
-                                        <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
-                                          {syn.keyThemes.map((theme, i) => (
-                                            <li key={i}>{theme}</li>
-                                          ))}
-                                        </ul>
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  )}
                                   {syn.gaps.length > 0 && (
                                     <AccordionItem value="gaps" className="border-none">
                                       <AccordionTrigger className="text-xs py-1 hover:no-underline text-orange-600">
