@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-**Last Updated:** 2026-08-26
+**Last Updated:** 2026-08-29
 
 ---
 
@@ -127,6 +127,29 @@ Project
 ### Data Contracts
 
 Contracts define expected shapes at pipeline boundaries. Located in `src/lib/contracts/` with tests in `src/lib/__tests__/contracts/`.
+
+> ### ⚠ Contracts are type-level only — they are not enforced at runtime (verified 2026-08-29)
+>
+> **5 of the 6 exported validators are never called in production code.** Only
+> `validateStrategyVersionInput` runs (in `/api/project/[id]/strategy-version`);
+> `validateEmergentExtraction`, `validateGenerationInput`, `validateGenerationOutput`,
+> `validateRefreshStrategyOutput` and `validateUser` are exercised **only by their own tests**.
+>
+> So `npm run verify` passing means the contracts agree with themselves — **not** that the pipeline
+> honours them. Two consequences already observed:
+>
+> - `FragmentContract` declares `contentType: 'theme'` and `status: 'active'`. Production holds
+>   **933 `insight` fragments** (bundle imports) against 921 themes, plus archived rows. Nothing
+>   caught it.
+> - There is **no contract for `DimensionalSynthesis`** — the boundary where four unread fields
+>   accumulated undetected.
+> - `contracts/strategy-version.ts` is named for a model retired after 2026-02-15, and its
+>   `StrategyComponentType` (`vision | strategy | objective`) disagrees with the schema's
+>   `DecisionStackComponent.componentType` (`objective | opportunity | principle`).
+>
+> **Do not patch these individually.** They are symptoms of one unexamined question — what contracts
+> are for here and where they should bind — deferred to a systematic pass. Findings:
+> `docs/_plans/2026-08-29-knowledge-architecture-audit.md` (local).
 
 When adding a new API or data flow:
 1. Define contract types in `src/lib/contracts/`

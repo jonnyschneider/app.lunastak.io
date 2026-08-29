@@ -1,6 +1,13 @@
-# Lunastak Intelligence Pipeline v2 — With Orchestrator
+# Lunastak Intelligence Pipeline v2.1 — With Orchestrator
+
+**Last updated:** 2026-08-29
 
 > Supersedes `intelligence-pipeline.md` (v1). See `docs/plans/2026-02-14-pipeline-orchestrator-design.md` for design rationale.
+>
+> **v2.1 (2026-08-29)** — corrections from a full schema/code cross-reference. §3 and §4 had drifted:
+> the ERD named three models that no longer exist (`GeneratedOutput`, `StrategyVersion`,
+> `UserContent`), and §4 showed a "Key Themes" surface removed in an earlier refactor. §5's prompt
+> constants were renamed by the 2026-08-27 seam consolidation. Corrected below.
 
 Four diagrams describing how Lunastak transforms unstructured input into strategy artefacts.
 
@@ -213,7 +220,9 @@ graph LR
 
 ## 3. Data Architecture
 
-Entity relationships are **unchanged** by the orchestrator refactor. No schema migrations.
+Entity relationships were unchanged by the orchestrator refactor itself, but the **strategy side was
+later replaced wholesale**: `GeneratedOutput` and `StrategyVersion` are retired in favour of
+`DecisionStack` / `DecisionStackComponent` / `DecisionStackSnapshot`. Corrected 2026-08-29.
 
 ```mermaid
 erDiagram
@@ -254,26 +263,37 @@ erDiagram
         int fragmentCount "contributing fragments"
     }
 
-    TRACE ||--|| GENERATED_OUTPUT : "stored alongside"
     TRACE {
         json extractedContext "fragment metadata (source, count, content)"
-        json output "vision + strategy + objectives"
+        json output "mirror of the stack — admin trace view"
         string claudeThoughts "LLM reasoning"
     }
 
-    GENERATED_OUTPUT ||--o{ STRATEGY_VERSION : "seeds per-component"
-    GENERATED_OUTPUT {
-        json content "full StrategyStatements"
-        int version "increments on refresh"
-        string status "generating | complete | failed"
-        string previousOutputId "version chain"
+    PROJECT ||--o| DECISION_STACK : "has"
+    DECISION_STACK ||--o{ DECISION_STACK_COMPONENT : "contains"
+    PROJECT ||--o{ DECISION_STACK_SNAPSHOT : "versioned by"
+
+    DECISION_STACK {
+        string vision "singleton column"
+        string visionElaboration
+        string strategy "singleton column"
+        string strategyElaboration
+        string generationStatus "null | generating | generating_opportunities"
     }
 
-    STRATEGY_VERSION {
-        string componentType "vision | strategy | objective"
-        json content "component-specific content"
-        string createdBy "ai | user"
-        string sourceType "generation | template | edit"
+    DECISION_STACK_COMPONENT {
+        string componentType "objective | opportunity | principle"
+        string componentId "stable within type — obj-1, opp-1"
+        json content "shape depends on componentType"
+        int sortOrder
+        string status "active | archived"
+    }
+
+    DECISION_STACK_SNAPSHOT {
+        int version "auto-increments per project"
+        json content "full stack, serialised"
+        string trigger "pre/post _generation | _refresh | _opportunities"
+        string modelUsed "null on pre-snapshots"
     }
 ```
 
@@ -293,12 +313,11 @@ graph TD
         V2["Suggested Questions<br/>(Project Page)"]:::visible
         V3["'N new insights' badge<br/>(Project Page)"]:::visible
         V4["Vision / Strategy / Objectives<br/>(Strategy Page)"]:::visible
-        V5["Luna's Reasoning<br/>(Strategy Page)"]:::visible
-        V6["Key Themes<br/>(Strategy Page)"]:::visible
+        V5["Luna's Reasoning<br/>(admin trace view)"]:::visible
     end
 
     subgraph HIDDEN ["Hidden — consumed by orchestrator + LLM"]
-        H1["Dimensional Synthesis x 11<br/>summary, gaps, contradictions"]:::hidden
+        H1["Dimensional Synthesis x 11<br/>summary, gaps, confidence — read<br/>keyThemes/keyQuotes/contradictions/<br/>subdimensions — written, unread"]:::hidden
         H2["Fragment Dimension Tags<br/>bucketing for synthesis"]:::hidden
         H3["Pipeline Plan<br/>what steps ran, what model"]:::hidden
     end
@@ -312,9 +331,8 @@ graph TD
     KS[Project.knowledgeSummary]:::source --> V1
     SQ[Project.suggestedQuestions]:::source --> V2
     FN["Fragments since<br/>knowledgeUpdatedAt"]:::source --> V3
-    GO[GeneratedOutput.content]:::source --> V4
+    GO[DecisionStack + components]:::source --> V4
     CT[Trace.claudeThoughts]:::source --> V5
-    EC[Trace.extractedContext.themes]:::source --> V6
 
     DS[DimensionalSynthesis]:::source --> H1
     DT[FragmentDimensionTag]:::source --> H2
@@ -370,14 +388,21 @@ graph TD
 
 ### LLM Calls in the Pipeline (ordered by layer)
 
+> ⚠ This table lists the **main-path** stages only. Since the 2026-08-27 seam consolidation,
+> `LLM_POLICY` (`src/lib/llm/policy.ts`) governs **26 contexts** — it is the authoritative list, and
+> an unclassified stage is a compile error. Treat `policy.ts` as the source of truth; this table is
+> orientation.
+
 | Layer | Step | Prompt | Input | Output |
 |-------|------|--------|-------|--------|
 | 0 | Extract (conversation) | `EMERGENT_EXTRACTION_PROMPT` | Conversation text | 3-7 themes with dimension tags |
 | 0 | Extract (document) | `DOCUMENT_EXTRACTION_PROMPT` | Document text | 3-10 themes with dimension tags |
-| 2 | Synthesis | `FULL_SYNTHESIS_PROMPT` x 11 | Fragments per dimension | Summary, themes, gaps, confidence |
-| 2 | Knowledge Summary | `KNOWLEDGE_SUMMARY_PROMPT` | Up to 50 fragments | Narrative + suggested questions |
+| 2 | Synthesis (full) | `FULL_SYNTHESIS_SYSTEM` x 11 | Fragments per dimension | summary, gaps, confidence **(read)**; keyThemes, keyQuotes, contradictions, subdimensions **(written, unread)** |
+| 2 | Synthesis (incremental) | `INCREMENTAL_SYNTHESIS_SYSTEM` | Existing synthesis + new fragments | same shape |
+| 2 | Knowledge Summary | see `lib/knowledge-summary.ts` | Up to 50 fragments | Narrative + suggested questions |
 | 3 | Generate (initial) | Generation prompt (versioned) | Active fragments from DB | Vision, Strategy, Objectives |
-| 3 | Generate (refresh) | `STRATEGY_UPDATE_PROMPT` | Previous strategy + syntheses + delta | Updated Decision Stack |
+| 3 | Generate (refresh) | `prompts/stages/generation.ts` | Previous stack + synthesis summaries + delta | Updated Decision Stack |
+| 3 | Generate (opportunities) | `prompts/stages/generation.ts` | Fragments + synthesis summaries + stack | `DecisionStackComponent` rows |
 
 ### Module Structure
 
@@ -409,6 +434,16 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
+
+### 2026-08-29: Documentation corrected against a full schema/code cross-reference
+
+**Context:** A cross-reference of all 225 scalar schema fields against their readers found §3 and §4 describing a system that no longer existed. The ERD named `GeneratedOutput`, `StrategyVersion` and (in the 2026-03-28 log entry) `UserContent` — all retired when the strategy side moved to `DecisionStack`. §4 showed a "Key Themes (Strategy Page)" surface removed in an earlier refactor. §5 named three prompt constants renamed by the 2026-08-27 seam consolidation.
+
+**Change:** §3 ERD now shows `DecisionStack` / `DecisionStackComponent` / `DecisionStackSnapshot`. §4 drops the removed surface and marks which `DimensionalSynthesis` fields are actually read. §5 notes that `LLM_POLICY` (26 contexts) is authoritative and adds the missing opportunity-generation and incremental-synthesis stages.
+
+**Also found, not yet actioned:** four `DimensionalSynthesis` fields (`keyQuotes`, `contradictions`, `subdimensions`, and `keyThemes` outside the incremental path) are written and never read — 37% of that stage's output. Full findings and dispositions in `docs/_plans/2026-08-29-knowledge-architecture-audit.md` and `2026-08-29-service-blueprints.md` (local).
+
+**Architecture impact:** Documentation only. No code change.
 
 ### 2026-08-27: Govern voice at the LLM call seam; split stage prompts into a cached prefix
 
