@@ -7,6 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1] - 2026-09-02
+
+### Removed — four `DimensionalSynthesis` columns nothing read (2026-08-29)
+
+`keyThemes`, `keyQuotes`, `contradictions` and `subdimensions` are gone from the schema.
+All four were produced by every synthesis call. Three had no consumer anywhere. `keyThemes`
+had exactly one — the incremental path, ~13% of runs, while the field was produced on 100%
+of them — and a 10-dimension A/B measured continuity against the prior summary at 98% with
+it and 98% without, for 10% fewer output tokens. `summary` was carrying the continuity all
+along.
+
+Together they were 37% of `full_synthesis` output, on the stage that is ~61% of workload
+cost. A live defect closed on the way out: the incremental prompt asked for "existing + new"
+while the payload never passed the existing ones, so every incremental update destroyed and
+regenerated them. Nobody noticed, because nothing read them.
+
+**This is a destructive migration and the data is not recoverable.** Ordering is code first,
+columns second — dropping them while an older deployment is live 500s every synthesis read.
+Reasoning and the SQL are in `prisma/SCHEMA_CHANGELOG.md`.
+
+### Changed — project bundle format v2 (2026-09-02)
+
+`syntheses[]` loses the same four fields, and `BUNDLE_VERSION` goes 1 → 2. The four
+committed demos were migrated in place rather than re-exported: the change is a pure field
+removal, and re-exporting would have pulled today's dev DB over bundles curated in April.
+**A v1 bundle no longer restores** — strip the four keys and set `bundleVersion: 2`.
+
+The bundle tooling was missed entirely by the original removal and only surfaced when the
+preview build failed. See below.
+
+### Fixed — synthesis responses using unicode punctuation structurally (2026-09-02)
+
+A `full_synthesis` response closed its `gaps` array and wrote U+3001 IDEOGRAPHIC COMMA where
+the ASCII comma belonged: `}]、"confidence": "MEDIUM"}`. `JSON.parse` rejects it,
+`fullSynthesis` catches the throw, and the user gets a synthesis whose only gap reads
+"Synthesis failed — Could not parse LLM response". `gaps` is the one synthesis field
+rendered to the user as a call to action, so the failure surfaces as strategy content.
+
+Root cause established by measurement, not inspection. **Not truncation** — `stop_reason`
+`end_turn`, 1961 of 4000 output tokens. **Not the 2026-08-27 control-character fix's
+business** — that escapes illegal characters inside string literals; this one is outside,
+where the only legal characters are `{}[]:,`, whitespace and literals, so any non-ASCII is
+malformed by definition. Reproduced by replaying the exact fragments that failed
+(PRODUCT_EXPERIENCE, 10 fragments) 12 times: 1 failure, 8%; the 11 that parsed carried no
+structural non-ASCII at all.
+
+The brace walk already tracked string state, so it now maps structural unicode look-alikes
+to their ASCII twins in the same pass. The real captured response is committed as a fixture.
+No prod row has ever carried the placeholder gap.
+
+### Fixed — `npm run verify` was not a sound gate for schema changes (2026-09-02)
+
+`type-check` now runs `prisma generate` first. It had been type-checking against whatever
+client happened to sit in `node_modules`, so eight references to the dropped columns in the
+bundle tooling passed locally and failed the preview build. `verify` and the pre-push hook
+inherit the fix.
+
+`prisma/env.ts` also documents the trap that sent a preview-targeted `prisma db push` at the
+dev database: prefixing the CLI with `DATABASE_URL=` does not retarget it, because the CLI
+loads `./.env` and that wins. The command reported success; the datasource host was the only
+tell. Use `db execute --url`.
+
+### Added — ground truth preflight prototype, Phase 1 (2026-08-27)
+
+`src/components/ui/review-pass.tsx` (28 tests) plus `/prototype/ground-truth` — page, fixture
+builder, and an instrument that reads five pre-registered questions off a real run. Two
+layouts, one-at-a-time and a compact ten-at-a-time matrix, instrumented as an A/B. No DB, no
+schema. A review pass walks a fixed list snapshotted on mount, after the walk was found
+silently skipping every second item.
+
+### Documented
+
+The v2 ERD named two retired models, §4 showed a deleted surface and §5 named three prompt
+constants that no longer exist; corrected and bumped to v2.1. `ARCHITECTURE.md` now warns
+that contracts are type-level only — 5 of 6 validators are never called in production. Added
+`docs/architecture/service-blueprints.md`: ten user tasks mapped above and below the line,
+each row naming its governing file, plus a dispositions register so the next reader does not
+"fix" a deliberate decision.
+
+Also recorded: **the narrower-ask hypothesis was falsified.** Removing four outputs did not
+reduce manufacturing — motive-assertion in gaps held at 3 and total gaps rose 14%. Narrowing
+the ask relocates invention, it does not reduce it.
+
 ## [2.6.0] - 2026-08-27
 
 ### Documented — the Generate Strategy CTA is green on purpose (2026-08-27)
