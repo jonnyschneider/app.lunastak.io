@@ -10,6 +10,16 @@
  * does not support all DDL operations and tends to drop schema-change
  * statements silently.
  *
+ * ⚠ Do NOT target an env by prefixing a Prisma CLI call with DATABASE_URL=…
+ * The Prisma CLI loads ./.env itself and that value wins, so the command runs
+ * against DEV while reporting success. Caught 2026-09-02 when a `prisma db push`
+ * aimed at preview silently dropped four columns on dev instead — the only tell
+ * was the datasource host in the output.
+ *
+ * Use a flag that takes the URL explicitly and cannot be overridden:
+ *   npx prisma db execute --url "$(… loadDbEnv('preview').unpooled …)" --file x.sql
+ * Then confirm with `npm run db:check-drift` before believing it landed.
+ *
  *   import { loadDbEnv, ENV_NAMES } from './env'
  *   const dev = loadDbEnv('dev')        // { pooled, unpooled }
  *   for (const env of ENV_NAMES) { ... } // run a script across all envs

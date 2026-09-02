@@ -11,7 +11,7 @@
     "test": "vitest run",
     "smoke": "vitest run --reporter=verbose smoke",
     "verify": "npm run type-check && npm run test && npm run smoke",
-    "type-check": "tsc --noEmit",
+    "type-check": "prisma generate && tsc --noEmit",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
