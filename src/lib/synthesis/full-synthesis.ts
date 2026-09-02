@@ -15,14 +15,10 @@ export async function fullSynthesis(
   if (fragments.length === 0) {
     return {
       summary: '',
-      keyThemes: [],
-      keyQuotes: [],
       gaps: [{
         title: 'No insights yet',
         description: `No fragments captured yet for ${dimension.replace(/_/g, ' ').toLowerCase()}`
       }],
-      contradictions: [],
-      subdimensions: null,
       confidence: 'LOW'
     }
   }
@@ -58,14 +54,10 @@ export async function fullSynthesis(
     console.error('[Synthesis] Failed to parse response:', content)
     return {
       summary: '',
-      keyThemes: [],
-      keyQuotes: [],
       gaps: [{
         title: 'Synthesis failed',
         description: 'Could not parse LLM response - please try again'
       }],
-      contradictions: [],
-      subdimensions: null,
       confidence: 'LOW'
     }
   }

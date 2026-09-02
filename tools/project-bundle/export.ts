@@ -77,11 +77,7 @@ async function main() {
       syntheses: project.dimensionalSyntheses.map((s) => ({
         dimension: s.dimension,
         summary: s.summary,
-        keyThemes: s.keyThemes,
-        keyQuotes: s.keyQuotes,
         gaps: s.gaps,
-        contradictions: s.contradictions,
-        subdimensions: s.subdimensions,
         confidence: s.confidence,
         fragmentCount: s.fragmentCount,
         synthesisVersion: s.synthesisVersion,

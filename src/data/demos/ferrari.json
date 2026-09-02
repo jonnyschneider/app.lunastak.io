@@ -1,5 +1,5 @@
 {
-  "bundleVersion": 1,
+  "bundleVersion": 2,
   "projectId": "cmnxrkvuv0094ow1betk3sjzr",
   "projectName": "Ferrari",
   "isDemo": true,
@@ -679,22 +679,6 @@
     {
       "dimension": "BUSINESS_MODEL_ECONOMICS",
       "summary": "Ferrari's business model economics represent a fundamental category shift from automotive manufacturing to luxury goods, achieving gross margins of 50% (versus 7-22% for traditional automakers) and EBITDA margins of 38.8%. The company generates over $170,000 in gross profit per car—more than the entire retail price of most luxury sedans—and trades at 35x P/E, on par with Hermès and LVMH rather than automotive peers at 8-10x. This economic transformation was unlocked by the 2015 IPO, which freed Ferrari from Fiat's conglomerate incentives (platform sharing, volume maximization, cost reduction) that were structurally destructive to luxury positioning. The journey from a $6.8M valuation in 1969 to a $90B peak market cap demonstrates how spectacularly the business was undervalued when treated as an automotive division rather than what it actually is: a luxury company that happens to make cars.\n\nThe economics are structured around three revenue pillars with dramatically different margin profiles. Core cars and spare parts (84% of $8.2B revenue) generate 50% gross margins through build-to-order customization that adds 20-100% to base prices. Supercars (1-5% of volume) represent the profit crown jewel: the F80 alone—799 units at ~$4M average—generates approximately $1.25B in revenue (15% of annual total) at 80-90% gross margins, contributing roughly 30% of annual profits in its delivery year. The Icona series was explicitly introduced to smooth the volatility of decade-apart supercar launches, creating predictable high-margin revenue streams. Formula 1 operations (11.5% of revenue under sponsorship/commercial/brand) have evolved from pure marketing expense into a genuine profit center valued at $6.5B, simultaneously serving as myth factory, R&D laboratory, and revenue generator. Brand licensing, while nearly 100% margin, remains tightly controlled after the Acer netbook debacle—the discipline to refuse easy licensing revenue is part of what separates Ferrari from diluted luxury brands.",
-      "keyThemes": [
-        "Luxury goods economics in automotive form: 50% gross margins versus 7-22% for traditional automakers",
-        "Supercar tier as margin-smoothing profit machine: 1-5% of volume contributing ~30% of annual profits",
-        "IPO as category liberation: freed from conglomerate incentives that were structurally destructive to luxury positioning",
-        "Build-to-order customization as dual profit and scarcity mechanism: 20-100% price premiums with perfect demand visibility through 2027",
-        "Formula 1 transformed from cost center to profit center: $6.5B valuation, 11.5% of revenue, simultaneous myth factory and R&D lab",
-        "Tiered product architecture creating aspiration-driven retention: Range (85%) → Special Series (10%) → Icona (~$2.3M) → Supercar ($3.5-5M)",
-        "Public market tension: luxury discipline (sacrificing short-term revenue) versus Wall Street expectations (consistent growth)"
-      ],
-      "keyQuotes": [
-        "Ferrari has a higher market capitalization than Ford, despite Ford making 160 times the number of cars that Ferrari does.",
-        "The average gross profit per car exceeds $170,000—more than the entire retail price of your average luxury sedan.",
-        "It's not a car company. That is the answer here.",
-        "All of these [F80 supercars] were sold out before the car was even announced to the public.",
-        "Can you imagine doing that as a publicly traded company? [cutting production 50% to restore scarcity]"
-      ],
       "gaps": [
         {
           "title": "Capital intensity and manufacturing economics",
@@ -721,18 +705,6 @@
           "description": "How many Icona cars are produced annually? What are actual margins versus supercars? Has this tier successfully smoothed profit volatility as intended?"
         }
       ],
-      "contradictions": [
-        "Fragment 5 states management projected 5% annual revenue growth and the market cap dropped from $90B to $55B, suggesting pricing power limits. However, Fragment 11 shows Ferrari still commands 50% gross margins and Fragment 12 shows supercars selling out instantly at $4M—indicating pricing power remains strong. The contradiction may be between management's conservative guidance and actual pricing capability.",
-        "Fragment 23 highlights the tension between luxury discipline (cutting production) and public market expectations (consistent growth), yet Fragment 20 shows Ferrari successfully maintained 15 years of production restraint (1991-2006) and Fragment 27 describes ongoing discipline (Purosangue capped at 20%). This suggests the tension exists but hasn't yet forced a compromise—the question is whether this can continue.",
-        "Fragment 29 describes brand licensing as 'nearly 100% margin revenue' that was 'critical during Ferrari's turnaround period (1992-1997) when the car business was losing money,' but Fragment 24 characterizes licensing as 'a permanently available weapon of self-destruction.' The contradiction is whether licensing is a legitimate revenue stream or a brand-diluting temptation—likely both, with the answer depending on execution discipline."
-      ],
-      "subdimensions": {
-        "Profit Concentration": "Supercar economics as structural profit driver: 1-5% of volume contributing ~30% of profits; Icona series as volatility-smoothing mechanism; customization adding 20-100% premiums",
-        "Revenue Architecture": "Three-pillar structure: cars/parts (84%, 50% gross margin), sponsorship/F1/brand (11.5%, high margin), financial services/engines (4.5%); tiered product strategy from Range cars to supercars creating margin diversity",
-        "Public Market Tension": "Structural conflict between luxury discipline (production restraint, refusing easy revenue) and Wall Street expectations (consistent growth); 2025 guidance of 5% growth causing $35B market cap decline",
-        "Valuation Transformation": "Journey from $6.8M (1969) to $192M (1988) to $9.8B IPO (2015) to $90B peak; IPO as category liberation from conglomerate constraints; luxury goods multiples (35x P/E) versus automotive (8-10x)",
-        "Demand Visibility & Risk Management": "Build-to-order eliminating inventory risk; 2-year waitlist providing perfect demand visibility through 2027; central allocation control reversing typical dealer power dynamics"
-      },
       "confidence": "HIGH",
       "fragmentCount": 31,
       "synthesisVersion": "v1"
@@ -740,22 +712,6 @@
     {
       "dimension": "CAPABILITIES_ASSETS",
       "summary": "Ferrari's capabilities are defined by a unique trifecta that no competitor can replicate: a world-class Formula 1 racing team, a world-class racing car construction company, and the full suite of services for private clients — all under one roof since 1947. The physical infrastructure centers on the Maranello campus where 'trucks roll up to the factory with raw ingots of aluminum and they are casting entire engines themselves right there,' creating vertical integration so extreme it would be economically irrational for any scale manufacturer. This isn't inefficiency to be optimized — 'part of what you are buying is the lore. You kind of like the fact that this is a pseudo-handmade bespoke, inefficient manufacturing process.' The F1 team sits across the street from road car production, enabling technology transfer within weeks rather than years, while simultaneously serving as myth factory, R&D laboratory, and genuine profit center (valued at $6.5B, generating 11.5% of revenue).\n\nFerrari operates at a 'Goldilocks' scale — ~14,000 cars per year is large enough to support F1, full vertical integration, global dealer networks, Ferrari Classiche, and 4 new models annually, yet small enough to maintain handmade character and genuine scarcity. The company likely maintains a comprehensive database mapping every owner to every serial number across all 330,000 cars ever produced, enabling precise allocation management and tier advancement. Leadership succession has been critical: Enzo built the myth, Montezemolo executed the luxury turnaround ('Luca is the one who realized that Ferrari is a luxury company'), Marchionne engineered the IPO, and Vigna (a semiconductor physicist with an iPhone accelerometer patent) was chosen for the technology transition ahead. The 61-year Pininfarina partnership created a design heritage analogous to Jobs-Ive, now transitioning to LoveFrom for the electric era.",
-      "keyThemes": [
-        "Unique trifecta: F1 team + racing car construction + private client services under one roof since 1947",
-        "Extreme vertical integration at Maranello: raw aluminum to finished car, enabling rapid iteration and artisan narrative",
-        "F1 as simultaneous myth factory, R&D laboratory, and profit center ($6.5B valuation, 11.5% of revenue)",
-        "Goldilocks scale economy: 14,000 cars/year — large enough for infrastructure, small enough for exclusivity",
-        "Comprehensive customer database mapping 330,000 cars to owners enables allocation control and tier management",
-        "Leadership succession as capability evolution: Enzo (myth), Montezemolo (luxury), Marchionne (finance), Vigna (technology)",
-        "Design heritage through 61-year Pininfarina partnership, analogous to Jobs-Ive collaboration"
-      ],
-      "keyQuotes": [
-        "It is the combination of three things under one roof: a world-class racing team, a world-class racing car and racing car heritage construction company, and the suite of services and people needed to operate that available for hire to private clients.",
-        "Part of what you are buying is the lore. You kind of like the fact that this is a pseudo-handmade bespoke, inefficient manufacturing process to make it. It's wrapped up in the value proposition.",
-        "They have trucks that roll up to the factory with raw ingots of aluminum and they are casting entire engines themselves right there in Maranello.",
-        "They have power because of their scale economies and because they're like Goldilocks. They're just right.",
-        "Luca is the one who realized that Ferrari is a luxury company. To Enzo, Ferrari was a racing company that sold a connection to that to its clients."
-      ],
       "gaps": [
         {
           "title": "Supplier relationships and dependencies",
@@ -778,16 +734,6 @@
           "description": "No mention of software engineering, digital customer experience, connected car capabilities, or data analytics infrastructure beyond the customer database speculation"
         }
       ],
-      "contradictions": [
-        "Fragment 3 states 'every car is assembled by humans at every station (except windshield installation for safety)' suggesting minimal automation, while Fragment 9 mentions 'any car can be made on any manufacturing line' which typically requires significant flexible automation infrastructure — unclear how much is truly handmade vs. flexibly automated",
-        "Fragment 13 describes Marchionne as 'not a car guy' and Fragment 7 notes he 'transferred $3.2B of Fiat Chrysler debt to Ferrari' suggesting financial extraction, yet Fragment 18 emphasizes Ferrari maintained 'the soul of a standalone company' even under Fiat ownership — tension between independence narrative and financial reality"
-      ],
-      "subdimensions": {
-        "Knowledge Assets": "77+ years racing heritage, design language from Pininfarina partnership, technology transfer pipeline F1-to-road, customer database and allocation intelligence",
-        "Leadership Evolution": "Succession through Enzo (myth-maker), Montezemolo (luxury strategist), Marchionne (financial engineer), Vigna (technology transition)",
-        "Physical Infrastructure": "Maranello campus, vertical integration from raw materials to finished cars, Fiorano test track, F1 facilities adjacent to road car production",
-        "Organizational Capabilities": "F1 team operations, rapid model development (4 new models/year), flexible manufacturing, customer relationship management across 330,000 cars"
-      },
       "confidence": "HIGH",
       "fragmentCount": 19,
       "synthesisVersion": "v1"
@@ -795,22 +741,6 @@
     {
       "dimension": "COMPETITIVE_LANDSCAPE",
       "summary": "Ferrari occupies a structurally unique competitive position that is nearly impossible to replicate. The company has achieved what the hosts describe as 'the highest ratio of people who know about their products to people who actually own their products of any company in human history' — a scarcity-awareness paradox that is self-reinforcing and central to the business model. Traditional luxury automotive competitors have either diluted their brands through volume (Porsche ships 22x more cars, 60% SUVs on shared platforms), failed operationally (McLaren's ownership chaos, Aston Martin's business failures), or lack the heritage infrastructure (Pagani and Koenigsegg too small to build the ecosystem). Lamborghini, the nearest competitor at 11,000 cars annually, has seen Ferrari pull away to a 50% price premium ($500K vs $340K ASP) while 60% of Lamborghinis are now platform-shared Urus SUVs built on VW architecture. The fundamental barrier is continuity: 'There are no other Ferraris because of the continuity. Even through all the crazy ups and downs, Ferrari has always been Ferrari.'\n\nFerrari is structurally counter-positioned against conglomerate auto groups that optimize for platform sharing and scale economies. 'No Ferrari shares a platform with any other car' — a choice that would be irrational for volume manufacturers but is existential for maintaining the myth. This enables 50% gross margins (versus 7-25% for all other automakers) and 38.8% EBITDA margins that place Ferrari in luxury goods territory alongside Hermès and LVMH, not automotive. The market validates this: Ferrari trades at ~35x P/E versus 8-10x for Porsche and other premium automakers. The emerging competitive threat is not traditional Western luxury brands but the EV transition and potential Chinese alternatives — though current signals suggest 'zero interest in electric supercars' among traditional buyers, and Ferrari's China exposure has contracted to just 7% of sales. The existential question is whether the emotional experience can survive electrification, or whether 'the next supercar brands be built around EVs and probably be built in China.'",
-      "keyThemes": [
-        "Scarcity-awareness paradox creates structural moat versus all competitors",
-        "Traditional Western competitors weakening through volume dilution or operational failure",
-        "Counter-positioning against platform-sharing conglomerates enables luxury-goods economics",
-        "Heritage and continuity as unreplicable cornered resource",
-        "Goldilocks scale: large enough for infrastructure, small enough for exclusivity",
-        "EV transition and Chinese market emergence as new competitive dynamics",
-        "Performance commoditization forcing industry-wide value proposition shift"
-      ],
-      "keyQuotes": [
-        "Ferrari has the highest ratio of people who know about their products to people who actually own their products of any company in human history.",
-        "There are no other Ferraris because of the continuity. Even through all the crazy ups and downs, Ferrari has always been Ferrari.",
-        "No Ferrari shares a platform with any other car.",
-        "The thing that makes you successful at scale prevents you from being able to execute Ferrari's strategy.",
-        "When you buy a Lamborghini Urus, you are buying a car that is essentially a Volkswagen Touareg."
-      ],
       "gaps": [
         {
           "title": "New entrant threat assessment incomplete",
@@ -829,15 +759,6 @@
           "description": "Does Ferrari compete with other ultra-luxury purchases (watches, yachts, art) for share of wallet among UHNW individuals? How does Ferrari's value proposition compare to these alternatives?"
         }
       ],
-      "contradictions": [
-        "Fragment 2 states 'Speed is no longer relevant' and performance is commoditized, yet Fragment 11 notes 'zero interest in electric supercars' among traditional collectors — suggesting performance characteristics (sound, engagement, mechanical connection) may still matter deeply, just not raw acceleration numbers.",
-        "Fragment 12 suggests Chinese EV manufacturers pose a competitive threat, but also argues 'the job to be done by an EV is completely different than the job to be done by owning a Ferrari' — unclear whether EVs are direct competitors or serve fundamentally different customer needs."
-      ],
-      "subdimensions": {
-        "Emerging Threats": "EV transition, Chinese market dynamics, performance commoditization, potential indigenous Chinese luxury brands",
-        "Structural Positioning": "Counter-positioning against platform-sharing conglomerates, Goldilocks scale economies, refusal to share components",
-        "Traditional Western Competitors": "Lamborghini, Porsche, McLaren, Aston Martin, Pagani, Koenigsegg — characterized by volume dilution, platform sharing, operational failures, or insufficient scale"
-      },
       "confidence": "MEDIUM",
       "fragmentCount": 12,
       "synthesisVersion": "v1"
@@ -845,22 +766,6 @@
     {
       "dimension": "CUSTOMER_MARKET",
       "summary": "Ferrari's customer market is structured as a multi-tiered pyramid with extraordinary concentration at the top and massive cultural reach at the base. Of approximately 14,000 cars shipped annually, 81% go to existing clients and 48% to multi-car collectors — fewer than 3,000 new customers enter the ecosystem each year. This concentration is intentional: Ferrari's growth mechanism is deepening wallet share with proven clients rather than acquiring new ones. The typical buyer is a 52-year-old male, but the ecosystem extends far beyond car ownership to include 400 million Tifosi fans worldwide who create cultural resonance that amplifies rather than dilutes exclusivity.\n\nThe pyramid operates with distinct engagement tiers: 400M+ fans at the base, secondary market buyers and 180,000 active/lapsed owners in the middle, and multi-car collectors at the apex who own 10-20+ Ferraris worth tens of millions. Access to higher product tiers (Icona at $2.3M, supercars at $3.5-5M) requires demonstrated loyalty through previous purchases, creating an aspiration-driven retention mechanism. Ferrari is now expanding the pyramid in multiple dimensions: adding height through new tiers like Icona, adding width through lifestyle merchandise (35% female buyers) and the Luce EV targeting tech-oriented demographics, and adding depth through programs like track days and Classiche. The discipline is that each expansion must enhance the tiers above it — the Purosangue FUV exemplifies this with its V12 engine and 20% production cap explicitly sacrificing volume for brand protection.\n\nCustomers construct elaborate 'functional alibis' for what is fundamentally an emotional purchase — engineering excellence, racing heritage, investment value, craftsmanship — each genuinely true, making them powerful rationalizations. Ferrari likely maintains comprehensive CRM tracking all 330,000 cars ever produced mapped to owners, enabling precise allocation management and tier advancement. The brand's dual identity as exclusive luxury brand and inclusive sports team creates a unique network economy where mass awareness amplifies exclusivity. While traditional Western competitors weaken, emerging Chinese EV manufacturers present a longer-term question about whether Chinese wealth will continue aspiring to European luxury brands, though Ferrari's current 7% China exposure contains near-term risk.",
-      "keyThemes": [
-        "Extreme customer concentration: 81% of sales to existing clients, fewer than 3,000 new customers annually",
-        "Multi-tiered pyramid structure from 400M fans to ultra-wealthy collectors owning 10-20+ cars",
-        "Aspiration-driven retention through invitation-only access to higher product tiers requiring demonstrated loyalty",
-        "Dual identity as exclusive luxury brand and inclusive sports team amplifies rather than dilutes exclusivity",
-        "Strategic pyramid expansion in multiple dimensions: height (new tiers), width (new demographics), depth (engagement programs)",
-        "Functional alibis enable rational justification for emotional purchases",
-        "Demographic diversification through lifestyle merchandise (35% female) and Luce EV targeting tech-conscious buyers"
-      ],
-      "keyQuotes": [
-        "About 80% of them are earmarked specifically for people who already own a Ferrari. So that means there's less than 3,000 new customers buying Ferraris in any given year.",
-        "In luxury, you never want a customer to feel like they've done it all. You want a place for them to graduate to.",
-        "Ferrari is both a luxury brand and a giant international sports team. Ferrari is Hermes and Manchester United smashed together.",
-        "Treat an American like a hick and you'll own him for life.",
-        "I don't think it's a layer in the pyramid. I think it's a new pyramid."
-      ],
       "gaps": [
         {
           "title": "Customer acquisition economics and CAC",
@@ -887,37 +792,6 @@
           "description": "How does Ferrari influence or manage the secondary market where 300,000 of 330,000 cars reside? Do they track secondary transactions? How do secondary prices affect new car demand and brand perception?"
         }
       ],
-      "contradictions": [
-        "Fragment 9 suggests the Luce 'is a new pyramid' separate from the existing customer base, while Fragment 12 describes growth as 'expanding the pyramid in multiple dimensions' — unclear whether Luce creates a parallel ecosystem or integrates into the existing structure",
-        "Fragment 2 emphasizes that mass fandom 'amplifies rather than dilutes exclusivity,' but Fragment 13 raises questions about whether Chinese buyers will continue aspiring to European luxury brands — suggesting cultural context may determine whether broad awareness enhances or undermines exclusivity in different markets"
-      ],
-      "subdimensions": {
-        "Pyramid Structure": [
-          1,
-          3,
-          6,
-          8,
-          11,
-          12
-        ],
-        "Purchase Psychology": [
-          5,
-          7
-        ],
-        "Competitive Dynamics": [
-          13
-        ],
-        "Cultural Ecosystem & Fandom": [
-          2,
-          7
-        ],
-        "Customer Demographics & Segmentation": [
-          1,
-          4,
-          9,
-          10
-        ]
-      },
       "confidence": "HIGH",
       "fragmentCount": 13,
       "synthesisVersion": "v1"
@@ -925,24 +799,6 @@
     {
       "dimension": "DIFFERENTIATION_ADVANTAGE",
       "summary": "Ferrari's differentiation advantage rests on a paradox that no competitor has replicated: it is simultaneously the world's most exclusive luxury brand and the world's most popular sports team. With 400 million Tifosi fans globally versus only ~330,000 cars ever produced, Ferrari has 'the highest ratio of people who know about their products to people who actually own their products of any company in human history.' This scarcity-awareness paradox is self-reinforcing—mass cultural resonance amplifies rather than dilutes exclusivity because the fans create the emotional context that makes ownership meaningful. The business model is the gap itself: 'We don't sell a car, we sell a dream.'\n\nFerrari's advantage compounds through irreproducible continuity. It is the only company to house three capabilities under one roof since 1947: a world-class F1 team, a world-class racing car manufacturer, and complete private client infrastructure—all on the same Maranello campus. This enables technology transfer ('right across the street'), narrative authenticity (your car shares DNA with the current F1 car), and an ecosystem of track programs, certifications, and rituals that smaller competitors cannot afford and larger manufacturers cannot justify. The advantage is protected by cornered resources built over 77 years—Enzo's myth, papal condemnation as 'Industrial Saturn,' deaths that proved these are not toys, the prancing horse bestowed by a war hero's mother, and unbroken F1 participation since 1950. Competitors like McLaren, Aston Martin, and Lamborghini lack either the continuity, the racing heritage, or the discipline. Ferrari is structurally counter-positioned against platform-sharing conglomerates: 'No Ferrari shares a platform with any other car'—a choice that would destroy margins for VW or Toyota but is existential for Ferrari.\n\nThe differentiation manifests in economics that resemble luxury goods, not automobiles: 50% gross margins, $170K+ gross profit per car, and 35x P/E multiples matching Hermes and LVMH. The advantage is defended through relentless scarcity discipline—Enzo's dictum that 'Ferrari will always deliver one car less than the market demand'—which was violated during the Fiat interregnum (production doubled, brand nearly collapsed) and restored by Montezemolo over 15 years of production cuts. Ferrari systematically leaves money on the table in every market, every year, forever. This is the opposite of rational economic behavior, and it is precisely what makes the company worth $55 billion.",
-      "keyThemes": [
-        "Scarcity-awareness paradox: mass cultural resonance amplifies rather than dilutes exclusivity",
-        "Unique tri-capability integration: F1 team, racing car manufacturer, and private client infrastructure under one roof since 1947",
-        "Cornered resources built over 77+ years: myth, heritage, tragedy, papal condemnation, and unbroken F1 continuity",
-        "Counter-positioning against platform-sharing conglomerates: no shared parts, vertical integration as brand protection",
-        "Luxury economics, not automotive: 50% gross margins, $170K+ profit per car, trading at luxury goods multiples",
-        "Relentless scarcity discipline: 'always deliver one car less than market demand' as existential strategic principle",
-        "The dream is the product, the car is the delivery mechanism: selling transcendence, not transportation"
-      ],
-      "keyQuotes": [
-        "Ferrari has the highest ratio of people who know about their products to people who actually own their products of any company in human history.",
-        "We don't sell a car, we sell a dream.",
-        "Ferrari will always deliver one car less than the market demand.",
-        "It is the combination of three things under one roof: a world-class racing team, a world-class racing car and racing car heritage construction company, and the suite of services and people needed to operate that available for hire to private clients.",
-        "There are no other Ferraris because of the continuity. Even through all the crazy ups and downs, Ferrari has always been Ferrari.",
-        "Ferrari is both inclusive and exclusive. It has the exclusivity of a luxury brand, but the inclusivity of a sports team.",
-        "No Ferrari shares a platform with any other car."
-      ],
       "gaps": [
         {
           "title": "How does Ferrari defend against EV disruption?",
@@ -965,62 +821,6 @@
           "description": "Fragment 18 describes an 'aspiration-driven retention mechanism' where you need to keep buying to ascend tiers, but notes this is 'distinct from traditional switching costs.' What prevents a wealthy collector from simply buying a Pagani or McLaren instead of their 11th Ferrari? Is it purely social/aspirational, or are there harder locks (access to events, dealer relationships, resale value protection)?"
         }
       ],
-      "contradictions": [
-        "Fragment 7 states Ferrari's branding is 'slightly less efficient' than pure luxury goods because 'a Ferrari has to elicit emotion from you' through actual performance, while Fragment 9 argues Ferrari has achieved 'tautological brand status' where the brand IS the product. These aren't necessarily contradictory, but they create tension: does Ferrari's differentiation depend on the car delivering a distinct experience, or on the myth being intellectually inseparable from the object?",
-        "Fragment 12 debates whether Ferrari's refusal to share platforms constitutes formal 'counter-positioning' in the Hamilton Helmer sense—Ben argued yes, David was uncertain. This suggests ambiguity about whether the differentiation is a deliberate strategic choice that incumbents cannot copy (counter-positioning) or simply a different business model that happens to be incompatible with scale manufacturing.",
-        "Fragment 22 describes Montezemolo cutting production nearly in half and maintaining discipline for 15 years, while Fragment 23 describes Ferrari planning to launch 4 new models per year over the next 5 years. These could be compatible (more models, same total volume), but the fragments don't clarify whether the rapid model turnover represents a shift away from scarcity discipline or a new form of it."
-      ],
-      "subdimensions": {
-        "Structural Moats": [
-          6,
-          8,
-          11,
-          12,
-          24,
-          25,
-          26,
-          27,
-          36
-        ],
-        "Brand Architecture": [
-          1,
-          2,
-          3,
-          4,
-          9,
-          20,
-          27,
-          29,
-          30,
-          32
-        ],
-        "Competitive Positioning": [
-          7,
-          10,
-          31,
-          34,
-          35
-        ],
-        "Go-to-Market Discipline": [
-          16,
-          17,
-          18,
-          19,
-          21,
-          22,
-          23,
-          28,
-          33,
-          38
-        ],
-        "Economic Differentiation": [
-          5,
-          13,
-          14,
-          15,
-          37
-        ]
-      },
       "confidence": "HIGH",
       "fragmentCount": 38,
       "synthesisVersion": "v1"
@@ -1028,19 +828,6 @@
     {
       "dimension": "GO_TO_MARKET",
       "summary": "Ferrari's go-to-market strategy is built on a pyramid infrastructure that manages scarcity and aspiration across multiple customer tiers. At the base are 400M+ Tifosi fans, progressing through secondary market buyers (the 'entry-level Ferrari is really a used Ferrari'), active and lapsed owners (180,000 total), and culminating with multi-car collectors who access Icona and supercar models. The entire system is designed so that 'you never want a customer to feel like they've done it all. You want a place for them to graduate to.' Ferrari has fundamentally restructured the dealer relationship, centralizing allocation control and customer relationships while dealers serve as 'franchised service and delivery infrastructure.' Dealers are incentivized through 100% economics on secondary market transactions, creating a thriving used market that feeds the entry pipeline.\n\nGeographic distribution functions as a deliberate scarcity lever. Sales historically divided in thirds between Italy, America, and rest of Europe, with China intentionally limited to 7% (versus Porsche's 33%). The philosophy is clear: 'It's not that you can't produce any more units without diluting your brand. It's that you can't sell any more units into your current market without diluting your brand. New markets are perfectly allowed.' This enables volume growth while preserving local rarity. Beyond the core automotive business (52-year-old male, 90% male), Ferrari is expanding the pyramid base through lifestyle merchandise and partnerships (Luxottica, Montblanc, Richard Mille, Puma), attracting 35% female buyers. The Luce EV with Jony Ive's LoveFrom explicitly targets a different demographic—technology-oriented, design-conscious, potentially younger and more gender-balanced—widening the base without touching the apex.",
-      "keyThemes": [
-        "Pyramid infrastructure with graduated aspiration tiers from fans to multi-car collectors",
-        "Geographic scarcity management: new markets enable growth without local dilution",
-        "Centralized allocation control with dealers as service infrastructure, not independent businesses",
-        "Secondary market as intentional entry-level pipeline with dealer incentive alignment",
-        "Demographic expansion through lifestyle and Luce EV without compromising automotive core"
-      ],
-      "keyQuotes": [
-        "In luxury, you never want a customer to feel like they've done it all. You want a place for them to graduate to.",
-        "It's not that you can't produce any more units without diluting your brand. It's that you can't sell any more units into your current market without diluting your brand. New markets are perfectly allowed.",
-        "the entry-level Ferrari is really a used Ferrari",
-        "franchised service and delivery infrastructure with Ferrari owning the actual customer relationship"
-      ],
       "gaps": [
         {
           "title": "Allocation criteria and waitlist mechanics",
@@ -1063,13 +850,6 @@
           "description": "Beyond China timing with cultural acceptance of wealth display, what is Ferrari's systematic approach to evaluating and entering new geographic markets? What are the leading indicators?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": {
-        "Geographic Strategy": "Scarcity management through controlled regional distribution, new market timing and entry",
-        "Demographic Expansion": "Lifestyle merchandise and Luce EV targeting different demographics (younger, more female, tech-oriented) while preserving core automotive customer",
-        "Channel & Dealer Model": "Centralized allocation control, dealer as service infrastructure, secondary market incentive alignment",
-        "Customer Segmentation & Pyramid": "The tiered structure from 400M+ fans through secondary buyers, active/lapsed owners, to multi-car collectors, with graduated aspiration and access"
-      },
       "confidence": "MEDIUM",
       "fragmentCount": 4,
       "synthesisVersion": "v1"
@@ -1077,19 +857,6 @@
     {
       "dimension": "PROBLEM_OPPORTUNITY",
       "summary": "Ferrari's problem-opportunity space is fundamentally misunderstood if viewed through a transportation lens. As CEO Benedetto Vigna states directly: 'We don't sell a car, we sell a dream.' This reframes the entire competitive landscape—Ferrari isn't competing on horsepower, 0-60 times, or even driving dynamics in isolation. The company is solving for existential human needs: the desire for transcendence, self-expression, and vitality. Enzo Ferrari himself articulated this: 'One drives at high speeds in order to transcend oneself.'\n\nThe opportunity Ferrari addresses is deeply emotional and psychological. Customers are seeking 'a weapon that you can use to fight against death and scream into the void should you so choose.' This positions the car as merely a delivery mechanism for the actual product: the dream, the identity, the feeling of being maximally alive. This emotional core creates a durable competitive moat that insulates Ferrari from disruption by EVs or other technologies that may surpass combustion engines on raw performance metrics. The dream—not the specifications—is what customers are buying.",
-      "keyThemes": [
-        "The product is the dream, not the car itself",
-        "Solving for existential human needs: transcendence, vitality, self-expression",
-        "Emotional positioning creates immunity from technical disruption",
-        "Identity and passion as the core 'job to be done'",
-        "Performance metrics are secondary to the psychological experience"
-      ],
-      "keyQuotes": [
-        "We don't sell a car, we sell a dream.",
-        "One drives at high speeds in order to transcend oneself.",
-        "Buying a Ferrari, you are buying a weapon that you can use to fight against death and scream into the void should you so choose.",
-        "The dream is the product; the car is the delivery mechanism."
-      ],
       "gaps": [
         {
           "title": "Customer segmentation within the dream",
@@ -1112,8 +879,6 @@
           "description": "If the dream is the product, what other delivery mechanisms beyond cars could Ferrari explore? What else could carry this emotional payload?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "LOW",
       "fragmentCount": 1,
       "synthesisVersion": "v1"
@@ -1121,22 +886,6 @@
     {
       "dimension": "PRODUCT_EXPERIENCE",
       "summary": "Ferrari's product experience is fundamentally about engineering genuine emotion — 'a Ferrari has to elicit emotion from you. Ferrari can't just stamp the prancing horse on a car and call it a Ferrari.' Unlike pure luxury goods where brand alone justifies premium, Ferrari must deliver an actual distinct racing thrill engineered over decades, making its branding power harder to fake but also requiring the product to perform. The experience extends far beyond the car itself into a dense ecosystem: track days, XX programs, factory tours, Classiche certification, F1 car ownership programs, and elaborate delivery ceremonies borrowed from haute couture. This infrastructure is expensive but creates 'the forest and pyramid' that smaller competitors cannot replicate — the infrastructure IS the moat.\n\nThe product range is structured as a four-tier aspiration pyramid: Range cars (85% of units, $280K-$500K), Special Series (10%, $500K-$1M), Icona ($2.3M), and Supercars (1-5%, $3.5-5M), with undisclosed one-offs at the apex. Every car is effectively bespoke through extensive customization programs that add 20-100% to base price. The rapid product cadence (4 new models per year, discontinued every 4-5 years) creates constant anticipation and prevents any model from becoming too common. The defining product-market fit was the Ferrari 355 — 'this thing that is a signature of the brand, is perfect product market fit, is priced perfectly' — establishing the template for the Range tier that generates 85% of volume today. The F40 accidentally unlocked the limited-run supercar business model that became structurally central to Ferrari's economics, with each successor adding sophistication and price while maintaining extreme exclusivity, performance, and emotion.",
-      "keyThemes": [
-        "Emotion must be engineered, not just branded — Ferrari cannot fake the experience",
-        "Four-tier aspiration pyramid ensures customers always have somewhere to graduate",
-        "Bespoke manufacturing with no two identical cars creates exclusivity and profit",
-        "Dense ecosystem infrastructure (track days, Classiche, F1 programs) is the moat",
-        "Rapid product turnover (4 new models/year) creates constant anticipation",
-        "Limited-run supercars generate disproportionate profits (30% of annual profits from single model)",
-        "Luxury rituals (waitlists, delivery ceremonies, custom luggage) transform purchase into relationship"
-      ],
-      "keyQuotes": [
-        "A Ferrari has to elicit emotion from you. Ferrari can't just stamp the prancing horse on a car and call it a Ferrari.",
-        "This thing that is a signature of the brand, is perfect product market fit, is priced perfectly.",
-        "A lot of brands who wanna be like Ferrari don't make the investments to have that amount of infrastructure.",
-        "This thing is trying to kill me at every angle.",
-        "You couldn't talk to Enzo about how Hermes was managing its business. Luca knew exactly what Jean-Louis Dumas was doing over in Paris."
-      ],
       "gaps": [
         {
           "title": "Customer feedback loops and product iteration process",
@@ -1159,18 +908,6 @@
           "description": "How does Ferrari systematically compare its product experience against competitors (Lamborghini, McLaren, Porsche)? What specific experiential dimensions do they measure and optimize?"
         }
       ],
-      "contradictions": [
-        "The Luce EV is described both as 'a new pyramid' targeting a completely different demographic AND as part of Ferrari's product strategy — unclear whether it's truly separate or integrated into the existing tier structure",
-        "Fragment 12 describes the 348 as 'the worst car we ever made' with 'no personality' during the Fiat era, yet Fragment 14 describes the F40 (launched in 1987, during the same Fiat-controlled period) as establishing the template for Ferrari's most successful business model — suggesting product quality was inconsistent even within the same management era",
-        "The emphasis on 'genuine racing thrill' and performance suggests objective engineering criteria, yet the luxury positioning and customization focus suggests subjective emotional experience — unclear how Ferrari balances measurable performance metrics versus ineffable emotional resonance"
-      ],
-      "subdimensions": {
-        "Halo Products": "Limited-run supercars (F40, F50, Enzo, LaFerrari, F80) generating disproportionate profits; Icona series smoothing profit volatility between supercar launches",
-        "Design Heritage": "61-year partnership with Pininfarina creating coherent multi-generational design language; transition to LoveFrom for Luce EV",
-        "Product Architecture": "Four-tier pyramid structure (Range, Special Series, Icona, Supercar) plus undisclosed one-offs; rapid turnover with 4 new models per year discontinued every 4-5 years",
-        "Ecosystem & Infrastructure": "Track days, XX programs, Ferrari Challenge racing, factory tours, Classiche certification, F1 car ownership program, delivery ceremonies, custom luggage",
-        "Manufacturing & Customization": "Build-to-order with no stock since 1994; bespoke manufacturing where no two cars are identical; customization adds 20-100% to base price"
-      },
       "confidence": "HIGH",
       "fragmentCount": 15,
       "synthesisVersion": "v1"
@@ -1178,22 +915,6 @@
     {
       "dimension": "RISKS_CONSTRAINTS",
       "summary": "Ferrari faces a constellation of existential tensions that stem from its dual identity as both a luxury brand and a public company. The core risk is that public market expectations for 'consistent, predictable growth' fundamentally conflict with luxury brand discipline, which requires the willingness to sacrifice short-term revenue for long-term brand health. This tension was visible when management stated 'the era of double-digit revenue growth is over,' projecting just 5% annual growth—a declaration that triggered a market cap drop from $90 billion to $55 billion. The question is whether Wall Street's valuation framework is compatible with a brand whose value derives precisely from restraint.\n\nThe historical cautionary tale looms large: between 1981-1992, Fiat's operational control nearly destroyed Ferrari by ramping production to 4,500 cars, cutting costs, and sharing parts with mass-market Fiats. The result was 'a shit car—the worst car we ever made,' unsold inventory, and factory shutdowns. The lesson is clear: the cardinal sins of luxury strategy are volume growth and cost optimization. Yet these temptations remain permanently available—brand licensing generates nearly 100% margin revenue (the Acer netbook debacle being 'the microcosm of brand destruction'), and pricing power may be approaching limits.\n\nThe electric transition compounds these risks. Tesla's Model S Plaid outperforms the F80 on acceleration at a fraction of the price, proving that 'speed is no longer relevant'—it's been commoditized. Ferrari must redefine its value proposition around 'the dream rather than the spec sheet,' but market signals are mixed: 'zero interest in electric supercars' among traditional collectors, and Lamborghini cancelled its EV program. Meanwhile, Chinese EV manufacturers pose both a competitive threat and a market access question. Ferrari's succession crises—Enzo's near-death, Agnelli's death, Marchionne's sudden passing—have repeatedly reshaped strategy, and the current question is whether Vigna, 'a semiconductor physicist,' has the instincts to steward a luxury brand through technology transition.",
-      "keyThemes": [
-        "Public market growth expectations versus luxury brand discipline—the structural tension of being a publicly traded luxury company",
-        "The Fiat era (1981-1992) as the defining cautionary tale: volume growth and cost-cutting nearly destroyed the brand",
-        "Speed commoditization: EVs can match or exceed performance, forcing Ferrari to redefine value around heritage and emotional experience",
-        "Brand licensing as a permanently available weapon of self-destruction—easy 100% margin revenue that erodes brand equity",
-        "Succession crises as both risk (strategic drift) and renewal mechanism (bringing capabilities each era demands)",
-        "Pricing power limits emerging: management signaling the end of double-digit growth, market reacting with valuation collapse",
-        "Chinese EV manufacturers and domestic sentiment shift as emerging competitive dynamic, though current exposure is contained at 7%"
-      ],
-      "keyQuotes": [
-        "Becoming a public company means you gotta deliver consistent, predictable growth, which means hitting a drumbeat of shipping more cars, making more models, adding more clients, raising prices. Can you imagine doing that as a publicly traded company?",
-        "The apex luxury brand of cars, one of the greatest brands in the entire world. And they have licensed it to this underclocked plastic little piece of crap computer.",
-        "Fiat came in—the way we can fix this is we'll increase production, we'll cut costs. So let's share some parts with Fiat cars.",
-        "The era of double-digit revenue growth is over.",
-        "Speed is no longer relevant."
-      ],
       "gaps": [
         {
           "title": "Regulatory risk: emissions and ICE bans",
@@ -1216,27 +937,6 @@
           "description": "Management says pricing power is limited, but what's the actual data? Are order cancellations increasing? Is waitlist duration shrinking? What are the leading indicators of pricing resistance?"
         }
       ],
-      "contradictions": [
-        "Fragment 3 claims Ferrari has 'near-perfect demand visibility' through 2027 with a 2-year waitlist and no inventory risk, but Fragment 2 suggests pricing power is approaching limits and management projects only 5% growth—if demand visibility is perfect, why the growth slowdown?",
-        "Fragment 1 frames EV performance parity as both risk (competitors can match speed) and opportunity (if Ferrari redefines around heritage), but Fragment 7 cites 'zero interest in electric supercars' among collectors—is the opportunity real or aspirational?",
-        "Fragment 8 describes succession crises as both risk (loss of vision, strategic drift) and paradoxically a source of renewal, but provides no framework for distinguishing productive succession from destructive—how do we know which type Ferrari is experiencing now?"
-      ],
-      "subdimensions": {
-        "Leadership and Succession": [
-          "Fragment 8: Succession crises as risk and renewal"
-        ],
-        "Technology Transition Risk": [
-          "Fragment 1: Speed commoditization by EVs",
-          "Fragment 7: Electric transition existential question",
-          "Fragment 9: Chinese EV competitive dynamic"
-        ],
-        "Brand Discipline vs. Growth Pressure": [
-          "Fragment 2: End of double-digit growth era",
-          "Fragment 4: Public company structural tension",
-          "Fragment 5: Brand licensing temptation",
-          "Fragment 6: Fiat era volume disaster"
-        ]
-      },
       "confidence": "MEDIUM",
       "fragmentCount": 15,
       "synthesisVersion": "v1"
@@ -1244,22 +944,6 @@
     {
       "dimension": "STRATEGIC_INTENT",
       "summary": "Ferrari's strategic intent is defined by a single, counterintuitive principle: 'Ferrari will always deliver one car less than the market demand.' This is not a production constraint but a deliberate choice to systematically leave money on the table in every market, every year, forever. The strategy treats scarcity as the product itself, not a byproduct of limited capacity. This discipline was violated during the Fiat era (production doubled, brand nearly destroyed) and restored by Montezemolo through a 15-year act of restraint—cutting production by 50% in 1993 and not returning to 1991 volumes until 2006. The modern strategic intent is to expand the pyramid in multiple dimensions without diluting scarcity: adding height through new tiers (Icona, Special Series), adding width through new geographies and demographics (lifestyle merchandise targeting 35% women, the Luce EV for tech-oriented buyers), and adding depth through engagement programs. Each expansion must enhance the tiers above it.\n\nThe strategic tension is structural: Ferrari operates as a luxury brand that happens to make cars, not an automaker that happens to be prestigious. This required independence from Fiat's automotive logic and created a valuation expansion from ~$200M to $90B. But the 2015 IPO introduced a fundamental conflict between luxury brand management (which requires the discipline to sacrifice short-term revenue for long-term brand health) and public market expectations (which reward consistent, predictable growth). When management stated in 2025 that 'the era of double-digit revenue growth is over,' projecting just 5% annual growth, the market cap dropped from $90B to $55B. The question is whether Wall Street's valuation framework is compatible with a luxury brand whose value derives precisely from restraint. Ferrari's leadership across four eras—Enzo (myth-maker), Montezemolo (luxury strategist), Marchionne (financial engineer), Vigna (technologist)—each brought what their era demanded, but the core strategic intent remains unchanged: protect the myth through disciplined scarcity.",
-      "keyThemes": [
-        "Systematic scarcity as the core strategic principle: always deliver one car less than market demand",
-        "Pyramid expansion in multiple dimensions: height (new tiers), width (new demographics/geographies), depth (engagement programs)",
-        "Luxury brand logic versus automotive logic: Ferrari is a luxury company that happens to make cars, not the reverse",
-        "Strategic restraint over growth maximization: willing to sacrifice short-term revenue to protect long-term brand health",
-        "Structural tension between public market expectations and luxury brand discipline",
-        "Independence as strategic prerequisite: freedom from conglomerate incentives that destroy luxury brands",
-        "Deepening wallet share with existing clients rather than mass customer acquisition"
-      ],
-      "keyQuotes": [
-        "Ferrari will always deliver one car less than the market demand.",
-        "It's not that you can't produce any more units without diluting your brand. It's that you can't sell any more units into your current market without diluting your brand. New markets are perfectly allowed.",
-        "Can you imagine doing that as a publicly traded company?",
-        "Luca is the one who realized that Ferrari is a luxury company. To Enzo, Ferrari was a racing company that sold a connection to that to its clients.",
-        "You never want a customer to feel like they've done it all."
-      ],
       "gaps": [
         {
           "title": "What happens when all dimensions of the pyramid are saturated?",
@@ -1282,17 +966,6 @@
           "description": "Each era had a leader who brought what was needed (Enzo: myth, Luca: luxury, Sergio: finance, Vigna: technology). What comes after the technology transition, and is there a plan for leadership continuity?"
         }
       ],
-      "contradictions": [
-        "Fragment 4 states management projects 5% annual revenue growth and the market cap dropped to $55B, while Fragment 5 references a $90B 'peak market cap'—but it's unclear if this peak was before or after the 2025 guidance, creating ambiguity about whether the strategic restraint caused the valuation drop or if other factors were involved.",
-        "Fragment 9 celebrates the discipline of cutting production by 50% as a private company, while Fragment 12 questions whether such discipline is possible as a public company—yet Ferrari has been public since 2015 and has maintained production discipline (e.g., Purosangue capped at 20%). This suggests the tension may be overstated or that Ferrari has found ways to manage it.",
-        "Fragment 14 describes expanding the pyramid in 'multiple dimensions' as the growth strategy, while Fragment 4 states 'the era of double-digit revenue growth is over'—these seem contradictory unless the pyramid expansion is intentionally slow or the 5% growth guidance represents a deliberate choice rather than a constraint."
-      ],
-      "subdimensions": {
-        "Scarcity Discipline": "The core principle of always delivering one car less than market demand, enforced through production caps, waitlists, and geographic/tier segmentation",
-        "Leadership Evolution": "The succession of strategic leaders, each bringing what their era demanded while maintaining core principles",
-        "Pyramid Architecture": "The multi-dimensional expansion strategy: adding height (new tiers), width (new demographics/geographies), and depth (engagement programs)",
-        "Independence & Governance": "The structural requirement for freedom from conglomerate logic and the tension between public market expectations and luxury brand discipline"
-      },
       "confidence": "HIGH",
       "fragmentCount": 18,
       "synthesisVersion": "v1"
@@ -1300,22 +973,6 @@
     {
       "dimension": "VALUE_PROPOSITION",
       "summary": "Ferrari's value proposition is fundamentally about selling a dream, not transportation. As CEO Benedetto Vigna stated directly: 'We don't sell a car, we sell a dream.' This dream is delivered through a unique combination of three capabilities under one roof since 1947: a world-class racing team, a world-class racing car heritage and construction company, and the full suite of services and infrastructure for private clients. The genius is that Ferrari operates as both an exclusive luxury brand and an inclusive international sports team simultaneously — 'Ferrari is Hermes and Manchester United smashed together.' This dual identity creates a network economy effect where 400 million Tifosi fans worldwide amplify rather than dilute the exclusivity that Ferrari owners experience.\n\nThe product itself must deliver genuine emotional experience — 'A Ferrari has to elicit emotion from you. Ferrari can't just stamp the prancing horse on a car and call it a Ferrari.' Buyers construct elaborate 'functional alibis' (engineering excellence, racing heritage, investment value, craftsmanship) that are all genuinely true, creating powerful rationalizations for what is fundamentally an emotional purchase about passion, self-expression, and the desire to feel maximally alive. The deliberately inefficient, artisan-driven manufacturing process is not a cost to optimize but part of what customers buy — the lore and story wrapped into the value proposition. Ferrari has achieved rare tautological brand status where the brand and product are inseparable, making it 'intellectually impossible' to rebadge something as a Ferrari. This is reinforced by tragedy and heritage that signal authenticity, a dense ecosystem of programs extending far beyond the car itself, and vertical integration enabling rapid F1-to-road-car technology transfer that competitors cannot match.",
-      "keyThemes": [
-        "Selling a dream, not transportation — the emotional core is the product",
-        "Unique combination of racing team, heritage constructor, and client services under one roof",
-        "Dual identity as exclusive luxury brand and inclusive sports team creates network effects",
-        "Product must deliver genuine emotional experience, not just brand application",
-        "Functional alibis (engineering, heritage, investment) rationalize emotional purchase",
-        "Artisan manufacturing inefficiency is part of the value proposition",
-        "Dense ecosystem and infrastructure create moat that competitors cannot replicate"
-      ],
-      "keyQuotes": [
-        "We don't sell a car, we sell a dream.",
-        "Ferrari is Hermes and Manchester United smashed together.",
-        "A Ferrari has to elicit emotion from you. Ferrari can't just stamp the prancing horse on a car and call it a Ferrari.",
-        "Part of what you are buying is the lore. You kind of like the fact that this is a pseudo-handmade bespoke, inefficient manufacturing process to make it. It's wrapped up in the value proposition.",
-        "If you can marry a luxury brand with a sports team, it is a business cheat code."
-      ],
       "gaps": [
         {
           "title": "How does the value proposition differ across tiers?",
@@ -1334,38 +991,6 @@
           "description": "The Ferrari 355 is mentioned as defining modern product-market fit, but how has the value proposition shifted from Enzo's era to Montezemolo's turnaround to today's Vigna leadership? What changed and what remained constant?"
         }
       ],
-      "contradictions": [
-        "Fragment 6 states Ferrari's branding is 'slightly less efficient' than pure luxury brands because the product must deliver actual emotional experience, while Fragment 9 claims Ferrari has achieved tautological brand status where brand and product are inseparable. These aren't necessarily contradictory but create tension around whether Ferrari's value is more experiential or symbolic.",
-        "Fragment 3 notes that 'speed is no longer relevant' as EVs commoditize performance, yet Fragment 5 emphasizes Ferrari's racing heritage and Fragment 6 requires the car to deliver 'genuine racing thrills.' There's ambiguity about whether performance still matters or has been fully transcended by the dream."
-      ],
-      "subdimensions": {
-        "Emotional Core": [
-          1,
-          2,
-          4,
-          9,
-          10
-        ],
-        "Product Delivery": [
-          6,
-          8,
-          11,
-          12,
-          14
-        ],
-        "Dual Brand Identity": [
-          1,
-          15
-        ],
-        "Ecosystem & Infrastructure": [
-          5,
-          13,
-          16
-        ],
-        "Rationalization Mechanisms": [
-          7
-        ]
-      },
       "confidence": "HIGH",
       "fragmentCount": 16,
       "synthesisVersion": "v1"

@@ -335,14 +335,12 @@ model DimensionalSynthesis {
   dimension String // CUSTOMER_MARKET | PROBLEM_OPPORTUNITY | etc.
 
   // Synthesis content: hybrid structured + JSONB
+  // keyThemes, keyQuotes, contradictions and subdimensions were removed
+  // 2026-08-29 — produced on every call, read by nothing (keyThemes was read
+  // only by the incremental path, ~13% of runs, and an A/B measured no
+  // continuity loss without it). See docs/architecture/service-blueprints.md.
   summary        String?  @db.Text
-  keyThemes      String[] @default([])
-  keyQuotes      String[] @default([])
   gaps           Json     @default("[]") // Array of { title: string, description: string }
-  contradictions String[] @default([])
-
-  // JSONB for emergent Tier 2 subdimensions
-  subdimensions Json?
 
   // Quality metrics
   confidence    String  @default("LOW") // HIGH | MEDIUM | LOW

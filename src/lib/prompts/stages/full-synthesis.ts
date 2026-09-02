@@ -31,19 +31,11 @@ Synthesize these fragments into structured understanding:
 
 1. **Summary** (2-3 paragraphs): What do we understand about this dimension? Use the leader's authentic voice where possible.
 
-2. **Key Themes** (3-7 themes): What are the main ideas? Each theme should be a short phrase or sentence.
-
-3. **Key Quotes** (3-5 quotes): Verbatim quotes that capture the essence. Use exact wording from fragments.
-
-4. **Gaps** (list of objects): What's missing? Each gap should have:
+2. **Gaps** (list of objects): What's missing? Each gap should have:
    - "title": A punchy, attention-grabbing title (max 60 chars). A gap is something you don't yet know, so phrase it as a question. The title rules below apply.
    - "description": The full question or explanation of what's missing
 
-5. **Contradictions** (list): Are there conflicting fragments? Surface tensions, don't hide them.
-
-6. **Subdimensions** (emergent): Are there natural groupings or sub-categories within these fragments? Only include if clearly evident.
-
-7. **Confidence** (HIGH | MEDIUM | LOW): How comprehensive is this understanding?
+4. **Confidence** (HIGH | MEDIUM | LOW): How comprehensive is this understanding?
    - HIGH: 5+ fragments, clear themes, few gaps
    - MEDIUM: 3-5 fragments, some gaps remain
    - LOW: <3 fragments or significant gaps
@@ -52,4 +44,4 @@ Synthesize these fragments into structured understanding:
 
 IMPORTANT: Respond with ONLY the JSON object below. No preamble, no explanation, no markdown - just the raw JSON starting with { and ending with }
 
-{"summary": "...", "keyThemes": ["...", "..."], "keyQuotes": ["...", "..."], "gaps": [{"title": "Short title", "description": "Full question or explanation"}], "contradictions": ["...", "..."], "subdimensions": null, "confidence": "MEDIUM"}`
+{"summary": "...", "gaps": [{"title": "Short title", "description": "Full question or explanation"}], "confidence": "MEDIUM"}`

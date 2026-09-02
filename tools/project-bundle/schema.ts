@@ -14,7 +14,7 @@
  */
 import { z } from 'zod'
 
-export const BUNDLE_VERSION = 1 as const
+export const BUNDLE_VERSION = 2 as const
 
 const ConfidenceSchema = z.enum(['HIGH', 'MEDIUM', 'LOW'])
 
@@ -40,11 +40,7 @@ const GapSchema = z.object({
 const SynthesisSchema = z.object({
   dimension: z.string(),
   summary: z.string().nullable(),
-  keyThemes: z.array(z.string()),
-  keyQuotes: z.array(z.string()),
   gaps: z.array(GapSchema),
-  contradictions: z.array(z.string()),
-  subdimensions: z.unknown().nullable(), // JSON for emergent Tier 2
   confidence: z.string(), // HIGH | MEDIUM | LOW (kept loose: prisma stores as String)
   fragmentCount: z.number().int().nonnegative(),
   synthesisVersion: z.string(),

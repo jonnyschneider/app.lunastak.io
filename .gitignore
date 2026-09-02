@@ -115,10 +115,10 @@ logs
 # Project-specific exclusions
 TECH_DILIGENCE_BRIEFING.md
 
-# Local docs (R&D, plans, archives) — architecture and analytics docs are tracked
+# Local docs (R&D, plans, archives) — only architecture/ is tracked
+# (analytics/events.md moved to architecture/analytics-events.md, 2026-08-29)
 docs/*
 !docs/architecture/
-!docs/analytics/
 e2e/
 evals/
 scripts/

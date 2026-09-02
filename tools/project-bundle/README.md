@@ -37,15 +37,14 @@ See `schema.ts` for the authoritative definition. High-level:
 
 ```
 {
-  bundleVersion: 1,
+  bundleVersion: 2,
   projectId, projectName, isDemo, demoSlug, description,
   exportedAt,
   knowledgeSummary, suggestedQuestions,
   decisionStack: { vision, visionElaboration, strategy, strategyElaboration,
                    objectives[], opportunities[], principles[] },
   fragments: [{ title, content, contentType, confidence, sourceType }],
-  syntheses: [{ dimension, summary, keyThemes, keyQuotes, gaps,
-                contradictions, subdimensions, confidence, fragmentCount,
+  syntheses: [{ dimension, summary, gaps, confidence, fragmentCount,
                 synthesisVersion }]
 }
 ```
@@ -72,6 +71,23 @@ When you change the bundle shape:
 3. Re-export every demo (`npm run bundle:export -- --env dev --slug <slug>`).
 4. Re-snapshot (`npm test -- -u project-bundle-contracts`).
 5. Document the change in this README.
+
+## Version history
+
+### v2 — 2026-09-02
+
+`syntheses[]` loses `keyThemes`, `keyQuotes`, `contradictions` and
+`subdimensions`. The columns were dropped from `DimensionalSynthesis` (see
+`prisma/SCHEMA_CHANGELOG.md`, 2026-08-29) — produced by every synthesis call and
+read by nothing, so there is no data to carry forward.
+
+The four committed demos were migrated in place rather than re-exported: the
+change is a pure field removal, and re-exporting would have pulled whatever the
+dev DB held today over curated bundles last exported in April. Content is
+otherwise byte-identical.
+
+**A v1 bundle no longer restores.** Strip the four keys and set
+`bundleVersion: 2` to bring one forward — nothing else changed.
 
 ## Future work (not implemented)
 

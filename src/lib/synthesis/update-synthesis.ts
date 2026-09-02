@@ -3,7 +3,6 @@
  */
 
 import { prisma } from '@/lib/db'
-import { Prisma } from '@prisma/client'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { fullSynthesis } from './full-synthesis'
 import { incrementalSynthesis } from './incremental-synthesis'
@@ -92,11 +91,7 @@ export async function updateDimensionalSynthesis(
       where: { id: existingSynthesis.id },
       data: {
         summary: null,
-        keyThemes: [],
-        keyQuotes: [],
         gaps: [],
-        contradictions: [],
-        subdimensions: Prisma.JsonNull,
         confidence: 'LOW',
         fragmentCount: 0,
         lastSynthesizedAt: new Date(),
@@ -139,11 +134,7 @@ export async function updateDimensionalSynthesis(
     where: { id: existingSynthesis.id },
     data: {
       summary: result.summary || null,
-      keyThemes: result.keyThemes,
-      keyQuotes: result.keyQuotes,
       gaps: result.gaps as unknown as Parameters<typeof prisma.dimensionalSynthesis.update>[0]['data']['gaps'],
-      contradictions: result.contradictions,
-      subdimensions: result.subdimensions ?? Prisma.JsonNull,
       confidence: result.confidence,
       fragmentCount: allFragments.length,
       lastSynthesizedAt: new Date(),

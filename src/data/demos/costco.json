@@ -1,5 +1,5 @@
 {
-  "bundleVersion": 1,
+  "bundleVersion": 2,
   "projectId": "cmn8an6ivpa0xoehj",
   "projectName": "Costco",
   "isDemo": true,
@@ -656,16 +656,6 @@
     {
       "dimension": "BUSINESS_MODEL_ECONOMICS",
       "summary": "Costco's business model economics are built on a radical inversion: it operates as two distinct businesses—a near-breakeven retailer (11% gross margin) that exists solely to drive value for a high-margin membership club that generates 70% of operating profits from just $4.5 billion in fees. The core mechanism is 'scale economies shared'—enormous purchasing volume (10x revenue per SKU versus Walmart) enables the absolute lowest supplier prices, which Costco marks up minimally (14% cap, 11% average) and passes directly to members. This creates a flywheel: maximum member value drives 93% renewal rates and attracts more members, concentrating even more volume on fewer SKUs (~3,800 versus Walmart's 100,000+), deepening supplier leverage. The warehouse format eliminates entire cost layers—no picking, packing, shipping, or last-mile delivery—enabling 10-11% overhead versus Amazon's 30%, creating structural counter-positioning that cannot be copied without abandoning convenience-first models.\n\nThe economics are deliberately designed for durability over profit maximization. Costco practices 'intelligent loss of sales' and 'latent power'—consciously leaving money on the table (could raise prices 3% and add 50% to pre-tax income) to build trust and longevity. The membership fee creates multiple compounding effects: it selects affluent customers ($125k median income), generates negative cash conversion cycles (12.4x inventory turns, selling products before paying suppliers), and drives the 'triple play' retention dynamic (membership + Executive tier + Citi Visa card). Despite ranking shareholders last in its code of ethics and returning 80% of net income as dividends/buybacks due to physical growth constraints, Costco delivered 330x returns from its 1985 IPO. The model proves that maximizing customer and employee value—not extracting maximum margin—produces the most durable shareholder returns, with the market awarding a premium P/E multiple for this structural durability.",
-      "keyThemes": [
-        "Two-business model: near-breakeven retail drives high-margin membership club (70% of operating profit from fees)",
-        "Scale economies shared, not captured: 11% markup cap forces cost reduction over margin expansion",
-        "Structural cost advantage through warehouse format: 10-11% overhead vs Amazon's 30% creates uncopyable counter-positioning",
-        "Negative cash conversion cycle: 12.4x inventory turns, selling before paying suppliers, creating self-financing growth",
-        "Latent power and intelligent loss of sales: deliberate under-monetization builds durability and commands premium market multiple",
-        "Membership fee as multi-function mechanism: revenue, customer selection, retention driver, and psychological commitment device",
-        "Low SKU count (3,800) concentrates volume to 10x per-product revenue versus Walmart, creating supplier leverage and operational simplicity"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "International economics vs domestic",
@@ -688,8 +678,6 @@
           "description": "What are the actual margins and contribution economics of Costco Logistics (big-and-bulky) and costconext.com versus in-warehouse sales? Do these channels dilute or enhance overall economics?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 35,
       "synthesisVersion": "v1"
@@ -697,16 +685,6 @@
     {
       "dimension": "CAPABILITIES_ASSETS",
       "summary": "Costco's capabilities assets are fundamentally rooted in a deeply embedded operational culture that has proven impossible for competitors to replicate despite decades of trying. This culture manifests in institutional knowledge passed through four generations of leadership (Sol Price to Jim Sinegal to Craig Jelinek to Ron Vachris), all with FedMart lineage, and in operational disciplines like the 14% markup cap, negative cash conversion cycle, and cross-dock logistics. The company's buying organization represents a distinctive capability: buyers track commodity prices down to the cent, maintain deep supplier relationships built on mutual respect rather than adversarial negotiation, and manage concentrated portfolios where average revenue per product is 10x Walmart's. The warehouse model itself eliminates the entire internal supply chain of traditional retail—pallets arrive and customers take product directly off them, enabling 12.4 inventory turns per year and selling products before paying suppliers.\n\nThe culture is held together by visible symbols and systematic practices: headquarters serves Kirkland pods, executives sit in cubicles, all 160 market managers fly to Issaquah monthly to share learnings, and CEOs visit every store annually. Employee compensation ($26/hour average versus Walmart's $19.50) yields 7% post-first-year turnover and 0.15% shrinkage, making the high-wage model economically rational at $730,000+ revenue per employee. The strategic intent explicitly prioritizes members over shareholders—'If we do the right things, we'll make money damn near automatic'—yet this philosophy delivered 330x returns from the 1985 IPO. The greatest risk is cultural fragility across leadership transitions: the company has never done a layoff, never broken its markup cap, never raised hot dog prices, and each of these is a cultural choice that a future leader could view as an outdated constraint rather than a strategic pillar.",
-      "keyThemes": [
-        "Process power embedded in unreplicable operational culture transmitted across four leadership generations",
-        "Warehouse model eliminates internal supply chain, enabling negative cash conversion cycle and 12.4 inventory turns",
-        "14% markup cap as cultural constraint forcing cost reduction rather than margin expansion",
-        "Buyer organization with deep category knowledge and respectful supplier relationships built on transparency",
-        "High-wage model ($26/hour) economically rational due to low turnover (7%), minimal shrinkage (0.15%), and high revenue per employee ($730K+)",
-        "Strategic intent prioritizes member value over short-term profit, with shareholders explicitly absent from code of ethics",
-        "Cultural fragility as greatest risk—continuity depends on future leaders maintaining customer-first philosophy"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "Digital and e-commerce capability development",
@@ -729,8 +707,6 @@
           "description": "What specific mechanisms ensure cultural continuity beyond the promote-from-within practice? The FedMart lineage will eventually end—what systems, training, or governance structures preserve the culture when direct mentorship chains break?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 22,
       "synthesisVersion": "v1"
@@ -738,16 +714,6 @@
     {
       "dimension": "COMPETITIVE_LANDSCAPE",
       "summary": "Costco occupies a unique competitive position characterized by what the hosts call 'counter-positioning power' against Amazon and e-commerce—a rare inversion where a $230 billion incumbent has structural advantages that prevent digital-native competitors from copying its model. The core of this advantage is Costco's 10-11% overhead versus Amazon's ~30%, a gap that exists because Costco's model requires customers to do the work of coming to warehouses, while Amazon must bear the costs of shipping, picking/packing, and last-mile delivery. This isn't just efficiency—it's a fundamental architectural choice that Amazon cannot replicate without abandoning its convenience-first value proposition.\n\nThe competitive landscape is deeply shaped by Sol Price's legacy and the FedMart/Price Club diaspora. Sam Walton visited Sol Price in 1982, copied the model, and launched Sam's Club within 12 months—yet despite this head start, Sam's Club has never matched Costco's execution, with the average Sam's Club generating only half the revenues of a Costco location. The 1993 Costco-Price Club merger was explicitly motivated by the Sam's Club threat, with the combined entity needing to scale quickly before Walmart's warehouse club 'ran away with the market.' Meanwhile, Kirkland Signature has become a competitive weapon that works even in premium categories, leveraging Costco's low-SKU environment where the house brand faces minimal shelf competition.",
-      "keyThemes": [
-        "Counter-positioning power as an incumbent against Amazon's e-commerce model",
-        "Structural overhead gap (10-11% vs 30%) that competitors cannot close without abandoning their core models",
-        "Sam's Club as perpetual follower despite earlier start and Walmart backing",
-        "Sol Price diaspora spawning multiple retail innovations (Sam's Club, Home Depot, Costco)",
-        "1993 merger driven by competitive urgency to scale before Sam's Club dominance",
-        "Kirkland Signature credibility even in premium categories where brand traditionally matters",
-        "Bezos-Sinegal meeting influencing Amazon's philosophy but not its structural model"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "International competitive dynamics",
@@ -770,8 +736,6 @@
           "description": "Why has Walmart apparently deprioritized Sam's Club? Is this a permanent strategic choice or could they reinvest? What would it take for Sam's Club to close the execution gap?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "MEDIUM",
       "fragmentCount": 7,
       "synthesisVersion": "v1"
@@ -779,16 +743,6 @@
     {
       "dimension": "CUSTOMER_MARKET",
       "summary": "Costco's customer market is defined by a paradox: they offer the lowest prices of any major retailer, yet attract the wealthiest customer base. The typical Costco household earns $125,000 versus Walmart's $80,000, driven by two selection mechanisms—the upfront membership fee requires customers who aren't cash-flow sensitive, and bulk buying requires both capital and storage space. This creates what the hosts call an 'all-weather' business: in recessions, Costco wins on price; in booms, they benefit as more people become affluent enough to join. The membership model itself is the engine: 73.4 million member households with 93% US renewal rates ('Consumer subscriptions retaining at 93%-plus is nuts. That's the monthly retention of most streaming services'), driven almost entirely by word-of-mouth with near-zero marketing spend. Executive members (55% of US base) represent 73% of sales and renew at even higher rates, especially when paired with the Costco Citi Visa card in a 'triple play' retention lock.\n\nWhat began as a B2B warehouse for small businesses accidentally became consumer-dominant when the San Diego City Credit Union negotiated group membership access. Today, Costco has created a 'walled garden' where normal pricing psychology doesn't apply—low prices don't signal low quality, allowing even Nike and Dom Perignon to sell through the channel without brand damage. The model has proven culturally portable: despite seeming incompatible with dense Asian urban environments, Costco thrives in Japan, Korea, Taiwan, and China because 'at the end of the day, people really like value.' The first China store reached 400,000 members in two years versus 68,000 for mature US stores. Younger demographics are engaging strongly—'There is nothing more Gen Z than Costco'—with TikTok haul videos generating massive organic reach despite Costco never posting a single tweet. The membership fee, originally a legal workaround at Fedco, now creates multiple second-order effects: the endowment effect drives shopping frequency, it reduces shrinkage, and it filters for committed high-value customers.",
-      "keyThemes": [
-        "Paradox of lowest prices attracting wealthiest customers through membership and bulk-buying barriers",
-        "All-weather business model: wins in recessions on price, wins in booms as affluence expands membership base",
-        "93% US renewal rate driven by word-of-mouth and near-zero marketing spend",
-        "Executive membership tier concentrates value: 55% of members drive 73% of sales",
-        "Walled garden pricing psychology allows premium brands to sell without quality signaling concerns",
-        "Cultural portability: value proposition transcends geography and demographic cohorts",
-        "Membership fee creates endowment effect, customer qualification, and retention lock beyond just revenue"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "Customer acquisition economics and payback period",
@@ -811,8 +765,6 @@
           "description": "Do members maintain dual memberships with Sam's Club or BJ's? What drives switching between warehouse clubs? How does Amazon Prime membership overlap with Costco, and does it create competitive tension or complementary behavior?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 13,
       "synthesisVersion": "v1"
@@ -820,16 +772,6 @@
     {
       "dimension": "DIFFERENTIATION_ADVANTAGE",
       "summary": "Costco's differentiation advantage rests on a tightly integrated system of trade-offs that competitors cannot replicate without abandoning their own business models. At its core is the principle of scale economies shared rather than captured: enormous purchasing volume (often becoming the single largest global buyer per SKU) enables the absolute lowest supplier prices, which Costco passes through to members via a strict 11% average markup cap. This creates a flywheel where maximum value sharing attracts more members, driving more volume, concentrating purchasing power further. The membership model itself (93% US renewal rate) functions as a high-quality subscription business with near-zero acquisition cost, generating 70% of operating income from just $4.5 billion in membership fees on $230 billion total revenue. The radical SKU limitation (~3,800 items versus Walmart's 100,000+) enables operational advantages no broad-assortment retailer can match: 92% cross-docked pallets, 12.4x inventory turns creating negative cash conversion, $1,800 revenue per square foot, and 10-11% overhead versus Amazon's 30%.\n\nWhat makes this defensible is not any single element but their interdependence—what Ben calls 'daisy chaining trade-offs such that the benefit of each plays into the benefit of another.' The warehouse format eliminates shipping, picking, packing, and last-mile delivery costs structurally. The membership fee selects affluent customers ($125k median household income) who can afford bulk purchases and storage space, creating an all-weather customer base. The treasure hunt model (25% rotating SKUs) drives repeat visits and earned media at zero marketing cost. Kirkland Signature ($52B in sales, America's largest CPG brand) leverages the low-SKU environment where private label competes with only 1-2 alternatives instead of 5-10. Most remarkably, Costco has developed counter-positioning power as a $230B incumbent—Amazon cannot replicate the 10-11% overhead without abandoning convenience, and Walmart has tried for decades through Sam's Club without matching execution. The company deliberately maintains 'latent power'—strategic advantages it chooses not to monetize through higher margins, instead investing in durability that the market rewards with premium multiples. As Jim Sinegal articulated the discipline: 'Raising prices just 3% would add 50% to our pre-tax income. Why not do it? It's like heroin. You do it a little bit, and you want a little more. Raising prices is the easy way.'",
-      "keyThemes": [
-        "Scale economies shared with customers rather than captured as profit, creating a self-reinforcing flywheel of volume and purchasing power",
-        "Membership model as high-margin subscription business (93% renewal) that funds a near-breakeven retail operation designed purely for member value",
-        "Radical SKU limitation (~3,800) enabling operational advantages competitors cannot replicate: cross-docking, inventory turns, overhead structure",
-        "Structural cost architecture (10-11% overhead) that creates counter-positioning power even against Amazon and prevents replication by traditional retailers",
-        "Latent power strategy: deliberately under-monetizing advantages to build durability and earn premium market multiples through equity appreciation",
-        "Interdependent trade-offs that break the entire system if any single element is compromised—warehouse format, bulk-only, membership gate, markup cap",
-        "Process power embedded in buyer culture, supplier relationships, and four-generation leadership continuity that competitors have failed to replicate over 40+ years"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "International replication challenges",
@@ -848,8 +790,6 @@
           "description": "How durable is the bulk-buying, warehouse-visit model with younger consumers who prioritize convenience, smaller living spaces, and on-demand delivery? What evidence exists about Gen Z and Millennial adoption patterns?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 40,
       "synthesisVersion": "v1"
@@ -857,16 +797,6 @@
     {
       "dimension": "GO_TO_MARKET",
       "summary": "Costco's go-to-market strategy is built on zero traditional advertising, relying entirely on word-of-mouth, earned media, and the membership model itself to drive customer acquisition. This approach traces back to Sol Price's deliberate cultivation of local news coverage at store openings, and today manifests in organic social media content where members share treasure hunt finds on TikTok despite Costco having 'zero tweets on its official account.' The treasure hunt model—where 25% of SKUs rotate and intentionally run out—creates urgency and turns members into content creators, generating earned media 'worth a lot more than anything you could ever buy.' International expansion follows a similarly deliberate philosophy: Costco waited 20 years after receiving its Chinese permit before opening, then achieved 400,000 members in two years versus the US average of 68,000, proving that 'people really like value' regardless of cultural context.\n\nThe physical warehouse experience is meticulously designed to maximize exposure and reinforce value perception. Fresh food placement in the back forces customers to 'walk past the entire product range,' while extra-wide parking and aisles accommodate bulk purchases. The $1.50 hot dog at exit food courts serves as the final touchpoint, 'cementing the emotional association between Costco and extraordinary value.' In e-commerce, Costco deliberately avoided competing on Amazon's terms, instead investing $1 billion in big-and-bulky logistics (sheds, refrigerators) where they have differentiation, and launching costconext.com—a platform where members get partner discounts 'without Costco handling any logistics.' Management is repeatedly surprised by domestic market saturation, discovering every five years that new stores in already-served cities 'did just as well,' suggesting physical expansion constraints (hiring, training, construction) rather than demand set the natural ~10% annual growth ceiling.",
-      "keyThemes": [
-        "Zero traditional advertising; entirely word-of-mouth and earned media driven",
-        "Treasure hunt model (25% rotating SKUs) creates urgency and turns members into organic content creators",
-        "Deliberate international expansion: wait until conditions are right, then achieve outsized success",
-        "Physical layout meticulously designed to maximize exposure and reinforce value perception",
-        "E-commerce strategy focuses on differentiation (big-and-bulky) and asset-light partnerships rather than competing with Amazon",
-        "Domestic market consistently less saturated than management expects",
-        "Membership model itself drives acquisition through member evangelism"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "Member acquisition economics and payback period",
@@ -889,8 +819,6 @@
           "description": "What percentage of Costco's revenue comes from e-commerce (big-and-bulky plus costconext.com)? Is this growing, stable, or shrinking relative to warehouse sales?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "MEDIUM",
       "fragmentCount": 7,
       "synthesisVersion": "v1"
@@ -898,14 +826,6 @@
     {
       "dimension": "PROBLEM_OPPORTUNITY",
       "summary": "The core problem opportunity identified by Sol Price was that traditional retail was fundamentally inefficient, adding enormous costs through multiple layers: inefficient distribution systems, excessive SKU proliferation, expensive real estate, and heavy marketing overhead. The Fedco model provided the proof of concept—a nonprofit membership club for federal postal workers that demonstrated consumers would travel hundreds of miles for wholesale pricing access. Sol Price transformed this insight into FedMart, creating the for-profit discounter category that would be copied by retail giants like Sam Walton (Walmart), Kresge (Kmart), and Dayton (Target). Sam Walton himself acknowledged in Made in America that 'he stole more ideas from Sol than anyone else in his business career.'\n\nThe warehouse club represented Sol's second major innovation, pushing the cost-elimination model even further by having manufacturers deliver directly to the selling floor, removing additional distribution layers. This systematic stripping out of cost layers became the foundational strategy that would flow from Fedco through FedMart to Price Club and ultimately to Costco, creating an entirely new retail category built on the principle that massive value could be unlocked by eliminating the inefficiencies embedded in traditional retail operations.",
-      "keyThemes": [
-        "Traditional retail adds enormous cost through inefficient distribution, excessive SKUs, costly real estate, and marketing overhead",
-        "Membership model proves consumers will travel for wholesale pricing access",
-        "Systematic elimination of cost layers as core innovation strategy",
-        "Direct manufacturer-to-selling-floor distribution removes intermediary costs",
-        "Sol Price's models became the blueprint for modern discount retail"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "What specific customer pain points drove the demand?",
@@ -924,8 +844,6 @@
           "description": "Did the core problem opportunity change or deepen as the model evolved through FedMart, Price Club, and Costco? Or was it the same problem with progressively better solutions?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "LOW",
       "fragmentCount": 1,
       "synthesisVersion": "v1"
@@ -933,16 +851,6 @@
     {
       "dimension": "PRODUCT_EXPERIENCE",
       "summary": "Costco's product experience is built on radical curation rather than selection breadth. With only 3,800 SKUs (down from 4,500 a decade ago) versus 100,000-250,000 at Walmart Supercenters, the entire model depends on members trusting Costco's buyers to pre-select the best one or two items in every category. As Ben explains: 'Costco essentially has its entire buying team's ethos shopping for you. They're pre-selecting the best one or two items in every category. Consumers are basically just okay, sacrificing selection entirely and saying, yeah, as long as you give us good value on great stuff, we're totally okay with that.' This trust, hard-earned over decades, enables all downstream operational advantages.\n\nThe experience is deliberately engineered around two complementary strategies: staples and treasure hunts. Approximately 25% of SKUs are rotating items that intentionally run out, creating urgency and driving repeat visits. The warehouse layout itself is strategic—fresh food in the back forces customers to walk past the entire product range, extra-wide parking and aisles accommodate bulk purchases, and the $1.50 hot dog at exit cements the value perception. The breadth is staggering yet curated: '2 and a half pound container of cashews, prescription eyeglasses, a tank of gas, new tires for your car, 96 rolls of toilet paper, a new refrigerator, an outdoor shed, a 10 carat diamond ring, some freshly prepared sushi, fine wine at a great price.' Each unexpected category reinforces both the treasure hunt and total-life-value proposition, turning members into organic content creators sharing discoveries on platforms like TikTok.",
-      "keyThemes": [
-        "Radical curation over selection: 3,800 SKUs versus 100,000+ at competitors",
-        "Trust in Costco's buyers as the foundation enabling limited SKU strategy",
-        "Treasure hunt items (25% of SKUs) create urgency and earned media",
-        "Warehouse layout deliberately engineered to maximize exposure and comfort",
-        "Unexpected product breadth (cashews to caskets) reinforces total-life-value",
-        "Concentration risk: single bad buying decision has disproportionate impact",
-        "Format limitations: requires large suburban footprints, limiting urban penetration"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "How are SKU decisions actually made?",
@@ -965,8 +873,6 @@
           "description": "What happens when a curated item choice fails (quality issues, member rejection, supplier problems)? How quickly can Costco pivot given the concentration risk? Are there documented examples of major product missteps?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "MEDIUM",
       "fragmentCount": 5,
       "synthesisVersion": "v1"
@@ -974,16 +880,6 @@
     {
       "dimension": "RISKS_CONSTRAINTS",
       "summary": "Costco's risks and constraints are primarily structural rather than strategic failures. The company faces inherent physical limits to growth velocity—'There is a physical limit to the speed at which this company can grow... There are bottlenecks everywhere to scaling, and no amount of cash is going to solve that problem.' These bottlenecks include hiring and training the right people, promoting internally, new construction, expanding supplier relationships, and shipping into new geographies, resulting in consistent ~10% annual growth for over 30 years. The 11% gross margin cannot absorb e-commerce overhead costs (shipping, picking, packing, technology infrastructure), leading to a 15-year delay in online presence and a deliberately constrained 'Costco-flavoured e-commerce' approach focused on big-and-bulky items and partner platforms.\n\nThe company's greatest asset—its culture—is simultaneously its greatest vulnerability. Costco has benefited from extraordinary leadership continuity (three CEOs since 1976, all from FedMart lineage), but this lineage cannot continue indefinitely. The culture is held together by decades of precedent: never doing a layoff, never breaking the markup cap, never raising hot dog prices. Each represents a trust contract with members that a future leader could view as outdated constraints rather than strategic pillars. The FedMart acquisition disaster—where Sol Price accidentally sold majority control to Hugo Mann, who fired him and destroyed the company within five years—serves as institutional memory about the fragility of brilliant operating models without cultural stewardship. The low-SKU strategy (3,800 items versus 100,000+) creates concentration risk where single bad buying decisions affect disproportionate revenue share, while the warehouse format's large suburban footprint limits dense urban penetration.",
-      "keyThemes": [
-        "Physical growth constraints are structural, not capital-limited—bottlenecks in hiring, training, construction, and supplier relationships cap velocity at ~10% annually",
-        "E-commerce economics fundamentally incompatible with 11% gross margin—cannot absorb overhead of shipping, picking, packing, technology infrastructure",
-        "Culture as greatest asset and greatest risk—fragile across leadership transitions, dependent on maintaining trust contract with members",
-        "Low-SKU concentration risk—3,800 items means single bad buying decisions affect disproportionate revenue share",
-        "All-weather economic positioning—performs well in both recessions (lowest prices) and booms (affluent customer migration)",
-        "FedMart disaster as institutional memory—loss of cultural control destroys operating models regardless of brilliance",
-        "Deliberate growth quality over velocity—returning 80% of net income to shareholders rather than forcing expansion faster than culture can absorb"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "Succession planning beyond current leadership generation",
@@ -1006,8 +902,6 @@
           "description": "How are competitors responding to Costco's strategy of maintaining latent pricing power? Are there emerging threats from retailers who can match the model or exploit its constraints?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 15,
       "synthesisVersion": "v1"
@@ -1015,16 +909,6 @@
     {
       "dimension": "STRATEGIC_INTENT",
       "summary": "Costco's strategic intent is explicitly NOT to maximize short-term profit but to maximize member value through a hierarchy codified in its ethics: (1) Obey the law, (2) Take care of members, (3) Take care of employees, (4) Respect suppliers. Shareholders are deliberately absent from this list. As Jim Sinegal articulates: 'If we do these four things throughout our organization, then we will achieve our ultimate goal, which is to reward our shareholders.' This philosophy traces directly from Sol Price's upbringing in the socialist-leaning Bronx Jewish community and his invention of both the discounter and warehouse club formats. The core insight is that traditional retail adds enormous cost through inefficient distribution, excessive SKUs, costly real estate, and marketing overhead—all of which can be systematically stripped out.\n\nThe strategic mechanism is 'latent power'—advantages Costco deliberately does not monetize through higher margins. They could charge higher prices and still undercut competitors, but choose not to. This under-monetization is an investment in durability and enterprise value rather than operating profit, validated by the market awarding Costco a much higher P/E multiple than Walmart. The company functions as two businesses: a near-breakeven retailer (customer acquisition engine) and a high-margin membership club (profit engine). All strategic choices are trade-offs daisy-chained together: the 14% markup cap, 4,000 SKU limit, no advertising, membership fees, treasure hunt merchandising. As Sinegal notes: 'This isn't a tricky business. We just tried to sell high quality merchandise at a lower cost than everybody else. Anybody can sell goods for cheap. The trick is to make money while doing so.'\n\nThe strategy's durability depends entirely on cultural continuity across leadership transitions. Costco has benefited from extraordinary succession: three CEOs since 1976, all from FedMart lineage, all promoted from within. The company has never done a layoff, never broken its markup cap, never raised hot dog prices. Each is a cultural choice reinforced by decades of precedent. Growth is deliberately constrained by physical realities—hiring, training, construction, internal promotion—resulting in consistent ~10% annual growth for 30+ years. The company returns 80% of net income to shareholders because expansion has inherent bottlenecks that cash cannot solve. The strategic intent is to remain 'squeaky clean' and 'above reproach,' leaving enormous consumer surplus on the table, trusting that equity appreciation will reward long-term shareholders. $10,000 invested at the 1985 IPO was worth $3.3 million by the episode date—a 330x return excluding dividends.",
-      "keyThemes": [
-        "Explicit hierarchy: members and employees before shareholders",
-        "Latent power: deliberate under-monetization as investment in durability",
-        "Dual business model: breakeven retail funds high-margin membership",
-        "Intelligent loss of sales: strategic trade-offs that reinforce each other",
-        "Cultural continuity as competitive moat and existential risk",
-        "Physical constraints on growth velocity as strategic feature",
-        "Maximum consumer surplus as path to long-term shareholder value"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "Explicit articulation of 'enough' profit",
@@ -1047,8 +931,6 @@
           "description": "How does Costco operationalize 'high quality merchandise' in buyer decisions? What trade-offs exist between quality, price, and margin within the 14% cap? How is quality measured and enforced?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 22,
       "synthesisVersion": "v1"
@@ -1056,16 +938,6 @@
     {
       "dimension": "VALUE_PROPOSITION",
       "summary": "Costco's value proposition is built on a radical inversion of retail economics: scale economies shared with customers rather than captured as profit. The flywheel works through concentrated purchasing power across only ~3,800 SKUs (versus 100,000+ at competitors), giving Costco leverage to negotiate the absolute lowest supplier prices, which they mark up minimally (11% target gross margin) and pass directly to members. This creates what the hosts call a 'walled garden' where low prices don't signal low quality—you can buy Dom Perignon, iPads, and Southwest gift cards 'for smaller dollars' without brand degradation. The model strips out every cost layer Sol Price identified in traditional retail: excessive SKUs, costly real estate, marketing overhead, and inefficient distribution. Members sacrifice selection entirely, trusting Costco's buyers to pre-select 'the best one or two items in every category.'\n\nThe value proposition extends beyond price to cultural trust signals: the $1.50 hot dog unchanged for 47 years ('if you raise the price I will effing kill you'), $4.99 rotisserie chickens, and Kirkland Signature—now America's largest CPG brand at $52B annually, larger than Nike. Kirkland embodies the anti-brand ethos, earning credibility even in premium categories like wine and tequila where provenance traditionally matters. The proposition proves universally compelling: Costco succeeded in Japan, Korea, and China despite seeming culturally incompatible, because 'at the end of the day, people really like value. High quality products at a great value is a super compelling value proposition for anyone in the entire world.' The first China store reached 400,000 members in two years versus 68,000 US average, suggesting the model transcends cultural boundaries.",
-      "keyThemes": [
-        "Scale economies shared with customers, not captured as profit",
-        "Radical SKU limitation (3,800 vs 100,000+) concentrates volume and purchasing power",
-        "The 'walled garden' where low prices don't signal low quality",
-        "Trust-based curation replacing consumer choice—buyers pre-select the best",
-        "Permanent trust signals (unchanged $1.50 hot dog, $4.99 chicken) anchor value perception",
-        "Kirkland Signature as the anti-brand: $52B CPG leader built on credibility, not marketing",
-        "Universal appeal transcending demographics and cultures through fundamental value"
-      ],
-      "keyQuotes": [],
       "gaps": [
         {
           "title": "Member perception vs. objective value measurement",
@@ -1084,8 +956,6 @@
           "description": "Where does the value proposition break down? What categories or customer segments does it NOT work for? What would cause members to perceive the value as diminished?"
         }
       ],
-      "contradictions": [],
-      "subdimensions": null,
       "confidence": "HIGH",
       "fragmentCount": 12,
       "synthesisVersion": "v1"
