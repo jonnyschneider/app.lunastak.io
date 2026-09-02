@@ -9,7 +9,7 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
       "additionalProperties": false,
       "properties": {
         "bundleVersion": {
-          "const": 1,
+          "const": 2,
           "type": "number",
         },
         "decisionStack": {
@@ -203,12 +203,6 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
               "confidence": {
                 "type": "string",
               },
-              "contradictions": {
-                "items": {
-                  "type": "string",
-                },
-                "type": "array",
-              },
               "dimension": {
                 "type": "string",
               },
@@ -235,26 +229,6 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
                 },
                 "type": "array",
               },
-              "keyQuotes": {
-                "items": {
-                  "type": "string",
-                },
-                "type": "array",
-              },
-              "keyThemes": {
-                "items": {
-                  "type": "string",
-                },
-                "type": "array",
-              },
-              "subdimensions": {
-                "anyOf": [
-                  {},
-                  {
-                    "type": "null",
-                  },
-                ],
-              },
               "summary": {
                 "type": [
                   "string",
@@ -268,10 +242,7 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
             "required": [
               "dimension",
               "summary",
-              "keyThemes",
-              "keyQuotes",
               "gaps",
-              "contradictions",
               "confidence",
               "fragmentCount",
               "synthesisVersion",
