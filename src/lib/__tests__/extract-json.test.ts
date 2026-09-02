@@ -141,3 +141,53 @@ describe('raw control characters inside string literals', () => {
     expect(parsed.gaps[0].title).not.toBe('Synthesis failed')
   })
 })
+
+/**
+ * Unicode punctuation look-alikes in STRUCTURAL positions.
+ *
+ * Distinct from the control-character case above, and not covered by it: the
+ * 2026-08-27 walk escapes illegal characters INSIDE string literals. This one
+ * lands OUTSIDE them, where the only legal characters are `{}[]:,`, whitespace
+ * and literals — so any non-ASCII there is already malformed by definition.
+ *
+ * Observed 2026-09-02 on preview: a `full_synthesis` response closed its `gaps`
+ * array and then wrote U+3001 IDEOGRAPHIC COMMA in place of the ASCII comma
+ * before `"confidence"` — `}]、"confidence": "MEDIUM"}`. The response was NOT
+ * truncated (stop_reason `end_turn`, 1961 of 4000 output tokens), so the usual
+ * suspect is ruled out by measurement.
+ *
+ * Reproduced by replaying the exact fragments that failed in production
+ * (PRODUCT_EXPERIENCE, 10 fragments) 12 times: 1 failed, 8%. The other 11
+ * responses contained no structural non-ASCII at all.
+ *
+ * The blast radius is why this matters more than 8% suggests: the fallback
+ * writes "Synthesis failed" into `gaps`, which is the one synthesis field
+ * rendered to the user as a call to action.
+ */
+describe('unicode punctuation in structural positions', () => {
+  it('parses an ideographic comma used as a separator', () => {
+    const input = '{"a": [1, 2]\u3001"b": "x"}'
+    expect(JSON.parse(extractJsonFromResponse(input))).toEqual({ a: [1, 2], b: 'x' })
+  })
+
+  it('parses fullwidth comma and colon', () => {
+    const input = '{"a": 1\uff0c"b"\uff1a2}'
+    expect(JSON.parse(extractJsonFromResponse(input))).toEqual({ a: 1, b: 2 })
+  })
+
+  it('leaves the same characters alone INSIDE a string', () => {
+    const input = '{"summary": "\u3001 and \uff0c are punctuation"}'
+    const parsed = JSON.parse(extractJsonFromResponse(input))
+    expect(parsed.summary).toBe('\u3001 and \uff0c are punctuation')
+  })
+
+  it('parses the real captured response that failed on preview', () => {
+    const raw = readFileSync(
+      join(__dirname, '../synthesis/__fixtures__/structural-unicode-comma.json.txt'), 'utf8')
+    const parsed = JSON.parse(extractJsonFromResponse(raw))
+    expect(parsed.summary.length).toBeGreaterThan(200)
+    expect(parsed.confidence).toBe('MEDIUM')
+    expect(parsed.gaps).toHaveLength(6)
+    expect(parsed.gaps[0].title).not.toBe('Synthesis failed')
+  })
+})

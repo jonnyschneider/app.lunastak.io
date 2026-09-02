@@ -25,6 +25,20 @@
  *
  * Evidence: Drive `Test-Data/2026-08-27-seam-consolidation/findings-phase1.md`.
  *
+ * ## Unicode punctuation in structural positions
+ *
+ * A second, distinct class, observed 2026-09-02 on preview: the model closed the
+ * `gaps` array and wrote U+3001 IDEOGRAPHIC COMMA where the ASCII comma belonged
+ * — `}]\u3001"confidence": "MEDIUM"}`. Not truncation (stop_reason `end_turn`,
+ * 1961 of 4000 output tokens) and not a control character, so neither the
+ * max_tokens canary nor the escaping above catches it.
+ *
+ * Reproduced by replaying the exact fragments that failed (PRODUCT_EXPERIENCE,
+ * 10 fragments) 12 times: 1 failure, 8%; the other 11 carried no structural
+ * non-ASCII at all. It matters more than 8% suggests because the fallback writes
+ * "Synthesis failed" into `gaps` — the one synthesis field rendered to the user
+ * as a call to action.
+ *
  * So the brace-matching walk below — which already has to track string and escape
  * state to find the closing brace — also escapes any control character it sees
  * inside a string. Newlines BETWEEN tokens are untouched; only those inside string
@@ -48,6 +62,19 @@ export function extractJsonFromResponse(content: string): string {
   // string literals as we go. One pass: the walk already tracks the state needed.
   const CONTROL_ESCAPES: Record<string, string> = {
     '\n': '\\n', '\r': '\\r', '\t': '\\t', '\b': '\\b', '\f': '\\f',
+  }
+
+  // Outside a string literal the only legal characters are `{}[]:,`, whitespace
+  // and literals — so a non-ASCII character there is malformed by definition and
+  // can be mapped to its ASCII twin without risk of touching content. Only
+  // U+3001 has been observed (2026-09-02, see below); the rest are the same
+  // class and would fail identically.
+  const STRUCTURAL_ASCII: Record<string, string> = {
+    '\u3001': ',', // IDEOGRAPHIC COMMA — observed
+    '\uff0c': ',', // FULLWIDTH COMMA
+    '\uff1a': ':', // FULLWIDTH COLON
+    '\uff3b': '[', '\uff3d': ']',
+    '\uff5b': '{', '\uff5d': '}',
   }
 
   const out: string[] = []
@@ -86,8 +113,13 @@ export function extractJsonFromResponse(content: string): string {
       continue
     }
 
-    if (char === '{') depth++
-    if (char === '}') {
+    // Structural position — normalise a unicode punctuation look-alike to the
+    // ASCII character it stands in for, then treat it as that character.
+    const norm = STRUCTURAL_ASCII[char] ?? char
+    if (norm !== char) out[out.length - 1] = norm
+
+    if (norm === '{') depth++
+    if (norm === '}') {
       depth--
       if (depth === 0) {
         endIndex = i
