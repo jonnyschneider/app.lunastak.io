@@ -3,11 +3,16 @@
  * Ground-truth check (2026-09-04) — the conversation extractor must parse the verbatim span each
  * theme rests on, plus the extractor's self-reported verbatim|interpretation type.
  *
+ * The span/type parsing itself now lives in `src/lib/evidence/parse.ts` and is unit-tested there,
+ * against a bare `<theme>` body and with no workarounds. What is left here is the end-to-end pass:
+ * `parseEmergentThemes` over whole `<extraction>` XML, since that is the function the route calls.
+ *
  * The backwards-compatibility case matters as much as the new one: captured fixtures and any
  * in-flight model response still use today's format, which carries neither element.
  */
-// The route module builds the Anthropic client at import time. vi.hoisted runs before the import
-// below, so a dummy key is in place; no call is made — parseEmergentThemes is pure string work.
+// The route module builds the Anthropic client at import time, and pulls in next/server — hence
+// the node environment and the dummy key. vi.hoisted runs before the import below; no call is made,
+// parseEmergentThemes is pure string work.
 vi.hoisted(() => {
   process.env.ANTHROPIC_API_KEY ||= 'test-key-not-used';
 });
@@ -15,35 +20,7 @@ vi.hoisted(() => {
 import { parseEmergentThemes } from '../route';
 
 describe('parseEmergentThemes — evidence and type', () => {
-  it('parses type and evidence spans, preserving span order', () => {
-    const xml = `
-<extraction>
-  <theme>
-    <theme_name>Pricing Opacity</theme_name>
-    <content>Builders keep pricing opaque, which stalls the buyer.</content>
-    <dimensions>
-      <dimension name="business_model_economics" confidence="high"/>
-    </dimensions>
-    <type>verbatim</type>
-    <evidence>
-      <span>builders keep it opaque, mostly</span>
-      <span>so they can't estimate it properly</span>
-    </evidence>
-  </theme>
-</extraction>`;
-
-    const themes = parseEmergentThemes(xml);
-
-    expect(themes).toHaveLength(1);
-    expect(themes[0].theme_name).toBe('Pricing Opacity');
-    expect(themes[0].type).toBe('verbatim');
-    expect(themes[0].evidence).toEqual([
-      'builders keep it opaque, mostly',
-      "so they can't estimate it properly",
-    ]);
-  });
-
-  it('parses an interpretation type across multiple themes independently', () => {
+  it('parses type and evidence spans per theme, preserving order', () => {
     const xml = `
 <extraction>
   <theme>
@@ -55,6 +32,7 @@ describe('parseEmergentThemes — evidence and type', () => {
     <type>interpretation</type>
     <evidence>
       <span>they don't trust the quote</span>
+      <span>so they can't estimate it properly</span>
     </evidence>
   </theme>
   <theme>
@@ -72,29 +50,16 @@ describe('parseEmergentThemes — evidence and type', () => {
 
     const themes = parseEmergentThemes(xml);
 
+    expect(themes).toHaveLength(2);
     expect(themes.map((t) => t.type)).toEqual(['interpretation', 'verbatim']);
-    expect(themes[0].evidence).toEqual(["they don't trust the quote"]);
-    expect(themes[1].evidence).toEqual(['I quote off a spreadsheet']);
-  });
-
-  it('parses a multi-line span, trimmed', () => {
-    const xml = `
-<extraction>
-  <theme>
-    <theme_name>Margin</theme_name>
-    <content>Margin pressure.</content>
-    <type>verbatim</type>
-    <evidence>
-      <span>
-        the margin is the first thing to go
-      </span>
-    </evidence>
-  </theme>
-</extraction>`;
-
-    expect(parseEmergentThemes(xml)[0].evidence).toEqual([
-      'the margin is the first thing to go',
+    expect(themes[0].evidence).toEqual([
+      "they don't trust the quote",
+      "so they can't estimate it properly",
     ]);
+    expect(themes[1].evidence).toEqual(['I quote off a spreadsheet']);
+    // The new elements must not disturb what was already parsed.
+    expect(themes[0].theme_name).toBe('Trust Gap');
+    expect(themes[0].dimensions).toEqual([{ name: 'customer_market', confidence: 'MEDIUM' }]);
   });
 
   // BACKWARDS COMPATIBILITY — today's format carries neither element. Old captured fixtures and
@@ -129,41 +94,5 @@ describe('parseEmergentThemes — evidence and type', () => {
     expect(themes[0].type).toBe('verbatim');
     expect(themes[1].evidence).toEqual([]);
     expect(themes[1].type).toBe('verbatim');
-  });
-
-  it('defaults type to verbatim when <evidence> is present but <type> is absent', () => {
-    const xml = `
-<extraction>
-  <theme>
-    <theme_name>Half Adopted</theme_name>
-    <content>A producer partway through the rollout.</content>
-    <evidence>
-      <span>this is the span it rests on</span>
-    </evidence>
-  </theme>
-</extraction>`;
-
-    const themes = parseEmergentThemes(xml);
-
-    expect(themes[0].type).toBe('verbatim');
-    expect(themes[0].evidence).toEqual(['this is the span it rests on']);
-  });
-
-  it('yields an empty evidence array when <evidence> is present but carries no spans', () => {
-    const xml = `
-<extraction>
-  <theme>
-    <theme_name>Empty</theme_name>
-    <content>Nothing quotable.</content>
-    <type>interpretation</type>
-    <evidence>
-    </evidence>
-  </theme>
-</extraction>`;
-
-    const themes = parseEmergentThemes(xml);
-
-    expect(themes[0].evidence).toEqual([]);
-    expect(themes[0].type).toBe('interpretation');
   });
 });
