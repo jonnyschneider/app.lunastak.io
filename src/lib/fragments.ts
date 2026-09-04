@@ -8,8 +8,27 @@ import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { EmergentThemeContract } from '@/lib/contracts/extraction'
 import { verifySpan, type Verification } from '@/lib/evidence/verify'
 
-/** Where the span came from — the ingest path, not the model's opinion. */
+/**
+ * Where the span was actually found — not the ingest path.
+ *
+ * On the conversation path this is the speaker whose turns the span matched, which is the whole
+ * point: a span that only appears in the coach's turns is not evidence of what the user thinks,
+ * however faithfully it was transcribed. `verification: 'failed'` alone would lose that distinction
+ * and read as hallucination.
+ */
 export type EvidenceSourceRole = 'user' | 'assistant' | 'document' | 'bundle'
+
+/**
+ * The two halves of a conversation transcript, already joined.
+ *
+ * Only `user` verifies. `assistant` exists solely to explain a failure — never to pass one.
+ */
+export interface ConversationSource {
+  /** The user's own turns. A span must match HERE to be `verified`. */
+  user: string | null
+  /** The coach's turns. Consulted only after a span fails against `user`. */
+  assistant?: string | null
+}
 
 export interface EvidenceInput {
   text: string
@@ -50,6 +69,39 @@ function buildEvidence(
     verification: verifySpan(text, source),
     sourceRole,
   }))
+}
+
+/**
+ * Verify a conversation theme's spans against the USER's turns only.
+ *
+ * Evidence exists so a user can be shown the words their fragment rests on. A span quoting the
+ * coach back at them is not that. Verifying against the whole transcript would make an
+ * assistant-proposed claim the user assented to in four characters look identically well-evidenced
+ * — the exact signal this feature exists to create.
+ *
+ * The three-state `verification` contract is unchanged (there is no fourth state); the wrong-speaker
+ * case is recorded in `sourceRole` instead:
+ *   - matched the user's turns          → verified   / user
+ *   - matched only the assistant's      → failed     / assistant
+ *   - matched neither                   → failed     / user   (the path it came in on)
+ * With no source at all, `verifySpan` still yields `unverifiable` and nothing is claimed.
+ */
+function buildConversationEvidence(
+  spans: string[] | undefined,
+  source: ConversationSource | null | undefined
+): EvidenceInput[] | undefined {
+  if (!spans || spans.length === 0) return undefined
+  return spans.map(text => {
+    const againstUser = verifySpan(text, source?.user)
+    if (againstUser !== 'failed') {
+      // 'verified', or 'unverifiable' when no source was supplied at all.
+      return { text, verification: againstUser, sourceRole: 'user' as const }
+    }
+    if (source?.assistant && verifySpan(text, source.assistant) === 'verified') {
+      return { text, verification: 'failed' as const, sourceRole: 'assistant' as const }
+    }
+    return { text, verification: 'failed' as const, sourceRole: 'user' as const }
+  })
 }
 
 export interface DimensionTagInput {
@@ -134,10 +186,11 @@ export async function createFragmentsFromThemes(
   conversationId: string,
   themes: ThemeWithDimensions[],
   /**
-   * The conversation text the themes were extracted from. Verification runs here, at ingest —
-   * pass `null` when the caller has no source in hand and the spans store as `unverifiable`.
+   * The transcript the themes were extracted from, split by speaker. Verification runs here, at
+   * ingest. Omit it (or pass `{ user: null }`) when the caller has no transcript in hand and the
+   * spans store as `unverifiable`.
    */
-  sourceText?: string | null
+  source?: ConversationSource | null
 ) {
   console.log(`[Fragments] Creating ${themes.length} fragments via Promise.all...`)
   const fragments = await Promise.all(
@@ -165,7 +218,7 @@ export async function createFragmentsFromThemes(
         content: theme.content,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
-        evidence: buildEvidence(theme.evidence, sourceText, 'user'),
+        evidence: buildConversationEvidence(theme.evidence, source),
         interpretationType: theme.type,
       }, tags)
       console.log(`[Fragments] Fragment ${i + 1}/${themes.length} created: ${fragment.id}`)

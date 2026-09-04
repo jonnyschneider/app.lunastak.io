@@ -100,28 +100,78 @@ describe('createFragment — evidence in the same write', () => {
 })
 
 describe('createFragmentsFromThemes — conversation path', () => {
-  const source = 'We keep losing enterprise deals on procurement review, every single quarter.'
+  // Only the user's turns can verify a span. The assistant half is carried purely so a
+  // wrong-speaker match is recorded as such instead of looking like a hallucination.
+  const source = {
+    user: 'We keep losing enterprise deals on procurement review, every single quarter.',
+    assistant: 'So the real constraint might be your enterprise buying cycle, not the product.',
+  }
 
-  it('verifies spans against the conversation source and preserves ordinal order', async () => {
-    const themes: ThemeWithDimensions[] = [
-      {
-        theme_name: 'Procurement friction',
-        content: 'Deals stall in procurement',
-        dimensions: [],
-        evidence: ['losing enterprise deals on procurement review', 'a span that is simply not there'],
-        type: 'verbatim',
-      } as ThemeWithDimensions,
-    ]
+  function theme(evidence: string[]): ThemeWithDimensions {
+    return {
+      theme_name: 'Procurement friction',
+      content: 'Deals stall in procurement',
+      dimensions: [],
+      evidence,
+      type: 'verbatim',
+    } as ThemeWithDimensions
+  }
 
-    await createFragmentsFromThemes('p1', 'c1', themes, source)
+  it('verifies spans against the user turns and preserves ordinal order', async () => {
+    await createFragmentsFromThemes('p1', 'c1', [
+      theme(['losing enterprise deals on procurement review', 'a span that is simply not there']),
+    ], source)
 
     const rows = createArg().evidence.create
     expect(rows.map((r: any) => r.ordinal)).toEqual([0, 1])
     expect(rows[0].text).toBe('losing enterprise deals on procurement review')
     expect(rows[0].verification).toBe('verified')
-    expect(rows[1].verification).toBe('failed')
-    expect(rows.every((r: any) => r.sourceRole === 'user')).toBe(true)
+    expect(rows[0].sourceRole).toBe('user')
     expect(createArg().interpretationType).toBe('verbatim')
+  })
+
+  it('fails a span found ONLY in the assistant turns, and records the speaker', async () => {
+    await createFragmentsFromThemes('p1', 'c1', [
+      theme(['the real constraint might be your enterprise buying cycle']),
+    ], source)
+
+    const [row] = createArg().evidence.create
+    // Quoting the coach back at the user is not admissible evidence...
+    expect(row.verification).toBe('failed')
+    // ...but sourceRole preserves WHY, so a reader does not assume hallucination.
+    expect(row.sourceRole).toBe('assistant')
+  })
+
+  it('fails a span found in neither speaker, attributed to the path it came in on', async () => {
+    await createFragmentsFromThemes('p1', 'c1', [
+      theme(['nobody in this conversation ever said this sentence']),
+    ], source)
+
+    const [row] = createArg().evidence.create
+    expect(row.verification).toBe('failed')
+    expect(row.sourceRole).toBe('user')
+  })
+
+  it('keeps verification three-state — never invents a fourth for wrong-speaker', async () => {
+    await createFragmentsFromThemes('p1', 'c1', [
+      theme([
+        'losing enterprise deals on procurement review',
+        'the real constraint might be your enterprise buying cycle',
+        'nobody in this conversation ever said this sentence',
+      ]),
+    ], source)
+
+    const rows = createArg().evidence.create
+    expect(rows.map((r: any) => r.verification)).toEqual(['verified', 'failed', 'failed'])
+    expect(rows.map((r: any) => r.sourceRole)).toEqual(['user', 'assistant', 'user'])
+  })
+
+  it('stores unverifiable, not failed, when no transcript is supplied', async () => {
+    await createFragmentsFromThemes('p1', 'c1', [theme(['a span with no source to check it against'])])
+
+    const [row] = createArg().evidence.create
+    expect(row.verification).toBe('unverifiable')
+    expect(row.sourceRole).toBe('user')
   })
 
   it('creates the fragment for a theme carrying no evidence (back-compat)', async () => {

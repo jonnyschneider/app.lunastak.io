@@ -27,18 +27,21 @@ export async function executePipeline(
   if (plan.persistFragments && trigger.type === 'conversation_ended' && trigger.extractionResult?.themes) {
     try {
       console.log(`[Pipeline] Creating fragments from ${trigger.extractionResult.themes.length} themes...`)
-      // Evidence spans are verified against the conversation they were extracted from, at ingest.
+      // Evidence spans are verified at ingest against the USER's turns only — a span quoting the
+      // coach back at the user is not evidence of what the user thinks. One query, split in memory;
+      // the assistant half is carried so a wrong-speaker match can be recorded as such.
       const messages = await prisma.message.findMany({
         where: { conversationId: trigger.conversationId },
-        select: { content: true },
+        select: { role: true, content: true },
         orderBy: { timestamp: 'asc' },
       })
-      const conversationText = messages.map(m => m.content).join('\n\n')
+      const joinTurns = (role: string) =>
+        messages.filter(m => m.role === role).map(m => m.content).join('\n\n')
       const fragments = await createFragmentsFromThemes(
         projectId,
         trigger.conversationId,
         trigger.extractionResult.themes as ThemeWithDimensions[],
-        conversationText
+        { user: joinTurns('user'), assistant: joinTurns('assistant') }
       )
       fragmentsCreated = fragments.length
       console.log(`[Pipeline] Created ${fragmentsCreated} fragments`)
