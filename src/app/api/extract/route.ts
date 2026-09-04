@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createMessage } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
+import { parseThemeEvidence } from '@/lib/evidence/parse';
 import { isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { logStatsigEvent } from '@/lib/statsig';
@@ -165,14 +166,8 @@ export function parseEmergentThemes(xml: string): ParsedTheme[] {
 
     // Ground-truth check (2026-09-04): the verbatim span the theme rests on, plus the extractor's
     // own verbatim|interpretation call. Both absent in today's format — that must still parse.
-    const type = extractXML(themeXML, 'type')?.trim().toLowerCase();
-    const evidence: string[] = [];
-    const evidenceXML = extractXML(themeXML, 'evidence');
-    if (evidenceXML) {
-      const spanRe = /<span>([\s\S]*?)<\/span>/g;
-      let s;
-      while ((s = spanRe.exec(evidenceXML)) !== null) evidence.push(s[1].trim());
-    }
+    // Shared with the document extractor; see src/lib/evidence/parse.ts.
+    const { evidence, type } = parseThemeEvidence(themeXML);
 
     // Parse inline dimensions
     const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
@@ -193,7 +188,7 @@ export function parseEmergentThemes(xml: string): ParsedTheme[] {
         content,
         dimensions,
         evidence,
-        type: type === 'interpretation' ? 'interpretation' : 'verbatim',
+        type,
       });
     }
   }
