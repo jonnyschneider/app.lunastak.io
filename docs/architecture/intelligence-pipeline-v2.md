@@ -435,6 +435,82 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
 
+### 2026-09-04: Extraction cites its source — the `Evidence` layer (slices 1-2, ON A BRANCH)
+
+> ⚠ **Not deployed.** This lands on `feat/ground-truth-check-backend` (app) and
+> `feat/verbatim-bundle-evidence` (`lunastak/tools`), with schema applied to **dev only** —
+> `db:check-drift` therefore reports drift on preview and prod, deliberately. §1, §3, §4 and §5
+> above still describe production and are correct until this deploys. The "on deploy" list at the
+> end of this entry is what changes then.
+
+**Context.** Groundedness was measured at 26% of factual claims clearly invented (2026-08-26), and
+two attempts at an LLM groundedness judge failed calibration (40-45% precision, 25-62% recall). A
+user-facing adjudication UI was designed, prototyped, and then **retired** — it duplicated the
+shipped `FragmentExplorer` and adjudicated the wrong layer. What replaced it came from one finding:
+**a model asked to QUOTE its evidence is reliable where the same model asked to JUDGE quality is
+not.** No producer in the pipeline had ever been asked to cite its source.
+
+**Change.** All three ingest paths now emit a verbatim span per theme plus a self-reported
+`verbatim | interpretation` type, and spans are verified **at ingest** while the source is briefly
+in hand. Source material is still **not persisted** — only the span and the verification result are.
+
+- Layer 0 — `EMERGENT_EXTRACTION_PROMPT` and `DOCUMENT_EXTRACTION_PROMPT` gain `<type>` and
+  `<evidence><span>`; parsing is shared via `src/lib/evidence/parse.ts`.
+- New `src/lib/evidence/verify.ts` — pure, markdown-tolerant matching.
+- Layer 1 — all three creators write `Evidence` rows in the same transaction as the fragment.
+- Import — `lunastak/tools` bundle spec now demands verbatim spans (both modes); the transform
+  carries them structurally instead of flattening them into `content`.
+- Schema — `Evidence` table plus `Fragment.interpretationType` / `Fragment.reviewedAt`, additive.
+
+`verification` is **three states and they are not interchangeable**: `verified`,
+`unverifiable` (no source retained — every bundle import, ~half of production fragments), `failed`.
+Conflating the last two would penalise a whole ingest path for a reason unrelated to quality.
+Conversation spans verify against the **user's turns only**; a span matching only the assistant is
+`failed` with `sourceRole: 'assistant'`.
+
+**Evidence.** Four spikes, all re-runnable, in `scripts/one-offs/`:
+
+| measurement | before | after |
+|---|---|---|
+| document extraction citing its source | no evidence at all | **119/119 spans verified**, 4 real docs |
+| bundle, themes mode | 63.1% traceable — the rest *near-quotes* | **100%** |
+| bundle, chunks mode | no evidence field | **100%** (68/68) |
+| retained per document | — | **8-18% of source**, ~850-1,200 chars |
+| real bundle, real voice memo (2026-09-05) | — | **46/46 verified**, 42/42 themes carrying evidence |
+
+Theme yield unchanged (−3.4% to +3.8%). A human-produced bundle imported end-to-end on dev: 47
+fragments, 46 spans, 9/9 checks including multi-span index alignment.
+
+**Two prompt changes were measured and NOT made**, recorded so they are not re-opened:
+- A "prefer the USER's own words" clause in the conversation prompt moved user-sourced spans 96% →
+  97.2% — one span in seventy-five. Not worth deviating from measured wording.
+- Removing the extraction count instruction entirely **increases** output up to 42%; the range acts
+  as a ceiling, not only a floor.
+
+**Deliberately unchanged, with reasons — do not "fix" these:**
+- **`Fragment.confidence`** — measured as a **constant** (1,901 of 1,901 prod rows `MEDIUM`; it
+  encodes only "did dimension tagging produce tags"). But the slot is live: holding fragments
+  constant and varying only the label moved **gap count ~40%** (3.5 HIGH vs 6.0 LOW). It belongs to
+  the confidence refactor, not here.
+- **`DimensionalSynthesis`** (every field), gaps generation, Explore Next, the opportunity coverage
+  gate — untouched.
+- **`averageConfidence`** (`api/project/[id]/route.ts`) is computed and never read. Left dead on
+  purpose; the Harvey ball's replacement input is designed but unbuilt (slice 3).
+
+**Known, unmeasured, and blocking slice 3.** Moving bundle evidence out of `content` **reduces what
+`full_synthesis` receives** — that stage reads `content` only and nothing reads `Evidence` rows. A
+themes-mode bundle theme is ~72 chars of title where it previously carried ~236 chars of evidence
+prose. Given a mere *label* change moves gap counts 40%, a volume change of this size must be
+measured before this reaches preview.
+
+**On deploy, update:** §1 Layer 0 (extraction emits evidence + type) · §3 ERD (add `EVIDENCE`;
+`FRAGMENT` gains `interpretationType`, `reviewedAt`) · §5 LLM table (extraction output shape) ·
+`service-blueprints.md` Tasks 2, 3 and 4 (fragment creation now writes evidence) · and apply the
+schema to preview and prod, code before columns.
+
+**Architecture impact.** New `src/lib/evidence/` layer. Design record:
+`docs/_plans/2026-08-27-ground-truth-preflight-design.md` §13-§16.
+
 ### 2026-08-29: Documentation corrected against a full schema/code cross-reference
 
 **Context:** A cross-reference of all 225 scalar schema fields against their readers found §3 and §4 describing a system that no longer existed. The ERD named `GeneratedOutput`, `StrategyVersion` and (in the 2026-03-28 log entry) `UserContent` — all retired when the strategy side moved to `DecisionStack`. §4 showed a "Key Themes (Strategy Page)" surface removed in an earlier refactor. §5 named three prompt constants renamed by the 2026-08-27 seam consolidation.
