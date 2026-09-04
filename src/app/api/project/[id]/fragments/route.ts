@@ -90,6 +90,10 @@ export async function GET(
       document: {
         select: { id: true, fileName: true },
       },
+      evidence: {
+        select: { text: true, verification: true, sourceRole: true, ordinal: true },
+        orderBy: { ordinal: 'asc' },
+      },
     },
     orderBy: { capturedAt: 'desc' },
   })
@@ -119,6 +123,18 @@ export async function GET(
           ? { type: 'document' as const, id: f.document.id, name: f.document.fileName }
           : null,
       capturedAt: f.capturedAt.toISOString(),
+      // Ground-truth facts, deliberately unshaped: no tranches, scores, grouping or
+      // "best span" flattening — the client composes whatever view it needs.
+      interpretationType: f.interpretationType,
+      reviewedAt: f.reviewedAt ? f.reviewedAt.toISOString() : null,
+      // Sorted here as well as in the query so ordinal order is a property of the
+      // response rather than of the query that happened to produce it.
+      evidence: [...(f.evidence ?? [])].sort((a, b) => a.ordinal - b.ordinal).map(e => ({
+        text: e.text,
+        verification: e.verification,
+        sourceRole: e.sourceRole,
+        ordinal: e.ordinal,
+      })),
     })),
     total: fragments.length,
     activeCount,
