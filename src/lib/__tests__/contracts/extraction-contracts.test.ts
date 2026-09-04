@@ -9,6 +9,7 @@ import {
   validateEmergentExtraction,
   validatePrescriptiveExtraction,
   EmergentExtractionContract,
+  EmergentThemeContract,
   PrescriptiveExtractionContract,
 } from '@/lib/contracts/extraction';
 
@@ -89,6 +90,53 @@ describe('Extraction Contracts', () => {
         },
       };
       expect(validateEmergentExtraction(invalid)).toBe(false);
+    });
+
+    // Ground-truth check (2026-09-04): every theme should carry the verbatim span it rests on,
+    // plus a self-reported verbatim|interpretation type. BOTH are OPTIONAL — three producers roll
+    // out at different times, and one that emits neither must keep parsing and validating.
+    describe('evidence and type are optional additions', () => {
+      it('validates a theme carrying evidence spans and a type', () => {
+        const withEvidence: EmergentExtractionContract = {
+          ...validEmergent,
+          themes: [
+            {
+              theme_name: 'Pricing Opacity',
+              content: 'Builders keep pricing opaque, which stalls the buyer.',
+              dimensions: [{ name: 'business_model_economics', confidence: 'HIGH' }],
+              evidence: ['builders keep it opaque, mostly', 'so they can’t estimate it properly'],
+              type: 'verbatim',
+            },
+          ],
+        };
+
+        expect(validateEmergentExtraction(withEvidence)).toBe(true);
+        expect(withEvidence.themes[0].evidence).toHaveLength(2);
+        expect(withEvidence.themes[0].type).toBe('verbatim');
+      });
+
+      it('accepts interpretation as a type', () => {
+        const theme: EmergentThemeContract = {
+          theme_name: 'Trust Gap',
+          content: 'Reasoning across several points in the discussion.',
+          evidence: ['a span', 'another span'],
+          type: 'interpretation',
+        };
+
+        expect(theme.type).toBe('interpretation');
+        expect(validateEmergentExtraction({ ...validEmergent, themes: [theme] })).toBe(true);
+      });
+
+      it('validates a theme omitting both — a producer mid-rollout is not a breaking change', () => {
+        const legacyTheme: EmergentThemeContract = {
+          theme_name: 'Customer Pain Points',
+          content: 'SMBs struggle with complex invoicing workflows',
+        };
+
+        expect(legacyTheme.evidence).toBeUndefined();
+        expect(legacyTheme.type).toBeUndefined();
+        expect(validateEmergentExtraction({ ...validEmergent, themes: [legacyTheme] })).toBe(true);
+      });
     });
   });
 

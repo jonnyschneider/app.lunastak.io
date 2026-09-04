@@ -22,6 +22,10 @@ export interface EmergentThemeContract {
     name: string;
     confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   }>;
+  /** Verbatim spans the theme rests on. Optional: a producer that omits them still parses. */
+  evidence?: string[];
+  /** How the theme was made. Self-reported by the extractor (§14). */
+  type?: 'verbatim' | 'interpretation';
 }
 
 // Emergent extraction output (E1a, E3)
