@@ -47,8 +47,8 @@ export interface FragmentInput {
   confidence?: 'HIGH' | 'MEDIUM' | 'LOW'
   /** Verbatim spans the fragment rests on, in the order the extractor emitted them. */
   evidence?: EvidenceInput[]
-  /** Self-reported by the extractor: verbatim | interpretation. */
-  interpretationType?: string
+  /** Self-reported by the extractor: verbatim | interpretation. Null when it reported neither. */
+  interpretationType?: string | null
 }
 
 /**
@@ -219,7 +219,7 @@ export async function createFragmentsFromThemes(
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
         evidence: buildConversationEvidence(theme.evidence, source),
-        interpretationType: theme.type,
+        interpretationType: theme.type ?? null,
       }, tags)
       console.log(`[Fragments] Fragment ${i + 1}/${themes.length} created: ${fragment.id}`)
       return fragment
@@ -267,7 +267,7 @@ export async function createFragmentsFromDocument(
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
         evidence: buildEvidence(theme.evidence, documentText, 'document'),
-        interpretationType: theme.type,
+        interpretationType: theme.type ?? null,
       }, tags)
     })
   )

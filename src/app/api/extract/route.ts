@@ -149,8 +149,8 @@ interface ParsedTheme {
   dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[];
   /** Verbatim spans the theme rests on. Empty for a response in today's format. */
   evidence: string[];
-  /** Self-reported by the extractor. Absent self-report is not a claim of interpretation. */
-  type: 'verbatim' | 'interpretation';
+  /** Self-reported by the extractor. Absent when it reported nothing — that is not a claim. */
+  type?: 'verbatim' | 'interpretation';
 }
 
 /** Exported for test. Must keep parsing responses that carry neither <type> nor <evidence>. */

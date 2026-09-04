@@ -187,6 +187,16 @@ describe('createFragmentsFromThemes — conversation path', () => {
     expect(row.sourceRole).toBe('user')
   })
 
+  it('writes interpretationType null — not a defaulted verbatim — when the theme self-reported none', async () => {
+    // §16.1: this field decides WHICH question the ground-truth check asks the user. Recording
+    // the stronger 'verbatim' claim for a theme that made no claim would put a question to them
+    // on the strength of a self-report that never happened. The column is nullable for this.
+    const untyped = { theme_name: 'Untyped', content: 'no self-report', dimensions: [], evidence: [] } as ThemeWithDimensions
+    await createFragmentsFromThemes('p1', 'c1', [untyped], source)
+
+    expect(createArg().interpretationType).toBeNull()
+  })
+
   it('creates the fragment for a theme carrying no evidence (back-compat)', async () => {
     const themes: ThemeWithDimensions[] = [
       { theme_name: 'Legacy theme', content: 'no evidence element', dimensions: [] } as ThemeWithDimensions,
@@ -225,6 +235,14 @@ describe('createFragmentsFromDocument — document path', () => {
         ordinal: 0,
       },
     ])
+  })
+
+  it('writes interpretationType null when the document theme self-reported none', async () => {
+    await createFragmentsFromDocument('p1', 'd1', [
+      { theme_name: 'Untyped', content: 'no self-report', dimensions: [] } as ThemeWithDimensions,
+    ], 'some document text')
+
+    expect(createArg().interpretationType).toBeNull()
   })
 })
 

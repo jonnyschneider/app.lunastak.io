@@ -51,11 +51,13 @@ describe('parseThemeEvidence', () => {
       <dimension name="customer_market" confidence="high"/>
     </dimensions>`
 
-    // No self-report is not a claim of interpretation — it defaults to verbatim.
-    expect(parseThemeEvidence(themeXML)).toEqual({ evidence: [], type: 'verbatim' })
+    // No self-report is no claim AT ALL — neither interpretation nor the stronger verbatim.
+    // The column is nullable precisely so "unknown" is expressible; defaulting would put a
+    // ground-truth question to the user on the strength of a self-report that never happened.
+    expect(parseThemeEvidence(themeXML)).toEqual({ evidence: [], type: undefined })
   })
 
-  it('defaults type to verbatim when <evidence> is present but <type> is absent', () => {
+  it('leaves type undefined when <evidence> is present but <type> is absent', () => {
     const themeXML = `
     <evidence>
       <span>this is the span it rests on</span>
@@ -63,7 +65,7 @@ describe('parseThemeEvidence', () => {
 
     expect(parseThemeEvidence(themeXML)).toEqual({
       evidence: ['this is the span it rests on'],
-      type: 'verbatim',
+      type: undefined,
     })
   })
 
@@ -74,7 +76,11 @@ describe('parseThemeEvidence', () => {
     })
   })
 
-  it('treats an unrecognised type self-report as verbatim', () => {
-    expect(parseThemeEvidence('<type>paraphrase</type>').type).toBe('verbatim')
+  it('treats an unrecognised type self-report as no self-report, not as verbatim', () => {
+    expect(parseThemeEvidence('<type>paraphrase</type>').type).toBeUndefined()
+  })
+
+  it('treats an empty <type> element as no self-report', () => {
+    expect(parseThemeEvidence('<type></type>').type).toBeUndefined()
   })
 })

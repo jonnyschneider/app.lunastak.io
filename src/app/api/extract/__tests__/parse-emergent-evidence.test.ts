@@ -90,9 +90,9 @@ describe('parseEmergentThemes — evidence and type', () => {
     expect(themes[0].theme_name).toBe('Customer Pain Points');
     expect(themes[0].dimensions).toHaveLength(2);
     expect(themes[0].evidence).toEqual([]);
-    // No self-report is not a claim of interpretation — it defaults to verbatim.
-    expect(themes[0].type).toBe('verbatim');
+    // No self-report is no claim at all — not the stronger 'verbatim' claim.
+    expect(themes[0].type).toBeUndefined();
     expect(themes[1].evidence).toEqual([]);
-    expect(themes[1].type).toBe('verbatim');
+    expect(themes[1].type).toBeUndefined();
   });
 });
