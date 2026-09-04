@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { createFragmentsFromThemes, createFragmentsFromDocument, type ThemeWithDimensions } from '@/lib/fragments'
+import { createFragmentsFromThemes, createFragmentsFromDocument, type ThemeWithDimensions, type ConversationSource } from '@/lib/fragments'
 import { updateAllSyntheses } from '@/lib/synthesis'
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
 import { runBackgroundTasks } from '@/lib/background-tasks'
@@ -25,11 +25,16 @@ export async function executePipeline(
 
   // Layer 1: Persist fragments
   if (plan.persistFragments && trigger.type === 'conversation_ended' && trigger.extractionResult?.themes) {
+    // Evidence spans are verified at ingest against the USER's turns only — a span quoting the
+    // coach back at the user is not evidence of what the user thinks. One query, split in memory;
+    // the assistant half is carried so a wrong-speaker match can be recorded as such.
+    //
+    // This read is SUPPLEMENTARY and gets its own try: the fragments are the primary artefact of
+    // an extraction, and a transient failure fetching the transcript must not discard them. On
+    // failure the source is null, so the spans store as `unverifiable` — "could not be checked",
+    // which is exactly what happened.
+    let source: ConversationSource | null = null
     try {
-      console.log(`[Pipeline] Creating fragments from ${trigger.extractionResult.themes.length} themes...`)
-      // Evidence spans are verified at ingest against the USER's turns only — a span quoting the
-      // coach back at the user is not evidence of what the user thinks. One query, split in memory;
-      // the assistant half is carried so a wrong-speaker match can be recorded as such.
       const messages = await prisma.message.findMany({
         where: { conversationId: trigger.conversationId },
         select: { role: true, content: true },
@@ -41,11 +46,18 @@ export async function executePipeline(
         const turns = messages.filter(m => m.role === role)
         return turns.length > 0 ? turns.map(m => m.content).join('\n\n') : null
       }
+      source = { user: joinTurns('user'), assistant: joinTurns('assistant') }
+    } catch (error) {
+      console.error('[Pipeline] Failed to read transcript for evidence verification — spans will store as unverifiable:', error)
+    }
+
+    try {
+      console.log(`[Pipeline] Creating fragments from ${trigger.extractionResult.themes.length} themes...`)
       const fragments = await createFragmentsFromThemes(
         projectId,
         trigger.conversationId,
         trigger.extractionResult.themes as ThemeWithDimensions[],
-        { user: joinTurns('user'), assistant: joinTurns('assistant') }
+        source
       )
       fragmentsCreated = fragments.length
       console.log(`[Pipeline] Created ${fragmentsCreated} fragments`)
