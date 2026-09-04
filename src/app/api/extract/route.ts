@@ -86,6 +86,17 @@ Format your extraction:
       <dimension name="dimension_key" confidence="high|medium|low"/>
       <!-- Include 1-3 most relevant dimensions per theme -->
     </dimensions>
+    <type>verbatim OR interpretation — "verbatim" if the theme restates or lightly compresses
+    something the conversation says outright; "interpretation" if you have applied reasoning across
+    the conversation to make new meaning. Be honest: most themes that combine several points are
+    interpretation.</type>
+    <evidence>
+      <span>A span copied VERBATIM from the conversation — character for character, including any
+      typos or odd punctuation. It must appear in the conversation exactly as you write it. This is
+      what will be kept after the conversation itself is discarded, so it has to stand on its own as
+      the reason this theme exists. Keep it to the shortest span that genuinely carries the claim.</span>
+      <!-- One span is usually enough. Add more only when the theme genuinely rests on several. -->
+    </evidence>
   </theme>
   <!-- Repeat for each emergent theme (3-7 themes) -->
 </extraction>`;
@@ -135,9 +146,14 @@ interface ParsedTheme {
   theme_name: string;
   content: string;
   dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[];
+  /** Verbatim spans the theme rests on. Empty for a response in today's format. */
+  evidence: string[];
+  /** Self-reported by the extractor. Absent self-report is not a claim of interpretation. */
+  type: 'verbatim' | 'interpretation';
 }
 
-function parseEmergentThemes(xml: string): ParsedTheme[] {
+/** Exported for test. Must keep parsing responses that carry neither <type> nor <evidence>. */
+export function parseEmergentThemes(xml: string): ParsedTheme[] {
   const themes: ParsedTheme[] = [];
   const themeRegex = /<theme>([\s\S]*?)<\/theme>/g;
   let match;
@@ -146,6 +162,17 @@ function parseEmergentThemes(xml: string): ParsedTheme[] {
     const themeXML = match[1];
     const theme_name = extractXML(themeXML, 'theme_name');
     const content = extractXML(themeXML, 'content');
+
+    // Ground-truth check (2026-09-04): the verbatim span the theme rests on, plus the extractor's
+    // own verbatim|interpretation call. Both absent in today's format — that must still parse.
+    const type = extractXML(themeXML, 'type')?.trim().toLowerCase();
+    const evidence: string[] = [];
+    const evidenceXML = extractXML(themeXML, 'evidence');
+    if (evidenceXML) {
+      const spanRe = /<span>([\s\S]*?)<\/span>/g;
+      let s;
+      while ((s = spanRe.exec(evidenceXML)) !== null) evidence.push(s[1].trim());
+    }
 
     // Parse inline dimensions
     const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
@@ -161,7 +188,13 @@ function parseEmergentThemes(xml: string): ParsedTheme[] {
     }
 
     if (theme_name && content) {
-      themes.push({ theme_name, content, dimensions });
+      themes.push({
+        theme_name,
+        content,
+        dimensions,
+        evidence,
+        type: type === 'interpretation' ? 'interpretation' : 'verbatim',
+      });
     }
   }
 
