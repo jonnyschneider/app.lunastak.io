@@ -47,6 +47,13 @@ describe('verifySpan', () => {
   it('returns unverifiable when there is no source to check against', () => {
     expect(verifySpan('anything at all here', null)).toBe('unverifiable')
   })
+
+  it('treats an EMPTY source as no source — unverifiable, not failed', () => {
+    // An empty (or whitespace-only) source is the same fact as a null one: there was nothing to
+    // check against. `failed` means "the source was there and the span was not in it".
+    expect(verifySpan('anything at all here', '')).toBe('unverifiable')
+    expect(verifySpan('anything at all here', '   \n  ')).toBe('unverifiable')
+  })
 })
 
 describe('normaliseForMatch', () => {

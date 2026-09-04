@@ -174,6 +174,19 @@ describe('createFragmentsFromThemes — conversation path', () => {
     expect(row.sourceRole).toBe('user')
   })
 
+  it('stores unverifiable, not failed, when the source object carries an EMPTY user half', async () => {
+    // A conversation with no user turns joins to '' — a source object whose user half is empty.
+    // '' is not a source: nothing was checked, so nothing may be claimed. Recording `failed` here
+    // would demote every fragment of that extraction for a reason that is not about the evidence.
+    await createFragmentsFromThemes('p1', 'c1', [
+      theme(['a span with nothing at all to check it against']),
+    ], { user: '', assistant: source.assistant })
+
+    const [row] = createArg().evidence.create
+    expect(row.verification).toBe('unverifiable')
+    expect(row.sourceRole).toBe('user')
+  })
+
   it('creates the fragment for a theme carrying no evidence (back-compat)', async () => {
     const themes: ThemeWithDimensions[] = [
       { theme_name: 'Legacy theme', content: 'no evidence element', dimensions: [] } as ThemeWithDimensions,

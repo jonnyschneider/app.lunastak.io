@@ -35,8 +35,12 @@ export async function executePipeline(
         select: { role: true, content: true },
         orderBy: { timestamp: 'asc' },
       })
-      const joinTurns = (role: string) =>
-        messages.filter(m => m.role === role).map(m => m.content).join('\n\n')
+      // No turns of a role is NOT an empty source that everything fails against — it is no source.
+      // Hence null, which stores `unverifiable`.
+      const joinTurns = (role: string): string | null => {
+        const turns = messages.filter(m => m.role === role)
+        return turns.length > 0 ? turns.map(m => m.content).join('\n\n') : null
+      }
       const fragments = await createFragmentsFromThemes(
         projectId,
         trigger.conversationId,

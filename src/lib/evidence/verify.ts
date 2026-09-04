@@ -25,7 +25,10 @@ export function normaliseForMatch(text: string): string {
 }
 
 export function verifySpan(span: string, source: string | null | undefined): Verification {
-  if (source == null) return 'unverifiable'
+  // An empty source is the same fact as an absent one: there was nothing to check against. A
+  // conversation with no turns of a role joins to '', and reading that as `failed` — "the source
+  // was there and the span was not in it" — would demote fragments for a check never performed.
+  if (source == null || source.trim() === '') return 'unverifiable'
   if (!span || span.trim().length < MIN_SPAN_CHARS) return 'failed'
   return normaliseForMatch(source).includes(normaliseForMatch(span)) ? 'verified' : 'failed'
 }
