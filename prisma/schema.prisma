@@ -225,6 +225,9 @@ model Fragment {
   archivedAt     DateTime?
   archivedReason String?
   softDeletedAt  DateTime?
+  // Ground truth check (2026-09-04): distinguishes "active because reviewed and kept"
+  // from "active because never looked at". Needed for resume + partial completion.
+  reviewedAt     DateTime?
 
   // Metadata
   capturedAt  DateTime @default(now())
@@ -232,6 +235,10 @@ model Fragment {
 
   sourceType    String @default("extraction") // extraction | import | manual
   importBatchId String?
+  // How the fragment was made, self-reported by the extractor. Decides which question the
+  // ground truth check asks: a verbatim claim asks "does this still matter?", an
+  // interpretation asks "we read this from these things".
+  interpretationType String? // verbatim | interpretation
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -242,6 +249,7 @@ model Fragment {
   message       Message?               @relation(fields: [messageId], references: [id], onDelete: SetNull)
   document      Document?              @relation(fields: [documentId], references: [id], onDelete: SetNull)
   dimensionTags FragmentDimensionTag[]
+  evidence      Evidence[]
 
   @@index([projectId])
   @@index([conversationId])
@@ -249,6 +257,35 @@ model Fragment {
   @@index([status])
   @@index([capturedAt])
   @@index([importBatchId])
+}
+
+/// The verbatim span a fragment rests on.
+///
+/// Source material is deliberately NOT persisted — documents and imported bundles are
+/// ephemeral by design — so verification happens at ingest while the text is briefly in
+/// hand, and only the result is stored. See docs/_plans/2026-08-27-ground-truth-preflight-design.md §16.1.
+///
+/// Phase 2 (synthesis gaps) adds a SECOND NULLABLE FK here, never a polymorphic
+/// subjectType/subjectId — that loses referential integrity.
+model Evidence {
+  id         String @id @default(cuid())
+  fragmentId String
+
+  text       String  @db.Text // the span, copied verbatim from the source
+  sourceRole String? // user | assistant | document | bundle
+  /// verified     — matched the source at ingest (conversation, document)
+  /// unverifiable — no source retained, so it COULD NOT be checked (every bundle import).
+  ///                Never counts against a fragment: it is a property of the path, not the evidence.
+  /// failed       — the source was there and the span did not match
+  verification String @default("unverifiable")
+  ordinal    Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  fragment Fragment @relation(fields: [fragmentId], references: [id], onDelete: Cascade)
+
+  @@index([fragmentId])
+  @@index([verification])
 }
 
 model FragmentDimensionTag {

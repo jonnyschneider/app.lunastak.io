@@ -5,6 +5,28 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ---
 
+## 2026-09-04 — `Evidence` table + two `Fragment` columns (ground truth check, slice 2)
+
+**Additive only. Nothing dropped.** Applied to **dev only**; preview and prod deliberately not
+migrated yet, so `db:check-drift` reports drift on both — that is the intended signal and it must
+NOT be approved away until the migration is applied at deploy time.
+
+- **`Evidence`** (new) — `fragmentId` FK (cascade), `text`, `sourceRole`, `verification`, `ordinal`.
+  The verbatim span a fragment rests on. Source material is deliberately not persisted, so
+  verification happens at ingest and only the result is stored.
+  `verification` is three states, not a boolean: **`verified`** (matched the source),
+  **`unverifiable`** (no source retained — every bundle import; never counts against a fragment,
+  it is a property of the path), **`failed`** (source was there, span did not match).
+- **`Fragment.interpretationType`** — `verbatim | interpretation`, self-reported by the extractor.
+  Decides which question the ground truth check asks.
+- **`Fragment.reviewedAt`** — distinguishes "active because reviewed and kept" from "active because
+  never looked at". `status` alone cannot express it.
+
+Phase 2 (synthesis gaps) adds a **second nullable FK** to `Evidence`, never a polymorphic
+`subjectType`/`subjectId`.
+
+Design: `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §16.1.
+
 ## [Unreleased]
 
 ### 2026-07-05: Public Share Links (v2.5.1)
