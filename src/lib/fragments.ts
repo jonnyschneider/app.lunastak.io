@@ -6,6 +6,16 @@ import { prisma } from '@/lib/db'
 import { randomUUID } from 'crypto'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { EmergentThemeContract } from '@/lib/contracts/extraction'
+import { verifySpan, type Verification } from '@/lib/evidence/verify'
+
+/** Where the span came from — the ingest path, not the model's opinion. */
+export type EvidenceSourceRole = 'user' | 'assistant' | 'document' | 'bundle'
+
+export interface EvidenceInput {
+  text: string
+  verification: Verification
+  sourceRole?: EvidenceSourceRole
+}
 
 export interface FragmentInput {
   projectId: string
@@ -16,6 +26,30 @@ export interface FragmentInput {
   content: string
   contentType: 'theme' | 'insight' | 'quote' | 'stat' | 'principle'
   confidence?: 'HIGH' | 'MEDIUM' | 'LOW'
+  /** Verbatim spans the fragment rests on, in the order the extractor emitted them. */
+  evidence?: EvidenceInput[]
+  /** Self-reported by the extractor: verbatim | interpretation. */
+  interpretationType?: string
+}
+
+/**
+ * Verify a theme's spans against the source it claims to come from.
+ *
+ * `source === null` means there is no source to check against — every bundle import — so the spans
+ * store as `unverifiable`, never `failed`. `verifySpan` encodes that; this just fans it out and
+ * preserves emission order as `ordinal`.
+ */
+function buildEvidence(
+  spans: string[] | undefined,
+  source: string | null | undefined,
+  sourceRole: EvidenceSourceRole
+): EvidenceInput[] | undefined {
+  if (!spans || spans.length === 0) return undefined
+  return spans.map(text => ({
+    text,
+    verification: verifySpan(text, source),
+    sourceRole,
+  }))
 }
 
 export interface DimensionTagInput {
@@ -42,16 +76,27 @@ export async function createFragment(
       contentType: input.contentType,
       confidence: input.confidence,
       status: 'active',
+      interpretationType: input.interpretationType,
       dimensionTags: dimensionTags ? {
         create: dimensionTags.map(tag => ({
           dimension: tag.dimension,
           confidence: tag.confidence,
           reasoning: tag.reasoning,
         }))
+      } : undefined,
+      // Same nested write as the tags: one statement, one transaction.
+      evidence: input.evidence && input.evidence.length > 0 ? {
+        create: input.evidence.map((span, ordinal) => ({
+          text: span.text,
+          verification: span.verification,
+          sourceRole: span.sourceRole,
+          ordinal,
+        }))
       } : undefined
     },
     include: {
-      dimensionTags: true
+      dimensionTags: true,
+      evidence: true
     }
   })
 
@@ -87,7 +132,12 @@ export type ThemeWithDimensions = EmergentThemeContract
 export async function createFragmentsFromThemes(
   projectId: string,
   conversationId: string,
-  themes: ThemeWithDimensions[]
+  themes: ThemeWithDimensions[],
+  /**
+   * The conversation text the themes were extracted from. Verification runs here, at ingest —
+   * pass `null` when the caller has no source in hand and the spans store as `unverifiable`.
+   */
+  sourceText?: string | null
 ) {
   console.log(`[Fragments] Creating ${themes.length} fragments via Promise.all...`)
   const fragments = await Promise.all(
@@ -115,6 +165,8 @@ export async function createFragmentsFromThemes(
         content: theme.content,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
+        evidence: buildEvidence(theme.evidence, sourceText, 'user'),
+        interpretationType: theme.type,
       }, tags)
       console.log(`[Fragments] Fragment ${i + 1}/${themes.length} created: ${fragment.id}`)
       return fragment
@@ -131,7 +183,9 @@ export async function createFragmentsFromThemes(
 export async function createFragmentsFromDocument(
   projectId: string,
   documentId: string,
-  themes: ThemeWithDimensions[]
+  themes: ThemeWithDimensions[],
+  /** The uploaded document's text. It is never persisted, so this is the only moment it can be checked. */
+  documentText?: string | null
 ) {
   const fragments = await Promise.all(
     themes.map(theme => {
@@ -159,6 +213,8 @@ export async function createFragmentsFromDocument(
         content: theme.content,
         contentType: 'theme',
         confidence: tags.length > 0 ? 'MEDIUM' : 'LOW',
+        evidence: buildEvidence(theme.evidence, documentText, 'document'),
+        interpretationType: theme.type,
       }, tags)
     })
   )
@@ -193,8 +249,23 @@ export async function createFragmentsFromImport(
       confidence: hasTags ? 'MEDIUM' : 'LOW',
       sourceType: 'import',
       importBatchId,
+      interpretationType: theme.type ?? null,
     }
   })
+
+  // A bundle is produced in a conversation this app never sees: there is no source here to check
+  // against, ever. `verifySpan(span, null)` returns `unverifiable` — "could not be checked" — and
+  // NOT `failed`, which would wrongly penalise every imported fragment for evidence quality.
+  const evidenceRows = themes.flatMap((theme, i) =>
+    (theme.evidence || []).map((text, ordinal) => ({
+      id: randomUUID(),
+      fragmentId: fragmentRows[i].id,
+      text,
+      verification: verifySpan(text, null),
+      sourceRole: 'bundle',
+      ordinal,
+    }))
+  )
 
   // Build all dimension tag rows
   const tagRows = themes.flatMap((theme, i) =>
@@ -219,14 +290,17 @@ export async function createFragmentsFromImport(
     if (tagRows.length > 0) {
       await tx.fragmentDimensionTag.createMany({ data: tagRows })
     }
+    if (evidenceRows.length > 0) {
+      await tx.evidence.createMany({ data: evidenceRows })
+    }
   })
 
-  console.log(`[Fragments] Bulk created ${fragmentRows.length} fragments with ${tagRows.length} dimension tags`)
+  console.log(`[Fragments] Bulk created ${fragmentRows.length} fragments with ${tagRows.length} dimension tags and ${evidenceRows.length} evidence spans`)
 
   // Return created fragments with tags for caller
   return prisma.fragment.findMany({
     where: { importBatchId },
-    include: { dimensionTags: true },
+    include: { dimensionTags: true, evidence: true },
     orderBy: { capturedAt: 'asc' },
   })
 }

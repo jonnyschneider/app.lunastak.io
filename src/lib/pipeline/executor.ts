@@ -27,10 +27,18 @@ export async function executePipeline(
   if (plan.persistFragments && trigger.type === 'conversation_ended' && trigger.extractionResult?.themes) {
     try {
       console.log(`[Pipeline] Creating fragments from ${trigger.extractionResult.themes.length} themes...`)
+      // Evidence spans are verified against the conversation they were extracted from, at ingest.
+      const messages = await prisma.message.findMany({
+        where: { conversationId: trigger.conversationId },
+        select: { content: true },
+        orderBy: { timestamp: 'asc' },
+      })
+      const conversationText = messages.map(m => m.content).join('\n\n')
       const fragments = await createFragmentsFromThemes(
         projectId,
         trigger.conversationId,
-        trigger.extractionResult.themes as ThemeWithDimensions[]
+        trigger.extractionResult.themes as ThemeWithDimensions[],
+        conversationText
       )
       fragmentsCreated = fragments.length
       console.log(`[Pipeline] Created ${fragmentsCreated} fragments`)
@@ -49,7 +57,9 @@ export async function executePipeline(
       const fragments = await createFragmentsFromDocument(
         projectId,
         trigger.documentId,
-        trigger.extractionResult.themes as ThemeWithDimensions[]
+        trigger.extractionResult.themes as ThemeWithDimensions[],
+        // The document text is never persisted — this is the only moment its spans can be checked.
+        trigger.documentText
       )
       fragmentsCreated = fragments.length
       console.log(`[Pipeline] Created ${fragmentsCreated} document fragments`)
