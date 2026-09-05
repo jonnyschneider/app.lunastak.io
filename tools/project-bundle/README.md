@@ -37,13 +37,15 @@ See `schema.ts` for the authoritative definition. High-level:
 
 ```
 {
-  bundleVersion: 2,
+  bundleVersion: 3,
   projectId, projectName, isDemo, demoSlug, description,
   exportedAt,
   knowledgeSummary, suggestedQuestions,
   decisionStack: { vision, visionElaboration, strategy, strategyElaboration,
                    objectives[], opportunities[], principles[] },
-  fragments: [{ title, content, contentType, confidence, sourceType }],
+  fragments: [{ title, content, contentType, confidence, sourceType,
+                interpretationType?, reviewedAt?,
+                evidence?: [{ text, sourceRole?, verification, ordinal }] }],
   syntheses: [{ dimension, summary, gaps, confidence, fragmentCount,
                 synthesisVersion }]
 }
@@ -73,6 +75,32 @@ When you change the bundle shape:
 5. Document the change in this README.
 
 ## Version history
+
+### v3 — 2026-09-06
+
+`fragments[]` gains `evidence[]`, `interpretationType` and `reviewedAt` — the
+ground truth check's reviewable unit (`prisma/schema.prisma`, `model Evidence`;
+design in `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §16.1). Until
+v3 the bundle mapped an explicit field list that predated them, so a
+dev → preview → prod hop silently destroyed every evidence span and every review
+verdict with nothing failing.
+
+All three are **optional**: absent means "exported before evidence existed",
+which restores as `null` / no rows. `verification` is the closed set
+`verified | unverifiable | failed` — restore carries it through verbatim rather
+than forcing `unverifiable` the way a fresh import does, because a bundle
+replicates fragments already checked against a source elsewhere.
+
+Restore pre-assigns fragment IDs so both inserts stay `createMany` and evidence
+can name its parent without a read-back — the pattern
+`createFragmentsFromImport` already uses. Never match evidence to fragments by
+content: two fragments may share text.
+
+The four committed demos were migrated in place (version line only). They hold
+no evidence, so there was nothing to re-export.
+
+**A v2 bundle needs only `bundleVersion: 3`** to come forward — the change is
+purely additive.
 
 ### v2 — 2026-09-02
 
