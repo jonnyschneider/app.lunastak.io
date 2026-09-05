@@ -497,11 +497,18 @@ fragments, 46 spans, 9/9 checks including multi-span index alignment.
 - **`averageConfidence`** (`api/project/[id]/route.ts`) is computed and never read. Left dead on
   purpose; the Harvey ball's replacement input is designed but unbuilt (slice 3).
 
-**Known, unmeasured, and blocking slice 3.** Moving bundle evidence out of `content` **reduces what
-`full_synthesis` receives** — that stage reads `content` only and nothing reads `Evidence` rows. A
-themes-mode bundle theme is ~72 chars of title where it previously carried ~236 chars of evidence
-prose. Given a mere *label* change moves gap counts 40%, a volume change of this size must be
-measured before this reaches preview.
+**Measured 2026-09-06 — does NOT block.** Moving bundle evidence out of `content` reduces what
+`full_synthesis` receives (that stage reads `content` only; nothing reads `Evidence` rows). Measured
+on a real bundle, 60 calls paired by dimension: the payload falls **−60.6%**, and **gap count moves
+−3.6%** — flat. The worry was that thinner input would *manufacture* more "what's missing"; it does
+not, which independently confirms the near-flat gap quota. The cost is a **−19.4% summary**, which
+propagates to refresh and opportunity generation.
+
+Two things worth carrying: **a `Confidence: HIGH` label moves gaps 40% while removing 60% of the
+actual material moves them 3.6%** — this stage responds more to a metadata claim about quality than
+to how much real content it has. And the blast radius is **themes-mode bundles only** (~15% of prod
+fragments): chunks-mode kept its `Source:` suffix, and documents/conversations never carried
+evidence in `content`. Detail: design doc §17.
 
 **On deploy, update:** §1 Layer 0 (extraction emits evidence + type) · §3 ERD (add `EVIDENCE`;
 `FRAGMENT` gains `interpretationType`, `reviewedAt`) · §5 LLM table (extraction output shape) ·
