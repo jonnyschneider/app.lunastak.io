@@ -25,7 +25,11 @@ const LEVELS: SupportLevel[] = ['empty', 'quarter', 'half', 'three-quarter', 'fu
 /**
  * Shortest evidence span we treat as substantial. Above `MIN_SPAN_CHARS` (12 — the "a four-word
  * assent is not a citation" floor in `@/lib/evidence/verify`) and below any real quoted sentence.
- * A judgement call, not a measured constant: unlike the bands, no prod distribution was fitted.
+ * MEASURED, not a guess (design doc §13): a 40-char floor flagged 26.8% of fragments from
+ * sub-600-char conversations and 0% from 4k+ ones — a clean separator with no false positives in
+ * that sample. Caveat worth knowing before re-tuning it: that was measured on spans a judge picked
+ * AFTER the fact. Extraction-time spans, where the producer knows the span is what survives, have
+ * not been re-measured against it.
  */
 export const THIN_EVIDENCE_CHARS = 40
 
