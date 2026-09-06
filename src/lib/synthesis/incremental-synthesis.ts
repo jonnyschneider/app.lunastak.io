@@ -7,6 +7,7 @@ import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { DimensionalSynthesis } from '@prisma/client'
 import { extractJsonFromResponse } from './extract-json'
+import { renderEvidence } from './evidence-block'
 import { StructuredProvocation } from '@/lib/types'
 import { extractText } from '@/lib/extract-text';
 
@@ -26,8 +27,12 @@ export async function incrementalSynthesis(
     }
   }
 
+  // Same measured evidence block as full synthesis (§18 of
+  // docs/_plans/2026-08-27-ground-truth-preflight-design.md — the wording is what
+  // was measured, don't reword it), appended to this path's deliberately simpler
+  // fragment shape. Empty when the fragment has no usable evidence.
   const newFragmentsText = newFragments
-    .map((f, i) => `### Fragment ${i + 1}\n${f.content}`)
+    .map((f, i) => `### Fragment ${i + 1}\n${f.content}${renderEvidence(f)}`)
     .join('\n\n---\n\n')
 
   // Format existing gaps for prompt

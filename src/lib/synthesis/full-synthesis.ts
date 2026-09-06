@@ -6,6 +6,7 @@ import { createMessage } from '@/lib/claude'
 import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { extractJsonFromResponse } from './extract-json'
+import { renderEvidence } from './evidence-block'
 import { extractText } from '@/lib/extract-text';
 
 export async function fullSynthesis(
@@ -23,8 +24,13 @@ export async function fullSynthesis(
     }
   }
 
+  // The evidence block marks which text is the user's own words rather than our
+  // paraphrase of them. Its wording is MEASURED, not stylistic — see §18 of
+  // docs/_plans/2026-08-27-ground-truth-preflight-design.md and the note in
+  // ./evidence-block.ts. It is empty for a fragment with no usable evidence, so
+  // the common path is byte-identical to the pre-evidence payload.
   const fragmentsText = fragments
-    .map((f, i) => `### Fragment ${i + 1}\nType: ${f.contentType}\nConfidence: ${f.confidence || 'unknown'}\n\n${f.content}`)
+    .map((f, i) => `### Fragment ${i + 1}\nType: ${f.contentType}\nConfidence: ${f.confidence || 'unknown'}\n\n${f.content}${renderEvidence(f)}`)
     .join('\n\n---\n\n')
 
   // The user message carries ONLY what varies per call. The task framing and
