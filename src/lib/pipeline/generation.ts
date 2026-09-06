@@ -523,7 +523,20 @@ export async function runOpportunityGeneration(
   // Load active fragments
   const fragments = await prisma.fragment.findMany({
     where: { projectId, status: 'active' },
-    select: { content: true, contentType: true },
+    select: {
+      content: true,
+      contentType: true,
+      // Verbatim spans, ordinal order — rendered into the payload as the user's own
+      // words (§18/§20 of the ground-truth preflight design). §2 traced the fabricated
+      // NUMBERS (`8–15 hours`, `30–50%`, `Baseline: 0%`) to this stage alone: a metric
+      // can only be grounded in the sentence the user actually said it in. The
+      // dimensional summaries below already carry evidence in prose (452afd5); these are
+      // the spans themselves, which is a different thing to hand a metric-writing step.
+      evidence: {
+        select: { text: true, verification: true },
+        orderBy: { ordinal: 'asc' },
+      },
+    },
     orderBy: { capturedAt: 'desc' },
     take: 100,
   })
@@ -541,8 +554,13 @@ export async function runOpportunityGeneration(
     })
     .join('\n\n')
 
+  // `renderEvidence` returns '' when a fragment has no usable evidence — which is nearly
+  // every production fragment, and must stay byte-identical to the pre-evidence payload.
+  // The block is multi-line and sits inside a bullet list; it is self-delimiting (labelled
+  // header plus `>` markers), and adding list-aware indentation would reword measured
+  // output, so it is left as the other two call sites render it.
   const fragmentsContent = fragments.length > 0
-    ? fragments.map(f => `- [${f.contentType}] ${f.content}`).join('\n')
+    ? fragments.map(f => `- [${f.contentType}] ${f.content}${renderEvidence(f)}`).join('\n')
     : 'No fragments yet.'
 
   // Payload only — instructions and output format are the stage's system block.
