@@ -28,7 +28,7 @@ const HEADER = "The user's own words this rests on:"
  * would penalise roughly half of production fragments for a property of their
  * ingest path. Both are quoted material, which is all synthesis needs to know.
  */
-export function renderEvidence(fragment: FragmentForSynthesis): string {
+export function renderEvidence(fragment: Pick<FragmentForSynthesis, 'evidence'>): string {
   const spans = (fragment.evidence ?? []).filter(
     (e) => e.verification !== 'failed' && e.text.trim() !== ''
   )

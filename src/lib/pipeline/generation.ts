@@ -11,6 +11,7 @@ import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strat
 import type { OpportunityGenerationOutputContract } from '@/lib/contracts/opportunity-generation'
 import type { PipelineResult } from './types'
 import { extractText } from '@/lib/extract-text';
+import { renderEvidence } from '@/lib/synthesis/evidence-block'
 
 /**
  * Initial strategy generation. Inlined 2026-08-27 from the retired prompt
@@ -318,7 +319,19 @@ export async function runInitialGeneration(
   // Load fragments from DB (created earlier in the pipeline)
   const fragments = await prisma.fragment.findMany({
     where: { projectId, status: 'active' },
-    select: { id: true, content: true, contentType: true },
+    select: {
+      id: true,
+      content: true,
+      contentType: true,
+      // Verbatim spans, ordinal order — rendered into the payload as the user's own
+      // words (§18/§19 of the ground-truth preflight design). Initial generation reads
+      // fragments, never syntheses, so this is the only route by which evidence reaches
+      // the first strategy a user sees.
+      evidence: {
+        select: { text: true, verification: true },
+        orderBy: { ordinal: 'asc' },
+      },
+    },
     orderBy: { capturedAt: 'desc' },
   })
 
@@ -327,8 +340,13 @@ export async function runInitialGeneration(
   }
 
   // Build prompt from fragments — same data as extractedContext.themes, read from DB
+  // `renderEvidence` returns '' when a fragment has no usable evidence — which is nearly
+  // every production fragment, and must stay byte-identical to the pre-evidence payload.
+  // No `### Fragment N` headers or `---` rules here, unlike the synthesis path: the
+  // evidence block is self-delimiting, and adding delimiters would be a second
+  // simultaneous change confounding the measurement this is built for.
   const themesText = fragments
-    .map(f => f.content)
+    .map(f => `${f.content}${renderEvidence(f)}`)
     .join('\n\n')
   // Payload only — framing, tone and output format are the stage's system block.
   const prompt = `EMERGENT THEMES:\n${themesText}`
