@@ -194,6 +194,7 @@ Deals are lost in procurement rather than in evaluation. As the user put it: "we
 The user's own words this rests on:
 > we lose deals in procurement, every time
 > it takes them nine months to sign anything
+
 - [observation] Delivery capability sits with one person.`
     )
   })

@@ -559,8 +559,20 @@ export async function runOpportunityGeneration(
   // The block is multi-line and sits inside a bullet list; it is self-delimiting (labelled
   // header plus `>` markers), and adding list-aware indentation would reword measured
   // output, so it is left as the other two call sites render it.
+  // Bullets join with a single newline, so a multi-line evidence block would run straight into the
+  // next `- [type]` bullet with nothing between them — the weakest boundary of the three call
+  // sites. Fragments carrying evidence therefore get a blank line after them. This changes the
+  // JOIN, not the measured block itself (§18), and only for fragments that actually have evidence,
+  // so the no-evidence payload stays byte-identical.
   const fragmentsContent = fragments.length > 0
-    ? fragments.map(f => `- [${f.contentType}] ${f.content}${renderEvidence(f)}`).join('\n')
+    ? fragments
+        .map(f => {
+          const block = renderEvidence(f)
+          return `- [${f.contentType}] ${f.content}${block}${block ? '\n' : ''}`
+        })
+        .join('\n')
+        // the separator is only needed BETWEEN bullets; the last one must not trail
+        .trimEnd()
     : 'No fragments yet.'
 
   // Payload only — instructions and output format are the stage's system block.
