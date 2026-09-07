@@ -180,7 +180,7 @@ function FragmentRow({
             {/* ONE axis: down to open, up to close. Right-then-down made a single control ask the
                 eye to read two different gestures. Source moved out of the row entirely — on a
                 scan list it was labelling rows that were not asking a question yet. */}
-            {onOpen && !item.weakReason && (
+            {onOpen && (
               <ChevronDown
                 className={cn('h-4 w-4 shrink-0 text-foreground/45 transition-transform',
                   showEvidence && 'rotate-180')}
@@ -337,10 +337,12 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                             item={c}
                             verdict={verdicts[c.id]}
                             onSet={v => set(c.id, v)}
-                            /* A weak item opens itself: the evidence IS why it was pulled out, and
-                               the extra height is a fair signal that it wants more attention. */
-                            showEvidence={!!c.weakReason || expanded === c.id}
-                            onOpen={c.weakReason ? undefined : () => setExpanded(expanded === c.id ? null : c.id)}
+                            /* Every row is the same row. A `failed` verification is not reliable
+                               enough to earn special treatment in a scan list — see the note on
+                               `WeakReason` in derive.ts. The honesty about an unverified span
+                               belongs inside the disclosure, where the span itself is. */
+                            showEvidence={expanded === c.id}
+                            onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
                             hideDimension
                           />
                         </div>

@@ -43,7 +43,19 @@ export interface ApiResponse {
  *  - `no-evidence`  pre-change fragments, and the bundle `tensions` that arrive titleless. There is
  *                   no backfill (task 15-23), so this is the largest weak class today and shrinks
  *                   to nothing over time. It can show the user NOTHING.
- *  - `failed`       the span matches nothing in the source. A fabricated near-quote.
+ *  - `failed`       the span did not match the source.
+ *
+ *      ⚠ TREAT WITH CARE — it is not reliably "the model made this up". The one `failed` span in
+ *      the baseline project is a FALSE POSITIVE: the model wrote "I've seen some stuff…" where the
+ *      transcript says "I have seen some stuff…". One contraction, 97 characters otherwise
+ *      character-perfect. `normaliseForMatch` handles markdown, smart quotes and whitespace (§14's
+ *      gotcha) but not contractions, so a faithful quote fails.
+ *
+ *      That is the same silent-tidying class as task 15-27 (`Teh role` → `The role` in a bundle),
+ *      and it means `failed` currently mixes real fabrication with checker strictness. Until the
+ *      verifier is fixed, it does not earn a marker in the user's face: telling someone "this
+ *      doesn't match anything you gave me" about their own words is worse than saying nothing.
+ *
  *  - `thin`         a real span, under the measured 40-char threshold.
  *
  * A fourth case is FILTERED OUT rather than shown — see `isLunaTalkingToItself`.
