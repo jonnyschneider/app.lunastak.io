@@ -15,7 +15,7 @@
  * a lonely "Drop this" that implies drop is the only thing you may do.
  */
 import { useEffect, useState } from 'react'
-import { Check, X, PenLine, ArrowRight, Sparkles, ChevronDown, ChevronRight, FileText, MessageSquare, Package, PencilLine } from 'lucide-react'
+import { Check, X, PenLine, ArrowRight, Sparkles, ChevronDown, FileText, MessageSquare, Package, PencilLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -44,11 +44,12 @@ function question(item: GateItem): string {
  * The three states are visually distinct, not just present/absent (Jonny, 2026-09-07):
  *
  *   at rest    outlined, dark grey — a real affordance rather than a ghost you have to hunt for
- *   kept       filled GOLD (`--luna`), the product's affirmative colour, dark text on it
- *   dropped    filled dark grey — the same weight as a keep, so neither reads as the default
+ *   kept       filled GOLD (`--luna`), white glyph — the ONLY saturated thing on the screen
+ *   dropped    faint paper fill; the row recedes with it rather than being struck through
  *
- * Filled-vs-outlined is what carries the state; colour only says WHICH. That keeps it legible
- * without relying on hue alone, and it is why drop is a fill rather than a red.
+ * Gold is reserved for keep so the eye can find what was kept at a glance; dropping recedes
+ * instead of shouting. A strike-through was doing the shouting — it reads as an error or a
+ * deletion, when dropping a fragment is an ordinary, reversible choice.
  */
 function VerdictControls({
   verdict, onSet, size = 'default', withEdit = true,
@@ -78,8 +79,8 @@ function VerdictControls({
           className={cn(
             'flex items-center justify-center rounded-md border transition-colors', box,
             verdict !== v && 'border-foreground/25 text-foreground/55 hover:border-foreground/50 hover:text-foreground',
-            verdict === v && v === 'keep' && 'border-luna bg-luna text-luna-foreground',
-            verdict === v && v === 'drop' && 'border-foreground/80 bg-foreground/80 text-background',
+            verdict === v && v === 'keep' && 'border-luna bg-luna text-white',
+            verdict === v && v === 'drop' && 'border-foreground/15 bg-foreground/[0.07] text-foreground/60',
             verdict === v && v === 'fixed' && 'border-luna-dark bg-luna-dark text-white',
           )}
         >
@@ -124,13 +125,7 @@ function FragmentRow({
   return (
     <div className="flex items-start gap-2 py-2.5">
       <VerdictControls verdict={verdict} onSet={onSet} size="sm" withEdit={false} />
-      {/* Disclosure, not decoration: without it a row gave no sign it had anything behind it. */}
-      {onOpen && (
-        <button onClick={onOpen} aria-label={showEvidence ? 'Hide the evidence' : 'Show the evidence'}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground">
-          {showEvidence ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </button>
-      )}
+
       <div className="min-w-0 flex-1">
         {/* IN-PLACE EDIT. The claim is replaced by an input occupying the same line at the same
             size, so "not quite" is visibly a correction of THIS sentence rather than a form that
@@ -160,8 +155,8 @@ function FragmentRow({
           <button
             onClick={onOpen}
             disabled={!onOpen}
-            className={cn('flex w-full items-baseline justify-between gap-4 text-left text-sm leading-snug',
-              verdict === 'drop' ? 'text-muted-foreground line-through' : 'text-foreground',
+            className={cn('flex w-full items-center justify-between gap-3 text-left text-sm leading-snug transition-opacity',
+              verdict === 'drop' ? 'text-muted-foreground opacity-55' : 'text-foreground',
               onOpen && 'hover:text-luna')}
           >
             <span className="min-w-0">
@@ -171,11 +166,15 @@ function FragmentRow({
               {shown}
               {correction && <span className="ml-2 text-xs font-medium text-luna">your words</span>}
             </span>
-            <span className="flex shrink-0 items-center gap-1.5 text-xs font-normal text-muted-foreground/70"
-              title={item.sourceName}>
-              {(() => { const I = SOURCE_ICON[item.sourceKind]; return <I className="h-3.5 w-3.5" /> })()}
-              {item.sourceShort}
-            </span>
+            {/* ONE axis: down to open, up to close. Right-then-down made a single control ask the
+                eye to read two different gestures. Source moved out of the row entirely — on a
+                scan list it was labelling rows that were not asking a question yet. */}
+            {onOpen && (
+              <ChevronDown
+                className={cn('h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform',
+                  showEvidence && 'rotate-180')}
+              />
+            )}
           </button>
         )}
 
@@ -192,7 +191,10 @@ function FragmentRow({
               {item.evidence}
             </p>
             <div className="mt-1.5 flex items-center gap-3 pl-3">
-              <p className="text-xs text-muted-foreground/70">{item.sourceName}</p>
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                {(() => { const I = SOURCE_ICON[item.sourceKind]; return <I className="h-3.5 w-3.5" /> })()}
+                {item.sourceName}
+              </p>
               {onStartEdit && (
                 <button onClick={onStartEdit} className="text-xs font-medium text-luna">
                   Not quite — say it my way
