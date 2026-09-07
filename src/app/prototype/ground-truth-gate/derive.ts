@@ -41,12 +41,12 @@ export interface ApiResponse {
  *  - `no-evidence`  pre-change fragments, and the bundle `tensions` that arrive titleless. There is
  *                   no backfill (task 15-23), so this is the largest weak class today and shrinks
  *                   to nothing over time. It can show the user NOTHING.
- *  - `unsaid`       the span verified against the ASSISTANT's turns, not the user's — correct
- *                   behaviour per commit 0b60f9e, and NOT a fabrication. Luna is quoting itself.
- *  - `failed`        the span matches nothing in the source. A fabricated near-quote.
+ *  - `failed`       the span matches nothing in the source. A fabricated near-quote.
  *  - `thin`         a real span, under the measured 40-char threshold.
+ *
+ * A fourth case is FILTERED OUT rather than shown — see `isLunaTalkingToItself`.
  */
-export type WeakReason = 'no-evidence' | 'failed' | 'unsaid' | 'thin'
+export type WeakReason = 'no-evidence' | 'failed' | 'thin'
 
 export interface GateItem {
   id: string
@@ -66,23 +66,57 @@ export interface GateItem {
   reason: string | null
 }
 
-/**
- * ⚠ FOUND BY RUNNING THIS AGAINST REAL DATA. `failed` was one bucket showing one sentence, and the
- * baseline project put two completely different failures behind it, indistinguishable on screen:
- * a span Luna quoted from its OWN turn, and a span the model invented outright. `sourceRole` has
- * always separated them and nothing was reading it. They deserve different sentences because they
- * are different admissions — one is "I said that, not you", the other is "I made that up".
- */
 const REASONS: Record<WeakReason, string> = {
   'no-evidence': "I couldn't find your own words behind this one",
-  unsaid: 'These are my words, not yours — you agreed rather than said it',
   failed: "This doesn't match anything you gave me",
   thin: 'Only a few words to go on',
 }
 
-/** A fragment's own source, named the way a user would recognise it. */
-function sourceName(f: ApiFragment): string {
-  if (f.source) return f.source.name
+/**
+ * ⚠ A BUG, SURFACED BY RUNNING THIS AGAINST REAL DATA — filtered here, to be fixed upstream.
+ *
+ * Conversation extraction reads the whole transcript, so it can build a "theme" entirely out of
+ * LUNA's own turns. In the baseline project three of 35 fragments are exactly that, and one is a
+ * restatement of a question Luna asked: *"Open question about how much effort is required per
+ * manufacturer…"*. Every span on them is `sourceRole: 'assistant'`, so the user contributed
+ * nothing — not even assent.
+ *
+ * Design §13 ruled that assistant SEEDING is not a defect: a framing Luna proposes and the user
+ * confirms is normal consulting, and what matters is degree of assent. These have none. That is
+ * the mechanical rule, and it is why this is a filter rather than a weak-set category: showing a
+ * user their own context should not include Luna talking to itself.
+ *
+ * §13 recorded the same thing as a measurement caveat ("the judge pointed at the prompt that
+ * elicited the answer") and treated it as an upper bound on a statistic. It is not only that — it
+ * manufactures fragments. Task 15-29.
+ */
+export function isLunaTalkingToItself(f: ApiFragment): boolean {
+  return f.evidence.length > 0 && f.evidence.every(e => e.sourceRole === 'assistant')
+}
+
+/**
+ * Bundle `tensions` all arrive titled "Strategic tension" — the transform falls back to that
+ * literal when the spec provides no `tensionTitle` (task 15-28). In a title-only scan list that is
+ * six identical rows. Checked where they go: nothing downstream distinguishes a tension from any
+ * other fragment, so they ARE live context feeding synthesis and generation, and their content is
+ * substantive. So they get a readable title here rather than being hidden.
+ */
+function titleFor(f: ApiFragment): string {
+  const t = f.title?.trim()
+  if (t && t !== 'Strategic tension') return t
+  // First clause of the content reads as a title far better than a repeated label.
+  const first = f.content.split(/ — |[.;] /)[0].trim()
+  return first.length > 96 ? `${first.slice(0, 93)}…` : first
+}
+
+/**
+ * A fragment's source, named the way a user would recognise it — NOT the way the row is stored.
+ * A conversation's `title` is its generated opening question, which ran to a full sentence in the
+ * baseline and swamped the row it was labelling. Conversations get a stable number instead.
+ */
+function sourceName(f: ApiFragment, convIndex: Map<string, number>): string {
+  if (f.source?.type === 'document') return f.source.name
+  if (f.source?.type === 'conversation') return `Conversation ${convIndex.get(f.source.id) ?? 1}`
   return f.sourceType === 'import' ? 'Context bundle' : 'Added directly'
 }
 
@@ -90,17 +124,15 @@ function classify(f: ApiFragment): WeakReason | null {
   if (f.evidence.length === 0) return 'no-evidence'
   const usable = f.evidence.filter(e => e.verification !== 'failed')
   // Unsupported evidence beats thin evidence: evidence we cannot stand behind is the bigger claim
-  // on the user's attention. Within that, WHY it failed decides which of the two we admit to.
-  if (usable.length === 0) {
-    return f.evidence.every(e => e.sourceRole === 'assistant') ? 'unsaid' : 'failed'
-  }
+  // on the user's attention. (The all-assistant case never reaches here — it is filtered out.)
+  if (usable.length === 0) return 'failed'
   // A fragment is thin on its STRONGEST span, not its shortest — one long span it can stand on is
   // not made weak by a short one sitting beside it.
   if (Math.max(...usable.map(e => e.text.length)) < THIN_EVIDENCE_CHARS) return 'thin'
   return null
 }
 
-export function toItem(f: ApiFragment): GateItem {
+export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map()): GateItem {
   const weakReason = classify(f)
   // Show the strongest span we can stand behind; only fall back to a failed one when that is all
   // there is, and let `verification` carry the caveat rather than hiding it.
@@ -109,13 +141,13 @@ export function toItem(f: ApiFragment): GateItem {
 
   return {
     id: f.id,
-    claim: f.title?.trim() || f.content.slice(0, 90),
+    claim: titleFor(f),
     detail: f.content,
     evidence: weakReason === 'no-evidence' ? null : best?.text ?? null,
     spans: f.evidence.length,
     verification: (best?.verification as GateItem['verification']) ?? null,
     sourceRole: best?.sourceRole ?? null,
-    sourceName: sourceName(f),
+    sourceName: sourceName(f, convIndex),
     type: f.interpretationType,
     dimensions: f.dimensions.map(d => d.dimension),
     reviewed: f.reviewedAt !== null,
@@ -136,7 +168,7 @@ export function toItem(f: ApiFragment): GateItem {
  * (both carry a real span the user can react to), and `no-evidence` goes last. Within a class,
  * §6 applies unchanged.
  */
-const CLASS_ORDER: Record<WeakReason, number> = { thin: 0, failed: 1, unsaid: 2, 'no-evidence': 3 }
+const CLASS_ORDER: Record<WeakReason, number> = { thin: 0, failed: 1, 'no-evidence': 2 }
 
 export function orderWeak(items: GateItem[]): GateItem[] {
   return [...items].sort((a, b) => {
@@ -153,11 +185,39 @@ export interface GateModel {
   confident: GateItem[]
   /** The one example the open screen leads with — best-evidenced, so it makes the strongest case. */
   example: GateItem | null
+  /** Dropped before the user sees anything — Luna quoting itself. Prototype instrumentation. */
+  filtered: number
   counts: Record<WeakReason, number>
 }
 
+/**
+ * The one item the open screen leads with. It has to carry the whole case, so it needs a span long
+ * enough to be convincing and short enough to read at a glance — Jonny, 2026-09-07: *"pick a strong
+ * one, lean toward shorter"*. Sorted by distance from an ideal span length rather than by maximum,
+ * which is what produced the five-line wall of quote on the first pass.
+ */
+const IDEAL_SPAN = 110
+
+export function pickExample(confident: GateItem[]): GateItem | null {
+  const withSpan = confident.filter(i => i.evidence && i.evidence.length >= THIN_EVIDENCE_CHARS)
+  if (withSpan.length === 0) return confident[0] ?? null
+  return [...withSpan].sort((a, b) =>
+    Math.abs((a.evidence!.length) - IDEAL_SPAN) - Math.abs((b.evidence!.length) - IDEAL_SPAN)
+  )[0]
+}
+
 export function buildGateModel(res: ApiResponse): GateModel {
-  const items = res.fragments.filter(f => f.status === 'active').map(toItem)
+  const active = res.fragments.filter(f => f.status === 'active')
+  const usable = active.filter(f => !isLunaTalkingToItself(f))
+  const filtered = active.length - usable.length
+  // Number conversations in the order their fragments were captured, so the label is stable.
+  const convIndex = new Map<string, number>()
+  for (const f of usable) {
+    if (f.source?.type === 'conversation' && !convIndex.has(f.source.id)) {
+      convIndex.set(f.source.id, convIndex.size + 1)
+    }
+  }
+  const items = usable.map(f => toItem(f, convIndex))
   const weak = orderWeak(items.filter(i => i.weakReason))
   const confident = items.filter(i => !i.weakReason)
 
@@ -165,11 +225,11 @@ export function buildGateModel(res: ApiResponse): GateModel {
     total: items.length,
     weak,
     confident,
-    example: [...confident].sort((a, b) => (b.evidence?.length ?? 0) - (a.evidence?.length ?? 0))[0] ?? null,
+    example: pickExample(confident),
+    filtered,
     counts: {
       'no-evidence': weak.filter(i => i.weakReason === 'no-evidence').length,
       failed: weak.filter(i => i.weakReason === 'failed').length,
-      unsaid: weak.filter(i => i.weakReason === 'unsaid').length,
       thin: weak.filter(i => i.weakReason === 'thin').length,
     },
   }
