@@ -70,20 +70,43 @@ type Filter = 'weak' | 'confident' | 'all'
  * deletion, when dropping a fragment is an ordinary, reversible choice.
  */
 function VerdictControls({
-  verdict, onSet, size = 'default',
+  verdict, onSet, size = 'default', withKeep = true, reserveKeep = false,
 }: {
   verdict: Verdict | undefined
   onSet: (v: Verdict | undefined) => void
   size?: 'default' | 'sm'
+  /** Hold the missing slot open — only where both kinds of row sit in one list. */
+  reserveKeep?: boolean
+  /**
+   * ASYMMETRIC BY DESIGN (Jonny, 2026-09-08). Only a flagged row gets a keep.
+   *
+   * The §22 test — name the reader of the field this control writes — kills the tick on a
+   * well-grounded row: nothing downstream distinguishes kept from untouched (the pipeline reads
+   * `active` vs `archived`), and §8 already settled that the score counts LOOKING rather than
+   * deciding. So it would cost attention across 25 rows and buy nothing, while implying the user
+   * ought to rule on every one.
+   *
+   * On a flagged row it is not redundant, because WE asserted the doubt. "I looked at the one you
+   * flagged and it's fine" is an override of our own judgement, and there is no other way to get
+   * it — a skim cannot say it and presentation-as-review cannot either, because we asked a
+   * question. On the 25 we ask *did we get anything wrong?*; on the 7 we ask *you tell me*. Only
+   * the second is a question, and only a question needs an answer.
+   *
+   * Silence is therefore the accept on a well-grounded row, and Build is the accept-all.
+   */
+  withKeep?: boolean
 }) {
   const box = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
   const icon = size === 'sm' ? 'h-[18px] w-[18px]' : 'h-5 w-5'
   const opts: { v: Verdict; Icon: typeof Check; label: string }[] = [
-    { v: 'keep', Icon: Check, label: 'Keep' },
+    ...(withKeep ? [{ v: 'keep' as Verdict, Icon: Check, label: 'This one is fine' }] : []),
     { v: 'drop', Icon: X, label: 'Discard' },
   ]
   return (
     <div className="flex shrink-0 items-center gap-0.5">
+      {/* Keeps the claim's left edge steady whether a row has one control or two. Without it the
+          flagged rows sit further right than the rest, which reads as subordinate — backwards. */}
+      {!withKeep && reserveKeep && <span className={cn('shrink-0', box)} aria-hidden />}
       {opts.map(({ v, Icon, label }) => (
         <button
           key={v}
@@ -117,7 +140,7 @@ const SOURCE_ICON = {
  * evidence IS the reason it was pulled out.
  */
 function FragmentRow({
-  item, verdict, onSet, showEvidence, onOpen, hideDimension,
+  item, verdict, onSet, showEvidence, onOpen, hideDimension, reserveKeep,
 }: {
   item: GateItem
   verdict: Verdict | undefined
@@ -126,10 +149,13 @@ function FragmentRow({
   onOpen?: () => void
   /** Suppressed inside a grouped list, where the subheading already says it. */
   hideDimension?: boolean
+  reserveKeep?: boolean
 }) {
   return (
     <div className="flex items-start gap-2 py-2.5">
-      <VerdictControls verdict={verdict} onSet={onSet} size="sm" />
+      {/* A row with one control is offering an out; a row with two is asking a question. */}
+      <VerdictControls verdict={verdict} onSet={onSet} size="sm"
+        withKeep={!!item.weakReason} reserveKeep={reserveKeep} />
 
       <div className="min-w-0 flex-1">
         {(
@@ -332,8 +358,10 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
               <p className="text-sm text-foreground/60">
                 {filter === 'confident'
-                  ? 'Nothing here needs a decision. Skim it; open one to see what it’s built on.'
-                  : 'The ones I’m unsure about are open, with what they rest on. Keep or discard.'}
+                  ? 'Nothing here needs a decision — skim it, and discard anything I got wrong.'
+                  : filter === 'weak'
+                    ? 'These are the ones I’m unsure about. Tell me they’re fine, or discard them.'
+                    : 'The ones I’m unsure about are open and ask a question. The rest just need a skim.'}
               </p>
 
               <div className="space-y-5">
@@ -361,6 +389,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                                 : (expanded === c.id ? null : c.id)
                             )}
                             hideDimension
+                            reserveKeep={filter === 'all'}
                           />
                         </div>
                       ))}
@@ -389,8 +418,12 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               </div>
 
               {/* Cause and effect, immediately — the thing the archive control never had. */}
+              {/* A keep can now only come from a flagged row, so the number means something
+                  specific: how many of OUR doubts the user resolved. */}
               <div className="space-y-1 text-sm">
-                {kept > 0 && <p>Kept <strong>{kept}</strong>.</p>}
+                {kept > 0 && (
+                  <p>Confirmed <strong>{kept}</strong> of the {weak.length} I flagged.</p>
+                )}
                 {dropped > 0 && <p>Discarded <strong>{dropped}</strong>.</p>}
                 {kept === 0 && dropped === 0 && <p>Nothing changed — building from all {total}.</p>}
                 <p className="text-foreground/60">Building from {remaining}.</p>
