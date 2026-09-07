@@ -231,6 +231,22 @@ export async function executePipeline(
     }
   }
 
+  /**
+   * The busy flag is cleared by the EXECUTOR, not by whatever the plan happened to do.
+   *
+   * It used to be cleared only inside `pipeline/generation.ts`, which was invisible while every
+   * plan generated. The ground-truth review split makes an initial conversation plan
+   * `generation: null`, and a plan that generates nothing would otherwise leave the project
+   * polling 'generating' forever with the UI stuck in its busy state.
+   *
+   * Clearing here is correct for every trigger, including ones not written yet. It is idempotent
+   * — the generation paths clear it too, and setting null twice is null.
+   */
+  if (!plan.generation) {
+    const { setGenerationStatus } = await import('@/lib/decision-stack')
+    await setGenerationStatus(projectId, null)
+  }
+
   return {
     extraction,
     fragmentsCreated,
