@@ -52,19 +52,9 @@ import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
  * context, and adding context is a path that already exists and does not need the gate.
  */
 type Verdict = 'keep' | 'drop'
-type Stage = 'open' | 'weak' | 'confident' | 'all' | 'close'
-
-/**
- * The question depends on how the fragment was made (§16.1) — but a fragment with no evidence can
- * be asked neither. "You said this" is a lie when we just admitted we cannot find their words.
- */
-function question(item: GateItem): string {
-  if (item.weakReason === 'no-evidence') return 'Keep it anyway?'
-  if (item.weakReason === 'failed') return "I can't tie this back to your words. Does it still stand?"
-  return item.type === 'verbatim'
-    ? 'You said this — does it still matter?'
-    : 'I read this from what you said — fair?'
-}
+type Stage = 'open' | 'list' | 'close'
+/** One list; the filter chooses the view. */
+type Filter = 'weak' | 'confident' | 'all'
 
 /**
  * Tri-state, ILS-style: the chosen control fills; clicking it again clears the verdict.
@@ -205,10 +195,10 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const { weak, confident, total, example } = model
 
   const [stage, setStage] = useState<Stage>('open')
-  const [i, setI] = useState(0)
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({})
   const [expanded, setExpanded] = useState<string | null>(null)
   const [skipOpen, setSkipOpen] = useState(false)
+  const [filter, setFilter] = useState<Filter>('weak')
   /**
    * ⚠ REVERSED, 2026-09-07. This used to count CLICKS, which made the number false in both
    * directions: a user who skims seven headings and is satisfied has reviewed them and scored zero,
@@ -223,7 +213,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
     const next = new Set(p); for (const id of ids) next.add(id); return next
   })
 
-  const list = stage === 'all' ? [...weak, ...confident] : confident
+  const list = filter === 'weak' ? weak : filter === 'confident' ? confident : [...weak, ...confident]
   const kept = Object.values(verdicts).filter(v => v === 'keep').length
   const dropped = Object.values(verdicts).filter(v => v === 'drop').length
   // Confirmed = anything looked at, whatever was decided. Denominator is the ORIGINAL count, so
@@ -231,7 +221,6 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const reviewed = presented.size
   const changed = dropped
   const remaining = total - dropped
-  const current = weak[i]
   const weakReviewed = weak.filter(w => presented.has(w.id)).length
 
   /** Setting a verdict anywhere is the same call, so the score moves the same way everywhere. */
@@ -245,17 +234,8 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   }
 
 
-  // The weak walk shows one at a time; the lists show everything at once.
   useEffect(() => { if (stage === 'open' && example) mark([example.id]) }, [stage, example?.id])
-  useEffect(() => { if (stage === 'weak' && current) mark([current.id]) }, [stage, current?.id])
-  useEffect(() => {
-    if (stage === 'confident' || stage === 'all') mark(list.map(x => x.id))
-  }, [stage])
-
-  function advance() {
-    if (i + 1 < weak.length) setI(i + 1)
-    else setStage('confident')
-  }
+  useEffect(() => { if (stage === 'list') mark(list.map(x => x.id)) }, [stage, filter])
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-10">
@@ -298,7 +278,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     <p className="text-sm">
                       <strong>I&rsquo;m not confident about {weak.length}</strong> of them.
                     </p>
-                    <Button onClick={() => setStage('weak')} className="shrink-0">
+                    <Button onClick={() => { setFilter('weak'); setStage('list') }} className="shrink-0">
                       Check those {weak.length} <ArrowRight className="ml-1 h-4 w-4" />
                     </Button>
                   </div>
@@ -307,7 +287,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                   <p className="text-sm text-foreground/60">
                     The other {confident.length} look well grounded.
                   </p>
-                  <Button variant="outline" onClick={() => setStage('confident')} className="shrink-0">
+                  <Button variant="outline" onClick={() => { setFilter('confident'); setStage('list') }} className="shrink-0">
                     Scan them
                   </Button>
                 </div>
@@ -321,83 +301,41 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
           </Card>
         )}
 
-        {stage === 'weak' && current && (
-          <div className="space-y-4">
-            <div className="flex items-baseline justify-between">
-              <p className="text-sm">
-                <strong>{SETS.weak}</strong>
-                <span className="text-foreground/60"> — where it matters most.</span>
-              </p>
-              <span className="font-mono text-[10px] uppercase tracking-wide text-foreground/60">
-                {i + 1} of {weak.length}
-              </span>
-            </div>
-
-            <Card>
-              <CardContent className="space-y-4 p-8">
-                {current.dimensionLabel && (
-                  <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">
-                    {current.dimensionLabel}
-                  </p>
-                )}
-                {/* Never a truncated heading. Where the fragment has no real title, the claim IS
-                    the content, so it is presented whole rather than cut mid-word. */}
-                {current.titleIsDerived
-                  ? <p className="text-base font-medium leading-relaxed">{current.detail}</p>
-                  : <h2 className="text-lg font-semibold leading-snug">{current.claim}</h2>}
-
-                {current.evidence && (
-                  <p className={cn('border-l-2 pl-3 text-sm italic',
-                    current.weakReason === 'failed' ? 'border-destructive/40 text-foreground/60' : 'border-luna')}>
-                    {current.evidence}
-                  </p>
-                )}
-
-                {/* The flag reason is the system showing its working — the trust mechanism. */}
-                <p className="text-sm text-foreground/60">
-                  {current.reason}
-                  <span className="ml-2 text-foreground/45">· {current.sourceName}</span>
-                </p>
-
-                <div className="space-y-3 border-t pt-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm">{question(current)}</p>
-                    <VerdictControls
-                      verdict={verdicts[current.id]}
-                      onSet={v => { set(current.id, v); if (v) advance() }}
-                    />
-                  </div>
-
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Named, so it cannot be read as "skip everything" and then surprise the user with
-                twenty-five more. It says exactly where it goes and how many are there. */}
-            <button onClick={() => setStage('confident')}
-              className="text-sm text-foreground/60 underline underline-offset-4">
-              Leave {SETS.weak.toLowerCase()} — go to {SETS.confident.toLowerCase()} ({confident.length})
-            </button>
-          </div>
-        )}
-
-        {(stage === 'confident' || stage === 'all') && (
+        {stage === 'list' && (
           <Card>
             <CardContent className="space-y-4 p-8">
-              <div>
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 className="text-lg font-semibold">
-                  {stage === 'all' ? `All ${total} ground truths` : `${SETS.confident} — ${confident.length}`}
+                  {filter === 'weak' ? `${weak.length} worth a look`
+                    : filter === 'confident' ? `${confident.length} well grounded`
+                    : `All ${total} ground truths`}
                 </h2>
-                <p className="text-sm text-foreground/60">
-                  {stage === 'all'
-                    ? `${SETS.weak} first, then ${SETS.confident.toLowerCase()}. `
-                    : 'Nothing here needs a decision. '}
-                  Skim it; tap one to see what it&rsquo;s built on.
-                </p>
+                {/* One list, three views. The split into a card-walk and a separate scan list made
+                    the same material feel like two jobs; a filter makes it one with a focus. */}
+                <div className="inline-flex overflow-hidden rounded-md border text-xs">
+                  {([
+                    ['weak', `Worth a look (${weak.length})`],
+                    ['confident', `Well grounded (${confident.length})`],
+                    ['all', `Everything (${total})`],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => setFilter(key)}
+                      className={cn('border-l px-3 py-1.5 font-medium transition-colors first:border-l-0',
+                        filter === key ? 'bg-foreground text-background' : 'text-foreground/60 hover:bg-muted')}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Full flow, no scroll box. The constrained-height version hid most of the list
-                  behind an invisible scroll and made the count on screen contradict the heading. */}
+              <p className="text-sm text-foreground/60">
+                {filter === 'confident'
+                  ? 'Nothing here needs a decision. Skim it; open one to see what it’s built on.'
+                  : 'The ones I’m unsure about are open, with what they rest on. Keep or discard.'}
+              </p>
+
               <div className="space-y-5">
                 {groupByDimension(list).map(g => (
                   <div key={g.dimension ?? 'none'}>
@@ -406,13 +344,22 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     </h3>
                     <div className="divide-y divide-border">
                       {g.items.map(c => (
-                        <div key={c.id} className="-mx-2 rounded px-2 transition-colors hover:bg-muted/40">
+                        <div key={c.id}
+                          className={cn('-mx-2 rounded px-2 transition-colors',
+                            /* Discarded needs to be scannable, not inferred from a faded glyph. */
+                            verdicts[c.id] === 'drop' ? 'bg-muted/70' : 'hover:bg-muted/40')}>
                           <FragmentRow
                             item={c}
                             verdict={verdicts[c.id]}
                             onSet={v => set(c.id, v)}
-                            showEvidence={expanded === c.id}
-                            onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
+                            /* A weak item opens itself: the evidence IS why it was pulled out, and
+                               the extra height is a fair signal that it wants more attention. */
+                            showEvidence={c.weakReason ? expanded !== `closed:${c.id}` : expanded === c.id}
+                            onOpen={() => setExpanded(
+                              c.weakReason
+                                ? (expanded === `closed:${c.id}` ? null : `closed:${c.id}`)
+                                : (expanded === c.id ? null : c.id)
+                            )}
                             hideDimension
                           />
                         </div>
@@ -420,18 +367,14 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     </div>
                   </div>
                 ))}
+                {list.length === 0 && (
+                  <p className="py-6 text-center text-sm text-foreground/45">Nothing in this view.</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between gap-4 border-t pt-4">
                 <Button onClick={() => setStage('close')}>Build my strategy</Button>
-                {weak.length > 0 ? (
-                  <button onClick={() => setStage(stage === 'all' ? 'confident' : 'all')}
-                    className="text-xs text-foreground/60 underline underline-offset-4">
-                    {stage === 'all' ? `${SETS.confident} only (${confident.length})` : `See all ${total}`}
-                  </button>
-                ) : (
-                  <span className="text-xs text-foreground/60">you can tweak these any time</span>
-                )}
+                <span className="text-xs text-foreground/45">you can change these any time</span>
               </div>
             </CardContent>
           </Card>
@@ -467,7 +410,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               </div>
 
               <Button variant="outline"
-                onClick={() => { setStage('open'); setI(0); setVerdicts({}); setPresented(new Set()); setExpanded(null) }}>
+                onClick={() => { setStage('open'); setFilter('weak'); setVerdicts({}); setPresented(new Set()); setExpanded(null) }}>
                 Run it again
               </Button>
             </CardContent>
@@ -502,7 +445,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setStage('weak')}>
+            <AlertDialogCancel onClick={() => { setFilter('weak'); setStage('list') }}>
               {weak.length > 0 ? `Check the ${weak.length} I flagged` : 'Take a look'}
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => setStage('close')}>Skip anyway</AlertDialogAction>
