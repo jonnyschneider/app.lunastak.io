@@ -166,8 +166,8 @@ function FragmentRow({
             disabled={!onOpen}
             className={cn('flex w-full items-center justify-between gap-3 text-left text-sm leading-snug transition-opacity',
               verdict === 'drop' ? 'opacity-45' : 'text-foreground',
-              // Open row reads as the one in focus without adding a second signal.
-              showEvidence && 'font-semibold')}
+              // Open row reads as the one in focus; medium is enough next to the other signals.
+              showEvidence && 'font-medium')}
           >
             <span className="min-w-0">
               {/* Eyebrow, not an inline prefix: as a prefix it read as part of the claim, and the
@@ -182,7 +182,7 @@ function FragmentRow({
             {/* ONE axis: down to open, up to close. Right-then-down made a single control ask the
                 eye to read two different gestures. Source moved out of the row entirely — on a
                 scan list it was labelling rows that were not asking a question yet. */}
-            {onOpen && (
+            {onOpen && !item.weakReason && (
               <ChevronDown
                 className={cn('h-4 w-4 shrink-0 text-foreground/45 transition-transform',
                   showEvidence && 'rotate-180')}
@@ -375,19 +375,22 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                         <div key={c.id}
                           className={cn('-mx-2 rounded px-2 transition-colors',
                             /* Discarded needs to be scannable, not inferred from a faded glyph. */
-                            verdicts[c.id] === 'drop' ? 'bg-muted/70' : 'hover:bg-muted/40')}>
+                            verdicts[c.id] === 'drop' ? 'bg-muted/70'
+                              /* A washed gold field is what makes the extra control legible: the
+                                 rows that ask a question look like a set, so a second affordance
+                                 on them reads as belonging to that set rather than as an
+                                 inconsistency. Gold because these are the ones that want the
+                                 user; the saturated gold is still reserved for a resolved one. */
+                              : c.weakReason ? 'bg-luna/[0.07] hover:bg-luna/[0.11]'
+                              : 'hover:bg-muted/40')}>
                           <FragmentRow
                             item={c}
                             verdict={verdicts[c.id]}
                             onSet={v => set(c.id, v)}
                             /* A weak item opens itself: the evidence IS why it was pulled out, and
                                the extra height is a fair signal that it wants more attention. */
-                            showEvidence={c.weakReason ? expanded !== `closed:${c.id}` : expanded === c.id}
-                            onOpen={() => setExpanded(
-                              c.weakReason
-                                ? (expanded === `closed:${c.id}` ? null : `closed:${c.id}`)
-                                : (expanded === c.id ? null : c.id)
-                            )}
+                            showEvidence={!!c.weakReason || expanded === c.id}
+                            onOpen={c.weakReason ? undefined : () => setExpanded(expanded === c.id ? null : c.id)}
                             hideDimension
                             reserveKeep={filter === 'all'}
                           />
