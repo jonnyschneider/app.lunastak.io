@@ -45,12 +45,26 @@ export async function POST(
 
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId, status: 'active' },
-    select: { id: true },
+    select: { id: true, decisionStack: { select: { id: true } } },
   })
 
   if (!project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
+
+  /**
+   * A FIRST strategy is the second half of one logical generation, so it is not metered twice.
+   *
+   * The ground-truth review split extraction and generation into two route calls: /api/generate
+   * extracts and stops, the user prunes, and this route generates. Both routes charge a guest
+   * against GUEST_API_LIMIT (20), so without this the split would cost every guest an extra call
+   * for a flow that used to cost one — and CLAUDE.md is explicit that metering more call sites is
+   * a product change, not an instrumentation fix: it can wall a guest mid-flow.
+   *
+   * A project with no DecisionStack has not generated before, so this call completes the pair
+   * /api/generate already charged for. Every later generation is charged normally.
+   */
+  const isFirstStrategy = project.decisionStack === null
 
   // Check we have fragments to work with
   const fragmentCount = await prisma.fragment.count({
@@ -64,13 +78,15 @@ export async function POST(
     )
   }
 
-  // Check guest API limit
-  const { blocked } = await checkAndIncrementGuestApiCalls(userId)
-  if (blocked) {
-    return NextResponse.json(
-      { error: 'limit_reached', message: 'Demo limit reached. Sign up to continue.' },
-      { status: 429 }
-    )
+  // Check guest API limit — see `isFirstStrategy` above for why the first one is exempt.
+  if (!isFirstStrategy) {
+    const { blocked } = await checkAndIncrementGuestApiCalls(userId)
+    if (blocked) {
+      return NextResponse.json(
+        { error: 'limit_reached', message: 'Demo limit reached. Sign up to continue.' },
+        { status: 429 }
+      )
+    }
   }
 
   // Set generation status for polling

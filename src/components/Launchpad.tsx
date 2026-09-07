@@ -3,7 +3,13 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight } from 'lucide-react'
+import { useState } from 'react'
+import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
@@ -16,6 +22,79 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+
+/**
+ * Fragments exist and no strategy does: the user sees what their strategy will be built from
+ * before it is built. Skipping stays available (§4's affirmative skip) — it just is not silent.
+ */
+function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; onGenerate: () => void }) {
+  const [remaining, setRemaining] = useState<number | null>(null)
+  const [total, setTotal] = useState<number | null>(null)
+  const [skipOpen, setSkipOpen] = useState(false)
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-6 md:p-8">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            {total === null ? 'Your ground truths' : `Your ${total} ground truths`}
+          </h2>
+          <p className="text-sm text-foreground/60">
+            This is what your strategy gets built from. Skim it and discard anything I got wrong —
+            open one to see what it&rsquo;s built on.
+          </p>
+        </div>
+
+        <GroundTruthReview
+          projectId={projectId}
+          onCountChange={(r, t) => { setRemaining(r); setTotal(t) }}
+        />
+
+        <div className="flex flex-wrap items-center gap-4 border-t pt-4">
+          <Button onClick={onGenerate}>
+            Build my strategy{remaining !== null && total !== null && remaining < total ? ` from ${remaining}` : ''}
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+          <button
+            onClick={() => setSkipOpen(true)}
+            className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground"
+          >
+            Skip the review
+          </button>
+          <span className="text-xs text-foreground/45">you can change these any time</span>
+        </div>
+      </CardContent>
+
+      {/*
+        ⚠ NO STATISTIC HERE, DELIBERATELY. §20 measured what EVIDENCE in generation does (not-clean
+        25.0% → 0.0%). Nothing has ever measured what a USER REVIEWING does — that experiment does
+        not exist, and "users who check their ground truths get n% fewer inventions" would be the
+        exact invention this whole thread removed. The mechanism is true; the number is not ours.
+      */}
+      <AlertDialog open={skipOpen} onOpenChange={setSkipOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Skip the review?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                These are the context your strategy is generated from. Anything wrong here can carry
+                through into your vision, strategy, objectives and metrics.
+              </span>
+              <span className="block">
+                You can fix them any time — but it&rsquo;s about thirty seconds now, and it&rsquo;s
+                the single biggest influence on what you get back.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Take a look</AlertDialogCancel>
+            <AlertDialogAction onClick={onGenerate}>Skip anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  )
+}
 
 // --- Shared onboarding cards (used in Launchpad + KB empty state) ---
 
@@ -97,19 +176,10 @@ export function Launchpad({
 
   return (
     <div className="space-y-8">
-      {/* Contextual nudge when fragments exist */}
-      {fragmentCount > 0 && onGenerateNow && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4 flex items-center justify-between">
-            <p className="text-sm">
-              <span className="font-semibold">{fragmentCount} fragments</span> imported. Ready when you are — generate your Decision Stack to see Vision, Strategy, and Objectives.
-            </p>
-            <Button size="sm" onClick={onGenerateNow}>
-              Generate strategy
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* The ground truth review. This slot is the one moment it belongs in — fragments exist, no
+          strategy yet — and it is reached identically from all three ingest paths, which is why it
+          needs no new route and no new state column. */}
+      {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} projectId={projectId} />}
 
       {/* Two onboarding paths */}
       <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
