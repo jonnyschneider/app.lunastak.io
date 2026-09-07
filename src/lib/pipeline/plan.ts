@@ -12,6 +12,18 @@ import type { PipelineTrigger, PipelinePlan } from './types'
 export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
   switch (trigger.type) {
     case 'conversation_ended':
+      /**
+       * An initial conversation now STOPS after fragments. The user reviews the ground truths
+       * their strategy will be built from and discards anything wrong; generation follows, via
+       * `generate_from_knowledge` — which already means "first strategy from fragments that
+       * already exist, without extracting", so the review needs no trigger of its own.
+       *
+       * That makes the two branches identical, and they are kept apart only because `isInitial`
+       * still carries meaning to callers. Design §13; the split is deliberately this one field.
+       *
+       * The user's wait is SPLIT, not added to: ~20-25s to the review instead of ~55s to a
+       * strategy, with generation's ~37s happening after their decision rather than before it.
+       */
       return trigger.isInitial
         ? {
             trigger: 'conversation_ended',
@@ -19,7 +31,7 @@ export function planPipeline(trigger: PipelineTrigger): PipelinePlan {
             persistFragments: true,
             runSynthesis: false,
             runKnowledgeSummary: false,
-            generation: { mode: 'initial', source: 'extracted_context' },
+            generation: null,
             model: CLAUDE_MODEL,
             backgroundSteps: [],
           }
