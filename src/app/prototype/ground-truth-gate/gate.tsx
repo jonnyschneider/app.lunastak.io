@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * PROTOTYPE: the ground truth gate. Disposable — built to decide layout, affordances and editing
+ * PROTOTYPE: the ground truth gate. Disposable — built to decide layout and affordances
  * in context. Design: docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md
  *
  * Real components and tokens, real project data via `derive.ts`. No writes.
@@ -15,10 +15,9 @@
  * a lonely "Drop this" that implies drop is the only thing you may do.
  */
 import { useEffect, useState } from 'react'
-import { Check, X, PenLine, ArrowRight, Sparkles, ChevronDown, FileText, MessageSquare, Package, PencilLine } from 'lucide-react'
+import { Check, X, ArrowRight, Sparkles, ChevronDown, FileText, MessageSquare, Package, PencilLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
@@ -37,7 +36,18 @@ import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
  * better here, `--muted-foreground` is the thing to revisit, not this file.
  */
 
-type Verdict = 'keep' | 'drop' | 'fixed'
+/**
+ * Two verdicts, not three (Jonny, 2026-09-08). "Not quite" was removed rather than reworded.
+ *
+ * It only ever edited the CLAIM — the heading — while the evidence, the content and everything
+ * generation actually reads stayed untouched. So it was relabelling a fragment, not correcting
+ * one, at the cost of a third control, an editor, a draft, a saved-correction state and copy
+ * ("not quite — say it my way", "use my words") that made the user work out what it did.
+ *
+ * Keep or discard is the whole ask. Anything the user wants to say in their own words is new
+ * context, and adding context is a path that already exists and does not need the gate.
+ */
+type Verdict = 'keep' | 'drop'
 type Stage = 'open' | 'weak' | 'confident' | 'all' | 'close'
 
 /**
@@ -66,20 +76,17 @@ function question(item: GateItem): string {
  * deletion, when dropping a fragment is an ordinary, reversible choice.
  */
 function VerdictControls({
-  verdict, onSet, size = 'default', withEdit = true,
+  verdict, onSet, size = 'default',
 }: {
   verdict: Verdict | undefined
   onSet: (v: Verdict | undefined) => void
   size?: 'default' | 'sm'
-  /** Rows drop it: three verdict icons plus a disclosure chevron is one control too many. */
-  withEdit?: boolean
 }) {
   const box = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
   const icon = size === 'sm' ? 'h-[18px] w-[18px]' : 'h-5 w-5'
   const opts: { v: Verdict; Icon: typeof Check; label: string }[] = [
     { v: 'keep', Icon: Check, label: 'Keep' },
-    { v: 'drop', Icon: X, label: 'Drop' },
-    ...(withEdit ? [{ v: 'fixed' as Verdict, Icon: PenLine, label: 'Not quite — say it my way' }] : []),
+    { v: 'drop', Icon: X, label: 'Discard' },
   ]
   return (
     <div className="flex shrink-0 items-center gap-0.5">
@@ -95,7 +102,6 @@ function VerdictControls({
             verdict !== v && 'border-foreground/25 text-foreground/55 hover:border-foreground/50 hover:text-foreground',
             verdict === v && v === 'keep' && 'border-luna bg-luna text-white',
             verdict === v && v === 'drop' && 'border-foreground/15 bg-foreground/[0.07] text-foreground/60',
-            verdict === v && v === 'fixed' && 'border-luna-dark bg-luna-dark text-white',
           )}
         >
           <Icon className={icon} strokeWidth={2.25} />
@@ -117,7 +123,7 @@ const SOURCE_ICON = {
  * evidence IS the reason it was pulled out.
  */
 function FragmentRow({
-  item, verdict, onSet, showEvidence, onOpen, hideDimension, editing, onStartEdit, draft, setDraft, onSaveEdit, onCancelEdit, correction,
+  item, verdict, onSet, showEvidence, onOpen, hideDimension,
 }: {
   item: GateItem
   verdict: Verdict | undefined
@@ -126,44 +132,13 @@ function FragmentRow({
   onOpen?: () => void
   /** Suppressed inside a grouped list, where the subheading already says it. */
   hideDimension?: boolean
-  editing?: boolean
-  onStartEdit?: () => void
-  draft?: string
-  setDraft?: (s: string) => void
-  onSaveEdit?: () => void
-  onCancelEdit?: () => void
-  correction?: string
 }) {
-  const shown = correction ?? item.claim
-
   return (
     <div className="flex items-start gap-2 py-2.5">
-      <VerdictControls verdict={verdict} onSet={onSet} size="sm" withEdit={false} />
+      <VerdictControls verdict={verdict} onSet={onSet} size="sm" />
 
       <div className="min-w-0 flex-1">
-        {/* IN-PLACE EDIT. The claim is replaced by an input occupying the same line at the same
-            size, so "not quite" is visibly a correction of THIS sentence rather than a form that
-            opened underneath it. Nothing below moves; §10's in-place editing, minus the diffing. */}
-        {editing ? (
-          <div className="space-y-1.5">
-            <input
-              autoFocus
-              value={draft}
-              onChange={e => setDraft?.(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') onSaveEdit?.()
-                if (e.key === 'Escape') onCancelEdit?.()
-              }}
-              className="w-full rounded-sm border-b-2 border-luna bg-transparent pb-0.5 text-sm leading-snug outline-none"
-            />
-            <div className="flex items-center gap-3 text-xs">
-              <button onClick={onSaveEdit} disabled={!draft?.trim()}
-                className="font-medium text-foreground underline underline-offset-2 disabled:opacity-40">Use my words</button>
-              <button onClick={onCancelEdit} className="text-foreground/60">Cancel</button>
-              <span className="text-foreground/45">↵ to save · esc to cancel</span>
-            </div>
-          </div>
-        ) : (
+        {(
           /* Claim and source share one line: the source was doubling every row's height for a
              label that only needs to be glanceable. */
           <button
@@ -178,12 +153,7 @@ function FragmentRow({
               {item.dimensionLabel && !hideDimension && (
                 <span className="mr-1.5 text-foreground/60">{item.dimensionLabel} ·</span>
               )}
-              {shown}
-              {correction && (
-                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/60">
-                  your words
-                </span>
-              )}
+              {item.claim}
             </span>
             {/* ONE axis: down to open, up to close. Right-then-down made a single control ask the
                 eye to read two different gestures. Source moved out of the row entirely — on a
@@ -197,11 +167,11 @@ function FragmentRow({
           </button>
         )}
 
-        {item.reason && !editing && (
+        {item.reason && (
           <p className="mt-0.5 text-xs text-foreground/60">{item.reason}</p>
         )}
 
-        {showEvidence && item.evidence && !editing && (
+        {showEvidence && item.evidence && (
           /* ONE quotation device, not three. It was carrying a border, curly quotes AND a quote
              icon for a single idea. The rule alone says "these are the words". */
           <div className="mt-2">
@@ -214,12 +184,6 @@ function FragmentRow({
                 {(() => { const I = SOURCE_ICON[item.sourceKind]; return <I className="h-3.5 w-3.5" /> })()}
                 {item.sourceName}
               </p>
-              {onStartEdit && (
-                <button onClick={onStartEdit}
-                  className="text-xs font-medium text-foreground/60 underline underline-offset-2 hover:text-foreground">
-                  Not quite — say it my way
-                </button>
-              )}
             </div>
           </div>
         )}
@@ -234,9 +198,6 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const [stage, setStage] = useState<Stage>('open')
   const [i, setI] = useState(0)
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({})
-  const [corrections, setCorrections] = useState<Record<string, string>>({})
-  const [editing, setEditing] = useState<string | null>(null)
-  const [draft, setDraft] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   /**
    * ⚠ REVERSED, 2026-09-07. This used to count CLICKS, which made the number false in both
@@ -255,11 +216,10 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const list = stage === 'all' ? [...weak, ...confident] : confident
   const kept = Object.values(verdicts).filter(v => v === 'keep').length
   const dropped = Object.values(verdicts).filter(v => v === 'drop').length
-  const fixes = Object.values(verdicts).filter(v => v === 'fixed').length
   // Confirmed = anything looked at, whatever was decided. Denominator is the ORIGINAL count, so
   // dropping can never inflate it — §8.
   const reviewed = presented.size
-  const changed = dropped + fixes
+  const changed = dropped
   const remaining = total - dropped
   const current = weak[i]
   const weakReviewed = weak.filter(w => presented.has(w.id)).length
@@ -272,36 +232,8 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
       else next[id] = v
       return next
     })
-    if (v === 'fixed') { setEditing(id); setDraft(corrections[id] ?? claimOf(id)) }
-    else setEditing(cur => (cur === id ? null : cur))
   }
 
-  function itemOf(id: string) {
-    return [...weak, ...confident].find(x => x.id === id)
-  }
-
-  function claimOf(id: string) {
-    const it = itemOf(id)
-    // Editing a derived-title fragment edits the whole claim, not the label cut from it.
-    return corrections[id] ?? (it?.titleIsDerived ? it.detail : it?.claim) ?? ''
-  }
-
-  /** Saving a correction is the only place a verdict is set by something other than a control. */
-  function saveEdit(id: string) {
-    setCorrections(c => ({ ...c, [id]: draft.trim() }))
-    setVerdicts(v => ({ ...v, [id]: 'fixed' }))
-    setEditing(null)
-    if (stage === 'weak' && current?.id === id) advance()
-  }
-
-  function cancelEdit(id: string) {
-    setEditing(null)
-    // Cancelling must not leave the row marked 'fixed' by the click that opened the editor.
-    setVerdicts(v => {
-      if (v[id] !== 'fixed' || corrections[id]) return v
-      const next = { ...v }; delete next[id]; return next
-    })
-  }
 
   // The weak walk shows one at a time; the lists show everything at once.
   useEffect(() => { if (stage === 'open' && example) mark([example.id]) }, [stage, example?.id])
@@ -353,12 +285,6 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     verdict={verdicts[example.id]}
                     onSet={v => set(example.id, v)}
                     showEvidence
-                    editing={editing === example.id}
-                    onStartEdit={() => set(example.id, 'fixed')}
-                    draft={draft} setDraft={setDraft}
-                    correction={corrections[example.id]}
-                    onSaveEdit={() => saveEdit(example.id)}
-                    onCancelEdit={() => cancelEdit(example.id)}
                   />
                 </div>
               )}
@@ -409,31 +335,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 )}
                 {/* Never a truncated heading. Where the fragment has no real title, the claim IS
                     the content, so it is presented whole rather than cut mid-word. */}
-                {editing === current.id ? (
-                  <div className="space-y-2">
-                    <textarea
-                      autoFocus rows={3} value={draft} onChange={e => setDraft(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEdit(current.id)
-                        if (e.key === 'Escape') cancelEdit(current.id)
-                      }}
-                      className="w-full resize-none rounded-md border-2 border-luna bg-transparent p-2 text-base font-medium leading-relaxed outline-none"
-                    />
-                    <div className="flex items-center gap-3 text-xs">
-                      <button onClick={() => saveEdit(current.id)} disabled={!draft.trim()}
-                        className="font-medium text-foreground underline underline-offset-2 disabled:opacity-40">Use my words</button>
-                      <button onClick={() => cancelEdit(current.id)} className="text-foreground/60">Cancel</button>
-                      <span className="text-foreground/45">⌘↵ to save · esc to cancel</span>
-                    </div>
-                  </div>
-                ) : corrections[current.id] ? (
-                  <p className="text-base font-medium leading-relaxed">
-                    {corrections[current.id]}
-                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/60">
-                      your words
-                    </span>
-                  </p>
-                ) : current.titleIsDerived
+                {current.titleIsDerived
                   ? <p className="text-base font-medium leading-relaxed">{current.detail}</p>
                   : <h2 className="text-lg font-semibold leading-snug">{current.claim}</h2>}
 
@@ -455,7 +357,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     <p className="text-sm">{question(current)}</p>
                     <VerdictControls
                       verdict={verdicts[current.id]}
-                      onSet={v => { set(current.id, v); if (v && v !== 'fixed') advance() }}
+                      onSet={v => { set(current.id, v); if (v) advance() }}
                     />
                   </div>
 
@@ -505,12 +407,6 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                             showEvidence={expanded === c.id}
                             onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
                             hideDimension
-                            editing={editing === c.id}
-                            onStartEdit={() => set(c.id, 'fixed')}
-                            draft={draft} setDraft={setDraft}
-                            correction={corrections[c.id]}
-                            onSaveEdit={() => saveEdit(c.id)}
-                            onCancelEdit={() => cancelEdit(c.id)}
                           />
                         </div>
                       ))}
@@ -545,9 +441,8 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               {/* Cause and effect, immediately — the thing the archive control never had. */}
               <div className="space-y-1 text-sm">
                 {kept > 0 && <p>Kept <strong>{kept}</strong>.</p>}
-                {dropped > 0 && <p>Dropped <strong>{dropped}</strong>.</p>}
-                {fixes > 0 && <p>Added <strong>{fixes}</strong> correction{fixes > 1 ? 's' : ''} in your words.</p>}
-                {kept === 0 && dropped === 0 && fixes === 0 && <p>Nothing changed — building from all {total}.</p>}
+                {dropped > 0 && <p>Discarded <strong>{dropped}</strong>.</p>}
+                {kept === 0 && dropped === 0 && <p>Nothing changed — building from all {total}.</p>}
                 <p className="text-foreground/60">Building from {remaining}.</p>
               </div>
 
@@ -565,7 +460,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               </div>
 
               <Button variant="outline"
-                onClick={() => { setStage('open'); setI(0); setVerdicts({}); setPresented(new Set()); setExpanded(null); setEditing(null) }}>
+                onClick={() => { setStage('open'); setI(0); setVerdicts({}); setPresented(new Set()); setExpanded(null) }}>
                 Run it again
               </Button>
             </CardContent>
