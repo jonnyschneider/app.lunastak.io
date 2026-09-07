@@ -326,14 +326,13 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                         <div key={c.id}
                           className={cn('-mx-2 rounded px-2 transition-colors',
                             /* Discarded needs to be scannable, not inferred from a faded glyph. */
-                            verdicts[c.id] === 'drop' ? 'bg-muted/70'
-                              /* A washed gold field is what makes the extra control legible: the
-                                 rows that ask a question look like a set, so a second affordance
-                                 on them reads as belonging to that set rather than as an
-                                 inconsistency. Gold because these are the ones that want the
-                                 user; the saturated gold is still reserved for a resolved one. */
-                              : c.weakReason ? 'bg-luna/[0.07] hover:bg-luna/[0.11]'
-                              : 'hover:bg-muted/40')}>
+                            /* No field on a flagged row any more. The gold was there to make an
+                               extra CONTROL legible by making those rows read as a set — and both
+                               the set and the control are gone. What was left was gold, which
+                               everywhere else means "these are your words", sitting under a quote
+                               that is NOT your words and carries a destructive rule saying so.
+                               The row being open, with its reason, is the marker. */
+                            verdicts[c.id] === 'drop' ? 'bg-muted/70' : 'hover:bg-muted/40')}>
                           <FragmentRow
                             item={c}
                             verdict={verdicts[c.id]}
