@@ -23,6 +23,20 @@ import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
 
+/**
+ * ⚠ COLOUR DOES NOT CARRY MEANING IN TEXT HERE (Jonny, 2026-09-08).
+ *
+ * Two things were wrong. Gold was creeping into links, badges and counters, so the one place it
+ * MEANS something — a kept fragment — stopped standing out. And secondary text leaned on
+ * `--muted-foreground`, which is `320 12% 38%`: a mulberry-tinted grey that reads as eggplant in
+ * quantity. This file uses neutral `text-foreground/NN` for secondary text instead, and says
+ * everything else with weight, underline, opacity or a background.
+ *
+ * Gold survives in exactly two places, both load-bearing: the fill on a KEPT control, and the rule
+ * beside a verbatim span. That is a deliberate local deviation from the app's tokens — if it reads
+ * better here, `--muted-foreground` is the thing to revisit, not this file.
+ */
+
 type Verdict = 'keep' | 'drop' | 'fixed'
 type Stage = 'open' | 'weak' | 'confident' | 'all' | 'close'
 
@@ -144,9 +158,9 @@ function FragmentRow({
             />
             <div className="flex items-center gap-3 text-xs">
               <button onClick={onSaveEdit} disabled={!draft?.trim()}
-                className="font-medium text-luna disabled:opacity-40">Use my words</button>
-              <button onClick={onCancelEdit} className="text-muted-foreground">Cancel</button>
-              <span className="text-muted-foreground/60">↵ to save · esc to cancel</span>
+                className="font-medium text-foreground underline underline-offset-2 disabled:opacity-40">Use my words</button>
+              <button onClick={onCancelEdit} className="text-foreground/60">Cancel</button>
+              <span className="text-foreground/45">↵ to save · esc to cancel</span>
             </div>
           </div>
         ) : (
@@ -156,22 +170,25 @@ function FragmentRow({
             onClick={onOpen}
             disabled={!onOpen}
             className={cn('flex w-full items-center justify-between gap-3 text-left text-sm leading-snug transition-opacity',
-              verdict === 'drop' ? 'text-muted-foreground opacity-55' : 'text-foreground',
-              onOpen && 'hover:text-luna')}
+              verdict === 'drop' ? 'opacity-45' : 'text-foreground')}
           >
             <span className="min-w-0">
               {item.dimensionLabel && !hideDimension && (
-                <span className="mr-1.5 text-muted-foreground">{item.dimensionLabel} ·</span>
+                <span className="mr-1.5 text-foreground/60">{item.dimensionLabel} ·</span>
               )}
               {shown}
-              {correction && <span className="ml-2 text-xs font-medium text-luna">your words</span>}
+              {correction && (
+                <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/60">
+                  your words
+                </span>
+              )}
             </span>
             {/* ONE axis: down to open, up to close. Right-then-down made a single control ask the
                 eye to read two different gestures. Source moved out of the row entirely — on a
                 scan list it was labelling rows that were not asking a question yet. */}
             {onOpen && (
               <ChevronDown
-                className={cn('h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform',
+                className={cn('h-4 w-4 shrink-0 text-foreground/45 transition-transform',
                   showEvidence && 'rotate-180')}
               />
             )}
@@ -179,7 +196,7 @@ function FragmentRow({
         )}
 
         {item.reason && !editing && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{item.reason}</p>
+          <p className="mt-0.5 text-xs text-foreground/60">{item.reason}</p>
         )}
 
         {showEvidence && item.evidence && !editing && (
@@ -187,16 +204,17 @@ function FragmentRow({
              icon for a single idea. The rule alone says "these are the words". */
           <div className="mt-2">
             <p className={cn('border-l-2 pl-3 text-sm italic',
-              item.weakReason === 'failed' ? 'border-destructive/40 text-muted-foreground' : 'border-luna')}>
+              item.weakReason === 'failed' ? 'border-destructive/40 text-foreground/60' : 'border-luna')}>
               {item.evidence}
             </p>
             <div className="mt-1.5 flex items-center gap-3 pl-3">
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+              <p className="flex items-center gap-1.5 text-xs text-foreground/45">
                 {(() => { const I = SOURCE_ICON[item.sourceKind]; return <I className="h-3.5 w-3.5" /> })()}
                 {item.sourceName}
               </p>
               {onStartEdit && (
-                <button onClick={onStartEdit} className="text-xs font-medium text-luna">
+                <button onClick={onStartEdit}
+                  className="text-xs font-medium text-foreground/60 underline underline-offset-2 hover:text-foreground">
                   Not quite — say it my way
                 </button>
               )}
@@ -298,7 +316,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-10">
       <div className="mx-auto max-w-2xl space-y-4">
-        <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+        <p className="font-mono text-[10px] uppercase tracking-wide text-foreground/60">
           Prototype · ground truth gate · real data · {projectId.slice(0, 10)}…
         </p>
 
@@ -310,7 +328,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             <Progress value={(reviewed / total) * 100} className="h-1.5 flex-1" />
             <span className="font-mono text-xs tabular-nums">{reviewed} of {total}</span>
             {changed > 0 && (
-              <span className="border-l pl-3 font-mono text-xs tabular-nums text-luna">{changed} changed</span>
+              <span className="border-l pl-3 font-mono text-xs tabular-nums text-foreground">{changed} changed</span>
             )}
           </div>
         )}
@@ -320,7 +338,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             <CardContent className="space-y-6 p-8">
               <div className="space-y-2">
                 <h1 className="text-2xl font-semibold tracking-tight">Before I build your strategy</h1>
-                <p className="text-muted-foreground">
+                <p className="text-foreground/60">
                   I took <strong className="text-foreground">{total} things</strong> from what you told me.
                   Here&rsquo;s one — check it and I&rsquo;ll show you the rest:
                 </p>
@@ -343,7 +361,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 </div>
               )}
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground/60">
                 <strong className="text-foreground">{confident.length}</strong> are grounded like that one — I&rsquo;ll call those{' '}
                 <strong className="text-foreground">{SETS.confident.toLowerCase()}</strong>.
                 {weak.length > 0 && <> The other <strong className="text-foreground">{weak.length}</strong> are{' '}
@@ -373,9 +391,9 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             <div className="flex items-baseline justify-between">
               <p className="text-sm">
                 <strong>{SETS.weak}</strong>
-                <span className="text-muted-foreground"> — where it matters most.</span>
+                <span className="text-foreground/60"> — where it matters most.</span>
               </p>
-              <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="font-mono text-[10px] uppercase tracking-wide text-foreground/60">
                 {i + 1} of {weak.length}
               </span>
             </div>
@@ -383,7 +401,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             <Card>
               <CardContent className="space-y-4 p-8">
                 {current.dimensionLabel && (
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">
                     {current.dimensionLabel}
                   </p>
                 )}
@@ -401,15 +419,17 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     />
                     <div className="flex items-center gap-3 text-xs">
                       <button onClick={() => saveEdit(current.id)} disabled={!draft.trim()}
-                        className="font-medium text-luna disabled:opacity-40">Use my words</button>
-                      <button onClick={() => cancelEdit(current.id)} className="text-muted-foreground">Cancel</button>
-                      <span className="text-muted-foreground/60">⌘↵ to save · esc to cancel</span>
+                        className="font-medium text-foreground underline underline-offset-2 disabled:opacity-40">Use my words</button>
+                      <button onClick={() => cancelEdit(current.id)} className="text-foreground/60">Cancel</button>
+                      <span className="text-foreground/45">⌘↵ to save · esc to cancel</span>
                     </div>
                   </div>
                 ) : corrections[current.id] ? (
                   <p className="text-base font-medium leading-relaxed">
                     {corrections[current.id]}
-                    <span className="ml-2 text-xs font-medium text-luna">your words</span>
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/60">
+                      your words
+                    </span>
                   </p>
                 ) : current.titleIsDerived
                   ? <p className="text-base font-medium leading-relaxed">{current.detail}</p>
@@ -417,15 +437,15 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
                 {current.evidence && (
                   <p className={cn('border-l-2 pl-3 text-sm italic',
-                    current.weakReason === 'failed' ? 'border-destructive/40 text-muted-foreground' : 'border-luna')}>
+                    current.weakReason === 'failed' ? 'border-destructive/40 text-foreground/60' : 'border-luna')}>
                     {current.evidence}
                   </p>
                 )}
 
                 {/* The flag reason is the system showing its working — the trust mechanism. */}
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground/60">
                   {current.reason}
-                  <span className="ml-2 text-muted-foreground/70">· {current.sourceName}</span>
+                  <span className="ml-2 text-foreground/45">· {current.sourceName}</span>
                 </p>
 
                 <div className="space-y-3 border-t pt-4">
@@ -444,7 +464,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             {/* Named, so it cannot be read as "skip everything" and then surprise the user with
                 twenty-five more. It says exactly where it goes and how many are there. */}
             <button onClick={() => setStage('confident')}
-              className="text-sm text-muted-foreground underline underline-offset-4">
+              className="text-sm text-foreground/60 underline underline-offset-4">
               Leave {SETS.weak.toLowerCase()} — go to {SETS.confident.toLowerCase()} ({confident.length})
             </button>
           </div>
@@ -457,7 +477,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 <h2 className="text-lg font-semibold">
                   {stage === 'all' ? `Everything — ${total}` : `${SETS.confident} — ${confident.length}`}
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground/60">
                   {stage === 'all'
                     ? `${SETS.weak} first, then ${SETS.confident.toLowerCase()}. `
                     : 'Nothing here needs a decision. '}
@@ -470,12 +490,12 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               <div className="space-y-5">
                 {groupByDimension(list).map(g => (
                   <div key={g.dimension ?? 'none'}>
-                    <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
                       {g.label}
                     </h3>
                     <div className="divide-y divide-border">
                       {g.items.map(c => (
-                        <div key={c.id}>
+                        <div key={c.id} className="-mx-2 rounded px-2 transition-colors hover:bg-muted/40">
                           <FragmentRow
                             item={c}
                             verdict={verdicts[c.id]}
@@ -501,11 +521,11 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 <Button onClick={() => setStage('close')}>Build my strategy</Button>
                 {weak.length > 0 ? (
                   <button onClick={() => setStage(stage === 'all' ? 'confident' : 'all')}
-                    className="text-xs text-muted-foreground underline underline-offset-4">
+                    className="text-xs text-foreground/60 underline underline-offset-4">
                     {stage === 'all' ? `${SETS.confident} only (${confident.length})` : `See all ${total}`}
                   </button>
                 ) : (
-                  <span className="text-xs text-muted-foreground">you can tweak these any time</span>
+                  <span className="text-xs text-foreground/60">you can tweak these any time</span>
                 )}
               </div>
             </CardContent>
@@ -526,7 +546,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 {dropped > 0 && <p>Dropped <strong>{dropped}</strong>.</p>}
                 {fixes > 0 && <p>Added <strong>{fixes}</strong> correction{fixes > 1 ? 's' : ''} in your words.</p>}
                 {kept === 0 && dropped === 0 && fixes === 0 && <p>Nothing changed — building from all {total}.</p>}
-                <p className="text-muted-foreground">Building from {remaining}.</p>
+                <p className="text-foreground/60">Building from {remaining}.</p>
               </div>
 
               <div className="space-y-2 rounded-lg border bg-card p-4">
@@ -535,7 +555,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                   <span className="font-mono text-sm tabular-nums">{reviewed} of {total}</span>
                 </div>
                 <Progress value={(reviewed / total) * 100} className="h-1.5" />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground/60">
                   {weakReviewed === weak.length && weak.length > 0
                     ? `You looked at all ${weak.length} I flagged. ${reviewed < total ? `The other ${total - reviewed} are there whenever you want them.` : ''}`
                     : `You can come back to the ${total - reviewed} you haven't seen any time.`}
