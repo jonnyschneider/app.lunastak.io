@@ -14,14 +14,14 @@
  * be *actionable* rather than a read-only demonstration, and it is why the scan list no longer has
  * a lonely "Drop this" that implies drop is the only thing you may do.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, X, PenLine, ArrowRight, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
-import type { GateItem, GateModel } from './derive'
+import { SETS, type GateItem, type GateModel } from './derive'
 
 type Verdict = 'keep' | 'drop' | 'fixed'
 type Stage = 'open' | 'weak' | 'confident' | 'all' | 'close'
@@ -73,13 +73,12 @@ function VerdictControls({
  * evidence IS the reason it was pulled out.
  */
 function FragmentRow({
-  item, verdict, onSet, showEvidence, seen, onOpen,
+  item, verdict, onSet, showEvidence, onOpen,
 }: {
   item: GateItem
   verdict: Verdict | undefined
   onSet: (v: Verdict | undefined) => void
   showEvidence: boolean
-  seen?: boolean
   onOpen?: () => void
 }) {
   return (
@@ -96,27 +95,22 @@ function FragmentRow({
           {item.claim}
         </button>
 
-        {showEvidence && (
-          <div className="mt-2 space-y-2">
-            {item.evidence ? (
-              /* ONE quotation device, not three. The rule was previously carrying a border, a pair
-                 of curly quotes AND a quote icon on the line beneath, which read as three separate
-                 signals for one idea. The rule alone says "these are the words". */
-              <p className={cn('border-l-2 pl-3 text-sm italic',
-                item.weakReason === 'failed' ? 'border-destructive/40 text-muted-foreground' : 'border-luna')}>
-                {item.evidence}
-              </p>
-            ) : null}
-            <p className="text-xs text-muted-foreground">
-              {item.reason ?? item.sourceName}
-              {item.reason && <span className="ml-2 opacity-60">{item.sourceName}</span>}
-            </p>
-          </div>
+        {/* The source belongs on the CLOSED row: it is the cheapest orientation available, and
+            hiding it behind the accordion meant a row gave no clue where it came from. */}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {item.sourceName}
+          {item.reason && <span className="ml-2 text-muted-foreground/70">· {item.reason}</span>}
+        </p>
+
+        {showEvidence && item.evidence && (
+          /* ONE quotation device, not three. It was carrying a border, curly quotes AND a quote
+             icon for a single idea. The rule alone says "these are the words". */
+          <p className={cn('mt-2 border-l-2 pl-3 text-sm italic',
+            item.weakReason === 'failed' ? 'border-destructive/40 text-muted-foreground' : 'border-luna')}>
+            {item.evidence}
+          </p>
         )}
       </div>
-      {seen !== undefined && !showEvidence && (
-        <span className={cn('mt-2 h-1.5 w-1.5 shrink-0 rounded-full', seen ? 'bg-luna' : 'bg-transparent')} />
-      )}
     </div>
   )
 }
@@ -131,7 +125,19 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [seen, setSeen] = useState<Set<string>>(new Set())
+  /**
+   * ⚠ REVERSED, 2026-09-07. This used to count CLICKS, which made the number false in both
+   * directions: a user who skims seven headings and is satisfied has reviewed them and scored zero,
+   * while a tick on a row already opened moved nothing at all, because verdicts and views were
+   * unioned into one set. Reviewing is being SHOWN something; it is not clicking.
+   *
+   * So `presented` is written when an item is actually put on screen, and acting on one is counted
+   * separately as `changed`. Two honest numbers instead of one confused one.
+   */
+  const [presented, setPresented] = useState<Set<string>>(new Set())
+  const mark = (ids: string[]) => setPresented(p => {
+    const next = new Set(p); for (const id of ids) next.add(id); return next
+  })
 
   const list = stage === 'all' ? [...weak, ...confident] : confident
   const kept = Object.values(verdicts).filter(v => v === 'keep').length
@@ -139,9 +145,11 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const fixes = Object.values(verdicts).filter(v => v === 'fixed').length
   // Confirmed = anything looked at, whatever was decided. Denominator is the ORIGINAL count, so
   // dropping can never inflate it — §8.
-  const confirmed = new Set([...Object.keys(verdicts), ...Array.from(seen)]).size
+  const reviewed = presented.size
+  const changed = dropped + fixes
   const remaining = total - dropped
   const current = weak[i]
+  const weakReviewed = weak.filter(w => presented.has(w.id)).length
 
   /** Setting a verdict anywhere is the same call, so the score moves the same way everywhere. */
   function set(id: string, v: Verdict | undefined) {
@@ -159,6 +167,13 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
     return [...weak, ...confident].find(x => x.id === id)?.claim ?? ''
   }
 
+  // The weak walk shows one at a time; the lists show everything at once.
+  useEffect(() => { if (stage === 'open' && example) mark([example.id]) }, [stage, example?.id])
+  useEffect(() => { if (stage === 'weak' && current) mark([current.id]) }, [stage, current?.id])
+  useEffect(() => {
+    if (stage === 'confident' || stage === 'all') mark(list.map(x => x.id))
+  }, [stage])
+
   function advance() {
     if (i + 1 < weak.length) setI(i + 1)
     else setStage('confident')
@@ -171,13 +186,16 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
           Prototype · ground truth gate · real data · {projectId.slice(0, 10)}…
         </p>
 
-        {/* The score is live and always on screen from the first action onward, so the very first
-            interaction has a visible consequence — §7's "one action, visible consequence". */}
-        {confirmed > 0 && stage !== 'close' && (
+        {/* Live from the first screen on, so acting has a visible consequence — §7. Two numbers,
+            because looking and changing are different things and one number conflated them. */}
+        {reviewed > 0 && stage !== 'close' && (
           <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-2.5">
-            <span className="text-xs font-medium">Confirmed by you</span>
-            <Progress value={(confirmed / total) * 100} className="h-1.5 flex-1" />
-            <span className="font-mono text-xs tabular-nums">{confirmed} of {total}</span>
+            <span className="text-xs font-medium">Seen</span>
+            <Progress value={(reviewed / total) * 100} className="h-1.5 flex-1" />
+            <span className="font-mono text-xs tabular-nums">{reviewed} of {total}</span>
+            {changed > 0 && (
+              <span className="border-l pl-3 font-mono text-xs tabular-nums text-luna">{changed} changed</span>
+            )}
           </div>
         )}
 
@@ -210,21 +228,25 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               )}
 
               <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">{confident.length} of the {total}</strong> are grounded like that one.
-                {weak.length > 0 && <> <strong className="text-foreground">{weak.length}</strong> I&rsquo;m less sure about.</>}
+                <strong className="text-foreground">{confident.length}</strong> are grounded like that one — I&rsquo;ll call those{' '}
+                <strong className="text-foreground">{SETS.confident.toLowerCase()}</strong>.
+                {weak.length > 0 && <> The other <strong className="text-foreground">{weak.length}</strong> are{' '}
+                  <strong className="text-foreground">{SETS.weak.toLowerCase()}</strong>.</>}
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
                 {weak.length > 0 && (
                   <Button onClick={() => setStage('weak')}>
-                    {verdicts[example?.id ?? ''] ? 'Next — check those' : 'Check those'} {weak.length}
+                    {SETS.weak} ({weak.length})
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}
-                <Button variant={weak.length ? 'outline' : 'default'} onClick={() => setStage('close')}>
+                <Button variant="outline" onClick={() => setStage('confident')}>
+                  {SETS.confident} ({confident.length})
+                </Button>
+                <Button variant="ghost" onClick={() => setStage('close')}>
                   {verdicts[example?.id ?? ''] ? 'That\u2019s enough — build it' : 'Looks right — build it'}
                 </Button>
-                <Button variant="ghost" onClick={() => setStage('all')}>See all {total}</Button>
               </div>
             </CardContent>
           </Card>
@@ -233,8 +255,9 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
         {stage === 'weak' && current && (
           <div className="space-y-4">
             <div className="flex items-baseline justify-between">
-              <p className="text-sm text-muted-foreground">
-                These <strong className="text-foreground">{weak.length}</strong> are where it matters most — the rest I&rsquo;m confident about.
+              <p className="text-sm">
+                <strong>{SETS.weak}</strong>
+                <span className="text-muted-foreground"> — where it matters most.</span>
               </p>
               <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
                 {i + 1} of {weak.length}
@@ -243,7 +266,11 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
             <Card>
               <CardContent className="space-y-4 p-8">
-                <h2 className="text-lg font-semibold leading-snug">{current.claim}</h2>
+                {/* Never a truncated heading. Where the fragment has no real title, the claim IS
+                    the content, so it is presented whole rather than cut mid-word. */}
+                {current.titleIsDerived
+                  ? <p className="text-base font-medium leading-relaxed">{current.detail}</p>
+                  : <h2 className="text-lg font-semibold leading-snug">{current.claim}</h2>}
 
                 {current.evidence && (
                   <p className={cn('border-l-2 pl-3 text-sm italic',
@@ -253,7 +280,10 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 )}
 
                 {/* The flag reason is the system showing its working — the trust mechanism. */}
-                <p className="text-sm text-muted-foreground">{current.reason}</p>
+                <p className="text-sm text-muted-foreground">
+                  {current.reason}
+                  <span className="ml-2 text-muted-foreground/70">· {current.sourceName}</span>
+                </p>
 
                 <div className="space-y-3 border-t pt-4">
                   <div className="flex items-center justify-between gap-4">
@@ -274,9 +304,11 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               </CardContent>
             </Card>
 
+            {/* Named, so it cannot be read as "skip everything" and then surprise the user with
+                twenty-five more. It says exactly where it goes and how many are there. */}
             <button onClick={() => setStage('confident')}
               className="text-sm text-muted-foreground underline underline-offset-4">
-              Skip the rest of these
+              Leave {SETS.weak.toLowerCase()} — go to {SETS.confident.toLowerCase()} ({confident.length})
             </button>
           </div>
         )}
@@ -286,9 +318,14 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             <CardContent className="space-y-4 p-8">
               <div>
                 <h2 className="text-lg font-semibold">
-                  {stage === 'all' ? `All ${total} things I took.` : `${confident.length} more, all well-grounded.`}
+                  {stage === 'all' ? `Everything — ${total}` : `${SETS.confident} — ${confident.length}`}
                 </h2>
-                <p className="text-sm text-muted-foreground">Skim if you like. Tap one to see what it&rsquo;s built on.</p>
+                <p className="text-sm text-muted-foreground">
+                  {stage === 'all'
+                    ? `${SETS.weak} first, then ${SETS.confident.toLowerCase()}. `
+                    : 'Nothing here needs a decision. '}
+                  Skim it; tap one to see what it&rsquo;s built on.
+                </p>
               </div>
 
               {/* Full flow, no scroll box. The constrained-height version hid most of the list
@@ -301,8 +338,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                       verdict={verdicts[c.id]}
                       onSet={v => set(c.id, v)}
                       showEvidence={expanded === c.id}
-                      seen={seen.has(c.id)}
-                      onOpen={() => { setExpanded(expanded === c.id ? null : c.id); setSeen(s => new Set(s).add(c.id)) }}
+                      onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
                     />
                     {editing === c.id && (
                       <CorrectionBox
@@ -316,7 +352,14 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
               <div className="flex items-center justify-between gap-4 border-t pt-4">
                 <Button onClick={() => setStage('close')}>Build my strategy</Button>
-                <span className="text-xs text-muted-foreground">you can tweak these any time</span>
+                {stage === 'confident' && weak.length > 0 ? (
+                  <button onClick={() => setStage('all')}
+                    className="text-xs text-muted-foreground underline underline-offset-4">
+                    Show {SETS.weak.toLowerCase()} here too
+                  </button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">you can tweak these any time</span>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -341,19 +384,19 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
               <div className="space-y-2 rounded-lg border bg-card p-4">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-medium">Confirmed by you</span>
-                  <span className="font-mono text-sm tabular-nums">{confirmed} of {total}</span>
+                  <span className="text-sm font-medium">Seen</span>
+                  <span className="font-mono text-sm tabular-nums">{reviewed} of {total}</span>
                 </div>
-                <Progress value={(confirmed / total) * 100} className="h-1.5" />
+                <Progress value={(reviewed / total) * 100} className="h-1.5" />
                 <p className="text-xs text-muted-foreground">
-                  {confirmed < total
-                    ? `You can come back to the ${total - confirmed} you haven't seen any time — the more confirmed, the better this gets.`
-                    : 'Everything confirmed.'}
+                  {weakReviewed === weak.length && weak.length > 0
+                    ? `You looked at all ${weak.length} I flagged. ${reviewed < total ? `The other ${total - reviewed} are there whenever you want them.` : ''}`
+                    : `You can come back to the ${total - reviewed} you haven't seen any time.`}
                 </p>
               </div>
 
               <Button variant="outline"
-                onClick={() => { setStage('open'); setI(0); setVerdicts({}); setSeen(new Set()); setExpanded(null); setEditing(null) }}>
+                onClick={() => { setStage('open'); setI(0); setVerdicts({}); setPresented(new Set()); setExpanded(null); setEditing(null) }}>
                 Run it again
               </Button>
             </CardContent>
@@ -372,9 +415,11 @@ function CorrectionBox({
     <div className="space-y-2 pb-3 pl-11">
       <Textarea autoFocus rows={3} value={draft} onChange={e => setDraft(e.target.value)}
         placeholder="Say it the way you'd say it." />
-      <Button size="sm" disabled={!draft.trim() || draft.trim() === claim} onClick={onSave}>
-        Use my words
-      </Button>
+      <div className="flex justify-end">
+        <Button size="sm" disabled={!draft.trim() || draft.trim() === claim} onClick={onSave}>
+          Use my words
+        </Button>
+      </div>
     </div>
   )
 }

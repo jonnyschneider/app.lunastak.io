@@ -61,6 +61,8 @@ export interface GateItem {
   type: 'verbatim' | 'interpretation' | null
   dimensions: string[]
   reviewed: boolean
+  /** True when `claim` was derived from content because the fragment carries no usable title. */
+  titleIsDerived: boolean
   weakReason: WeakReason | null
   /** Shown to the user. The system showing its working is the trust mechanism (design §5). */
   reason: string | null
@@ -99,14 +101,18 @@ export function isLunaTalkingToItself(f: ApiFragment): boolean {
  * literal when the spec provides no `tensionTitle` (task 15-28). In a title-only scan list that is
  * six identical rows. Checked where they go: nothing downstream distinguishes a tension from any
  * other fragment, so they ARE live context feeding synthesis and generation, and their content is
- * substantive. So they get a readable title here rather than being hidden.
+ * substantive. So they get a readable label here rather than being hidden.
+ *
+ * ⚠ NEVER TRUNCATE. The first pass capped the derived label at 96 chars with an ellipsis, and on a
+ * card where that label is the ONLY heading it reads as a sentence cut off mid-word — disorienting
+ * exactly where the user is being asked to make a judgement. A row can wrap; a claim cannot be
+ * half-shown. Where no real title exists, `titleIsDerived` tells the view to present the whole
+ * claim rather than dressing a fragment of it up as a heading.
  */
-function titleFor(f: ApiFragment): string {
+function labelFor(f: ApiFragment): { claim: string; derived: boolean } {
   const t = f.title?.trim()
-  if (t && t !== 'Strategic tension') return t
-  // First clause of the content reads as a title far better than a repeated label.
-  const first = f.content.split(/ — |[.;] /)[0].trim()
-  return first.length > 96 ? `${first.slice(0, 93)}…` : first
+  if (t && t !== 'Strategic tension') return { claim: t, derived: false }
+  return { claim: f.content.split(/ — |[.;] /)[0].trim(), derived: true }
 }
 
 /**
@@ -134,6 +140,7 @@ function classify(f: ApiFragment): WeakReason | null {
 
 export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map()): GateItem {
   const weakReason = classify(f)
+  const label = labelFor(f)
   // Show the strongest span we can stand behind; only fall back to a failed one when that is all
   // there is, and let `verification` carry the caveat rather than hiding it.
   const usable = f.evidence.filter(e => e.verification !== 'failed')
@@ -141,7 +148,8 @@ export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(
 
   return {
     id: f.id,
-    claim: titleFor(f),
+    claim: label.claim,
+    titleIsDerived: label.derived,
     detail: f.content,
     evidence: weakReason === 'no-evidence' ? null : best?.text ?? null,
     spans: f.evidence.length,
@@ -178,6 +186,17 @@ export function orderWeak(items: GateItem[]): GateItem[] {
     return (a.evidence?.length ?? 0) - (b.evidence?.length ?? 0)
   })
 }
+
+/**
+ * The two sets need names the user can hold. "Skip the rest of these" was ambiguous — it meant the
+ * rest of the flagged ones, and reads as "skip everything", which then dumps 25 more on someone who
+ * thought they were done (Jonny, 2026-09-07). Naming them once here and referring to them by name
+ * everywhere is what removes the ambiguity; no copy change to a single button could.
+ */
+export const SETS = {
+  weak: 'Worth a look',
+  confident: 'Well grounded',
+} as const
 
 export interface GateModel {
   total: number
