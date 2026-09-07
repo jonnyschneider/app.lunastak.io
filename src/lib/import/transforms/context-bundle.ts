@@ -67,6 +67,11 @@ export function transformContextBundleDirect(bundle: ContextBundle): EmergentThe
       themes.push({
         theme_name: (t.tensionTitle as string) || 'Strategic tension',
         content,
+        // NOT ground truth: a tension is the skill's reading across themes, drawn in a
+        // conversation this app never saw. It carries no verbatim span because it is not a quote.
+        // Naming the type is what lets the ground-truth review leave it out while it still feeds
+        // synthesis and generation like any other context.
+        contentType: 'tension',
         dimensions: dims,
       })
     }
@@ -187,6 +192,7 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
     themes.push({
       theme_name: (t.tensionTitle as string) || 'Strategic tension',
       content,
+      contentType: 'tension',   // see the direct-mode transform above
       dimensions: [{ name: 'risks_constraints', confidence: 'MEDIUM' as const }],
     })
   }

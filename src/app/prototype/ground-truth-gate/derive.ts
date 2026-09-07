@@ -107,6 +107,23 @@ export function isLunaTalkingToItself(f: ApiFragment): boolean {
 }
 
 /**
+ * ⚠ A tension is NOT a ground truth, so it does not belong in this review (Jonny, 2026-09-08).
+ *
+ * It is the skill's own reading ACROSS themes — a conclusion drawn in a conversation this app
+ * never saw. It carries no verbatim span because it is not a quote, and asking it to cite one
+ * would invite exactly the laundering §13 named. So it was landing in the weak set saying "I
+ * couldn't find your own words behind this one", which reads as doubt about the CONTENT when it
+ * is really an artefact of the bundle format having no shape for tensions at all.
+ *
+ * They stay as context — synthesis and generation read them like anything else. They are simply
+ * not something to ask a user to verify. `contentType: 'tension'` is set by the import transform;
+ * the title check covers rows imported before that change.
+ */
+export function isNotGroundTruth(f: ApiFragment): boolean {
+  return f.contentType === 'tension' || f.title?.trim() === 'Strategic tension'
+}
+
+/**
  * Bundle `tensions` all arrive titled "Strategic tension" — the transform falls back to that
  * literal when the spec provides no `tensionTitle` (task 15-28). In a title-only scan list that is
  * six identical rows. Checked where they go: nothing downstream distinguishes a tension from any
@@ -318,7 +335,7 @@ export function pickExample(confident: GateItem[]): GateItem | null {
 
 export function buildGateModel(res: ApiResponse): GateModel {
   const active = res.fragments.filter(f => f.status === 'active')
-  const usable = active.filter(f => !isLunaTalkingToItself(f))
+  const usable = active.filter(f => !isLunaTalkingToItself(f) && !isNotGroundTruth(f))
   const filtered = active.length - usable.length
   // Number conversations in the order their fragments were captured, so the label is stable.
   const convIndex = new Map<string, number>()

@@ -297,7 +297,7 @@ export async function createFragmentsFromImport(
       projectId,
       title: theme.theme_name || null,
       content: theme.content,
-      contentType: 'insight',
+      contentType: theme.contentType ?? 'insight',
       status: 'active',
       confidence: hasTags ? 'MEDIUM' : 'LOW',
       sourceType: 'import',
