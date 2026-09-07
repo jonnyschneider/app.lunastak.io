@@ -170,7 +170,9 @@ function FragmentRow({
             onClick={onOpen}
             disabled={!onOpen}
             className={cn('flex w-full items-center justify-between gap-3 text-left text-sm leading-snug transition-opacity',
-              verdict === 'drop' ? 'opacity-45' : 'text-foreground')}
+              verdict === 'drop' ? 'opacity-45' : 'text-foreground',
+              // Open row reads as the one in focus without adding a second signal.
+              showEvidence && 'font-semibold')}
           >
             <span className="min-w-0">
               {item.dimensionLabel && !hideDimension && (
