@@ -44,6 +44,40 @@ describe('verifySpan', () => {
     expect(verifySpan('Both', 'The answer was Both, apparently.')).toBe('failed')
   })
 
+  /**
+   * Found 2026-09-08 in the gate baseline, on a real document.
+   *
+   * Source:  "…so I have seen some stuff that does things like that. But from, like,
+   *            kind of a pre -selected library."
+   * Model:   "I've seen some stuff that does things like that. But from, like,
+   *            kind of a pre -selected library."
+   *
+   * One contraction. The other 97 characters are exact, including the ASR's odd `pre -selected`
+   * spacing, which the model preserved faithfully. It was reported as the first observed
+   * extraction-path fabrication and it was nothing of the kind — the same silent-tidying class as
+   * task 15-27, and the same shape as the markdown gotcha above: the model is faithful, the
+   * checker is not.
+   *
+   * Expansion runs on BOTH sides, so it does not matter which form each one used.
+   */
+  it('verifies across a contraction the model expanded or contracted', () => {
+    const source = 'Yeah, so I have seen some stuff that does things like that. But from, like, kind of a pre -selected library.'
+    expect(verifySpan("I've seen some stuff that does things like that", source)).toBe('verified')
+  })
+
+  it('verifies when the SOURCE is contracted and the model expanded it', () => {
+    expect(verifySpan('we do not price it that way', "Honestly we don't price it that way, never have.")).toBe('verified')
+  })
+
+  it('leaves a possessive apostrophe alone', () => {
+    // "the builder's margin" must not become "the builder is margin".
+    expect(verifySpan("the builder's margin is the issue", "I think the builder's margin is the issue here")).toBe('verified')
+  })
+
+  it('still fails a span that is genuinely absent, contractions notwithstanding', () => {
+    expect(verifySpan("I've never seen anything like it", 'They have seen some stuff that does things like that.')).toBe('failed')
+  })
+
   it('returns unverifiable when there is no source to check against', () => {
     expect(verifySpan('anything at all here', null)).toBe('unverifiable')
   })
@@ -64,7 +98,13 @@ describe('normaliseForMatch', () => {
   })
 
   it('folds smart quotes to their ASCII equivalents', () => {
-    expect(normaliseForMatch('“they can’t”')).toBe('"they can\'t"')
+    // A possessive, deliberately: it exercises the curly-apostrophe fold without also tripping
+    // contraction expansion, and doubles as a guard that a possessive is NOT expanded.
+    expect(normaliseForMatch('“the builder’s margin”')).toBe('"the builder\'s margin"')
+  })
+
+  it('folds a curly apostrophe BEFORE expanding, so a smart-quoted contraction still expands', () => {
+    expect(normaliseForMatch('they can’t')).toBe('they can not')
   })
 
   it('collapses runs of whitespace and trims', () => {
