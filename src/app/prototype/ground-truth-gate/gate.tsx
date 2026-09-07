@@ -19,6 +19,10 @@ import { Check, X, ArrowRight, Sparkles, ChevronDown, FileText, MessageSquare, P
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
 
@@ -150,8 +154,12 @@ function FragmentRow({
               showEvidence && 'font-semibold')}
           >
             <span className="min-w-0">
+              {/* Eyebrow, not an inline prefix: as a prefix it read as part of the claim, and the
+                  claim is the thing being judged. */}
               {item.dimensionLabel && !hideDimension && (
-                <span className="mr-1.5 text-foreground/60">{item.dimensionLabel} ·</span>
+                <span className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-foreground/45">
+                  {item.dimensionLabel}
+                </span>
               )}
               {item.claim}
             </span>
@@ -188,6 +196,7 @@ function FragmentRow({
           </div>
         )}
       </div>
+
     </div>
   )
 }
@@ -199,6 +208,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const [i, setI] = useState(0)
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({})
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [skipOpen, setSkipOpen] = useState(false)
   /**
    * ⚠ REVERSED, 2026-09-07. This used to count CLICKS, which made the number false in both
    * directions: a user who skims seven headings and is satisfied has reviewed them and scored zero,
@@ -251,30 +261,20 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
     <div className="min-h-screen bg-muted/30 px-4 py-10">
       <div className="mx-auto max-w-2xl space-y-4">
         <p className="font-mono text-[10px] uppercase tracking-wide text-foreground/60">
-          Prototype · ground truth gate · real data · {projectId.slice(0, 10)}…
+          Prototype · ground truths · real data · {projectId.slice(0, 10)}…
         </p>
 
-        {/* Live from the first screen on, so acting has a visible consequence — §7. Two numbers,
-            because looking and changing are different things and one number conflated them. */}
-        {reviewed > 0 && stage !== 'close' && (
-          <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-2.5">
-            <span className="text-xs font-medium">Seen</span>
-            <Progress value={(reviewed / total) * 100} className="h-1.5 flex-1" />
-            <span className="font-mono text-xs tabular-nums">{reviewed} of {total}</span>
-            {changed > 0 && (
-              <span className="border-l pl-3 font-mono text-xs tabular-nums text-foreground">{changed} changed</span>
-            )}
-          </div>
-        )}
+        {/* No running score. It was chrome that did not help anyone finish, and rewarding the
+            review is a job for the close — where there is something to reward. */}
 
         {stage === 'open' && (
           <Card>
             <CardContent className="space-y-6 p-8">
               <div className="space-y-2">
-                <h1 className="text-2xl font-semibold tracking-tight">Before I build your strategy</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">Your ground truths</h1>
                 <p className="text-foreground/60">
-                  I took <strong className="text-foreground">{total} things</strong> from what you told me.
-                  Here&rsquo;s one — check it and I&rsquo;ll show you the rest:
+                  The <strong className="text-foreground">{total} things</strong> I took from what you told me.
+                  Your strategy gets built from these — so it&rsquo;s worth a look before I do.
                 </p>
               </div>
 
@@ -289,27 +289,34 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 </div>
               )}
 
-              <p className="text-sm text-foreground/60">
-                <strong className="text-foreground">{confident.length}</strong> are grounded like that one — I&rsquo;ll call those{' '}
-                <strong className="text-foreground">{SETS.confident.toLowerCase()}</strong>.
-                {weak.length > 0 && <> The other <strong className="text-foreground">{weak.length}</strong> are{' '}
-                  <strong className="text-foreground">{SETS.weak.toLowerCase()}</strong>.</>}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Confidence, then the action it recommends. The previous version explained its own
+                  vocabulary — "I'll call those well grounded" — which is a tour of the interface,
+                  not a reason to act. */}
+              <div className="space-y-3 border-t pt-5">
                 {weak.length > 0 && (
-                  <Button onClick={() => setStage('weak')}>
-                    {SETS.weak} ({weak.length})
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm">
+                      <strong>I&rsquo;m not confident about {weak.length}</strong> of them.
+                    </p>
+                    <Button onClick={() => setStage('weak')} className="shrink-0">
+                      Check those {weak.length} <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
-                <Button variant="outline" onClick={() => setStage('confident')}>
-                  {SETS.confident} ({confident.length})
-                </Button>
-                <Button variant="ghost" onClick={() => setStage('close')}>
-                  {verdicts[example?.id ?? ''] ? 'That\u2019s enough — build it' : 'Looks right — build it'}
-                </Button>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm text-foreground/60">
+                    The other {confident.length} look well grounded.
+                  </p>
+                  <Button variant="outline" onClick={() => setStage('confident')} className="shrink-0">
+                    Scan them
+                  </Button>
+                </div>
               </div>
+
+              <button onClick={() => setSkipOpen(true)}
+                className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground">
+                Skip the review
+              </button>
             </CardContent>
           </Card>
         )}
@@ -379,7 +386,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             <CardContent className="space-y-4 p-8">
               <div>
                 <h2 className="text-lg font-semibold">
-                  {stage === 'all' ? `Everything — ${total}` : `${SETS.confident} — ${confident.length}`}
+                  {stage === 'all' ? `All ${total} ground truths` : `${SETS.confident} — ${confident.length}`}
                 </h2>
                 <p className="text-sm text-foreground/60">
                   {stage === 'all'
@@ -467,6 +474,41 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
           </Card>
         )}
       </div>
+
+      {/*
+        Skipping is a real choice and stays available — §4's "the skip is affirmative". But it was
+        labelled "Looks right — build it", which asserts a judgement the user has not made. It is
+        skipping, so it says so, and it gets one confirmation that explains the stake.
+
+        ⚠ NO STATISTIC HERE, DELIBERATELY. §20 measured that EVIDENCE in generation takes not-clean
+        output 25.0% → 0.0%. Nothing has ever measured that a USER REVIEWING changes anything — that
+        experiment does not exist. "Users who check their ground truths get n% fewer inventions"
+        would be exactly the invention this whole thread is about. The mechanism is true and worth
+        stating; the number is not ours to claim yet.
+      */}
+      <AlertDialog open={skipOpen} onOpenChange={setSkipOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Skip the review?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                These {total} ground truths are the context your strategy is generated from. Anything
+                wrong here can carry through into your vision, strategy, objectives and metrics.
+              </span>
+              <span className="block">
+                You can fix them any time — but it&rsquo;s about thirty seconds now, and it&rsquo;s
+                the single biggest influence on what you get back.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStage('weak')}>
+              {weak.length > 0 ? `Check the ${weak.length} I flagged` : 'Take a look'}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => setStage('close')}>Skip anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
