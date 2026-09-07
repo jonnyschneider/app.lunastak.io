@@ -1,9 +1,11 @@
 /**
- * PROTOTYPE: the gate's view model, derived from the REAL read surface.
+ * The ground-truth review's view model, derived from `GET /api/project/[id]/fragments` exactly as
+ * it ships — no reshaping on the server.
  *
- * Input is `GET /api/project/[id]/fragments` exactly as it ships — no fixture, no reshaping on the
- * server. That is the claim design §16.6 made when it said the read surface must be *data-shaped,
- * not screen-shaped*: if the gate is a pure front-end change, this file is the whole of it.
+ * That was the claim design §16.6 made when it said the read surface must be *data-shaped, not
+ * screen-shaped*: if the review is a pure front-end change, this file is the whole of it. It was
+ * built against the real endpoint in the prototype and moved here unchanged, which is the evidence
+ * that the claim held.
  *
  * Everything here is a pure function of the response. Nothing is asked of the model, nothing is
  * stored, and no score is invented — the split is arithmetic over evidence the producer already
