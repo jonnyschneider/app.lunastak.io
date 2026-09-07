@@ -10,6 +10,7 @@
  * had to cite (design §13: ask for the span, compute the rest).
  */
 import { THIN_EVIDENCE_CHARS } from '@/lib/support/dimension-support'
+import { TIER_1_DIMENSIONS, DIMENSION_CONTEXT, type Tier1Dimension } from '@/lib/constants/dimensions'
 
 /** One fragment, exactly as the fragments route returns it. */
 export interface ApiFragment {
@@ -60,6 +61,10 @@ export interface GateItem {
   sourceName: string
   type: 'verbatim' | 'interpretation' | null
   dimensions: string[]
+  /** The dimension the row is filed under. First tag wins; extraction lists them best-first. */
+  dimension: string | null
+  /** Human label for `dimension` — "Customer & Market", not CUSTOMER_MARKET. */
+  dimensionLabel: string | null
   reviewed: boolean
   /** True when `claim` was derived from content because the fragment carries no usable title. */
   titleIsDerived: boolean
@@ -138,9 +143,15 @@ function classify(f: ApiFragment): WeakReason | null {
   return null
 }
 
+/** Reuses the shipped taxonomy rather than a second copy of the labels. */
+export function dimensionLabel(dim: string): string {
+  return DIMENSION_CONTEXT[dim as Tier1Dimension]?.name ?? dim.replace(/_/g, ' ').toLowerCase()
+}
+
 export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map()): GateItem {
   const weakReason = classify(f)
   const label = labelFor(f)
+  const primary = f.dimensions[0]?.dimension ?? null
   // Show the strongest span we can stand behind; only fall back to a failed one when that is all
   // there is, and let `verification` carry the caveat rather than hiding it.
   const usable = f.evidence.filter(e => e.verification !== 'failed')
@@ -158,6 +169,8 @@ export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(
     sourceName: sourceName(f, convIndex),
     type: f.interpretationType,
     dimensions: f.dimensions.map(d => d.dimension),
+    dimension: primary,
+    dimensionLabel: primary ? dimensionLabel(primary) : null,
     reviewed: f.reviewedAt !== null,
     weakReason,
     reason: weakReason ? REASONS[weakReason] : null,
@@ -197,6 +210,39 @@ export const SETS = {
   weak: 'Worth a look',
   confident: 'Well grounded',
 } as const
+
+/**
+ * Group a list by dimension, in the taxonomy's own order so the gate reads in the same sequence as
+ * the Knowledgebase coverage grid the user already knows.
+ *
+ * Why group at all: capture order makes 25 rows one undifferentiated run, and "is anything off
+ * here?" is a 25-item question. By dimension it becomes five or six small ones, each in a single
+ * frame of mind — the batching rationale from the retired preflight (§3), which survived its
+ * interaction. An untagged remainder sorts last rather than being hidden.
+ */
+export interface DimensionGroup {
+  dimension: string | null
+  label: string
+  items: GateItem[]
+}
+
+export function groupByDimension(items: GateItem[]): DimensionGroup[] {
+  const order = [...TIER_1_DIMENSIONS] as string[]
+  const groups = new Map<string | null, GateItem[]>()
+  for (const it of items) {
+    const k = it.dimension
+    if (!groups.has(k)) groups.set(k, [])
+    groups.get(k)!.push(it)
+  }
+  const rank = (d: string | null) => (d === null ? 999 : order.indexOf(d) === -1 ? 998 : order.indexOf(d))
+  return Array.from(groups.entries())
+    .sort((a, b) => rank(a[0]) - rank(b[0]))
+    .map(([dimension, list]) => ({
+      dimension,
+      label: dimension ? dimensionLabel(dimension) : 'Not filed anywhere',
+      items: list,
+    }))
+}
 
 export interface GateModel {
   total: number

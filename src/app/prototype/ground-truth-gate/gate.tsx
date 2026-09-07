@@ -21,7 +21,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
-import { SETS, type GateItem, type GateModel } from './derive'
+import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
 
 type Verdict = 'keep' | 'drop' | 'fixed'
 type Stage = 'open' | 'weak' | 'confident' | 'all' | 'close'
@@ -73,13 +73,15 @@ function VerdictControls({
  * evidence IS the reason it was pulled out.
  */
 function FragmentRow({
-  item, verdict, onSet, showEvidence, onOpen,
+  item, verdict, onSet, showEvidence, onOpen, hideDimension,
 }: {
   item: GateItem
   verdict: Verdict | undefined
   onSet: (v: Verdict | undefined) => void
   showEvidence: boolean
   onOpen?: () => void
+  /** Suppressed inside a grouped list, where the subheading already says it. */
+  hideDimension?: boolean
 }) {
   return (
     <div className="flex items-start gap-3 py-3">
@@ -92,6 +94,9 @@ function FragmentRow({
             verdict === 'drop' ? 'text-muted-foreground line-through' : 'text-foreground',
             onOpen && 'hover:text-luna')}
         >
+          {item.dimensionLabel && !hideDimension && (
+            <span className="mr-1.5 text-muted-foreground">{item.dimensionLabel} ·</span>
+          )}
           {item.claim}
         </button>
 
@@ -266,6 +271,11 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
             <Card>
               <CardContent className="space-y-4 p-8">
+                {current.dimensionLabel && (
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {current.dimensionLabel}
+                  </p>
+                )}
                 {/* Never a truncated heading. Where the fragment has no real title, the claim IS
                     the content, so it is presented whole rather than cut mid-word. */}
                 {current.titleIsDerived
@@ -330,22 +340,33 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
               {/* Full flow, no scroll box. The constrained-height version hid most of the list
                   behind an invisible scroll and made the count on screen contradict the heading. */}
-              <div className="divide-y divide-border">
-                {list.map(c => (
-                  <div key={c.id}>
-                    <FragmentRow
-                      item={c}
-                      verdict={verdicts[c.id]}
-                      onSet={v => set(c.id, v)}
-                      showEvidence={expanded === c.id}
-                      onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
-                    />
-                    {editing === c.id && (
-                      <CorrectionBox
-                        draft={draft} setDraft={setDraft} claim={c.claim}
-                        onSave={() => { setCorrections(cs => ({ ...cs, [c.id]: draft })); setEditing(null) }}
-                      />
-                    )}
+              <div className="space-y-5">
+                {groupByDimension(list).map(g => (
+                  <div key={g.dimension ?? 'none'}>
+                    <div className="flex items-baseline justify-between border-b pb-1.5">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.label}</h3>
+                      <span className="font-mono text-[10px] text-muted-foreground">{g.items.length}</span>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {g.items.map(c => (
+                        <div key={c.id}>
+                          <FragmentRow
+                            item={c}
+                            verdict={verdicts[c.id]}
+                            onSet={v => set(c.id, v)}
+                            showEvidence={expanded === c.id}
+                            onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
+                            hideDimension
+                          />
+                          {editing === c.id && (
+                            <CorrectionBox
+                              draft={draft} setDraft={setDraft} claim={c.claim}
+                              onSave={() => { setCorrections(cs => ({ ...cs, [c.id]: draft })); setEditing(null) }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
