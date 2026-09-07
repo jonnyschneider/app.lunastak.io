@@ -24,6 +24,7 @@ export interface ApiFragment {
   reviewedAt: string | null
   dimensions: { dimension: string; confidence: string | null }[]
   source: { type: 'conversation' | 'document'; id: string; name: string } | null
+  capturedAt: string
   evidence: { text: string; verification: string; sourceRole: string | null; ordinal: number }[]
 }
 
@@ -61,6 +62,8 @@ export interface GateItem {
   sourceName: string
   /** Row-sized label. The full name is for the expanded view; a row only needs the path. */
   sourceShort: string
+  /** Which ingest path — drives the row icon. */
+  sourceKind: 'document' | 'conversation' | 'bundle' | 'manual'
   type: 'verbatim' | 'interpretation' | null
   dimensions: string[]
   /** The dimension the row is filed under. First tag wins; extraction lists them best-first. */
@@ -127,10 +130,32 @@ function labelFor(f: ApiFragment): { claim: string; derived: boolean } {
  * A conversation's `title` is its generated opening question, which ran to a full sentence in the
  * baseline and swamped the row it was labelling. Conversations get a stable number instead.
  */
+/**
+ * The expanded view's source line — as specific as the data allows.
+ *
+ * ⚠ For a bundle that is NOT the filename, because no filename is stored. `importBatchId` is a
+ * bare UUID, the import dialog takes paste-or-file without capturing a name, and themes-mode
+ * bundles carry no `sources` either (chunk-mode does). The import DATE is the most specific true
+ * thing available, and it is at least enough to tell two imports apart. Task 15-31.
+ */
 function sourceName(f: ApiFragment, convIndex: Map<string, number>): string {
   if (f.source?.type === 'document') return f.source.name
-  if (f.source?.type === 'conversation') return `Conversation ${convIndex.get(f.source.id) ?? 1}`
-  return f.sourceType === 'import' ? 'Context bundle' : 'Added directly'
+  if (f.source?.type === 'conversation') {
+    return f.source.name && f.source.name !== 'Untitled'
+      ? f.source.name
+      : `Conversation ${convIndex.get(f.source.id) ?? 1}`
+  }
+  if (f.sourceType === 'import') {
+    const d = new Date(f.capturedAt)
+    return `Context bundle · imported ${d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  }
+  return 'Added directly'
+}
+
+function sourceKind(f: ApiFragment): GateItem['sourceKind'] {
+  if (f.source?.type === 'document') return 'document'
+  if (f.source?.type === 'conversation') return 'conversation'
+  return f.sourceType === 'import' ? 'bundle' : 'manual'
 }
 
 /**
@@ -186,6 +211,7 @@ export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(
     sourceRole: best?.sourceRole ?? null,
     sourceName: sourceName(f, convIndex),
     sourceShort: sourceShort(f, convIndex, docCount),
+    sourceKind: sourceKind(f),
     type: f.interpretationType,
     dimensions: f.dimensions.map(d => d.dimension),
     dimension: primary,

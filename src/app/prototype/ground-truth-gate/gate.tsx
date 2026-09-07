@@ -15,7 +15,7 @@
  * a lonely "Drop this" that implies drop is the only thing you may do.
  */
 import { useEffect, useState } from 'react'
-import { Check, X, PenLine, ArrowRight, Sparkles } from 'lucide-react'
+import { Check, X, PenLine, ArrowRight, Sparkles, ChevronDown, ChevronRight, FileText, MessageSquare, Package, PencilLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -38,16 +38,33 @@ function question(item: GateItem): string {
     : 'I read this from what you said — fair?'
 }
 
-/** Tri-state, ILS-style: the chosen control fills; clicking it again clears the verdict. */
+/**
+ * Tri-state, ILS-style: the chosen control fills; clicking it again clears the verdict.
+ *
+ * The three states are visually distinct, not just present/absent (Jonny, 2026-09-07):
+ *
+ *   at rest    outlined, dark grey — a real affordance rather than a ghost you have to hunt for
+ *   kept       filled GOLD (`--luna`), the product's affirmative colour, dark text on it
+ *   dropped    filled dark grey — the same weight as a keep, so neither reads as the default
+ *
+ * Filled-vs-outlined is what carries the state; colour only says WHICH. That keeps it legible
+ * without relying on hue alone, and it is why drop is a fill rather than a red.
+ */
 function VerdictControls({
-  verdict, onSet, size = 'default',
-}: { verdict: Verdict | undefined; onSet: (v: Verdict | undefined) => void; size?: 'default' | 'sm' }) {
-  const pad = size === 'sm' ? 'p-2' : 'p-2.5'
-  const icon = size === 'sm' ? 'h-4 w-4' : 'h-[18px] w-[18px]'
+  verdict, onSet, size = 'default', withEdit = true,
+}: {
+  verdict: Verdict | undefined
+  onSet: (v: Verdict | undefined) => void
+  size?: 'default' | 'sm'
+  /** Rows drop it: three verdict icons plus a disclosure chevron is one control too many. */
+  withEdit?: boolean
+}) {
+  const box = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
+  const icon = size === 'sm' ? 'h-[18px] w-[18px]' : 'h-5 w-5'
   const opts: { v: Verdict; Icon: typeof Check; label: string }[] = [
     { v: 'keep', Icon: Check, label: 'Keep' },
     { v: 'drop', Icon: X, label: 'Drop' },
-    { v: 'fixed', Icon: PenLine, label: 'Not quite — say it my way' },
+    ...(withEdit ? [{ v: 'fixed' as Verdict, Icon: PenLine, label: 'Not quite — say it my way' }] : []),
   ]
   return (
     <div className="flex shrink-0 items-center gap-0.5">
@@ -58,22 +75,34 @@ function VerdictControls({
           aria-label={label}
           aria-pressed={verdict === v}
           onClick={() => onSet(verdict === v ? undefined : v)}
-          className={cn('rounded-md transition-colors', pad,
-            verdict === v ? 'bg-luna text-white' : 'text-muted-foreground/50 hover:bg-muted hover:text-foreground')}
+          className={cn(
+            'flex items-center justify-center rounded-md border transition-colors', box,
+            verdict !== v && 'border-foreground/25 text-foreground/55 hover:border-foreground/50 hover:text-foreground',
+            verdict === v && v === 'keep' && 'border-luna bg-luna text-luna-foreground',
+            verdict === v && v === 'drop' && 'border-foreground/80 bg-foreground/80 text-background',
+            verdict === v && v === 'fixed' && 'border-luna-dark bg-luna-dark text-white',
+          )}
         >
-          <Icon className={icon} strokeWidth={2} />
+          <Icon className={icon} strokeWidth={2.25} />
         </button>
       ))}
     </div>
   )
 }
 
+const SOURCE_ICON = {
+  document: FileText,
+  conversation: MessageSquare,
+  bundle: Package,
+  manual: PencilLine,
+} as const
+
 /**
  * One fragment. `detail` opens the evidence; the weak walk passes it always-open because the
  * evidence IS the reason it was pulled out.
  */
 function FragmentRow({
-  item, verdict, onSet, showEvidence, onOpen, hideDimension, editing, draft, setDraft, onSaveEdit, onCancelEdit, correction,
+  item, verdict, onSet, showEvidence, onOpen, hideDimension, editing, onStartEdit, draft, setDraft, onSaveEdit, onCancelEdit, correction,
 }: {
   item: GateItem
   verdict: Verdict | undefined
@@ -83,6 +112,7 @@ function FragmentRow({
   /** Suppressed inside a grouped list, where the subheading already says it. */
   hideDimension?: boolean
   editing?: boolean
+  onStartEdit?: () => void
   draft?: string
   setDraft?: (s: string) => void
   onSaveEdit?: () => void
@@ -92,8 +122,15 @@ function FragmentRow({
   const shown = correction ?? item.claim
 
   return (
-    <div className="flex items-start gap-3 py-2.5">
-      <VerdictControls verdict={verdict} onSet={onSet} size="sm" />
+    <div className="flex items-start gap-2 py-2.5">
+      <VerdictControls verdict={verdict} onSet={onSet} size="sm" withEdit={false} />
+      {/* Disclosure, not decoration: without it a row gave no sign it had anything behind it. */}
+      {onOpen && (
+        <button onClick={onOpen} aria-label={showEvidence ? 'Hide the evidence' : 'Show the evidence'}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground">
+          {showEvidence ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </button>
+      )}
       <div className="min-w-0 flex-1">
         {/* IN-PLACE EDIT. The claim is replaced by an input occupying the same line at the same
             size, so "not quite" is visibly a correction of THIS sentence rather than a form that
@@ -134,7 +171,9 @@ function FragmentRow({
               {shown}
               {correction && <span className="ml-2 text-xs font-medium text-luna">your words</span>}
             </span>
-            <span className="shrink-0 text-xs font-normal text-muted-foreground/70" title={item.sourceName}>
+            <span className="flex shrink-0 items-center gap-1.5 text-xs font-normal text-muted-foreground/70"
+              title={item.sourceName}>
+              {(() => { const I = SOURCE_ICON[item.sourceKind]; return <I className="h-3.5 w-3.5" /> })()}
               {item.sourceShort}
             </span>
           </button>
@@ -152,7 +191,14 @@ function FragmentRow({
               item.weakReason === 'failed' ? 'border-destructive/40 text-muted-foreground' : 'border-luna')}>
               {item.evidence}
             </p>
-            <p className="mt-1.5 pl-3 text-xs text-muted-foreground/70">{item.sourceName}</p>
+            <div className="mt-1.5 flex items-center gap-3 pl-3">
+              <p className="text-xs text-muted-foreground/70">{item.sourceName}</p>
+              {onStartEdit && (
+                <button onClick={onStartEdit} className="text-xs font-medium text-luna">
+                  Not quite — say it my way
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -286,6 +332,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                     onSet={v => set(example.id, v)}
                     showEvidence
                     editing={editing === example.id}
+                    onStartEdit={() => set(example.id, 'fixed')}
                     draft={draft} setDraft={setDraft}
                     correction={corrections[example.id]}
                     onSaveEdit={() => saveEdit(example.id)}
@@ -435,6 +482,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                             onOpen={() => setExpanded(expanded === c.id ? null : c.id)}
                             hideDimension
                             editing={editing === c.id}
+                            onStartEdit={() => set(c.id, 'fixed')}
                             draft={draft} setDraft={setDraft}
                             correction={corrections[c.id]}
                             onSaveEdit={() => saveEdit(c.id)}
@@ -449,10 +497,10 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
               <div className="flex items-center justify-between gap-4 border-t pt-4">
                 <Button onClick={() => setStage('close')}>Build my strategy</Button>
-                {stage === 'confident' && weak.length > 0 ? (
-                  <button onClick={() => setStage('all')}
+                {weak.length > 0 ? (
+                  <button onClick={() => setStage(stage === 'all' ? 'confident' : 'all')}
                     className="text-xs text-muted-foreground underline underline-offset-4">
-                    Show {SETS.weak.toLowerCase()} here too
+                    {stage === 'all' ? `${SETS.confident} only (${confident.length})` : `See all ${total}`}
                   </button>
                 ) : (
                   <span className="text-xs text-muted-foreground">you can tweak these any time</span>
