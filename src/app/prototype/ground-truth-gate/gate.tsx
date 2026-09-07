@@ -24,7 +24,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
-import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
+import { groupByDimension, type GateItem, type GateModel } from './derive'
 
 /**
  * ⚠ COLOUR DOES NOT CARRY MEANING IN TEXT HERE (Jonny, 2026-09-08).
@@ -53,8 +53,6 @@ import { SETS, groupByDimension, type GateItem, type GateModel } from './derive'
  */
 type Verdict = 'keep' | 'drop'
 type Stage = 'open' | 'list' | 'close'
-/** One list; the filter chooses the view. */
-type Filter = 'weak' | 'confident' | 'all'
 
 /**
  * Tri-state, ILS-style: the chosen control fills; clicking it again clears the verdict.
@@ -70,15 +68,23 @@ type Filter = 'weak' | 'confident' | 'all'
  * deletion, when dropping a fragment is an ordinary, reversible choice.
  */
 function VerdictControls({
-  verdict, onSet, size = 'default', withKeep = true, reserveKeep = false,
+  verdict, onSet, size = 'default',
 }: {
   verdict: Verdict | undefined
   onSet: (v: Verdict | undefined) => void
   size?: 'default' | 'sm'
-  /** Hold the missing slot open — only where both kinds of row sit in one list. */
-  reserveKeep?: boolean
   /**
-   * ASYMMETRIC BY DESIGN (Jonny, 2026-09-08). Only a flagged row gets a keep.
+   * ⚠ REMOVED 2026-09-08, and the reasoning is worth keeping. There was briefly a keep on flagged
+   * rows only, on the argument that an explicit "this one is fine" overrides OUR asserted doubt
+   * and cannot be got any other way. That held while there was a doubtful set to override. There
+   * is not: with tensions typed out, the baseline project flags ONE of 26, and evidence spans run
+   * a median of 150 characters with a single one under the threshold in sixty-eight.
+   *
+   * The pipeline does the heavy lifting now, so the user's whole job is pruning. Confidence — the
+   * stronger/weaker idea — moves downstream of generation, which is where §1's 26% was measured
+   * and where it was always really about outputs rather than inputs.
+   *
+   * Kept below for the record, unused.
    *
    * The §22 test — name the reader of the field this control writes — kills the tick on a
    * well-grounded row: nothing downstream distinguishes kept from untouched (the pipeline reads
@@ -94,19 +100,14 @@ function VerdictControls({
    *
    * Silence is therefore the accept on a well-grounded row, and Build is the accept-all.
    */
-  withKeep?: boolean
 }) {
   const box = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
   const icon = size === 'sm' ? 'h-[18px] w-[18px]' : 'h-5 w-5'
   const opts: { v: Verdict; Icon: typeof Check; label: string }[] = [
-    ...(withKeep ? [{ v: 'keep' as Verdict, Icon: Check, label: 'This one is fine' }] : []),
     { v: 'drop', Icon: X, label: 'Discard' },
   ]
   return (
     <div className="flex shrink-0 items-center gap-0.5">
-      {/* Keeps the claim's left edge steady whether a row has one control or two. Without it the
-          flagged rows sit further right than the rest, which reads as subordinate — backwards. */}
-      {!withKeep && reserveKeep && <span className={cn('shrink-0', box)} aria-hidden />}
       {opts.map(({ v, Icon, label }) => (
         <button
           key={v}
@@ -140,7 +141,7 @@ const SOURCE_ICON = {
  * evidence IS the reason it was pulled out.
  */
 function FragmentRow({
-  item, verdict, onSet, showEvidence, onOpen, hideDimension, reserveKeep,
+  item, verdict, onSet, showEvidence, onOpen, hideDimension,
 }: {
   item: GateItem
   verdict: Verdict | undefined
@@ -149,13 +150,10 @@ function FragmentRow({
   onOpen?: () => void
   /** Suppressed inside a grouped list, where the subheading already says it. */
   hideDimension?: boolean
-  reserveKeep?: boolean
 }) {
   return (
     <div className="flex items-start gap-2 py-2.5">
-      {/* A row with one control is offering an out; a row with two is asking a question. */}
-      <VerdictControls verdict={verdict} onSet={onSet} size="sm"
-        withKeep={!!item.weakReason} reserveKeep={reserveKeep} />
+      <VerdictControls verdict={verdict} onSet={onSet} size="sm" />
 
       <div className="min-w-0 flex-1">
         {(
@@ -224,7 +222,6 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({})
   const [expanded, setExpanded] = useState<string | null>(null)
   const [skipOpen, setSkipOpen] = useState(false)
-  const [filter, setFilter] = useState<Filter>('weak')
   /**
    * ⚠ REVERSED, 2026-09-07. This used to count CLICKS, which made the number false in both
    * directions: a user who skims seven headings and is satisfied has reviewed them and scored zero,
@@ -239,15 +236,14 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
     const next = new Set(p); for (const id of ids) next.add(id); return next
   })
 
-  const list = filter === 'weak' ? weak : filter === 'confident' ? confident : [...weak, ...confident]
-  const kept = Object.values(verdicts).filter(v => v === 'keep').length
+  // One list. Flagged rows are a per-row marker now, not a set.
+  const list = [...weak, ...confident]
   const dropped = Object.values(verdicts).filter(v => v === 'drop').length
   // Confirmed = anything looked at, whatever was decided. Denominator is the ORIGINAL count, so
   // dropping can never inflate it — §8.
   const reviewed = presented.size
   const changed = dropped
   const remaining = total - dropped
-  const weakReviewed = weak.filter(w => presented.has(w.id)).length
 
   /** Setting a verdict anywhere is the same call, so the score moves the same way everywhere. */
   function set(id: string, v: Verdict | undefined) {
@@ -261,7 +257,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
 
 
   useEffect(() => { if (stage === 'open' && example) mark([example.id]) }, [stage, example?.id])
-  useEffect(() => { if (stage === 'list') mark(list.map(x => x.id)) }, [stage, filter])
+  useEffect(() => { if (stage === 'list') mark(list.map(x => x.id)) }, [stage])
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-10">
@@ -294,35 +290,17 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                   />
                 </div>
               )}
-
-              {/* Confidence, then the action it recommends. The previous version explained its own
-                  vocabulary — "I'll call those well grounded" — which is a tour of the interface,
-                  not a reason to act. */}
-              <div className="space-y-3 border-t pt-5">
-                {weak.length > 0 && (
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm">
-                      <strong>I&rsquo;m not confident about {weak.length}</strong> of them.
-                    </p>
-                    <Button onClick={() => { setFilter('weak'); setStage('list') }} className="shrink-0">
-                      Check those {weak.length} <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm text-foreground/60">
-                    The other {confident.length} look well grounded.
-                  </p>
-                  <Button variant="outline" onClick={() => { setFilter('confident'); setStage('list') }} className="shrink-0">
-                    Scan them
-                  </Button>
-                </div>
+              {/* One action. There is no confident/doubtful split to route between any more: with
+                  the pipeline citing its sources, the user's whole job is pruning. */}
+              <div className="flex items-center gap-4 border-t pt-5">
+                <Button onClick={() => setStage('list')}>
+                  Look through them <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+                <button onClick={() => setSkipOpen(true)}
+                  className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground">
+                  Skip the review
+                </button>
               </div>
-
-              <button onClick={() => setSkipOpen(true)}
-                className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground">
-                Skip the review
-              </button>
             </CardContent>
           </Card>
         )}
@@ -330,39 +308,12 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
         {stage === 'list' && (
           <Card>
             <CardContent className="space-y-4 p-8">
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 className="text-lg font-semibold">
-                  {filter === 'weak' ? `${weak.length} worth a look`
-                    : filter === 'confident' ? `${confident.length} well grounded`
-                    : `All ${total} ground truths`}
-                </h2>
-                {/* One list, three views. The split into a card-walk and a separate scan list made
-                    the same material feel like two jobs; a filter makes it one with a focus. */}
-                <div className="inline-flex overflow-hidden rounded-md border text-xs">
-                  {([
-                    ['weak', `Worth a look (${weak.length})`],
-                    ['confident', `Well grounded (${confident.length})`],
-                    ['all', `Everything (${total})`],
-                  ] as const).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setFilter(key)}
-                      className={cn('border-l px-3 py-1.5 font-medium transition-colors first:border-l-0',
-                        filter === key ? 'bg-foreground text-background' : 'text-foreground/60 hover:bg-muted')}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+              <div>
+                <h2 className="text-lg font-semibold">Your {total} ground truths</h2>
+                <p className="text-sm text-foreground/60">
+                  Skim them and discard anything I got wrong. Open one to see what it&rsquo;s built on.
+                </p>
               </div>
-
-              <p className="text-sm text-foreground/60">
-                {filter === 'confident'
-                  ? 'Nothing here needs a decision — skim it, and discard anything I got wrong.'
-                  : filter === 'weak'
-                    ? 'These are the ones I’m unsure about. Tell me they’re fine, or discard them.'
-                    : 'The ones I’m unsure about are open and ask a question. The rest just need a skim.'}
-              </p>
 
               <div className="space-y-5">
                 {groupByDimension(list).map(g => (
@@ -392,7 +343,6 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                             showEvidence={!!c.weakReason || expanded === c.id}
                             onOpen={c.weakReason ? undefined : () => setExpanded(expanded === c.id ? null : c.id)}
                             hideDimension
-                            reserveKeep={filter === 'all'}
                           />
                         </div>
                       ))}
@@ -424,11 +374,9 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
               {/* A keep can now only come from a flagged row, so the number means something
                   specific: how many of OUR doubts the user resolved. */}
               <div className="space-y-1 text-sm">
-                {kept > 0 && (
-                  <p>Confirmed <strong>{kept}</strong> of the {weak.length} I flagged.</p>
-                )}
-                {dropped > 0 && <p>Discarded <strong>{dropped}</strong>.</p>}
-                {kept === 0 && dropped === 0 && <p>Nothing changed — building from all {total}.</p>}
+                {dropped > 0
+                  ? <p>Discarded <strong>{dropped}</strong>.</p>
+                  : <p>Nothing discarded — building from all {total}.</p>}
                 <p className="text-foreground/60">Building from {remaining}.</p>
               </div>
 
@@ -439,14 +387,14 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
                 </div>
                 <Progress value={(reviewed / total) * 100} className="h-1.5" />
                 <p className="text-xs text-foreground/60">
-                  {weakReviewed === weak.length && weak.length > 0
-                    ? `You looked at all ${weak.length} I flagged. ${reviewed < total ? `The other ${total - reviewed} are there whenever you want them.` : ''}`
+                  {reviewed >= total
+                    ? 'You looked at all of them.'
                     : `You can come back to the ${total - reviewed} you haven't seen any time.`}
                 </p>
               </div>
 
               <Button variant="outline"
-                onClick={() => { setStage('open'); setFilter('weak'); setVerdicts({}); setPresented(new Set()); setExpanded(null) }}>
+                onClick={() => { setStage('open'); setVerdicts({}); setPresented(new Set()); setExpanded(null) }}>
                 Run it again
               </Button>
             </CardContent>
@@ -481,9 +429,7 @@ export function GroundTruthGate({ model, projectId }: { model: GateModel; projec
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setFilter('weak'); setStage('list') }}>
-              {weak.length > 0 ? `Check the ${weak.length} I flagged` : 'Take a look'}
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setStage('list')}>Take a look</AlertDialogCancel>
             <AlertDialogAction onClick={() => setStage('close')}>Skip anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
