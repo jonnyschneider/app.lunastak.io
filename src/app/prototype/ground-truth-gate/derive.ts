@@ -59,6 +59,8 @@ export interface GateItem {
   verification: 'verified' | 'unverifiable' | 'failed' | null
   sourceRole: string | null
   sourceName: string
+  /** Row-sized label. The full name is for the expanded view; a row only needs the path. */
+  sourceShort: string
   type: 'verbatim' | 'interpretation' | null
   dimensions: string[]
   /** The dimension the row is filed under. First tag wins; extraction lists them best-first. */
@@ -131,6 +133,22 @@ function sourceName(f: ApiFragment, convIndex: Map<string, number>): string {
   return f.sourceType === 'import' ? 'Context bundle' : 'Added directly'
 }
 
+/**
+ * What a row shows. `2026-09-02-voice-memo-001.md` is 28 characters of mostly-noise on every row,
+ * and it was forcing claims to wrap. A row only needs to say WHICH INGEST PATH this came from —
+ * the exact filename is one tap away. Where a project has several documents the name is needed to
+ * tell them apart, so it degrades to a truncated filename rather than an ambiguous "Document".
+ */
+function sourceShort(f: ApiFragment, convIndex: Map<string, number>, docCount: number): string {
+  if (f.source?.type === 'conversation') return `Chat ${convIndex.get(f.source.id) ?? 1}`
+  if (f.source?.type === 'document') {
+    if (docCount <= 1) return 'Document'
+    const base = f.source.name.replace(/\.[^.]+$/, '')
+    return base.length > 16 ? `${base.slice(0, 15)}…` : base
+  }
+  return f.sourceType === 'import' ? 'Bundle' : 'Added'
+}
+
 function classify(f: ApiFragment): WeakReason | null {
   if (f.evidence.length === 0) return 'no-evidence'
   const usable = f.evidence.filter(e => e.verification !== 'failed')
@@ -148,7 +166,7 @@ export function dimensionLabel(dim: string): string {
   return DIMENSION_CONTEXT[dim as Tier1Dimension]?.name ?? dim.replace(/_/g, ' ').toLowerCase()
 }
 
-export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map()): GateItem {
+export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(), docCount = 1): GateItem {
   const weakReason = classify(f)
   const label = labelFor(f)
   const primary = f.dimensions[0]?.dimension ?? null
@@ -167,6 +185,7 @@ export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(
     verification: (best?.verification as GateItem['verification']) ?? null,
     sourceRole: best?.sourceRole ?? null,
     sourceName: sourceName(f, convIndex),
+    sourceShort: sourceShort(f, convIndex, docCount),
     type: f.interpretationType,
     dimensions: f.dimensions.map(d => d.dimension),
     dimension: primary,
@@ -282,7 +301,10 @@ export function buildGateModel(res: ApiResponse): GateModel {
       convIndex.set(f.source.id, convIndex.size + 1)
     }
   }
-  const items = usable.map(f => toItem(f, convIndex))
+  const docCount = new Set(
+    usable.filter(f => f.source?.type === 'document').map(f => f.source!.id)
+  ).size
+  const items = usable.map(f => toItem(f, convIndex, docCount))
   const weak = orderWeak(items.filter(i => i.weakReason))
   const confident = items.filter(i => !i.weakReason)
 
