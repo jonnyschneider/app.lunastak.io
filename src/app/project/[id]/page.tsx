@@ -60,8 +60,6 @@ import {
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { GenerationConfirmDialog, type GenerationAction } from '@/components/GenerationConfirmDialog'
 import { KnowledgeSummaryPanel } from '@/components/KnowledgeSummaryPanel'
-import { EvidencePanel } from '@/components/EvidencePanel'
-import { EvidenceSheet } from '@/components/EvidenceSheet'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
 import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
@@ -213,7 +211,6 @@ export default function ProjectPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [shareSignInGateOpen, setShareSignInGateOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
-  const [isKnowledgeSummaryExpanded, setIsKnowledgeSummaryExpanded] = useState(false)
   const vsoGuidanceKey = `vso-guidance-dismissed:${projectId}`
   const [vsoGuidanceDismissed, setVsoGuidanceDismissed] = useState(true)
   useEffect(() => {
@@ -226,19 +223,15 @@ export default function ProjectPage() {
   }
 
   const searchParams = useSearchParams()
-  const evidenceOpen = searchParams.get('evidence') === '1'
-  const evidenceDimension = searchParams.get('dimension') || undefined
-
-  const setEvidenceOpen = useCallback((open: boolean) => {
-    const url = new URL(window.location.href)
-    if (open) {
-      url.searchParams.set('evidence', '1')
-    } else {
-      url.searchParams.delete('evidence')
-      url.searchParams.delete('dimension')
-    }
-    router.replace(url.pathname + url.search, { scroll: false })
-  }, [router])
+  /**
+   * `?evidence=1` outlived the sheet it used to open.
+   *
+   * The ground truths live in the Knowledge Summary now, so there is nothing to open — but the
+   * param is load-bearing for links we do not control: `/project/[id]/fragments` redirects into
+   * it for the book, the marketing site and old bookmarks. So it keeps its MEANING — "take me to
+   * what was extracted" — and lands on the Knowledgebase, then clears itself.
+   */
+  const evidenceParam = searchParams.get('evidence') === '1'
 
   // Expand/collapse state for sections
   const [showAllInputs, setShowAllInputs] = useState(false)
@@ -264,6 +257,15 @@ export default function ProjectPage() {
   useEffect(() => {
     localStorage.setItem(`project-${projectId}-tab`, activeTab)
   }, [activeTab, projectId])
+
+  useEffect(() => {
+    if (!evidenceParam) return
+    setActiveTab('knowledgebase')
+    const url = new URL(window.location.href)
+    url.searchParams.delete('evidence')
+    url.searchParams.delete('dimension')
+    router.replace(url.pathname + url.search, { scroll: false })
+  }, [evidenceParam, router])
 
   // Derived state needed by header injection
   const hasStrategy = projectData?.hasStrategy === true || (projectData?.strategyOutputs?.length ?? 0) > 0
@@ -330,14 +332,6 @@ export default function ProjectPage() {
               }}>
                 <Package className="h-4 w-4 mr-2" />Import Context Bundle
               </DropdownMenuItem>
-              {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
-                <DropdownMenuItem onClick={() => {
-                  logAndFlush('cta_open_evidence', 'overflow-menu', { projectId })
-                  setEvidenceOpen(true)
-                }}>
-                  <FileText className="h-4 w-4 mr-2" />Check your {projectData?.stats?.fragmentCount} ground truths
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
               <DropdownMenuItem
@@ -1058,7 +1052,8 @@ export default function ProjectPage() {
             {/* Summary panels: Knowledge Summary + Evidence — full-viewport-width band */}
             <div className="bg-primary py-8">
             <div className="mx-auto max-w-7xl px-4 md:px-6">
-            <div className="grid gap-6 md:grid-cols-2">
+            {/* One child since the evidence card went — a two-column grid would strand it in half the width. */}
+            <div>
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={stats.conversationCount}
@@ -1079,12 +1074,9 @@ export default function ProjectPage() {
               }}
               onChatClick={() => triggerUpgrade('knowledge-chat')}
               onEditClick={() => triggerUpgrade('knowledge-edit')}
-              onDimensionClick={(dimension?: string) => {
-                const url = new URL(window.location.href)
-                url.searchParams.set('evidence', '1')
-                if (dimension) url.searchParams.set('dimension', dimension)
-                router.replace(url.pathname + url.search, { scroll: false })
-              }}
+              // Unreachable while `projectId` is set — the panel filters in place and only falls
+              // back to this when it cannot. Kept honest rather than thrown away.
+              onDimensionClick={() => setActiveTab('knowledgebase')}
               knowledgeBusyMessage={
                 isRunning(projectId, 'extraction') ? 'processing insights...'
                 : recentlyGenerated && !hasActiveTasks(projectId) ? 'updating...'
@@ -1095,8 +1087,6 @@ export default function ProjectPage() {
                 isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
                 : null
               }
-              className={isKnowledgeSummaryExpanded ? 'md:col-span-2' : ''}
-              onExpandedChange={setIsKnowledgeSummaryExpanded}
               // With these set the panel shows the ground truths in place, and `onDimensionClick`
               // above becomes the fallback it now only takes in demo mode.
               projectId={projectId}
@@ -1105,11 +1095,6 @@ export default function ProjectPage() {
                 setChatViewOnly(false)
                 setChatSheetOpen(true)
               }}
-            />
-            <EvidencePanel
-              projectId={projectId}
-              fragmentCount={stats.fragmentCount}
-              onOpen={() => setEvidenceOpen(true)}
             />
             </div>
             </div>
@@ -1383,19 +1368,6 @@ export default function ProjectPage() {
       />
 
       {/* Chat Sheet */}
-      <EvidenceSheet
-        projectId={projectId}
-        open={evidenceOpen}
-        onOpenChange={setEvidenceOpen}
-        initialDimensionFilter={evidenceDimension}
-        onResumeConversation={(convId) => {
-          setEvidenceOpen(false)
-          setChatResumeConversationId(convId)
-          setChatViewOnly(false)
-          setChatSheetOpen(true)
-        }}
-      />
-
       <ChatSheet
         projectId={projectId}
         open={chatSheetOpen}

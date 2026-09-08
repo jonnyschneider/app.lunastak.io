@@ -126,8 +126,6 @@ interface KnowledgeSummaryPanelProps {
   readOnly?: boolean
   /** Optional class name for outer container (e.g. col-span control) */
   className?: string
-  /** Notify parent when expanded state changes (so parent can adjust layout) */
-  onExpandedChange?: (expanded: boolean) => void
 }
 
 export function KnowledgeSummaryPanel({
@@ -151,7 +149,6 @@ export function KnowledgeSummaryPanel({
   strategyBusyMessage = null,
   readOnly = false,
   className,
-  onExpandedChange,
 }: KnowledgeSummaryPanelProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
@@ -162,7 +159,6 @@ export function KnowledgeSummaryPanel({
   const handleToggle = useCallback(() => {
     const willExpand = !isExpanded
     setIsExpanded(willExpand)
-    onExpandedChange?.(willExpand)
 
     if (willExpand) {
       expandedAtRef.current = Date.now()
@@ -171,7 +167,7 @@ export function KnowledgeSummaryPanel({
         fragmentCount: String(fragmentCount),
       })
     }
-  }, [isExpanded, strategyIsStale, fragmentCount, onExpandedChange])
+  }, [isExpanded, strategyIsStale, fragmentCount])
 
   const handleRefreshClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
