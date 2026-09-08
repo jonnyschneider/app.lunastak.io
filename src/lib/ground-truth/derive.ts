@@ -78,6 +78,12 @@ export interface GateItem {
   sourceShort: string
   /** Which ingest path — drives the row icon. */
   sourceKind: 'document' | 'conversation' | 'bundle' | 'manual'
+  /**
+   * The source record's id, when there is one to link to. Carried so a row can offer "read the
+   * conversation this came from" — reading the exchange is often how a user decides whether a row
+   * is worth keeping.
+   */
+  sourceId: string | null
   type: 'verbatim' | 'interpretation' | null
   dimensions: string[]
   /** The dimension the row is filed under. First tag wins; extraction lists them best-first. */
@@ -243,6 +249,7 @@ export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(
     sourceName: sourceName(f, convIndex),
     sourceShort: sourceShort(f, convIndex, docCount),
     sourceKind: sourceKind(f),
+    sourceId: f.source?.id ?? null,
     type: f.interpretationType,
     dimensions: f.dimensions.map(d => d.dimension),
     dimension: primary,

@@ -29,16 +29,43 @@ const SOURCE_ICON = {
 export function GroundTruthReview({
   projectId,
   onCountChange,
+  dimension,
+  onResumeConversation,
 }: {
   projectId: string
   /** Remaining (not discarded), so the page can label its Build action. */
   onCountChange?: (remaining: number, total: number) => void
+  /**
+   * Show only this dimension. Set when the user arrived by clicking one in the coverage grid —
+   * they asked a narrower question than "show me everything" and the surface should answer it.
+   */
+  dimension?: string
+  /**
+   * Jump to the conversation a fragment came from. Carried over from `FragmentExplorer`: reading
+   * the exchange is often how you decide whether a row is worth keeping, which makes this worth
+   * more HERE than it was in a browse view.
+   */
+  onResumeConversation?: (conversationId: string) => void
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [discarded, setDiscarded] = useState<Set<string>>(new Set())
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
+  /**
+   * WHAT WAS DISCARDED HAS TO BE REACHABLE, or discarding is destructive.
+   *
+   * `discarded` above is in-session state only: this list fetches `?status=active`, so on the next
+   * load a discarded row is simply absent and its "Undo" is gone with the render that offered it.
+   * That was survivable while the Evidence sheet existed — it was the one surface reading
+   * `?status=archived`. Once the sheet is this component, it has to carry recovery itself.
+   */
+  const [archivedCount, setArchivedCount] = useState(0)
+  const [archivedOpen, setArchivedOpen] = useState(false)
+  const [archivedItems, setArchivedItems] = useState<GateItem[] | null>(null)
+  // Bumped after a restore: the row belongs in the live list again, and re-reading is the only
+  // honest way to put it back in its dimension group and its sort position.
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let live = true
@@ -52,6 +79,10 @@ export function GroundTruthReview({
         const model = buildGateModel(res)
         const all = [...model.weak, ...model.confident]
         setItems(all)
+        setArchivedCount(res.archivedCount ?? 0)
+        // A reload means the server is now the truth about what is live; anything still marked
+        // discarded here would be a row that no longer exists in this list.
+        setDiscarded(new Set())
         // Reviewing is being SHOWN something, not clicking it. Everything rendered is stamped.
         if (all.length > 0) {
           fetch(`/api/project/${projectId}/fragments`, {
@@ -63,7 +94,7 @@ export function GroundTruthReview({
       })
       .catch(e => { if (live) setError(String(e.message ?? e)) })
     return () => { live = false }
-  }, [projectId])
+  }, [projectId, reloadKey])
 
   useEffect(() => {
     if (items) onCountChange?.(items.length - discarded.size, items.length)
@@ -73,11 +104,27 @@ export function GroundTruthReview({
    * Persisted IMMEDIATELY, one fragment at a time — never staged awaiting a submit.
    *
    * This is the one structural rule that survived the retired preflight (§4): a user who rules on
-   * six and closes the tab keeps all six. A failed PATCH leaves the row un-discarded rather than
-   * optimistically struck, so the screen never claims something the database did not do.
+   * six and closes the tab keeps all six.
+   *
+   * ⚠ THE DISPLAY IS OPTIMISTIC; THE WRITE IS NOT. This used to withhold the struck-through state
+   * until the PATCH resolved, on the rule that "the screen never claims something the database did
+   * not do". That rule is right for submit-shaped UI and wrong for a list you rule on twenty-six
+   * times: on preview it read as a lag on every click (Jonny, 2026-09-08 — "felt cumbersome").
+   *
+   * So the row strikes immediately and the write still fires on that same click. Nothing is
+   * staged, so a closed tab still loses nothing. If the write fails the row comes BACK and says so
+   * — failure is visible rather than pre-emptive, which is the honest version of the same promise.
    */
   const toggle = useCallback(async (item: GateItem) => {
-    const nowDiscarded = !discarded.has(item.id)
+    // Read the intent from the set, not from a stale closure: two fast clicks on one row must not
+    // both compute `nowDiscarded` from the same starting value.
+    let nowDiscarded = false
+    setDiscarded(d => {
+      nowDiscarded = !d.has(item.id)
+      const next = new Set(d)
+      if (nowDiscarded) next.add(item.id); else next.delete(item.id)
+      return next
+    })
     setPending(p => new Set(p).add(item.id))
     try {
       const r = await fetch(`/api/project/${projectId}/fragments`, {
@@ -90,17 +137,53 @@ export function GroundTruthReview({
         }),
       })
       if (!r.ok) throw new Error('patch failed')
+      setError(null)
+    } catch {
+      // Put it back exactly as it was. Reverting by recomputing would undo a later click.
       setDiscarded(d => {
         const next = new Set(d)
-        if (nowDiscarded) next.add(item.id); else next.delete(item.id)
+        if (nowDiscarded) next.delete(item.id); else next.add(item.id)
         return next
       })
-    } catch {
       setError('That didn’t save — try again.')
     } finally {
       setPending(p => { const n = new Set(p); n.delete(item.id); return n })
     }
-  }, [discarded, projectId])
+  }, [projectId])
+
+  /** Put a discarded fragment back. Same PATCH as an undo, from a list the undo cannot reach. */
+  const restore = useCallback(async (item: GateItem) => {
+    setPending(p => new Set(p).add(item.id))
+    try {
+      const r = await fetch(`/api/project/${projectId}/fragments`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, status: 'active' }),
+      })
+      if (!r.ok) throw new Error('patch failed')
+      setArchivedItems(a => (a ?? []).filter(x => x.id !== item.id))
+      setArchivedCount(c => Math.max(0, c - 1))
+      setReloadKey(k => k + 1)
+      setError(null)
+    } catch {
+      setError('That didn’t restore — try again.')
+    } finally {
+      setPending(p => { const n = new Set(p); n.delete(item.id); return n })
+    }
+  }, [projectId])
+
+  const openArchived = useCallback(async () => {
+    setArchivedOpen(o => !o)
+    if (archivedItems) return
+    try {
+      const res = await fetch(`/api/project/${projectId}/fragments?status=archived`)
+        .then(r => r.json() as Promise<ApiResponse>)
+      const model = buildGateModel(res)
+      setArchivedItems([...model.weak, ...model.confident])
+    } catch {
+      setError('Couldn’t load what you discarded.')
+    }
+  }, [projectId, archivedItems])
 
   if (error && !items) return <p className="py-6 text-sm text-destructive">{error}</p>
   if (!items) {
@@ -118,7 +201,9 @@ export function GroundTruthReview({
     <div className="space-y-5">
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {groupByDimension(items).map(g => (
+      {groupByDimension(items)
+        .filter(g => !dimension || g.dimension === dimension)
+        .map(g => (
         <div key={g.dimension ?? 'none'}>
           <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
             {g.label}
@@ -133,17 +218,61 @@ export function GroundTruthReview({
                 open={expanded === item.id}
                 onToggleDiscard={() => toggle(item)}
                 onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
+                onResumeConversation={onResumeConversation}
               />
             ))}
           </div>
         </div>
       ))}
+
+      {/*
+        The recovery path, deliberately a footer and not a tab. It is the second state of the
+        eventual two-state surface (`15-31`) delivered at the size the interim can afford: closed
+        by default, because a list of things you already rejected is not what you came for, and
+        absent entirely when there is nothing to recover.
+      */}
+      {archivedCount > 0 && (
+        <div className="border-t pt-3">
+          <button
+            onClick={openArchived}
+            className="flex items-center gap-1.5 text-xs text-foreground/50 underline underline-offset-4 hover:text-foreground"
+          >
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', archivedOpen && 'rotate-180')} />
+            {archivedCount} discarded
+          </button>
+
+          {archivedOpen && (
+            archivedItems === null ? (
+              <p className="flex items-center gap-2 py-3 text-sm text-foreground/60">
+                <Loader2 className="h-4 w-4 animate-spin" /> Reading what you discarded…
+              </p>
+            ) : archivedItems.length === 0 ? (
+              <p className="py-3 text-sm text-foreground/60">Nothing to show.</p>
+            ) : (
+              <div className="mt-2 divide-y divide-border">
+                {archivedItems.map(item => (
+                  <Row
+                    key={item.id}
+                    item={item}
+                    discarded
+                    pending={pending.has(item.id)}
+                    open={expanded === item.id}
+                    onToggleDiscard={() => restore(item)}
+                    onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
+                    onResumeConversation={onResumeConversation}
+                  />
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 function Row({
-  item, discarded, pending, open, onToggleDiscard, onToggleOpen,
+  item, discarded, pending, open, onToggleDiscard, onToggleOpen, onResumeConversation,
 }: {
   item: GateItem
   discarded: boolean
@@ -151,6 +280,7 @@ function Row({
   open: boolean
   onToggleDiscard: () => void
   onToggleOpen: () => void
+  onResumeConversation?: (conversationId: string) => void
 }) {
   const SourceIcon = SOURCE_ICON[item.sourceKind]
   return (
@@ -168,15 +298,21 @@ function Row({
           live row offers ✕ (discard), and a discarded row offers the reverse as WORDS — "Undo" is
           self-describing where a second icon cannot be.
         */}
+        {/*
+          `pending` still disables for the length of the write, but shows NOTHING — the row has
+          already flipped, so a spinner here would re-introduce the lag the optimistic update just
+          removed. Disabling is what stops two in-flight writes for one row racing to a wrong final
+          state; at a few hundred milliseconds it is not perceptible, which is the point.
+        */}
         {discarded ? (
           <Button
             variant="outline"
             size="sm"
             onClick={onToggleDiscard}
             disabled={pending}
-            className="mt-px shrink-0 border-foreground/15 bg-foreground/[0.07] px-2 text-foreground/60 shadow-none hover:bg-foreground/[0.07] hover:text-foreground disabled:opacity-40"
+            className="mt-px shrink-0 border-foreground/15 bg-foreground/[0.07] px-2 text-foreground/60 shadow-none hover:bg-foreground/[0.07] hover:text-foreground"
           >
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Undo'}
+            Undo
           </Button>
         ) : (
           <Button
@@ -186,9 +322,9 @@ function Row({
             disabled={pending}
             title="Discard"
             aria-label="Discard"
-            className="mt-px shrink-0 border-foreground/25 bg-transparent text-foreground/55 shadow-none hover:border-foreground/50 hover:bg-transparent hover:text-foreground disabled:opacity-40"
+            className="mt-px shrink-0 border-foreground/25 bg-transparent text-foreground/55 shadow-none hover:border-foreground/50 hover:bg-transparent hover:text-foreground"
           >
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-[18px] w-[18px]" strokeWidth={2.25} />}
+            <X className="h-[18px] w-[18px]" strokeWidth={2.25} />
           </Button>
         )}
 
@@ -213,7 +349,16 @@ function Row({
               )}
               <p className="mt-1.5 flex items-center gap-1.5 pl-3 text-xs text-foreground/45">
                 <SourceIcon className="h-3.5 w-3.5" />
-                {item.sourceName}
+                {onResumeConversation && item.sourceKind === 'conversation' && item.sourceId ? (
+                  <button
+                    onClick={() => onResumeConversation(item.sourceId!)}
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    {item.sourceName}
+                  </button>
+                ) : (
+                  item.sourceName
+                )}
               </p>
             </div>
           )}

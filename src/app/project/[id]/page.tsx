@@ -335,7 +335,7 @@ export default function ProjectPage() {
                   logAndFlush('cta_open_evidence', 'overflow-menu', { projectId })
                   setEvidenceOpen(true)
                 }}>
-                  <FileText className="h-4 w-4 mr-2" />View all {projectData?.stats?.fragmentCount} fragments
+                  <FileText className="h-4 w-4 mr-2" />Check your {projectData?.stats?.fragmentCount} ground truths
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
