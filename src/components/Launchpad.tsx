@@ -236,11 +236,12 @@ export function Launchpad({
           needs no new route and no new state column. */}
       {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} projectId={projectId} />}
 
-      {/* Data security hook — ABOVE the two paths, not under them. It is a reassurance a user
+      <div className="space-y-3">
+        {/* Data security hook — ABOVE the two paths, not under them. It is a reassurance a user
           wants BEFORE choosing how to hand over their business, and trailing the cards it read as
           a footnote to the demo block below rather than as an answer to the question the cards
           had just raised. */}
-      <div className="flex justify-center">
+        <div className="flex justify-center">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground text-xs">
@@ -285,11 +286,12 @@ export function Launchpad({
             </div>
           </PopoverContent>
         </Popover>
-      </div>
-      {/* Two onboarding paths */}
-      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto pt-2">
+        </div>
+        {/* Two onboarding paths */}
+        <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
         <TalkToLunaCard onStartChat={onStartChat} />
         <ImportBundleCard onImportBundle={onImportBundle} />
+        </div>
       </div>
 
 
