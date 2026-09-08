@@ -236,14 +236,11 @@ export function Launchpad({
           needs no new route and no new state column. */}
       {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} projectId={projectId} />}
 
-      {/* Two onboarding paths */}
-      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
-        <TalkToLunaCard onStartChat={onStartChat} />
-        <ImportBundleCard onImportBundle={onImportBundle} />
-      </div>
-
-      {/* Data security hook */}
-      <div className="flex justify-center -mt-4">
+      {/* Data security hook — ABOVE the two paths, not under them. It is a reassurance a user
+          wants BEFORE choosing how to hand over their business, and trailing the cards it read as
+          a footnote to the demo block below rather than as an answer to the question the cards
+          had just raised. */}
+      <div className="flex justify-center">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground text-xs">
@@ -289,6 +286,12 @@ export function Launchpad({
           </PopoverContent>
         </Popover>
       </div>
+      {/* Two onboarding paths */}
+      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto pt-2">
+        <TalkToLunaCard onStartChat={onStartChat} />
+        <ImportBundleCard onImportBundle={onImportBundle} />
+      </div>
+
 
       {/*
         ⚠ ORDER: heading, subheading, explanation, cards, THEN the mark.
@@ -299,7 +302,7 @@ export function Launchpad({
       <div className="text-center">
         <h2 className="text-xl font-semibold tracking-tight">See it on four real companies</h2>
 
-        <div className="mb-3 mt-2 space-y-1">
+        <div className="mb-3 mt-3 space-y-1">
           <p className="text-base text-muted-foreground">
             Because every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
           </p>
@@ -308,13 +311,7 @@ export function Launchpad({
           </p>
         </div>
 
-        {/* The explanation, under the subheading it explains. Rewritten off first-person: the
-            sentence used to say what Luna does, where what matters is what these ARE. */}
-        <p className="mx-auto mb-8 max-w-sm text-xs text-muted-foreground">
-          Each one is a Decision Stack built from an <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Acquired podcast</a> transcript, by Ben Gilbert and David Rosenthal.
-        </p>
-
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mb-6">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mt-8 mb-6">
           {DEMO_PROJECTS.map((demo) => (
             <div
               key={demo.id}
@@ -335,8 +332,13 @@ export function Launchpad({
           ))}
         </div>
 
+        {/* The mark and its credit, together at the end. This line is attribution, not
+            explanation — it belongs with the logo it attributes, at the size a credit takes. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="mx-auto w-full max-w-[170px] rounded-lg opacity-90" />
+        <p className="mx-auto mt-2 max-w-sm text-[11px] leading-relaxed text-muted-foreground/70">
+          Each one is a Decision Stack built from an <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-muted-foreground">Acquired podcast</a> transcript, by Ben Gilbert and David Rosenthal.
+        </p>
       </div>
     </div>
   )
