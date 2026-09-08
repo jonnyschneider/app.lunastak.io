@@ -8,6 +8,10 @@
 > **Hand-editable** — this file is the authority the audit checks against, so correcting it
 > here is a first-class action. Every `source` was verified to resolve.
 
+**inherits:** `~/Dev/hub/conventions/base-rubric.md` @ **G1–G8** — the cross-repo conventions
+(commits, branch model, the deprecation playbook). They are NOT restated here; change them
+there once and every repo picks them up. `G` ids mean the same thing in every repo.
+
 `class`: **TEST** = an existing test enforces it. **GREP** = a shell one-liner decides it.
 **JUDGMENT** = needs a reviewer. `⊘ proposed` = doc-currency row proposed by the audit and
 confirmed by Jonny; the rubric row is itself the written source.
@@ -16,13 +20,13 @@ confirmed by Jonny; the rubric row is itself the written source.
 
 | id | convention | source | class | scope |
 |----|-----------|--------|-------|-------|
-| C1 | Use conventional commit prefixes (`feat:` `fix:` `docs:` `chore:` `refactor:` `test:` `release:` `merge:`). Merge commits are exempt. | `CLAUDE.md:67` ✎ *amended — see below* | GREP | `**` |
+| ~~C1~~ | *retired 2026-09-08 — inherited as **G1*** | `base-rubric.md` | — | — |
 | C2 | All Claude API calls go through `createMessage()` in `src/lib/claude.ts` | `CLAUDE.md:55` | TEST → `claude-wrapper.test.ts` | `src/**` |
 | C3 | Read Claude responses with `extractText()`, never `content[0]` | `ARCHITECTURE.md:180` | TEST → `content-block-access.test.ts` | `src/**` |
 | C4 | Model IDs live in `@/lib/model-config` — no hardcoded `claude-*` literals at call sites | `model-literals.test.ts:1-11` | TEST → same file | `src/**` |
-| C5 | Delete dead code outright — no `_old/`, `deprecated/`, `archive/`, no commented-out blocks, no "just in case" headers | `~/Dev/CLAUDE.md:65` | GREP + JUDGMENT | `**` |
-| C6 | Retiring a subsystem requires a tombstone at `docs/retired-<name>.md` plus a `<name>-final` recovery tag | `~/Dev/CLAUDE.md:68-69` | JUDGMENT | `**` |
-| C7 | Retiring anything sweeps its references — CLAUDE.md, READMEs, SKILL.md paths, design docs, cron entries | `~/Dev/CLAUDE.md:70` | JUDGMENT | `**` |
+| ~~C5~~ | *retired 2026-09-08 — inherited as **G3*** | `base-rubric.md` | — | — |
+| ~~C6~~ | *retired 2026-09-08 — inherited as **G6*** | `base-rubric.md` | — | — |
+| ~~C7~~ | *retired 2026-09-08 — inherited as **G7*** | `base-rubric.md` | — | — |
 | C8 | New pipeline behaviour (triggers, layers, generation paths) goes through the orchestrator, not standalone route logic | `CLAUDE.md:41` | JUDGMENT | `src/app/api/**`, `src/lib/pipeline/**` |
 | C9 | Routes are thin HTTP wrappers — business logic lives in the pipeline | `CLAUDE.md:29` | JUDGMENT | `src/app/api/**` |
 | C10 | Reuse `src/components/ui/`; a bespoke component is built INTO the library, never one-off in a page | `CLAUDE.md:121` | JUDGMENT | `src/components/**`, `src/app/**` |
@@ -61,8 +65,8 @@ Pair the *specific section* where one exists: touched ≠ accurate.
 
 | row | was | now |
 |---|---|---|
-| C1 | 6 prefixes, all commits checked | + `release:` and `merge:` (both in real use); merge commits exempt. Before: 8 false positives of 128. After: 0. |
-| C14 | `docs/analytics/events.md` — **does not exist** | `docs/architecture/analytics-events.md`. Upstream `CLAUDE.md:100` and `:84` still carry the stale path — **fix upstream**. |
+| C1 → G1 | 6 prefixes, all commits checked | + `release:`/`merge:`, merge commits exempt. 8 false positives of 128 → 0. **Moved upstream to `base-rubric.md` G1** — it was never lunastak-specific. |
+| C14 | `docs/analytics/events.md` — **does not exist** | `docs/architecture/analytics-events.md`. Upstream `CLAUDE.md:85`, `:90` and `:100` were fixed in the same commit. |
 | C15 | grep matched `.md` prose | scoped to code paths |
 
 ## Candidates (watching)
