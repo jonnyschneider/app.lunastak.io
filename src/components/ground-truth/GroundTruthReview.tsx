@@ -49,7 +49,6 @@ export function GroundTruthReview({
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [discarded, setDiscarded] = useState<Set<string>>(new Set())
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
   /**
@@ -80,9 +79,6 @@ export function GroundTruthReview({
         const all = [...model.weak, ...model.confident]
         setItems(all)
         setArchivedCount(res.archivedCount ?? 0)
-        // A reload means the server is now the truth about what is live; anything still marked
-        // discarded here would be a row that no longer exists in this list.
-        setDiscarded(new Set())
         // Reviewing is being SHOWN something, not clicking it. Everything rendered is stamped.
         if (all.length > 0) {
           fetch(`/api/project/${projectId}/fragments`, {
@@ -97,8 +93,8 @@ export function GroundTruthReview({
   }, [projectId, reloadKey])
 
   useEffect(() => {
-    if (items) onCountChange?.(items.length - discarded.size, items.length, archivedCount)
-  }, [items, discarded, archivedCount, onCountChange])
+    if (items) onCountChange?.(items.length, items.length, archivedCount)
+  }, [items, archivedCount, onCountChange])
 
   /**
    * Persisted IMMEDIATELY, one fragment at a time — never staged awaiting a submit.
@@ -106,45 +102,37 @@ export function GroundTruthReview({
    * This is the one structural rule that survived the retired preflight (§4): a user who rules on
    * six and closes the tab keeps all six.
    *
-   * ⚠ THE DISPLAY IS OPTIMISTIC; THE WRITE IS NOT. This used to withhold the struck-through state
-   * until the PATCH resolved, on the rule that "the screen never claims something the database did
-   * not do". That rule is right for submit-shaped UI and wrong for a list you rule on twenty-six
-   * times: on preview it read as a lag on every click (Jonny, 2026-09-08 — "felt cumbersome").
+   * ⚠ THE ROW LEAVES THE LIST. It used to stay in place, greyed, offering "Undo" — which showed
+   * the state honestly and still read as nothing having happened, because the list was the same
+   * length and the row was still in it. Twice on preview that was reported as a missing confirm
+   * button (Jonny, 2026-09-08).
    *
-   * So the row strikes immediately and the write still fires on that same click. Nothing is
-   * staged, so a closed tab still loses nothing. If the write fails the row comes BACK and says so
-   * — failure is visible rather than pre-emptive, which is the honest version of the same promise.
+   * Removal IS the confirmation. The row goes, the discarded count above it goes up, and that
+   * count is the control that brings it back — so the interaction that signals the change is the
+   * same one that teaches the undo. A confirm button was considered and rejected: it would be a
+   * promise that nothing had happened yet, which is either false or costs the rule above.
+   *
+   * Optimistic, so the row leaves on the click that discards it. A failed write puts it back where
+   * it was and says so.
    */
-  const toggle = useCallback(async (item: GateItem) => {
-    // Read the intent from the set, not from a stale closure: two fast clicks on one row must not
-    // both compute `nowDiscarded` from the same starting value.
-    let nowDiscarded = false
-    setDiscarded(d => {
-      nowDiscarded = !d.has(item.id)
-      const next = new Set(d)
-      if (nowDiscarded) next.add(item.id); else next.delete(item.id)
-      return next
-    })
+  const discard = useCallback(async (item: GateItem) => {
     setPending(p => new Set(p).add(item.id))
+    setItems(cur => cur?.filter(i => i.id !== item.id) ?? cur)
+    setArchivedCount(c => c + 1)
+    // Front of the recovery list: the thing you just did is the thing you are most likely to undo.
+    setArchivedItems(a => (a === null ? a : [item, ...a]))
     try {
       const r = await fetch(`/api/project/${projectId}/fragments`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: item.id,
-          status: nowDiscarded ? 'archived' : 'active',
-          ...(nowDiscarded ? { archivedReason: 'ground_truth_review' } : {}),
-        }),
+        body: JSON.stringify({ id: item.id, status: 'archived', archivedReason: 'ground_truth_review' }),
       })
       if (!r.ok) throw new Error('patch failed')
       setError(null)
     } catch {
-      // Put it back exactly as it was. Reverting by recomputing would undo a later click.
-      setDiscarded(d => {
-        const next = new Set(d)
-        if (nowDiscarded) next.delete(item.id); else next.add(item.id)
-        return next
-      })
+      setItems(cur => (cur ? [...cur, item] : cur))
+      setArchivedCount(c => Math.max(0, c - 1))
+      setArchivedItems(a => (a === null ? a : a.filter(i => i.id !== item.id)))
       setError('That didn’t save — try again.')
     } finally {
       setPending(p => { const n = new Set(p); n.delete(item.id); return n })
@@ -163,6 +151,7 @@ export function GroundTruthReview({
       if (!r.ok) throw new Error('patch failed')
       setArchivedItems(a => (a ?? []).filter(x => x.id !== item.id))
       setArchivedCount(c => Math.max(0, c - 1))
+      // Re-read rather than splice: the row belongs back in its dimension group, in sort order.
       setReloadKey(k => k + 1)
       setError(null)
     } catch {
@@ -269,10 +258,10 @@ export function GroundTruthReview({
               <Row
                 key={item.id}
                 item={item}
-                discarded={discarded.has(item.id)}
+                discarded={false}
                 pending={pending.has(item.id)}
                 open={expanded === item.id}
-                onToggleDiscard={() => toggle(item)}
+                onToggleDiscard={() => discard(item)}
                 onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
                 onResumeConversation={onResumeConversation}
               />

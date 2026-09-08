@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, Info } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
@@ -18,7 +19,18 @@ import type { SupportLevel } from '@/lib/support/dimension-support'
  * ruled uppercase text for its dimension groups, and a heading has to outrank its own contents.
  */
 const SECTION_HEADING =
-  'mb-1 flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground'
+  'mb-1 flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold uppercase tracking-wide text-primary-foreground'
+
+/**
+ * Both section headings stick under the panel's own sticky block, so the column you are working in
+ * keeps saying which one it is.
+ *
+ * The offset cannot be a constant: the block above is the header rows PLUS the coverage grid, and
+ * that grid reflows from five columns to three as the viewport narrows. So its height is measured
+ * and published as a custom property — a guessed number would be right at one width and wrong at
+ * every other. `md:` only, matching the block it hangs from.
+ */
+const SECTION_HEADING_STICKY = 'md:sticky md:top-[calc(3.5rem+var(--ks-head,0px))] md:z-20'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -237,6 +249,17 @@ export function KnowledgeSummaryPanel({
    * the second visit should not have to fold it again. Desktop never sees this — the two columns
    * put the summary beside the work rather than in front of it.
    */
+  const headRef = useRef<HTMLDivElement | null>(null)
+  const [headHeight, setHeadHeight] = useState(0)
+  useEffect(() => {
+    const el = headRef.current
+    if (!el || !isExpanded) return
+    const ro = new ResizeObserver(() => setHeadHeight(el.offsetHeight))
+    ro.observe(el)
+    setHeadHeight(el.offsetHeight)
+    return () => ro.disconnect()
+  }, [isExpanded])
+
   const summaryKey = projectId ? `project-${projectId}-kb-summary-open` : null
   const [summaryOpen, setSummaryOpen] = useState(true)
   useEffect(() => {
@@ -257,7 +280,10 @@ export function KnowledgeSummaryPanel({
     : null
 
   return (
-    <div className={cn("border border-border rounded-lg bg-background", className)}>
+    <div
+      className={cn("border border-border rounded-lg bg-background", className)}
+      style={{ ['--ks-head' as string]: `${headHeight}px` }}
+    >
       {/*
         ⚠ THE BALLS ARE THE INSTRUMENT, so they stay put.
         Expanded, this panel does three jobs at once: it explains, it lets the summary be refined,
@@ -271,7 +297,10 @@ export function KnowledgeSummaryPanel({
         The card cannot carry `overflow-hidden` for this — it clips a sticky child — so the top
         rounding moves onto this block.
       */}
-      <div className={cn(isExpanded && 'md:sticky md:top-14 z-30 rounded-t-lg border-b border-border bg-background')}>
+      <div
+        ref={headRef}
+        className={cn(isExpanded && 'md:sticky md:top-14 z-30 rounded-t-lg border-b border-border bg-background')}
+      >
       {/* Header Bar */}
       <button
         onClick={handleToggle}
@@ -408,7 +437,7 @@ export function KnowledgeSummaryPanel({
             <button
               onClick={toggleSummary}
               aria-expanded={summaryOpen}
-              className={cn(SECTION_HEADING, 'w-full justify-between md:pointer-events-none md:cursor-default')}
+              className={cn(SECTION_HEADING, SECTION_HEADING_STICKY, 'w-full justify-between md:pointer-events-none md:cursor-default')}
             >
               <span>Summary</span>
               {summaryOpen
@@ -484,7 +513,7 @@ export function KnowledgeSummaryPanel({
           */}
           {inPlace && fragmentCount > 0 && (
             <div>
-              <div className={cn(SECTION_HEADING, 'justify-between')}>
+              <div className={cn(SECTION_HEADING, SECTION_HEADING_STICKY, 'justify-between')}>
                 <span>
                   {selectedDimension
                     ? DIMENSION_LABELS[selectedDimension as Tier1Dimension]
@@ -507,10 +536,13 @@ export function KnowledgeSummaryPanel({
                 what it was or what to do with it. It also carries the save model, because there is
                 no submit and a user who expects one needs telling, not guessing.
               */}
-              <p className="mb-3 mt-2 text-xs leading-relaxed text-muted-foreground">
-                Everything your vision, strategy and objectives get built from. Discard anything
-                wrong — changes save as you make them.
-              </p>
+              <Alert className="mb-3 mt-2 py-2.5">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
+                  Everything your vision, strategy and objectives get built from. Discard anything
+                  wrong — it saves straight away, and anything you discard can be restored below.
+                </AlertDescription>
+              </Alert>
               <GroundTruthReview
                 projectId={projectId!}
                 dimension={selectedDimension ?? undefined}
