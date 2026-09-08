@@ -25,6 +25,13 @@
  * hand-rolled track: same component the rest of the app uses, so the fill matches everything else
  * that reports progress.
  *
+ * `flush` mounts it as CARD CHROME: the bar sits square on the card's top edge and the whole block
+ * carries a bottom border, so it reads as the frame around the content rather than as the first
+ * item of content. Pass the card's own horizontal padding as `labelsClassName` — the labels have
+ * to line up with the content, and guessing the host's padding from inside a library component is
+ * the kind of coupling that breaks silently. The host also needs `overflow-hidden` on the Card so
+ * the bar clips to its rounded corners.
+ *
  * Deliberately NOT interactive. A step indicator says where you are; navigating between phases is
  * the host's job and differs per flow.
  */
@@ -36,20 +43,24 @@ export interface StepsProps {
   steps: readonly string[]
   /** Zero-based index of the step the user is on. */
   current: number
+  /** Mount as card chrome: square bar on the card's top edge, bottom border under the labels. */
+  flush?: boolean
+  /** The host's horizontal padding, so labels line up with the card's content. */
+  labelsClassName?: string
   className?: string
 }
 
-export function Steps({ steps, current, className }: StepsProps) {
+export function Steps({ steps, current, flush, labelsClassName, className }: StepsProps) {
   const pct = steps.length === 0 ? 0 : ((current + 1) / steps.length) * 100
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full', flush && 'border-b', className)}>
       <Progress
         value={pct}
-        className="h-1.5"
+        className={cn(flush ? 'h-1 rounded-none' : 'h-1.5')}
         aria-label={`Step ${current + 1} of ${steps.length}: ${steps[current] ?? ''}`}
       />
-      <ol className="mt-2 flex w-full items-baseline">
+      <ol className={cn('flex w-full items-baseline', flush ? 'px-1 py-2.5' : 'mt-2', labelsClassName)}>
         {steps.map((label, i) => {
           const reached = i <= current
           return (

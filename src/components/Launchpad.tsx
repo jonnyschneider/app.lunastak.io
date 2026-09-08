@@ -43,17 +43,18 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
   // The whole panel takes the reading measure, not just its contents — a narrow column inside a
   // full-width card read as a mistake rather than a choice.
   return (
-    <Card className="mx-auto max-w-3xl">
+    <Card className="mx-auto max-w-3xl overflow-hidden">
+      {/* Chrome, not content: the bar sits on the card's top edge and the block is ruled off, so
+          the frame says where you are and the content below is only the ground truths. */}
+      <Steps steps={GROUND_TRUTH_PHASES} current={1} flush labelsClassName="px-6 md:px-8" />
       <CardContent className="space-y-4 p-6 md:p-8">
-        <div className="space-y-3">
+        <div>
           {/*
             WHERE AM I, WHAT HAPPENS NEXT, AND WHY BOTHER. Without this the review is a list of
             sentences with no frame: the user has just asked for a strategy and been handed
             something else, with no signal that it is a step rather than the destination, or that
             it is waiting on them.
           */}
-          <Steps steps={GROUND_TRUTH_PHASES} current={1} />
-
           <div>
             <h2 className="text-xl font-semibold tracking-tight">
               {total === null ? 'Check your ground truths' : `Check your ${total} ground truths`}
