@@ -131,3 +131,25 @@ describe('buildGateModel — the status it models', () => {
     expect([...m.weak, ...m.confident].map(i => i.id)).toEqual(['a1'])
   })
 })
+
+describe('buildGateModel — the no-evidence count drives a user-facing note', () => {
+  it('counts only rows the user is actually shown', () => {
+    // The note explaining pre-evidence rows keys off this count, so it must not fire for rows
+    // the model filters out anyway. A bundle tension legitimately has no evidence and is never
+    // presented — counting it would apologise for something nobody can see.
+    const res = {
+      fragments: [
+        frag({ id: 'a', evidence: [] }),
+        frag({ id: 't', evidence: [], contentType: 'tension' }),
+      ],
+      total: 2,
+      activeCount: 2,
+      archivedCount: 0,
+    }
+
+    const m = buildGateModel(res)
+
+    expect(m.counts['no-evidence']).toBe(1)
+    expect([...m.weak, ...m.confident].map(i => i.id)).toEqual(['a'])
+  })
+})
