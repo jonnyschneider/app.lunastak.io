@@ -36,19 +36,36 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
   // state — which is luck, not design.
   const handleCount = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
 
+  // The whole panel takes the reading measure, not just its contents — a narrow column inside a
+  // full-width card read as a mistake rather than a choice.
   return (
-    <Card>
-      {/* Constrained: the page container is max-w-7xl, which left claims stranded in white space
-          and made a scan list read as a spreadsheet. Reading measure, not page width. */}
-      <CardContent className="mx-auto max-w-3xl space-y-4 p-6 md:p-8">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            {total === null ? 'Your ground truths' : `Your ${total} ground truths`}
-          </h2>
-          <p className="text-sm text-foreground/60">
-            This is what your strategy gets built from. Skim it and discard anything I got wrong —
-            open one to see what it&rsquo;s built on.
-          </p>
+    <Card className="mx-auto max-w-3xl">
+      <CardContent className="space-y-4 p-6 md:p-8">
+        <div className="space-y-3">
+          {/*
+            WHERE AM I, WHAT HAPPENS NEXT, AND WHY BOTHER. Without this the review is a list of
+            sentences with no frame: the user has just asked for a strategy and been handed
+            something else, with no signal that it is a step rather than the destination, or that
+            it is waiting on them.
+          */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-foreground/40">
+            <span>Your context</span>
+            <span aria-hidden>→</span>
+            <span className="rounded bg-luna px-1.5 py-0.5 font-semibold text-white">Ground truths</span>
+            <span aria-hidden>→</span>
+            <span>Your strategy</span>
+            <span className="ml-1 text-foreground/60">· your turn</span>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              {total === null ? 'Check your ground truths' : `Check your ${total} ground truths`}
+            </h2>
+            <p className="mt-1 text-sm text-foreground/60">
+              This is everything I took from what you gave me — and everything your vision, strategy
+              and objectives get built from. Discard anything I got wrong, then I&rsquo;ll build it.
+            </p>
+          </div>
         </div>
 
         <GroundTruthReview
