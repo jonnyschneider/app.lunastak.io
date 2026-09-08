@@ -1344,14 +1344,14 @@ export default function ProjectPage() {
                       href="https://lunastak.io/docs/install"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-8 rounded-md py-2 transition-opacity hover:opacity-80"
+                      className="flex items-center justify-center gap-10 rounded-md py-6 transition-opacity hover:opacity-80"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-claude.svg" alt="Claude" className="h-10" />
+                      <img src="/logo-claude.svg" alt="Claude" className="h-16" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-gemini.svg" alt="Gemini" className="h-10" />
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-16" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-openai.svg" alt="OpenAI" className="h-10" />
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-16" />
                     </a>
                     <a
                       href="https://lunastak.io/docs/install"
