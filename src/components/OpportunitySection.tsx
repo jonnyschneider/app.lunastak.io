@@ -257,6 +257,27 @@ export function OpportunitySection({
         )}
       </div>
 
+      {/*
+        ⚠ AN EMPTY SECTION HAS TO SAY WHAT GOES IN IT.
+        `showPlaceholder` was computed and never rendered, so an empty Opportunities section was a
+        heading, an Add button and blank space — the user is told to add something without being
+        told what. Naming the QUESTION the section answers teaches the concept without handing over
+        a template, which is the thing to avoid: a worked example here reads as content.
+
+        The second line points at the control rather than repeating it; Add sits beside the heading.
+      */}
+      {showPlaceholder && (
+        <div className="mb-4 rounded-lg border border-dashed border-border px-4 py-6">
+          <p className="text-sm font-medium text-foreground">
+            Where could you play that you aren&rsquo;t yet?
+          </p>
+          <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">
+            Opportunities are bets worth taking — the outcome you want and why now, not the plan for
+            getting there. Add one, or generate them from your strategy.
+          </p>
+        </div>
+      )}
+
       {/* Cards grid */}
       {hasOpportunities && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

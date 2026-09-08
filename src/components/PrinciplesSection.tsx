@@ -330,6 +330,25 @@ export function PrinciplesSection({
 
   return (
     <div className="space-y-6">
+      {/*
+        ⚠ THE SHAPE IS THE THING A USER CANNOT GUESS.
+        An empty Principles section was a heading, an Add button and nothing else. The question
+        teaches what belongs here; the second line teaches the FORM — "one thing, even over
+        another" — which is this app's particular take and the part nobody arrives knowing.
+        Deliberately not a worked example: a filled-in principle reads as content, not guidance.
+      */}
+      {principles.length === 0 && !editingPrincipleId && (
+        <div className="rounded-lg border border-dashed border-border px-4 py-6">
+          <p className="text-sm font-medium text-foreground">
+            What will you hold to when it&rsquo;s inconvenient?
+          </p>
+          <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">
+            Principles are trade-offs, not values: one thing <em>even over</em> another, so a team
+            can decide without you in the room.
+          </p>
+        </div>
+      )}
+
       {/* Selected principles - grid layout */}
       {principles.length > 0 && (
         <div>
