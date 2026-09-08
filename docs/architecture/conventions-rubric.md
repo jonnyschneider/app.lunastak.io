@@ -57,7 +57,7 @@ Pair the *specific section* where one exists: touched ≠ accurate.
 |----|-----------|--------|-------|-------|
 | C22 | A `SCHEMA_CHANGELOG.md` entry for a destructive or behaviour-changing migration carries **Why / Ordering / Recovery** | emergence 2026-09-08, 3/3 sites | JUDGMENT | `prisma/**` |
 | C23 | Tests are colocated in a `__tests__/` folder beside the code under test | emergence 2026-09-08, 5 dirs | GREP | `src/**` |
-| C24 | A rejected alternative is recorded inline as a `⚠` comment citing the design-doc section | emergence 2026-09-08, 6+ sites | JUDGMENT | `src/**` |
+| ~~C24~~ | *demoted 2026-09-08 — see Candidates (watching); adopted on one-sided evidence* | — | — | — |
 | C25 | `type-check` regenerates the Prisma client before `tsc` — stale client types must not pass local verify | emergence 2026-09-08, `package.json` | GREP | `package.json` |
 | C26 | A Decision Log entry landing on a feature branch carries a `⚠ Not deployed` banner AND an explicit "On deploy, update:" checklist naming the sections that go stale | emergence 2026-09-08, 2 sites (`intelligence-pipeline-v2.md:440-442,503-506` and `:514-518,587-590`) | JUDGMENT | `docs/architecture/**` |
 
@@ -76,6 +76,9 @@ _Emergent patterns accepted as `watch`. No `id` — by Law 1 they cannot produce
 | pattern | evidence | first seen |
 |---|---|---|
 | Operational gotchas from a migration written back into `prisma/env.ts` as a standing warning | 1 site | 2026-09-08 |
+| **`⚠` rationale comment citing a design-doc section for a rejected alternative** — *demoted from C24 the day it was adopted.* Followed at **10** sites (`ground-truth/derive.ts` ×6, `evidence/verify.ts`, `Launchpad.tsx`, `GroundTruthReview.tsx`, `generate-strategy/route.ts`); **not** followed at **7** (`import/transforms/context-bundle.ts` ×4, `support/dimension-support.ts` ×2, `evidence/verify.ts` ×1). ~59% is a habit forming, not a convention. Re-count next audit; adopt only if the ratio is genuinely lopsided. | 10 for / 7 against | 2026-09-08 |
+| Substantial new test files open with a JSDoc header naming the design-doc section and the real bug or measurement that motivated them (e.g. the 11% false-failure rate, the 878-instance prod sample) | 6 files | 2026-09-08 |
+| Structural interfaces defined instead of importing concrete Prisma types, so contract tests can inject a recorder (`tools/project-bundle/fragments.ts`) | 1 site | 2026-09-08 |
 
 ## Deferred obligations — OUTSTANDING at HEAD
 
@@ -85,4 +88,4 @@ _Not violations. They fire on the named trigger. Cleared by doing them, not by a
 |---|---|---|
 | deploy of `feat/ground-truth-check-backend` | `intelligence-pipeline-v2.md` §1 Layer 3; §2 decision matrix (mermaid **and** table at `:209`) — `plan.ts` returns `generation: null` for `conversation_ended{isInitial:true}` where the matrix still shows `Generate ✓ mode: initial` | `intelligence-pipeline-v2.md:503-506` |
 | deploy of `feat/ground-truth-check-backend` | `service-blueprints.md` Task 2 (`:133-159`) still describes the pre-`f553d6f` single-call flow | `intelligence-pipeline-v2.md:503-506` |
-| deploy of the 2026-09-04 evidence layer | sections named in that entry's own checklist | `intelligence-pipeline-v2.md:587-590` |
+| deploy of the 2026-09-04 evidence layer (app branch **+** `lunastak/tools` `feat/verbatim-bundle-evidence`, schema applied beyond dev) | `intelligence-pipeline-v2.md` §1 Layer 0, §3 ERD, §5 LLM table; `service-blueprints.md` **Tasks 2–4**; and `db:check-drift` on preview/prod — currently expected to report drift, which **must not be approved away** until then | `intelligence-pipeline-v2.md:587-590` |
