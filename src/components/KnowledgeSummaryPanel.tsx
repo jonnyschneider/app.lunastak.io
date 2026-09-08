@@ -2,8 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, Info, FileText, Package, Sparkles } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, Info } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -50,22 +49,21 @@ const SECTION_HEADING_ACTION =
 const SECTION_HEADING_STICKY = 'md:sticky md:top-[calc(3.5rem+var(--ks-head,0px))] md:z-20'
 
 /**
- * One input count. The icon runs the full height of the number-and-label stack rather than sitting
- * beside the label, so the three read as a row of equal things at a glance instead of as a
- * sentence you have to parse left to right.
+ * One input count, typographic only.
+ *
+ * An icon-and-number treatment was tried and rejected on sight: at this size the glyphs carried no
+ * information the label did not, and three of them turned a quiet header into a toolbar. The
+ * number is the thing worth seeing, so nothing competes with it — scale and case do the work.
  */
-function Stat({ icon: Icon, value, label, accent }: {
-  icon: LucideIcon
-  value: number
-  label: string
-  accent?: boolean
-}) {
+function Stat({ value, label, accent }: { value: number; label: string; accent?: boolean }) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon className={cn('h-7 w-7 stroke-[1.25]', accent ? 'text-lunastak' : 'text-muted-foreground/50')} />
-      <div className="leading-none">
-        <div className={cn('text-lg font-semibold tabular-nums', accent && 'text-lunastak')}>{value}</div>
-        <div className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    <div className="leading-none">
+      <div className={cn('text-lg font-semibold tabular-nums', accent ? 'text-lunastak' : 'text-foreground')}>
+        {value}
+      </div>
+      <div className={cn('mt-1 text-[10px] uppercase tracking-wider',
+        accent ? 'text-lunastak' : 'text-muted-foreground')}>
+        {label}
       </div>
     </div>
   )
@@ -392,26 +390,21 @@ export function KnowledgeSummaryPanel({
             {/*
               THE INPUTS, AS A READING. Three counts on one line of small grey text said what had
               gone in without ever making it look like anything; at full width there is room for
-              them to be read at a glance instead. Icon at full height, number over label.
+              them to be read at a glance instead. Number over label, no icons — see `Stat`.
 
               ⚠ NO INSIGHT COUNT HERE. It used to read "33 insights" directly above
               "Ground truths (24)" — two numbers for one thing, disagreeing, because the review
               filters what is not the user's to verify. These three are INPUTS: what you put in,
               which nothing downstream contradicts. The output count lives on its own heading.
             */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <Stat icon={MessageCircle} value={chatCount} label={chatCount === 1 ? 'chat' : 'chats'} />
-              <Stat icon={FileText} value={documentCount} label={documentCount === 1 ? 'doc' : 'docs'} />
+            <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
+              <Stat value={chatCount} label={chatCount === 1 ? 'chat' : 'chats'} />
+              <Stat value={documentCount} label={documentCount === 1 ? 'doc' : 'docs'} />
               {importCount > 0 && (
-                <Stat icon={Package} value={importCount} label={importCount === 1 ? 'import' : 'imports'} />
+                <Stat value={importCount} label={importCount === 1 ? 'import' : 'imports'} />
               )}
               {strategyIsStale && fragmentsSinceStrategy > 0 && (
-                <Stat
-                  icon={Sparkles}
-                  value={fragmentsSinceStrategy}
-                  label="since last strategy"
-                  accent
-                />
+                <Stat value={fragmentsSinceStrategy} label="since last strategy" accent />
               )}
             </div>
             <div className="shrink-0">
