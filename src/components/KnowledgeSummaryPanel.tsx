@@ -13,6 +13,13 @@ import { InlineMarkdown } from '@/components/InlineMarkdown'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import type { SupportLevel } from '@/lib/support/dimension-support'
 
+/**
+ * The two section headings inside the expanded panel. Filled, not ruled: the list already uses
+ * ruled uppercase text for its dimension groups, and a heading has to outrank its own contents.
+ */
+const SECTION_HEADING =
+  'mb-1 flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground'
+
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
   CUSTOMER_MARKET: 'Customer & Market',
@@ -300,8 +307,13 @@ export function KnowledgeSummaryPanel({
               <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
               <span>&middot;</span>
               <span>{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
-              <span>&middot;</span>
-              <span>{fragmentCount} insight{fragmentCount !== 1 ? 's' : ''}</span>
+              {/*
+                ⚠ NO INSIGHT COUNT HERE. It used to read "33 insights" directly above
+                "Ground truths (24)" — two numbers for the same thing, disagreeing, because the
+                review filters what is not the user's to verify. Side by side on different screens
+                that was defensible; stacked in one panel it reads as a bug. The panel now states
+                the number it can stand behind, once, next to the list it counts.
+              */}
               {strategyIsStale && fragmentsSinceStrategy > 0 && (
                 <>
                   <span>&middot;</span>
@@ -334,9 +346,13 @@ export function KnowledgeSummaryPanel({
         )}
       </button>
 
+        {/* Expanded, the header rows need a floor — without it "Strategy in sync" hangs over the
+            grid, belonging to neither. */}
+        {isExpanded && <div className="mx-4 border-t border-border" />}
+
         {/* The filter. Lives in the sticky block, not in the scrolling body. */}
         {isExpanded && fragmentCount > 0 && (
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-3 pt-3">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
               {TIER_1_DIMENSIONS.map((dimension) => {
                 // Computed support, not the synthesis self-report: the old input reached the ball
@@ -379,18 +395,25 @@ export function KnowledgeSummaryPanel({
           */}
           <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-3">
-            {/* The fold. Mobile only — desktop shows the column and needs no control. */}
+            {/*
+              ⚠ SECTION HEADINGS OUTRANK THE DIMENSION HEADINGS INSIDE THE LIST.
+              Both were small uppercase muted text, so "GROUND TRUTHS" read as a peer of
+              "PROBLEM & OPPORTUNITY" — a heading competing with its own contents. A filled bar at
+              full-strength foreground puts them in different classes at a glance.
+
+              The fold is mobile-only, but the HEADING is not — on desktop it is the column header
+              the two columns were missing. So the element is always a button and simply stops
+              being interactive at `md`, rather than being a different element per breakpoint.
+            */}
             <button
               onClick={toggleSummary}
               aria-expanded={summaryOpen}
-              className="flex w-full items-center justify-between gap-2 border-b border-border pb-2 text-left md:hidden"
+              className={cn(SECTION_HEADING, 'w-full justify-between md:pointer-events-none md:cursor-default')}
             >
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Summary
-              </span>
+              <span>Summary</span>
               {summaryOpen
-                ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-                : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                ? <ChevronUp className="h-4 w-4 shrink-0 md:hidden" />
+                : <ChevronDown className="h-4 w-4 shrink-0 md:hidden" />}
             </button>
 
             <div className={cn('space-y-3', !summaryOpen && 'hidden md:block')}>
@@ -461,21 +484,33 @@ export function KnowledgeSummaryPanel({
           */}
           {inPlace && fragmentCount > 0 && (
             <div>
-              <div className="mb-2 flex items-baseline justify-between gap-3">
-                <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className={cn(SECTION_HEADING, 'justify-between')}>
+                <span>
                   {selectedDimension
                     ? DIMENSION_LABELS[selectedDimension as Tier1Dimension]
-                    : `Ground truths${truthCounts ? ` · ${truthCounts.total}` : ''}`}
-                </h4>
+                    : 'Ground truths'}
+                  {truthCounts && <span className="ml-1.5 font-normal">({truthCounts.total})</span>}
+                </span>
                 {selectedDimension && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setSelectedDimension(null) }}
-                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    className="text-[11px] font-normal normal-case tracking-normal underline underline-offset-4 hover:text-foreground/70"
                   >
                     Show all
                   </button>
                 )}
               </div>
+
+              {/*
+                ⚠ THE EXPLAINER IS NOT DECORATION. Moved here from the Launchpad gate, which is the
+                only place it ever existed — so on this surface the list arrived with nothing saying
+                what it was or what to do with it. It also carries the save model, because there is
+                no submit and a user who expects one needs telling, not guessing.
+              */}
+              <p className="mb-3 mt-2 text-xs leading-relaxed text-muted-foreground">
+                Everything your vision, strategy and objectives get built from. Discard anything
+                wrong — changes save as you make them.
+              </p>
               <GroundTruthReview
                 projectId={projectId!}
                 dimension={selectedDimension ?? undefined}
