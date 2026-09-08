@@ -745,14 +745,33 @@ export function KnowledgeSummaryPanel({
               </div>
 
               {/*
+                ⚠ THE EXPLAINER IS NOT DECORATION, AND IT LEADS. It came from the Launchpad gate,
+                the only place it ever existed — without it the list arrives with nothing saying
+                what it is or what to do with it. It carries the save model too, because there is
+                no submit and a user expecting one should be told rather than left to infer.
+
+                First, and in the same voice as the summary opposite: this column and that one are
+                two halves of one panel, so they should read as though written by the same hand.
+                An Alert box was tried here and was too heavy for one line of guidance.
+              */}
+              <p className="mb-3 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                {changedOnly
+                  ? `What has changed since ${sync?.version ?? 'the last build'}. Rebuild to catch it up.`
+                  : 'Everything your Decision Stack is built from. Discard any items that are wrong, you can restore anytime.'}
+              </p>
+
+              {/*
                 ⚠ A FILTER, NOT A DEAD END. Arriving here from "1 discarded since" dropped the user
                 into a filtered list with no visible way back and nothing saying they were in one —
                 the deep link disoriented precisely because the view carried no control of its own.
                 Two options, shown whenever there is a diff to see, so the state is legible whether
                 the user chose it or was sent to it.
+
+                Below the guidance and above the sections: it is the control the guidance has just
+                explained, and the thing it acts on follows it.
               */}
               {sync?.changed && (
-                <div className="mb-2 mt-2 flex flex-wrap items-center gap-1.5">
+                <div className="mb-3 flex flex-wrap items-center gap-1.5">
                   <FilterChip active={!changedOnly} onClick={() => setChangedOnly(false)}>
                     All
                   </FilterChip>
@@ -761,21 +780,6 @@ export function KnowledgeSummaryPanel({
                   </FilterChip>
                 </div>
               )}
-
-              {/*
-                ⚠ THE EXPLAINER IS NOT DECORATION. It came from the Launchpad gate, the only place
-                it ever existed — without it the list arrives with nothing saying what it is or what
-                to do with it. It carries the save model too, because there is no submit and a user
-                expecting one should be told rather than left to infer.
-
-                An Alert box was too heavy for one line of guidance. It sits under the control it
-                describes instead.
-              */}
-              <p className="mb-3 mt-2 text-xs leading-relaxed text-muted-foreground">
-                {changedOnly
-                  ? `What has changed since ${sync?.version ?? 'the last build'}. Rebuild to catch it up.`
-                  : 'Everything your Decision Stack is built from. Discard any items that are wrong, you can restore anytime.'}
-              </p>
               <GroundTruthReview
                 projectId={projectId!}
                 dimension={changedOnly ? undefined : selectedDimension ?? undefined}
