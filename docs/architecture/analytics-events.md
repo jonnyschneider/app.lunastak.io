@@ -180,3 +180,7 @@ complete cost picture until this is closed.
 
 - `cta_view_fragments` — folded into `cta_open_evidence` in v2.4.2.
 - `pro_interstitial_view`, `pro_upgrade_click`, `pro_coming_soon_view` — replaced by `paywall_*` and `fake_door_*` taxonomy in the v2.4.5 cutover. Hard removed.
+- `fake_door_view` / `fake_door_click` with feature key **`model-selection`** — the surface was
+  removed 2026-09-08. It read "Use Claude Opus 4.7" and was the only fake door that named a model
+  version, so it dated on every model bump. The series simply stops; it was not renamed or folded
+  into another key. `unlimited-projects`, `knowledge-chat` and `knowledge-edit` are unaffected.

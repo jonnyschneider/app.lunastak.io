@@ -46,11 +46,6 @@ export const PRO_FEATURES = {
     title: 'Audio Memos',
     description: 'Record voice memos, Luna transcribes and extracts strategic insights automatically.',
   },
-  'model-selection': {
-    icon: Sparkles,
-    title: 'Premium AI Model',
-    description: 'Access to Opus, our most capable model for deeper strategic analysis.',
-  },
   'ai-improve': {
     icon: Sparkles,
     title: 'Improve with AI',

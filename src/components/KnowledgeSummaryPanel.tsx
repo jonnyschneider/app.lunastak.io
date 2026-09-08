@@ -459,7 +459,8 @@ export function KnowledgeSummaryPanel({
             ) : (
               <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
-            <span className={cn("font-medium text-sm", knowledgeBusy && "animate-pulse text-muted-foreground")}>
+            {/* Same weight as Explore Next / Chats — it is a card heading, not a label. */}
+            <span className={cn("text-base font-semibold", knowledgeBusy && "animate-pulse text-muted-foreground")}>
               {knowledgeBusy ? knowledgeBusyMessage : 'Summary and ground truths'}
             </span>
             {!knowledgeBusy && updatedLabel && (

@@ -222,17 +222,6 @@ export default function ProjectPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [shareSignInGateOpen, setShareSignInGateOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
-  const vsoGuidanceKey = `vso-guidance-dismissed:${projectId}`
-  const [vsoGuidanceDismissed, setVsoGuidanceDismissed] = useState(true)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    setVsoGuidanceDismissed(localStorage.getItem(vsoGuidanceKey) === '1')
-  }, [vsoGuidanceKey])
-  const dismissVsoGuidance = () => {
-    setVsoGuidanceDismissed(true)
-    try { localStorage.setItem(vsoGuidanceKey, '1') } catch {}
-  }
-
   const searchParams = useSearchParams()
   /**
    * `?evidence=1` outlived the sheet it used to open.
@@ -414,7 +403,9 @@ export default function ProjectPage() {
           </DropdownMenu>
         )}
       </div>
-      {!isDemo && hasStrategy && (
+      {/* Decision Stack only: the link publishes the strategy, so it has nothing to act on from
+          the Knowledgebase. */}
+      {!isDemo && hasStrategy && activeTab === 'decision-stack' && (
         <Button
           variant="outline"
           size="sm"
@@ -922,9 +913,10 @@ export default function ProjectPage() {
                     <img src={DEMO_META[projectId].logo} alt={DEMO_META[projectId].name} className="h-20" />
                   </div>
                 )}
-                {/* Version stamp + Decision Stack branding */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
+                {/* Branding leads, version stamp trails — the mark says what this is, the stamp
+                    says which one of it you are looking at. */}
+                <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 order-2">
                   {isDemo ? (
                     (() => {
                       const episodeUrls: Record<string, string> = {
@@ -948,21 +940,23 @@ export default function ProjectPage() {
                     })()
                   ) : (
                     <>
-                      <span>
+                      {/* Badged like the input counts in the knowledgebase panel — one visual
+                          language for "a number that identifies something". */}
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                         v{(projectData as any)?.latestSnapshotVersion || projectData?.strategyOutputs?.[0]?.version || 1}
                       </span>
                       <button
                         onClick={() => setVersionHistoryOpen(true)}
-                        className="font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        className="underline underline-offset-4 transition-colors hover:text-foreground"
                       >
-                        view past revisions &rarr;
+                        view past revisions
                       </button>
                     </>
                   )}
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button>
+                    <button className="order-1">
                       <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-7" />
                     </button>
                   </PopoverTrigger>
@@ -973,23 +967,6 @@ export default function ProjectPage() {
                   </PopoverContent>
                 </Popover>
                 </div>
-                {!isDemo && !vsoGuidanceDismissed && (
-                  <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold mb-1">Your Vision, Strategy, and Objectives are ready.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Review, edit, and add Opportunities and Principles as you go, or have Luna generate those too. Head to Knowledgebase to add more context before generating new strategy.
-                      </p>
-                    </div>
-                    <button
-                      onClick={dismissVsoGuidance}
-                      aria-label="Dismiss"
-                      className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
                 <StrategyDisplay
                   strategy={strategyData.strategy}
                   conversationId={strategyData.conversationId}
