@@ -265,6 +265,13 @@ export function OpportunitySection({
         a template, which is the thing to avoid: a worked example here reads as content.
 
         The second line points at the control rather than repeating it; Add sits beside the heading.
+
+        ⚠ "ROUGHLY HOW" IS LOAD-BEARING, not a hedge. `src/lib/opportunity-coaching.ts` treats
+        delivery language as project-speak and nudges back toward outcome and rationale ("Better to
+        have clear WHY with vague HOW than the reverse", :49). An earlier draft invited "how you'll
+        get there", which would have had the coach flag a user for following this guidance.
+        "Roughly" is the word that admits direction without inviting a delivery plan — keep it, or
+        change the coaching to match.
       */}
       {showPlaceholder && (
         <div className="mb-4 rounded-lg border border-dashed border-border px-4 py-6">
@@ -272,8 +279,8 @@ export function OpportunitySection({
             Where could you play that you aren&rsquo;t yet?
           </p>
           <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">
-            Opportunities are bets worth taking — the outcome you want, why now, and how you&rsquo;ll
-            get there. Add one, or generate them from your strategy.
+            Opportunities are bets worth taking — the outcome you want, why now, and roughly how.
+            Add one, or generate them from your strategy.
           </p>
         </div>
       )}
