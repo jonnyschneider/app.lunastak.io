@@ -198,10 +198,32 @@ export function KnowledgeSummaryPanel({
     setTruthCounts({ total, archived })
   }, [])
 
+  /**
+   * ON MOBILE THE GRID IS ALSO THE NAVIGATION — which is why this needs no mobile-only selector.
+   *
+   * Stacked, the ground truths sit under the whole summary, so the thing you came to prune is a
+   * long scroll away. The obvious fix is a Summary/Ground-truths toggle, and it is the wrong one:
+   * the page already has a tab strip at the top, and a second one directly under it makes the
+   * user work out which one they are in.
+   *
+   * A ball is already the filter. Tapping one on a small screen means "show me this dimension",
+   * so it takes you there too — one gesture, no new chrome, and identical semantics to desktop
+   * where the list is simply already in view. Clearing the filter does not scroll; going back to
+   * everything is not a request to go anywhere.
+   */
+  const truthsRef = useRef<HTMLDivElement | null>(null)
+
   const handleDimensionClick = useCallback((dimension: string) => {
     logAndFlush('cta_open_evidence', 'dimension-chip', { dimension })
     if (inPlace) {
-      setSelectedDimension(d => (d === dimension ? null : dimension))
+      setSelectedDimension(d => {
+        const next = d === dimension ? null : dimension
+        if (next && typeof window !== 'undefined' && !window.matchMedia('(min-width: 768px)').matches) {
+          // After the filter has painted, or we scroll to where the list used to end.
+          requestAnimationFrame(() => truthsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+        }
+        return next
+      })
       return
     }
     onDimensionClick(dimension)
@@ -407,7 +429,7 @@ export function KnowledgeSummaryPanel({
             loses the user's place.
           */}
           {inPlace && fragmentCount > 0 && (
-            <div>
+            <div ref={truthsRef} className="scroll-mt-24">
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {selectedDimension
