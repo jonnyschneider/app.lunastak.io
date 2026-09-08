@@ -272,8 +272,8 @@ export function OpportunitySection({
             Where could you play that you aren&rsquo;t yet?
           </p>
           <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">
-            Opportunities are bets worth taking — the outcome you want and why now, not the plan for
-            getting there. Add one, or generate them from your strategy.
+            Opportunities are bets worth taking — the outcome you want, why now, and how you&rsquo;ll
+            get there. Add one, or generate them from your strategy.
           </p>
         </div>
       )}
