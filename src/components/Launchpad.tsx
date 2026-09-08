@@ -157,17 +157,15 @@ export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
         ⚠ THE JOB FIRST, THEN THE METHOD.
         Both cards used to lead with how they work, so a new user had to infer which one was for
         them from the mechanism. The heading still names the method; the body now names what the
-        user is trying to get done — and the last line states the TRADE, which is the thing that
-        was missing. Both paths read as "fast" otherwise, so there was nothing to choose between.
+        user is trying to get done.
       */}
       <p className="text-[14px] text-foreground/70 leading-relaxed">
-        Start from nothing. A conversation gets you a first draft you can react to.
+        Start from nothing. One conversation gets you a strategy draft you can build on.
       </p>
-      <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={onStartChat}>
+      <Button size="sm" variant="outline" className="gap-1.5" onClick={onStartChat}>
         <MessageSquare className="h-3.5 w-3.5" />
         Start
       </Button>
-      <p className="text-xs text-muted-foreground">~10 minutes, nothing to prepare</p>
     </div>
   )
 }
@@ -180,12 +178,12 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
         <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
       </h3>
       <p className="text-[14px] text-foreground/70 leading-relaxed">
-        Already thinking in Claude, ChatGPT or Gemini? Bring that work in and start from depth
-        rather than a blank page.
+        Already thinking in Claude, ChatGPT or Gemini? Plug in and start from depth instead of a
+        blank page.
       </p>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="ghost" className="gap-1.5 text-primary">
+          <Button size="sm" variant="outline" className="gap-1.5">
             <Upload className="h-3.5 w-3.5" />
             Import
             <ChevronDown className="h-3 w-3" />
@@ -202,7 +200,6 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <p className="text-xs text-muted-foreground">~2 minutes, once you have a bundle</p>
     </div>
   )
 }
