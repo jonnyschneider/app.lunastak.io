@@ -7,9 +7,15 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ## 2026-09-04 — `Evidence` table + two `Fragment` columns (ground truth check, slice 2)
 
-**Additive only. Nothing dropped.** Applied to **dev only**; preview and prod deliberately not
-migrated yet, so `db:check-drift` reports drift on both — that is the intended signal and it must
-NOT be approved away until the migration is applied at deploy time.
+**Additive only. Nothing dropped.** Applied to **dev and preview** (preview 2026-09-08); prod
+deliberately not migrated yet and lands at deploy.
+
+Prod's drift is recorded as a **scoped** approval — `prisma/drift-baseline/prod.sql` plus a
+reason in `prod.why.md`, which `db:check-drift` prints on every push. That keeps the signal
+loud instead of silencing it. Do **not** run blanket `npm run db:approve-drift` while this is
+outstanding: it would rewrite every env's baseline and bless any accidental drift alongside
+this one. Clear it after the prod migration with
+`npm run db:approve-drift -- --env prod --reason "in sync"`.
 
 - **`Evidence`** (new) — `fragmentId` FK (cascade), `text`, `sourceRole`, `verification`, `ordinal`.
   The verbatim span a fragment rests on. Source material is deliberately not persisted, so
