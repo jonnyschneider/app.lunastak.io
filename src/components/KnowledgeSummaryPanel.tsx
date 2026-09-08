@@ -217,7 +217,21 @@ export function KnowledgeSummaryPanel({
     : null
 
   return (
-    <div className={cn("border border-border rounded-lg bg-background overflow-hidden", className)}>
+    <div className={cn("border border-border rounded-lg bg-background", className)}>
+      {/*
+        ⚠ THE BALLS ARE THE INSTRUMENT, so they stay put.
+        Expanded, this panel does three jobs at once: it explains, it lets the summary be refined,
+        and it lets the ground truths be pruned. The coverage grid is what joins them — it is the
+        filter, and a filter that scrolls away is a filter you have to go back for. So the header
+        and the grid are ONE sticky block, and the work scrolls under it.
+
+        `md:` only: eleven balls at two columns is six rows, too much of a small screen to spend on
+        chrome. On mobile they scroll away with everything else.
+
+        The card cannot carry `overflow-hidden` for this — it clips a sticky child — so the top
+        rounding moves onto this block.
+      */}
+      <div className={cn(isExpanded && 'md:sticky md:top-14 z-30 rounded-t-lg border-b border-border bg-background')}>
       {/* Header Bar */}
       <button
         onClick={handleToggle}
@@ -287,9 +301,51 @@ export function KnowledgeSummaryPanel({
         )}
       </button>
 
+        {/* The filter. Lives in the sticky block, not in the scrolling body. */}
+        {isExpanded && fragmentCount > 0 && (
+          <div className="px-4 pb-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
+              {TIER_1_DIMENSIONS.map((dimension) => {
+                // Computed support, not the synthesis self-report: the old input reached the ball
+                // as a boolean before synthesis ran and flickered per run after it (design §16.3).
+                const support = dimensionalCoverage[dimension]?.support ?? 'empty'
+
+                const selected = selectedDimension === dimension
+                return (
+                  <button
+                    key={dimension}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDimensionClick(dimension)
+                    }}
+                    aria-pressed={inPlace ? selected : undefined}
+                    className={cn(
+                      'flex items-center gap-2 py-1 text-xs rounded px-1 -mx-1 transition-colors',
+                      selected ? 'bg-muted' : 'hover:bg-muted/50')}
+                  >
+                    <HarveyBall support={support} />
+                    <span className={cn('truncate', selected ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                      {DIMENSION_LABELS[dimension]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            </div>
+        )}
+      </div>
+
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-border px-4 py-4 space-y-3">
+        <div className="px-4 py-4">
+          {/*
+            TWO COLUMNS, because one column was wrong for both halves. The summary is small text
+            run to the full width of a card that DOUBLES in width on expand — an unreadable
+            measure — and the ground truths sat below the fold of it. Side by side, the prose gets
+            a column it can be read in and the list sits next to the grid that filters it.
+          */}
+          <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-3">
           {/* Heading row: Refine popover + countdown */}
           {knowledgeSummary && fragmentCount > 0 && (
             <div className="flex items-baseline gap-1.5 text-sm">
@@ -327,50 +383,22 @@ export function KnowledgeSummaryPanel({
 
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            <p className="max-w-[68ch] text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
               <InlineMarkdown text={knowledgeSummary} />
             </p>
           ) : fragmentCount > 0 ? (
             <p className="text-sm text-muted-foreground">
-              Luna has extracted insights from your inputs. Add more documents or start a conversation to go deeper.
+              Insights have been extracted from your inputs. Add more documents or start a conversation to go deeper.
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Have conversations with Luna to build context about your strategy.
+              Start a conversation to build context about your strategy.
             </p>
           )}
 
-          {/* Dimensions Grid */}
-          {fragmentCount > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
-              {TIER_1_DIMENSIONS.map((dimension) => {
-                // Computed support, not the synthesis self-report: the old input reached the ball
-                // as a boolean before synthesis ran and flickered per run after it (design §16.3).
-                const support = dimensionalCoverage[dimension]?.support ?? 'empty'
+          </div>
 
-                const selected = selectedDimension === dimension
-                return (
-                  <button
-                    key={dimension}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDimensionClick(dimension)
-                    }}
-                    aria-pressed={inPlace ? selected : undefined}
-                    className={cn(
-                      'flex items-center gap-2 py-1 text-xs rounded px-1 -mx-1 transition-colors',
-                      selected ? 'bg-muted' : 'hover:bg-muted/50')}
-                  >
-                    <HarveyBall support={support} />
-                    <span className={cn('truncate', selected ? 'text-foreground font-medium' : 'text-muted-foreground')}>
-                      {DIMENSION_LABELS[dimension]}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-
+          <div>
           {/*
             ⚠ THE GROUND TRUTHS LIVE HERE NOW, not behind a sheet.
             Two things on preview pointed the same way (design §4): the dimension link read well —
@@ -383,7 +411,7 @@ export function KnowledgeSummaryPanel({
             loses the user's place.
           */}
           {inPlace && fragmentCount > 0 && (
-            <div className="border-t border-border pt-3">
+            <div>
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {selectedDimension
@@ -407,7 +435,8 @@ export function KnowledgeSummaryPanel({
               />
             </div>
           )}
-
+          </div>
+          </div>
         </div>
       )}
     </div>
