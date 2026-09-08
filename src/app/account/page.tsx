@@ -106,11 +106,13 @@ export default function AccountPage() {
                 )}
               </Badge>
             </CardTitle>
-            <CardDescription>
-              {account.isPro
-                ? "You're on the Pro plan - thank you for being an early supporter!"
-                : 'Upgrade to Pro to unlock premium features.'}
-            </CardDescription>
+            {/* Nothing to say to a free account: the badge states the plan, and there is no
+                upgrade path to sell. Pro users keep their thank-you. */}
+            {account.isPro && (
+              <CardDescription>
+                You&rsquo;re on the Pro plan &mdash; thank you for being an early supporter!
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3">
