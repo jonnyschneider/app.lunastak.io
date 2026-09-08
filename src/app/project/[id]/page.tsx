@@ -1049,7 +1049,7 @@ export default function ProjectPage() {
               </div>
             ) : (
             <>
-            {/* Summary panels: Knowledge Summary + Evidence — full-viewport-width band */}
+            {/* The summary and the ground truths it is drawn from — full-viewport-width band */}
             <div className="bg-primary py-8">
             <div className="mx-auto max-w-7xl px-4 md:px-6">
             {/* One child since the evidence card went — a two-column grid would strand it in half the width. */}

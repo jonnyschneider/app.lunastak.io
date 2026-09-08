@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
 
@@ -199,35 +199,50 @@ export function KnowledgeSummaryPanel({
   }, [])
 
   /**
-   * ON MOBILE THE GRID IS ALSO THE NAVIGATION — which is why this needs no mobile-only selector.
+   * ⚠ NO SCROLL-TO ON MOBILE, deliberately — it was tried and removed 2026-09-08.
    *
-   * Stacked, the ground truths sit under the whole summary, so the thing you came to prune is a
-   * long scroll away. The obvious fix is a Summary/Ground-truths toggle, and it is the wrong one:
-   * the page already has a tab strip at the top, and a second one directly under it makes the
-   * user work out which one they are in.
+   * Tapping a ball used to scroll the list into view. It reads as jumpy, and worse, it leaves the
+   * filter behind: the grid is not sticky on a small screen (eleven balls at two columns is six
+   * rows, too much of the viewport to spend on chrome), so arriving at the list means the next
+   * filter tap is a scroll back up.
    *
-   * A ball is already the filter. Tapping one on a small screen means "show me this dimension",
-   * so it takes you there too — one gesture, no new chrome, and identical semantics to desktop
-   * where the list is simply already in view. Clearing the filter does not scroll; going back to
-   * everything is not a request to go anywhere.
+   * The fix is to shorten the distance rather than automate it — see the summary disclosure below.
+   * With the summary folded away the grid and the list are adjacent, and nothing has to move.
    */
-  const truthsRef = useRef<HTMLDivElement | null>(null)
-
   const handleDimensionClick = useCallback((dimension: string) => {
     logAndFlush('cta_open_evidence', 'dimension-chip', { dimension })
     if (inPlace) {
-      setSelectedDimension(d => {
-        const next = d === dimension ? null : dimension
-        if (next && typeof window !== 'undefined' && !window.matchMedia('(min-width: 768px)').matches) {
-          // After the filter has painted, or we scroll to where the list used to end.
-          requestAnimationFrame(() => truthsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-        }
-        return next
-      })
+      setSelectedDimension(d => (d === dimension ? null : dimension))
       return
     }
     onDimensionClick(dimension)
   }, [inPlace, onDimensionClick])
+
+  /**
+   * THE SUMMARY FOLDS AWAY, ON SMALL SCREENS ONLY.
+   *
+   * Stacked, the summary sits between the filter and the work — it is long, it is read once, and
+   * after that it is distance. Folding it is what keeps the grid within reach of the list without
+   * a second tab strip under the page's own (Jonny, 2026-09-08: a global nav toggle plus an
+   * in-page toggle is the thing to avoid).
+   *
+   * Open by default, because the first visit should read it, and remembered per project, because
+   * the second visit should not have to fold it again. Desktop never sees this — the two columns
+   * put the summary beside the work rather than in front of it.
+   */
+  const summaryKey = projectId ? `project-${projectId}-kb-summary-open` : null
+  const [summaryOpen, setSummaryOpen] = useState(true)
+  useEffect(() => {
+    if (!summaryKey) return
+    setSummaryOpen(localStorage.getItem(summaryKey) !== '0')
+  }, [summaryKey])
+  const toggleSummary = useCallback(() => {
+    setSummaryOpen(o => {
+      const next = !o
+      if (summaryKey) localStorage.setItem(summaryKey, next ? '1' : '0')
+      return next
+    })
+  }, [summaryKey])
 
   // Header timestamp
   const updatedLabel = knowledgeUpdatedAt
@@ -259,7 +274,7 @@ export function KnowledgeSummaryPanel({
         <div className="flex items-center justify-between gap-3 w-full">
           <div className="flex items-center gap-3 min-w-0">
             <span className={cn("font-medium text-sm", knowledgeBusy && "animate-pulse text-muted-foreground")}>
-              {knowledgeBusy ? knowledgeBusyMessage : 'Knowledge Summary'}
+              {knowledgeBusy ? knowledgeBusyMessage : 'Summary and ground truths'}
             </span>
             {!knowledgeBusy && updatedLabel && (
               <span className="text-xs text-muted-foreground truncate">
@@ -364,6 +379,21 @@ export function KnowledgeSummaryPanel({
           */}
           <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-3">
+            {/* The fold. Mobile only — desktop shows the column and needs no control. */}
+            <button
+              onClick={toggleSummary}
+              aria-expanded={summaryOpen}
+              className="flex w-full items-center justify-between gap-2 border-b border-border pb-2 text-left md:hidden"
+            >
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Summary
+              </span>
+              {summaryOpen
+                ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+            </button>
+
+            <div className={cn('space-y-3', !summaryOpen && 'hidden md:block')}>
           {/* Heading row: Refine popover + countdown */}
           {knowledgeSummary && fragmentCount > 0 && (
             <div className="flex items-baseline gap-1.5 text-sm">
@@ -415,6 +445,7 @@ export function KnowledgeSummaryPanel({
           )}
 
           </div>
+          </div>
 
           <div>
           {/*
@@ -429,7 +460,7 @@ export function KnowledgeSummaryPanel({
             loses the user's place.
           */}
           {inPlace && fragmentCount > 0 && (
-            <div ref={truthsRef} className="scroll-mt-24">
+            <div>
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {selectedDimension
