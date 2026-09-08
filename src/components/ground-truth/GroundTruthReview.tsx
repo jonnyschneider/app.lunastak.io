@@ -13,8 +13,9 @@
  * `docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4–§7.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { X, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2 } from 'lucide-react'
+import { X, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from '@/lib/ground-truth/derive'
 import { EvidenceQuote } from './EvidenceQuote'
@@ -77,6 +78,19 @@ export function GroundTruthReview({
    * That was survivable while the Evidence sheet existed — it was the one surface reading
    * `?status=archived`. Once the sheet is this component, it has to carry recovery itself.
    */
+  /**
+   * How many rows predate the evidence layer.
+   *
+   * ⚠ NOT BACKFILLED, DELIBERATELY (Jonny, 2026-09-08). Only conversation-sourced fragments could
+   * be: `Document` retains no text and a bundle never had a source. And doing it would mean asking
+   * a model to find the user's words behind a claim it did not produce — `verifySpan` catches a
+   * fabricated span, but not a real quote that fails to support the claim, so the failure mode is
+   * false attribution at scale, stamped `verified`. That is the thing the evidence layer exists to
+   * prevent, so retrofitting it that way would be self-defeating.
+   *
+   * These rows say "No source text behind this one" individually. The note below says why, once.
+   */
+  const [noEvidence, setNoEvidence] = useState(0)
   const [archivedCount, setArchivedCount] = useState(0)
   const [archivedOpenSelf, setArchivedOpenSelf] = useState(false)
   const controlled = archivedOpenProp !== undefined
@@ -100,6 +114,7 @@ export function GroundTruthReview({
         const model = buildGateModel(res)
         const all = [...model.weak, ...model.confident]
         setItems(all)
+        setNoEvidence(model.counts['no-evidence'])
         setArchivedCount(res.archivedCount ?? 0)
         // Reviewing is being SHOWN something, not clicking it. Everything rendered is stamped.
         if (all.length > 0) {
@@ -287,6 +302,18 @@ export function GroundTruthReview({
   return (
     <div className="space-y-5">
       {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {/* Explains a condition the user can already see, so it appears only when they can see it. */}
+      {noEvidence > 0 && (
+        <Alert className="py-2.5">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
+            {noEvidence === items.length ? 'These were' : `${noEvidence} of these were`} captured
+            before Lunastak started recording the source text behind each ground truth, so there is
+            nothing to show you for them. Anything added from here on will have it.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/*
         The recovery path, AT THE TOP. It was a footer for one build, on the reasoning that a list
