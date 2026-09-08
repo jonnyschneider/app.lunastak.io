@@ -470,13 +470,34 @@ plan and one existing trigger:
 - Discards are `status: 'archived'` with `archivedReason: 'ground_truth_review'`, persisted one
   fragment at a time, immediately — never staged awaiting a submit.
 
-**Latency, measured — the wait is split, not added to.** First render on the extraction paths drops
-from ~55s (fragments + generation) to ~20-25s (fragments only), and on bundle import to **zero**:
-`transformContextBundleDirect` makes no LLM call, so the review is there as soon as the import is.
-Generation's ~37s then happens **after** the user's decision rather than before it. Sources: prod
-`DecisionStackSnapshot` `post_generation` median 37.1s (n=94, `scripts/one-offs/gate-latency.ts`);
-model-bump `metrics.csv` `document_extraction` 25.1s on Sonnet 5. Total time to a strategy is
-unchanged.
+**Latency — the wait is split, not added to.** The conclusion holds and the numbers have been
+corrected against a real run.
+
+*Estimated when this entry was written* (from prod `DecisionStackSnapshot` `post_generation` median
+37.1s, n=94, `scripts/one-offs/gate-latency.ts`, and model-bump `metrics.csv`
+`document_extraction` 25.1s on Sonnet 5): ~55s to a strategy becoming ~20-25s to the review.
+
+*Measured on preview 2026-09-08*, on fresh projects, which is the first time any of this was timed
+where `waitUntil` actually runs — the dev server makes it a no-op, so every earlier observation was
+of an inline await:
+
+| | measured |
+|---|---|
+| document row → ground truths on screen | **29.5s** (7 fragments, 267-word document) |
+| Build my strategy → strategy exists | **18.9s** |
+| bundle import → ground truths on screen | **≤3.6s** (upper bound, includes harness latency) |
+
+So the review costs **~29.5s, not ~20-25s** — the estimate was optimistic, on a *short* document.
+Total to a strategy is ~48s against the ~55s single wait, with the user's decision in the middle,
+so the claim this entry rests on survives its own measurement.
+
+Two cautions on the numbers. Generation came in at 18.9s against a prod median of 37.1s: one
+observation, a small project, a warm path — **do not restate it as a new baseline**. And the
+conversation path, which is what the ~55s figure described, is still unmeasured; the figures above
+are the document and bundle paths.
+
+`transformContextBundleDirect` makes no LLM call, which is why the bundle path is effectively
+instant. Record: `docs/uat/2026-09-08-preview-ground-truth-review.md` (local).
 
 **Checked and left alone — synthesis is parallel, not wasted.** `generate_from_knowledge` sets
 `runSynthesis` and `runKnowledgeSummary`, and `runInitialGeneration` does **not** read
