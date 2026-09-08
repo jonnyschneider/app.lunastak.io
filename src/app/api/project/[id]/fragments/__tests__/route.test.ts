@@ -15,13 +15,14 @@
  * lightweight contract-style tests with the prisma + cookie + auth collaborators mocked.
  */
 
-import { GET } from '../route'
+import { GET, PATCH } from '../route'
 import type { NextRequest } from 'next/server'
 
 const mockFindFirstProject = vi.fn()
 const mockFindUniqueUser = vi.fn()
 const mockFragmentFindMany = vi.fn()
 const mockFragmentCount = vi.fn()
+const mockFragmentUpdateMany = vi.fn()
 const mockCookieGet = vi.fn()
 const mockGetServerSession = vi.fn()
 const mockIsGuestUser = vi.fn()
@@ -43,6 +44,7 @@ vi.mock('@/lib/db', () => ({
     fragment: {
       findMany: (...args: unknown[]) => mockFragmentFindMany(...args),
       count: (...args: unknown[]) => mockFragmentCount(...args),
+      updateMany: (...args: unknown[]) => mockFragmentUpdateMany(...args),
     },
   },
 }))
@@ -90,6 +92,50 @@ beforeEach(() => {
   mockFindFirstProject.mockResolvedValue({ id: 'p1' })
   mockFragmentCount.mockResolvedValue(0)
   mockFragmentFindMany.mockResolvedValue([])
+  mockFragmentUpdateMany.mockResolvedValue({ count: 0 })
+})
+
+/**
+ * `reviewedAt` shipped with the Evidence layer and nothing wrote it. It is what separates
+ * *reviewed and kept* from *never seen* (design §5) — the one engagement state a fragment cannot
+ * report for itself. It lives on this route rather than a second endpoint for the same reason a
+ * drop IS an archive: one control for what happens to a fragment.
+ */
+describe('PATCH /api/project/[id]/fragments — marking reviewed', () => {
+  const patch = (body: unknown) =>
+    PATCH(
+      new Request('http://localhost/api/project/p1/fragments', {
+        method: 'PATCH', body: JSON.stringify(body),
+      }) as unknown as NextRequest,
+      makeParams('p1'),
+    )
+
+  it('stamps reviewedAt without touching status', async () => {
+    mockFragmentUpdateMany.mockResolvedValue({ count: 2 })
+    const res = await patch({ ids: ['a', 'b'], reviewed: true })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true, reviewed: 2 })
+    const [call] = mockFragmentUpdateMany.mock.calls[0]
+    expect(call.data).toEqual({ reviewedAt: expect.any(Date) })
+    expect(call.data).not.toHaveProperty('status')
+    expect(call.where).toEqual({ id: { in: ['a', 'b'] }, projectId: 'p1' })
+  })
+
+  it('does not require a status, which archiving does', async () => {
+    const res = await patch({ ids: ['a'], reviewed: true })
+    expect(res.status).toBe(200)
+  })
+
+  it('still rejects an archive with an invalid status', async () => {
+    const res = await patch({ ids: ['a'], status: 'nonsense' })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects a review with no ids', async () => {
+    const res = await patch({ reviewed: true })
+    expect(res.status).toBe(400)
+  })
 })
 
 describe('GET /api/project/[id]/fragments — evidence', () => {

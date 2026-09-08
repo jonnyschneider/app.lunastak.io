@@ -161,7 +161,7 @@ export async function PATCH(
 
   const { id: projectId } = await params
   const body = await request.json()
-  const { id, ids, status, archivedReason } = body
+  const { id, ids, status, archivedReason, reviewed } = body
 
   // Verify project access
   const project = await prisma.project.findFirst({
@@ -171,6 +171,30 @@ export async function PATCH(
 
   if (!project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  }
+
+  /**
+   * `{ ids, reviewed: true }` stamps `reviewedAt` without touching status.
+   *
+   * `Fragment.reviewedAt` shipped with the Evidence layer and nothing wrote it. It is what
+   * separates *reviewed and kept* from *never seen* (design §5) — the middle of the three
+   * engagement states, and the one a fragment cannot report for itself.
+   *
+   * It lives on this route rather than a second endpoint for the same reason a drop IS an archive:
+   * one control for what happens to a fragment. And it is written for everything the review PUT ON
+   * SCREEN, not everything clicked — a user who skims and is satisfied has reviewed. That was
+   * decided against real data, after a click-counted version scored a satisfied skimmer at zero.
+   */
+  if (reviewed) {
+    const reviewIds: string[] = ids || (id ? [id] : [])
+    if (reviewIds.length === 0) {
+      return NextResponse.json({ error: 'No fragment IDs provided' }, { status: 400 })
+    }
+    const { count } = await prisma.fragment.updateMany({
+      where: { id: { in: reviewIds }, projectId },
+      data: { reviewedAt: new Date() },
+    })
+    return NextResponse.json({ success: true, reviewed: count })
   }
 
   if (!['archived', 'active'].includes(status)) {
