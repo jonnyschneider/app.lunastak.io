@@ -153,13 +153,21 @@ export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
         <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Talk to</span>{' '}
         <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">Luna</span>
       </h3>
+      {/*
+        ⚠ THE JOB FIRST, THEN THE METHOD.
+        Both cards used to lead with how they work, so a new user had to infer which one was for
+        them from the mechanism. The heading still names the method; the body now names what the
+        user is trying to get done — and the last line states the TRADE, which is the thing that
+        was missing. Both paths read as "fast" otherwise, so there was nothing to choose between.
+      */}
       <p className="text-[14px] text-foreground/70 leading-relaxed">
-        Tell Luna about your business. In ~10 minutes, get your first draft strategy.
+        Start from nothing. A conversation gets you a first draft you can react to.
       </p>
       <Button size="sm" variant="ghost" className="gap-1.5 text-primary" onClick={onStartChat}>
         <MessageSquare className="h-3.5 w-3.5" />
         Start
       </Button>
+      <p className="text-xs text-muted-foreground">~10 minutes, nothing to prepare</p>
     </div>
   )
 }
@@ -172,7 +180,8 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
         <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
       </h3>
       <p className="text-[14px] text-foreground/70 leading-relaxed">
-        Prepared context in Claude, ChatGPT, or Gemini? Import it and generate a Decision Stack instantly.
+        Already thinking in Claude, ChatGPT or Gemini? Bring that work in and start from depth
+        rather than a blank page.
       </p>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -193,6 +202,7 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <p className="text-xs text-muted-foreground">~2 minutes, once you have a bundle</p>
     </div>
   )
 }
@@ -283,13 +293,16 @@ export function Launchpad({
         </Popover>
       </div>
 
-      {/* Acquired × Lunastak */}
+      {/*
+        ⚠ ORDER: heading, subheading, explanation, cards, THEN the mark.
+        The Acquired × Lunastak banner used to open this block, which made a co-brand the first
+        thing a new user met — before anything had told them what they were looking at. It is
+        attribution, so it belongs at the end, smaller, where a credit goes.
+      */}
       <div className="text-center">
-        {/* Banner */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="w-full max-w-[260px] mx-auto rounded-lg mb-5" />
+        <h2 className="text-xl font-semibold tracking-tight">See it on four real companies</h2>
 
-        <div className="space-y-1 mb-8">
+        <div className="mb-3 mt-2 space-y-1">
           <p className="text-base text-muted-foreground">
             Because every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
           </p>
@@ -298,7 +311,13 @@ export function Launchpad({
           </p>
         </div>
 
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mb-5">
+        {/* The explanation, under the subheading it explains. Rewritten off first-person: the
+            sentence used to say what Luna does, where what matters is what these ARE. */}
+        <p className="mx-auto mb-8 max-w-sm text-xs text-muted-foreground">
+          Each one is a Decision Stack built from an <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Acquired podcast</a> transcript, by Ben Gilbert and David Rosenthal.
+        </p>
+
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mb-6">
           {DEMO_PROJECTS.map((demo) => (
             <div
               key={demo.id}
@@ -319,9 +338,8 @@ export function Launchpad({
           ))}
         </div>
 
-        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-          See how Luna extracts insight and creates a Decision Stack from <a href="https://www.acquired.fm" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Acquired podcast</a> transcripts by Ben Gilbert and David Rosenthal
-        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/acquired-promo.svg" alt="Acquired × Lunastak" className="mx-auto w-full max-w-[170px] rounded-lg opacity-90" />
       </div>
     </div>
   )
