@@ -198,7 +198,9 @@ export function ExploreNextSection({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
+        {/* text-base, like Chats / Documents / Integrations / Ground Truth. It was text-lg — the
+            only card heading that never got aligned, which made it read as the important one. */}
+        <CardTitle className="flex items-center gap-2 text-base">
           <Compass className="h-4 w-4" />
           Explore Next
         </CardTitle>
