@@ -469,7 +469,9 @@ export function KnowledgeSummaryPanel({
               <button
                 onClick={toggleSummary}
                 aria-expanded={summaryOpen}
-                className="flex items-center gap-1.5 md:pointer-events-none md:cursor-default"
+                // `uppercase` is re-declared because Tailwind's preflight sets `text-transform: none`
+                // on `button`, so the bar's own uppercase does not reach a label inside one.
+                className="flex items-center gap-1.5 uppercase md:pointer-events-none md:cursor-default"
               >
                 <span>Summary</span>
                 {knowledgeSummary && fragmentCount > 0 && (
@@ -483,7 +485,7 @@ export function KnowledgeSummaryPanel({
               {knowledgeSummary && fragmentCount > 0 && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className={SECTION_HEADING_ACTION} aria-label="Refine this summary">
+                    <button className={cn(SECTION_HEADING_ACTION, 'normal-case')} aria-label="Refine this summary">
                       <Pencil className="h-3 w-3" />
                       Refine
                     </button>
