@@ -1158,7 +1158,7 @@ export default function ProjectPage() {
                       Chats
                     </CardTitle>
                     {!isDemo && (
-                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
                         setChatInitialQuestion(undefined)
                         setChatDeepDiveId(undefined)
                         setChatGapExploration(undefined)
@@ -1166,7 +1166,7 @@ export default function ProjectPage() {
                         setChatViewOnly(false)
                         setChatSheetOpen(true)
                       }}>
-                        <Plus className="h-3 w-3 mr-1" />
+                        <Plus className="h-3 w-3" />
                         New
                       </Button>
                     )}
@@ -1250,11 +1250,11 @@ export default function ProjectPage() {
                       Documents
                     </CardTitle>
                     {!isDemo && (
-                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
                         setUploadDeepDiveId(undefined)
                         setUploadDialogOpen(true)
                       }}>
-                        <Plus className="h-3 w-3 mr-1" />
+                        <Plus className="h-3 w-3" />
                         Upload
                       </Button>
                     )}
@@ -1323,8 +1323,8 @@ export default function ProjectPage() {
                         <Package className="h-4 w-4" />
                         Integrations
                       </CardTitle>
-                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => setImportDialogOpen(true)}>
-                        <Plus className="h-3 w-3 mr-1" />
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setImportDialogOpen(true)}>
+                        <Plus className="h-3 w-3" />
                         Import context
                       </Button>
                     </div>
