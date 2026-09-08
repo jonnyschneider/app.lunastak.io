@@ -61,7 +61,6 @@ import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { GenerationConfirmDialog, type GenerationAction } from '@/components/GenerationConfirmDialog'
 import { KnowledgeSummaryPanel } from '@/components/KnowledgeSummaryPanel'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
-import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
@@ -203,8 +202,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { hasActiveTasks, isRunning, getProgressLabel, startTask } = useGenerationStatusContext()
-  const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
+  const { hasActiveTasks, isRunning, getProgressLabel, startTask, runningCount } = useGenerationStatusContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -1080,7 +1078,7 @@ export default function ProjectPage() {
               knowledgeBusyMessage={
                 isRunning(projectId, 'extraction') ? 'processing insights...'
                 : recentlyGenerated && !hasActiveTasks(projectId) ? 'updating...'
-                : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
+                : isRunning(projectId, 'document') ? `reading ${runningCount(projectId, 'document') > 1 ? `${runningCount(projectId, 'document')} documents` : 'document'}...`
                 : null
               }
               strategyBusyMessage={

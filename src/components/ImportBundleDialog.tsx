@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Upload, Loader2, Check, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
+import { ingestComplete } from '@/lib/ingest-messaging'
 
 interface ImportBundleDialogProps {
   projectId: string
@@ -100,10 +101,13 @@ export function ImportBundleDialog({
       }
 
       const result = await res.json()
-      toast.success(`Imported ${result.fragmentsCreated} ground truths`, {
+      // Bundle import is synchronous — nothing to poll — but it is the same user-facing event as
+      // the other two, so it reads from the same place.
+      const msg = ingestComplete({ source: 'bundle', count: result.fragmentsCreated })
+      toast.success(msg.title, {
         description: result.questionsAdded > 0
-          ? `Plus ${result.questionsAdded} open questions for Explore Next`
-          : undefined,
+          ? `Plus ${result.questionsAdded} open questions for Explore Next.`
+          : msg.description,
       })
       setImported(result)
       setJsonText('')
@@ -141,8 +145,8 @@ export function ImportBundleDialog({
               <span className="font-semibold text-foreground">{imported.fragmentsCreated} ground truths</span> added to your knowledge base
               {imported.questionsAdded > 0 && <> — plus <span className="font-semibold text-foreground">{imported.questionsAdded} open questions</span> for Explore Next</>}.
             </p>
-            <p className="text-sm">
-              Check what was extracted from your bundle, then build your strategy.
+            <p className="text-sm text-muted-foreground">
+              {ingestComplete({ source: 'bundle' }).description}
             </p>
             <div className="flex justify-end">
               <Button onClick={() => handleClose(false)}>

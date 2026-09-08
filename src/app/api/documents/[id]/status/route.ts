@@ -27,6 +27,8 @@ export async function GET(
       fileName: true,
       errorMessage: true,
       processedAt: true,
+      // The completion message says how many ground truths arrived, so the poll has to carry it.
+      _count: { select: { fragments: true } },
     },
   })
 
@@ -39,6 +41,7 @@ export async function GET(
 
   return NextResponse.json({
     status: document.status,
+    fragmentCount: document._count.fragments,
     fileName: document.fileName,
     errorMessage: document.errorMessage,
     processedAt: document.processedAt?.toISOString(),

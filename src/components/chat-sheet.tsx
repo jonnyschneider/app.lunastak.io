@@ -1,5 +1,7 @@
 'use client'
 
+import { ingestComplete, ingestRunning, ingestFailed } from '@/lib/ingest-messaging'
+
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
@@ -69,16 +71,22 @@ type FlowStep = 'chat' | 'extracting' | 'summary' | 'strategy'
  * Since the split this call EXTRACTS and stops: the strategy is generated after the user has
  * seen what it would be built from, so the copy promises the review, not the stack.
  */
+/**
+ * ⚠ WORDING LIVES IN `src/lib/ingest-messaging.ts`, NOT HERE.
+ * A conversation is one of three ways context arrives, and all three used to say something
+ * different. Change the words there and every ingest path moves together.
+ */
 const EXTRACTION_TASK_COPY = {
-  running: 'Reading what you told me...',
-  complete: 'Ready for you to check',
-  failed: 'Something went wrong reading your conversation',
-  completeDescription: 'Check what was extracted, then build your strategy.',
+  running: ingestRunning('conversation'),
+  complete: ingestComplete({ source: 'conversation' }).title,
+  failed: ingestFailed('conversation').title,
+  completeDescription: `{{fragmentCount}} ground truths added. ${ingestComplete({ source: 'conversation' }).description}`,
+  failedDescription: ingestFailed('conversation').description,
   completeAction: undefined,
 } as const
 
 const EXTRACTION_TOAST = {
-  title: 'Reading what you told me',
+  title: ingestRunning('conversation'),
   description: 'A few seconds — then you can check it before anything is built.',
 } as const
 
