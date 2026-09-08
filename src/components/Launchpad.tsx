@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import { Steps } from '@/components/ui/steps'
@@ -18,11 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 
 /** The user has given context; they are checking it; then it becomes a strategy. */
 const GROUND_TRUTH_PHASES = ['Your context', 'Ground truths', 'Your strategy'] as const
@@ -236,62 +231,10 @@ export function Launchpad({
           needs no new route and no new state column. */}
       {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} projectId={projectId} />}
 
-      <div className="space-y-3">
-        {/* Data security hook — ABOVE the two paths, not under them. It is a reassurance a user
-          wants BEFORE choosing how to hand over their business, and trailing the cards it read as
-          a footnote to the demo block below rather than as an answer to the question the cards
-          had just raised. */}
-        <div className="flex justify-center">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground text-xs">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Curious about data security?
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 text-sm" align="center">
-            <div className="space-y-3">
-              <p className="font-semibold text-foreground">Your data, your control</p>
-              <ul className="space-y-2 text-foreground/80 text-[13px] leading-relaxed">
-                <li className="flex gap-2">
-                  <span aria-hidden>🔒</span>
-                  <span><strong>Encrypted, isolated database</strong> — your projects live in Neon Postgres, encrypted in transit and at rest.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span aria-hidden>🚫</span>
-                  <span><strong>Never used to train AI models</strong> — Anthropic doesn&apos;t train Claude on your conversations.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span aria-hidden>🗑️</span>
-                  <span><strong>Delete projects anytime</strong> — wipes everything in them, instantly.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span aria-hidden>📄</span>
-                  <span><strong>Uploaded documents aren&apos;t kept</strong> — we extract the text and discard the file.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span aria-hidden>🛠️</span>
-                  <span><strong>Our skills run on your machine</strong> — they never send data to us until you upload a prepared bundle.</span>
-                </li>
-              </ul>
-              <a
-                href="https://lunastak.io/docs/data-security"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary underline underline-offset-2 hover:text-primary/80"
-              >
-                Read the full data &amp; privacy docs
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          </PopoverContent>
-        </Popover>
-        </div>
-        {/* Two onboarding paths */}
-        <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+      {/* Two onboarding paths */}
+      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
         <TalkToLunaCard onStartChat={onStartChat} />
         <ImportBundleCard onImportBundle={onImportBundle} />
-        </div>
       </div>
 
 
