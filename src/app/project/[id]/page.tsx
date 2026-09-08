@@ -1329,19 +1329,36 @@ export default function ProjectPage() {
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-0 space-y-4">
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Prepare context in your favourite AI tool, then import it into Luna. Skills and connectors available for all major platforms.
-                    </p>
-                    <div className="flex items-center justify-center gap-8">
+                  {/*
+                    ⚠ NO EXPLAINER. This card read as an advert in the shape of chrome: a
+                    paragraph selling the capability, above three logos greyed out as though
+                    disabled, above a link. The card already has its action — Import context, in
+                    the header, where every other card on this tab keeps its action.
+
+                    So the logos do the explaining. At full colour they say "these work" without a
+                    sentence claiming it, and they carry the link out for anyone who wants the
+                    detail. Greyscale was saying the opposite of what the card meant.
+                  */}
+                  <CardContent className="space-y-4 pt-0">
+                    <a
+                      href="https://lunastak.io/docs/install"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-8 rounded-md py-2 transition-opacity hover:opacity-80"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-claude.svg" alt="Claude" className="h-10 grayscale opacity-60" />
+                      <img src="/logo-claude.svg" alt="Claude" className="h-10" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-gemini.svg" alt="Gemini" className="h-10 grayscale opacity-60" />
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-10" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-openai.svg" alt="OpenAI" className="h-10 grayscale opacity-60" />
-                    </div>
-                    <a href="https://lunastak.io/docs/install" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-10" />
+                    </a>
+                    <a
+                      href="https://lunastak.io/docs/install"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-muted-foreground hover:text-foreground"
+                    >
                       Installation guide &rarr;
                     </a>
                   </CardContent>
