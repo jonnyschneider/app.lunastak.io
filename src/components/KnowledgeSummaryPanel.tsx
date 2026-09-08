@@ -15,8 +15,7 @@ import type { SupportLevel } from '@/lib/support/dimension-support'
 /**
  * The two section headings inside the expanded panel. Filled, not ruled: the list already uses
  * ruled uppercase text for its dimension groups, and a heading has to outrank its own contents.
- */
-/**
+ *
  * ⚠ THE BAR OWNS THE LIST-LEVEL CONTROLS.
  *
  * "Refine this summary" and "N discarded" both used to float loose in the body — the first as a
@@ -46,16 +45,6 @@ const SECTION_HEADING_ACTION =
  */
 const SECTION_HEADING_STICKY = 'md:sticky md:top-[calc(3.5rem+var(--ks-head,0px))] md:z-20'
 
-/**
- * One input count: number badge, label beside it.
- *
- * Stacked number-over-label was tried first and read as a dashboard the header did not want — four
- * two-line blocks make a quiet row into a panel of its own. Collapsed onto one line the counts sit
- * where they belong, as a caption under the title rather than a display above the content.
- *
- * An icon-and-number treatment was tried before that and rejected on sight: at this size the
- * glyphs carried nothing the label did not.
- */
 /** One option in the ground-truths filter row. */
 function FilterChip({ active, onClick, children }: {
   active: boolean
@@ -76,6 +65,16 @@ function FilterChip({ active, onClick, children }: {
   )
 }
 
+/**
+ * One input count: number badge, label beside it.
+ *
+ * Stacked number-over-label was tried first and read as a dashboard the header did not want — four
+ * two-line blocks make a quiet row into a panel of its own. Collapsed onto one line the counts sit
+ * where they belong, as a caption under the title rather than a display above the content.
+ *
+ * An icon-and-number treatment was tried before that and rejected on sight: at this size the
+ * glyphs carried nothing the label did not.
+ */
 function Stat({ value, label, accent }: { value: number; label: string; accent?: boolean }) {
   return (
     <span className="flex items-center gap-1.5">
@@ -575,12 +574,36 @@ export function KnowledgeSummaryPanel({
                       handleDimensionClick(dimension)
                     }}
                     aria-pressed={inPlace ? selected : undefined}
+                    title={
+                      inPlace
+                        ? selected
+                          ? 'Show all ground truths'
+                          : `Show only ${DIMENSION_LABELS[dimension]}`
+                        : undefined
+                    }
+                    /*
+                      ⚠ THE HOVER HAS TO SAY "THIS FILTERS".
+                      It was `hover:bg-muted/50` — a tint that reads as a hover highlight, which
+                      every non-interactive row in the app also has. A user who does not already
+                      know the grid is a filter has nothing here to tell them (Jonny, 2026-09-09).
+
+                      So hover borrows the SELECTED treatment minus the commitment: same fill, label
+                      to full strength, plus a ring the resting state does not have — a ring is the
+                      app's control language, so it reads as a thing you press rather than a thing
+                      you are merely over. The title names the actual outcome, because "it filters"
+                      is learnable in one hover and never again needs saying.
+                    */
                     className={cn(
-                      'flex items-center gap-2 py-1 text-xs rounded px-1 -mx-1 transition-colors',
-                      selected ? 'bg-muted' : 'hover:bg-muted/50')}
+                      'group flex items-center gap-2 rounded px-1 -mx-1 py-1 text-xs transition-all',
+                      selected
+                        ? 'bg-muted ring-1 ring-foreground/15'
+                        : 'hover:bg-muted hover:ring-1 hover:ring-foreground/10')}
                   >
                     <HarveyBall support={support} />
-                    <span className={cn('truncate', selected ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                    <span className={cn('truncate transition-colors',
+                      selected
+                        ? 'font-medium text-foreground'
+                        : 'text-muted-foreground group-hover:text-foreground')}>
                       {DIMENSION_LABELS[dimension]}
                     </span>
                   </button>

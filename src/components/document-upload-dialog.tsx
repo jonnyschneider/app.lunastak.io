@@ -222,16 +222,17 @@ export function DocumentUploadDialog({
               {/* Context Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Tell Luna about this document
+                  What is this document?
                 </label>
                 <Textarea
-                  placeholder="e.g., This is our competitor analysis from Q3, focusing on market positioning..."
+                  placeholder="e.g. our competitor analysis from Q3, focused on market positioning"
                   value={uploadContext}
                   onChange={(e) => setUploadContext(e.target.value)}
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This context helps Luna extract more relevant insights.
+                  Optional. It goes to the extraction alongside the document, so a line about why
+                  it matters helps.
                 </p>
               </div>
             </div>

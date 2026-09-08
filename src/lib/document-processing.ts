@@ -21,6 +21,15 @@ const unstructured = new UnstructuredClient({
   },
 })
 
+/**
+ * How much of a document reaches extraction. Override with `DOCUMENT_EXTRACTION_CHAR_LIMIT` to
+ * change it per environment without a deploy — see the note at the call site for why the default
+ * is what it is and what raising it would and would not buy.
+ */
+export const DOCUMENT_EXTRACTION_CHAR_LIMIT = Number(
+  process.env.DOCUMENT_EXTRACTION_CHAR_LIMIT ?? 15000
+)
+
 export const DOCUMENT_EXTRACTION_PROMPT = `You are analyzing a business document. Extract the key strategic themes from this document, and tag each theme with the strategic dimensions it relates to.
 
 Document content:
@@ -198,8 +207,33 @@ export async function processDocument(
     // Step 2: Extract strategic themes using Claude
     console.log('[DocumentProcessing] Extracting strategic themes')
 
-    // Truncate to avoid context limits (keep first 15000 chars)
-    const truncatedContent = extractedText.slice(0, 15000)
+    /**
+     * ⚠ THIS CAP IS A RELIC, AND IT HAS BEEN SILENTLY EATING REAL DOCUMENTS.
+     *
+     * Introduced as a bare `slice(0, 15000)` in `e17d589` (v1.5.0, 2026-01-07) with the comment
+     * "avoid context limits". Whatever that meant then, it does not mean it now: the default model
+     * is `claude-sonnet-5` with a 200k-token window, and 15,000 characters is roughly 3,750
+     * tokens — under 2% of it.
+     *
+     * Measured on prod 2026-09-09: 11 of 43 documents exceed 15,000 bytes, and the largest are a
+     * 792KB business plan, a 204KB report and a 164KB strategy document. The documents a user
+     * cared most about are precisely the ones losing their second half, with nothing said.
+     *
+     * ⚠ RAISING IT IS A PRODUCT CALL, NOT A FREE WIN. §17 measured this family of stage as nearly
+     * insensitive to input volume — cutting the synthesis payload 60% moved gap count 3.6% — and
+     * §21 found extraction output is capped by the count instruction, not by how much it is fed.
+     * So more input probably will not yield more themes. It would stop us ignoring half a business
+     * plan without telling anyone, which is a correctness argument rather than a quality one.
+     */
+    const truncatedContent = extractedText.slice(0, DOCUMENT_EXTRACTION_CHAR_LIMIT)
+
+    if (extractedText.length > DOCUMENT_EXTRACTION_CHAR_LIMIT) {
+      // Was silent for eight months. At minimum it should be greppable.
+      console.warn(
+        `[DocumentProcessing] truncated ${documentId}: ${extractedText.length} chars -> ` +
+        `${DOCUMENT_EXTRACTION_CHAR_LIMIT} (${Math.round((1 - DOCUMENT_EXTRACTION_CHAR_LIMIT / extractedText.length) * 100)}% dropped)`
+      )
+    }
 
     const prompt = DOCUMENT_EXTRACTION_PROMPT
       .replace('{documentContent}', truncatedContent)
