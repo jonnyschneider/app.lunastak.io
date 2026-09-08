@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
+import { Steps } from '@/components/ui/steps'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -22,6 +23,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+
+/** The user has given context; they are checking it; then it becomes a strategy. */
+const GROUND_TRUTH_PHASES = ['Your context', 'Ground truths', 'Your strategy'] as const
 
 /**
  * Fragments exist and no strategy does: the user sees what their strategy will be built from
@@ -48,14 +52,7 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
             something else, with no signal that it is a step rather than the destination, or that
             it is waiting on them.
           */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-foreground/40">
-            <span>Your context</span>
-            <span aria-hidden>→</span>
-            <span className="rounded bg-luna px-1.5 py-0.5 font-semibold text-white">Ground truths</span>
-            <span aria-hidden>→</span>
-            <span>Your strategy</span>
-            <span className="ml-1 text-foreground/60">· your turn</span>
-          </div>
+          <Steps steps={GROUND_TRUTH_PHASES} current={1} hint="your turn" />
 
           <div>
             <h2 className="text-xl font-semibold tracking-tight">
