@@ -31,6 +31,8 @@ export function GroundTruthReview({
   onCountChange,
   dimension,
   onResumeConversation,
+  archivedOpen: archivedOpenProp,
+  onArchivedOpenChange,
 }: {
   projectId: string
   /** Remaining (not discarded), total, and how many sit archived — so a host can show volume. */
@@ -46,6 +48,13 @@ export function GroundTruthReview({
    * more HERE than it was in a browse view.
    */
   onResumeConversation?: (conversationId: string) => void
+  /**
+   * Controlled recovery disclosure. A host that has a heading bar wants the "N discarded" toggle
+   * IN it — loose above the list it reads as orphaned, and it is a list-level control like the
+   * count beside it. Left uncontrolled, the component keeps its own.
+   */
+  archivedOpen?: boolean
+  onArchivedOpenChange?: (open: boolean) => void
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +69,9 @@ export function GroundTruthReview({
    * `?status=archived`. Once the sheet is this component, it has to carry recovery itself.
    */
   const [archivedCount, setArchivedCount] = useState(0)
-  const [archivedOpen, setArchivedOpen] = useState(false)
+  const [archivedOpenSelf, setArchivedOpenSelf] = useState(false)
+  const controlled = archivedOpenProp !== undefined
+  const archivedOpen = controlled ? archivedOpenProp : archivedOpenSelf
   const [archivedItems, setArchivedItems] = useState<GateItem[] | null>(null)
   // Bumped after a restore: the row belongs in the live list again, and re-reading is the only
   // honest way to put it back in its dimension group and its sort position.
@@ -140,6 +151,18 @@ export function GroundTruthReview({
   }, [projectId])
 
   /** Put a discarded fragment back. Same PATCH as an undo, from a list the undo cannot reach. */
+  // A controlled host toggles the disclosure without going through `openArchived`, so the fetch
+  // has to hang off the open state rather than off the click.
+  useEffect(() => {
+    if (!archivedOpen || archivedItems !== null) return
+    let live = true
+    fetch(`/api/project/${projectId}/fragments?status=archived`)
+      .then(r => r.json() as Promise<ApiResponse>)
+      .then(res => { if (live) setArchivedItems([...buildGateModel(res).weak, ...buildGateModel(res).confident]) })
+      .catch(() => { if (live) setError('Couldn’t load what you discarded.') })
+    return () => { live = false }
+  }, [archivedOpen, archivedItems, projectId])
+
   const restore = useCallback(async (item: GateItem) => {
     setPending(p => new Set(p).add(item.id))
     try {
@@ -162,7 +185,8 @@ export function GroundTruthReview({
   }, [projectId])
 
   const openArchived = useCallback(async () => {
-    setArchivedOpen(o => !o)
+    if (controlled) onArchivedOpenChange?.(!archivedOpen)
+    else setArchivedOpenSelf(o => !o)
     if (archivedItems) return
     try {
       const res = await fetch(`/api/project/${projectId}/fragments?status=archived`)
@@ -172,7 +196,7 @@ export function GroundTruthReview({
     } catch {
       setError('Couldn’t load what you discarded.')
     }
-  }, [projectId, archivedItems])
+  }, [projectId, archivedItems, controlled, archivedOpen, onArchivedOpenChange])
 
   if (error && !items) return <p className="py-6 text-sm text-destructive">{error}</p>
   if (!items) {
@@ -202,14 +226,16 @@ export function GroundTruthReview({
         can afford.
       */}
       {archivedCount > 0 && (
-        <div className="border-b pb-3">
-          <button
-            onClick={openArchived}
-            className="flex items-center gap-1.5 text-xs text-foreground/50 underline underline-offset-4 hover:text-foreground"
-          >
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', archivedOpen && 'rotate-180')} />
-            {archivedCount} discarded
-          </button>
+        <div className={cn(!controlled && 'border-b pb-3')}>
+          {!controlled && (
+            <button
+              onClick={openArchived}
+              className="flex items-center gap-1.5 text-xs text-foreground/50 underline underline-offset-4 hover:text-foreground"
+            >
+              <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', archivedOpen && 'rotate-180')} />
+              {archivedCount} discarded
+            </button>
+          )}
 
           {archivedOpen && (
             archivedItems === null ? (

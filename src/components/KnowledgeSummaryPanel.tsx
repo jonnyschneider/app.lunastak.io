@@ -18,8 +18,24 @@ import type { SupportLevel } from '@/lib/support/dimension-support'
  * The two section headings inside the expanded panel. Filled, not ruled: the list already uses
  * ruled uppercase text for its dimension groups, and a heading has to outrank its own contents.
  */
+/**
+ * ⚠ THE BAR OWNS THE LIST-LEVEL CONTROLS.
+ *
+ * "Refine this summary" and "N discarded" both used to float loose in the body — the first as a
+ * row above the prose, the second between the explainer and the list, where it read as orphaned
+ * (Jonny, 2026-09-08). They are not content; they act on the whole column, which is exactly what
+ * the heading names. So each bar reads: what this is, its state in brackets, and what you can do
+ * to it — with the doing on the right.
+ *
+ * Wraps rather than truncates: the summary's state can be a sentence, and a heading that hides
+ * its own status to stay on one line is worse than one that takes two.
+ */
 const SECTION_HEADING =
-  'mb-1 flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold uppercase tracking-wide text-primary-foreground'
+  'mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold uppercase tracking-wide text-primary-foreground'
+/** Inside a bar: normal weight, sentence case, and legible on the fill. */
+const SECTION_HEADING_META = 'font-normal normal-case tracking-normal text-primary-foreground/75'
+const SECTION_HEADING_ACTION =
+  'ml-auto flex items-center gap-1 font-normal normal-case tracking-normal text-primary-foreground/75 transition-colors hover:text-primary-foreground'
 
 /**
  * Both section headings stick under the panel's own sticky block, so the column you are working in
@@ -213,6 +229,7 @@ export function KnowledgeSummaryPanel({
   const inPlace = !!projectId && !readOnly
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
   const [truthCounts, setTruthCounts] = useState<{ total: number; archived: number } | null>(null)
+  const [archivedOpen, setArchivedOpen] = useState(false)
   const onTruthCount = useCallback((_r: number, total: number, archived: number) => {
     setTruthCounts({ total, archived })
   }, [])
@@ -259,6 +276,20 @@ export function KnowledgeSummaryPanel({
     setHeadHeight(el.offsetHeight)
     return () => ro.disconnect()
   }, [isExpanded])
+
+  /**
+   * The summary's state, in the heading's brackets — the mirror of the ground truths' count.
+   *
+   * Deliberately NOT worded with "insights": that word was just removed from the panel header for
+   * disagreeing with the ground-truths count, and reintroducing it three lines below would put the
+   * same two numbers back in conflict.
+   */
+  const remainingToUpdate = 15 - fragmentsSinceSummary
+  const summaryStatus = fragmentsSinceSummary === 0
+    ? 'up to date'
+    : remainingToUpdate > 0
+      ? `updates in ${remainingToUpdate}`
+      : 'updating soon'
 
   const summaryKey = projectId ? `project-${projectId}-kb-summary-open` : null
   const [summaryOpen, setSummaryOpen] = useState(true)
@@ -434,53 +465,50 @@ export function KnowledgeSummaryPanel({
               the two columns were missing. So the element is always a button and simply stops
               being interactive at `md`, rather than being a different element per breakpoint.
             */}
-            <button
-              onClick={toggleSummary}
-              aria-expanded={summaryOpen}
-              className={cn(SECTION_HEADING, SECTION_HEADING_STICKY, 'w-full justify-between md:pointer-events-none md:cursor-default')}
-            >
-              <span>Summary</span>
-              {summaryOpen
-                ? <ChevronUp className="h-4 w-4 shrink-0 md:hidden" />
-                : <ChevronDown className="h-4 w-4 shrink-0 md:hidden" />}
-            </button>
+            <div className={cn(SECTION_HEADING, SECTION_HEADING_STICKY)}>
+              <button
+                onClick={toggleSummary}
+                aria-expanded={summaryOpen}
+                className="flex items-center gap-1.5 md:pointer-events-none md:cursor-default"
+              >
+                <span>Summary</span>
+                {knowledgeSummary && fragmentCount > 0 && (
+                  <span className={SECTION_HEADING_META}>({summaryStatus})</span>
+                )}
+                {summaryOpen
+                  ? <ChevronUp className="h-4 w-4 shrink-0 md:hidden" />
+                  : <ChevronDown className="h-4 w-4 shrink-0 md:hidden" />}
+              </button>
+
+              {knowledgeSummary && fragmentCount > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className={SECTION_HEADING_ACTION} aria-label="Refine this summary">
+                      <Pencil className="h-3 w-3" />
+                      Refine
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-44 p-1">
+                    <button
+                      onClick={handleChatClick}
+                      className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors hover:bg-muted"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      Talk it through
+                    </button>
+                    <button
+                      onClick={handleEditClick}
+                      className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors hover:bg-muted"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      Edit directly
+                    </button>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
 
             <div className={cn('space-y-3', !summaryOpen && 'hidden md:block')}>
-          {/* Heading row: Refine popover + countdown */}
-          {knowledgeSummary && fragmentCount > 0 && (
-            <div className="flex items-baseline gap-1.5 text-sm">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="font-medium hover:text-muted-foreground transition-colors inline-flex items-center gap-1">
-                    <Pencil className="h-3 w-3" />
-                    Refine this summary
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-44 p-1">
-                  <button
-                    onClick={handleChatClick}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    Talk it through
-                  </button>
-                  <button
-                    onClick={handleEditClick}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted transition-colors"
-                  >
-                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    Edit directly
-                  </button>
-                </PopoverContent>
-              </Popover>
-              <span className="text-muted-foreground">
-                {fragmentsSinceSummary === 0
-                  ? '· up to date'
-                  : `· ${15 - fragmentsSinceSummary > 0 ? `${15 - fragmentsSinceSummary} more insights 'til next auto-update` : 'auto-updating soon'}`}
-              </span>
-            </div>
-          )}
-
           {/* Knowledge Summary */}
           {knowledgeSummary ? (
             <p className="max-w-[68ch] text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
@@ -513,21 +541,34 @@ export function KnowledgeSummaryPanel({
           */}
           {inPlace && fragmentCount > 0 && (
             <div>
-              <div className={cn(SECTION_HEADING, SECTION_HEADING_STICKY, 'justify-between')}>
+              <div className={cn(SECTION_HEADING, SECTION_HEADING_STICKY)}>
                 <span>
                   {selectedDimension
                     ? DIMENSION_LABELS[selectedDimension as Tier1Dimension]
                     : 'Ground truths'}
-                  {truthCounts && <span className="ml-1.5 font-normal">({truthCounts.total})</span>}
+                  {truthCounts && <span className={cn('ml-1.5', SECTION_HEADING_META)}>({truthCounts.total})</span>}
                 </span>
-                {selectedDimension && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setSelectedDimension(null) }}
-                    className="text-[11px] font-normal normal-case tracking-normal underline underline-offset-4 hover:text-foreground/70"
-                  >
-                    Show all
-                  </button>
-                )}
+
+                <div className={SECTION_HEADING_ACTION}>
+                  {selectedDimension && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelectedDimension(null) }}
+                      className="underline underline-offset-4"
+                    >
+                      Show all
+                    </button>
+                  )}
+                  {!!truthCounts?.archived && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setArchivedOpen(o => !o) }}
+                      aria-expanded={archivedOpen}
+                      className={cn('flex items-center gap-1', selectedDimension && 'ml-2')}
+                    >
+                      {truthCounts.archived} discarded
+                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', archivedOpen && 'rotate-180')} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/*
@@ -540,7 +581,7 @@ export function KnowledgeSummaryPanel({
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
                   Everything your vision, strategy and objectives get built from. Discard anything
-                  wrong — it saves straight away, and anything you discard can be restored below.
+                  wrong — it saves straight away, and you can bring it back from the count above.
                 </AlertDescription>
               </Alert>
               <GroundTruthReview
@@ -548,6 +589,8 @@ export function KnowledgeSummaryPanel({
                 dimension={selectedDimension ?? undefined}
                 onResumeConversation={onResumeConversation}
                 onCountChange={onTruthCount}
+                archivedOpen={archivedOpen}
+                onArchivedOpenChange={setArchivedOpen}
               />
             </div>
           )}
