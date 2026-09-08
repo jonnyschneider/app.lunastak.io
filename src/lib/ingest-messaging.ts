@@ -70,7 +70,7 @@ export function ingestComplete({
     : ''
 
   const where = hasStrategy
-    ? 'Check them under Summary and ground truths in your knowledgebase.'
+    ? 'Check them under Ground Truth in your knowledgebase.'
     : 'Check them whenever you are ready — add more first if you want to.'
 
   return { title, description: [running, where].filter(Boolean).join(' ') }
