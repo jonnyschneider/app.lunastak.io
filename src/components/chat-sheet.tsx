@@ -73,13 +73,13 @@ const EXTRACTION_TASK_COPY = {
   running: 'Reading what you told me...',
   complete: 'Ready for you to check',
   failed: 'Something went wrong reading your conversation',
-  completeDescription: "Have a look at what I took, then I'll build your strategy.",
+  completeDescription: 'Check what was extracted, then build your strategy.',
   completeAction: undefined,
 } as const
 
 const EXTRACTION_TOAST = {
   title: 'Reading what you told me',
-  description: 'A few seconds — then you can check it before I build anything.',
+  description: 'A few seconds — then you can check it before anything is built.',
 } as const
 
 export interface GapExploration {

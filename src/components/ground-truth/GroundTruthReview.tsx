@@ -189,7 +189,7 @@ export function GroundTruthReview({
   if (!items) {
     return (
       <p className="flex items-center gap-2 py-6 text-sm text-foreground/60">
-        <Loader2 className="h-4 w-4 animate-spin" /> Reading what I took from you…
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading your ground truths…
       </p>
     )
   }

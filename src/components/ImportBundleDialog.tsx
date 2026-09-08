@@ -142,7 +142,7 @@ export function ImportBundleDialog({
               {imported.questionsAdded > 0 && <> — plus <span className="font-semibold text-foreground">{imported.questionsAdded} open questions</span> for Explore Next</>}.
             </p>
             <p className="text-sm">
-              Have a look at what I took from your bundle, then I&apos;ll build your strategy.
+              Check what was extracted from your bundle, then build your strategy.
             </p>
             <div className="flex justify-end">
               <Button onClick={() => handleClose(false)}>

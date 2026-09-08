@@ -26,8 +26,10 @@
  * carry no evidence spans, so the pruning UI would flag every row for a reason that is about the
  * fixture rather than the content.
  */
+import { useCallback, useState } from 'react'
 import { Sheet, SheetContent, SheetTitle, SheetHeader, SheetDescription, SheetClose } from '@/components/ui/sheet'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
+import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 
 interface EvidenceSheetProps {
@@ -46,14 +48,19 @@ export function EvidenceSheet({
   initialDimensionFilter,
   onResumeConversation,
 }: EvidenceSheetProps) {
+  const [remaining, setRemaining] = useState<number | null>(null)
+  const [total, setTotal] = useState<number | null>(null)
+  const onCountChange = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
+  const discarded = remaining !== null && total !== null ? total - remaining : 0
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col overflow-y-auto bg-background p-0 sm:max-w-3xl">
         <SheetHeader className="sticky top-0 z-20 flex-row items-center justify-between space-y-0 border-b bg-card px-6 py-4">
           <SheetTitle>Your ground truths</SheetTitle>
           <SheetDescription className="sr-only">
-            Everything Luna took from your conversations, documents and context bundles. Discard
-            anything wrong, or restore something you discarded earlier.
+            Everything extracted from your conversations, documents and context bundles. Discard
+            anything wrong, or restore something discarded earlier.
           </SheetDescription>
           <SheetClose className="rounded-sm p-1 opacity-70 transition-opacity hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
             <X className="h-5 w-5" />
@@ -67,15 +74,36 @@ export function EvidenceSheet({
             regenerating is a separate decision made from the Decision Stack.
           */}
           <p className="text-sm text-muted-foreground">
-            This is everything Luna took from what you gave her — and everything your vision,
-            strategy and objectives get built from. Discard anything wrong; it stops being used
-            straight away.
+            Everything your vision, strategy and objectives get built from. Discard anything
+            wrong — it stops being used straight away.
           </p>
           <GroundTruthReview
             projectId={projectId}
             dimension={initialDimensionFilter}
             onResumeConversation={onResumeConversation}
+            onCountChange={onCountChange}
           />
+        </div>
+
+        {/*
+          ⚠ THERE IS NOTHING TO SUBMIT — SO SAY SO.
+          Every discard is written on the click that makes it; there is no staged state and no
+          save. But a surface with no closing move reads as one that did not take, which is
+          exactly how it was reported on preview: "doesn't have a submit mechanism, and X doesn't
+          persist it" — on a build where the write had in fact persisted every time.
+          So the footer does the two jobs a submit button was standing in for: it states that the
+          work is saved, and it gives the user a way to be finished. It does NOT pretend to
+          commit anything.
+        */}
+        <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-4 border-t bg-card px-6 py-3">
+          <p className="text-xs text-muted-foreground">
+            {discarded > 0
+              ? `${discarded} discarded · saved`
+              : 'Changes save as you make them'}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            Done
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

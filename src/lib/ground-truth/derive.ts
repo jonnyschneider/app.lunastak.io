@@ -98,9 +98,23 @@ export interface GateItem {
   reason: string | null
 }
 
-const REASONS: Record<WeakReason, string> = {
-  'no-evidence': "I couldn't find your own words behind this one",
-  failed: "This doesn't match anything you gave me",
+const REASONS: Record<WeakReason, string | null> = {
+  'no-evidence': 'No source text behind this one',
+  /**
+   * ⚠ DELIBERATELY SILENT, 2026-09-08. This used to read "This doesn't match anything you gave
+   * me" — which the comment on `WeakReason` above already argues is worse than saying nothing,
+   * because `failed` mixes real fabrication with checker strictness.
+   *
+   * Preview measured how bad the mix is: 5 failed spans on a real project, 3 of them Luna's own
+   * turns and 2 the model eliding with "..." inside a span asked for as verbatim (`15-34`).
+   * Zero fabrications. Telling a user their own words match nothing, on that hit rate, is a
+   * false accusation the row cannot defend itself against.
+   *
+   * The row still SHOWS — it is prunable like any other, and its span renders with the
+   * destructive rule. It simply makes no claim about why. Restore a sentence here when the
+   * verifier handles elision and the verdict means what it says.
+   */
+  failed: null,
   thin: 'Only a few words to go on',
 }
 
