@@ -338,6 +338,9 @@ export async function GET(
           added: addedSinceStrategy,
           removed: removedSinceStrategy,
           comparable: snapshotIds !== null,
+          // The one fact a pre-`fragmentIds` snapshot can still offer. Without it the degraded
+          // label is a bare "v1", which says nothing a user could act on.
+          builtAt: latestSnapshot?.createdAt.toISOString() ?? null,
         },
         fragmentsSinceSummary,
       },

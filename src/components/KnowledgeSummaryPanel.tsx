@@ -170,7 +170,13 @@ interface KnowledgeSummaryPanelProps {
    * `DecisionStackSnapshot.fragmentIds`, so only additions are visible and the panel says less
    * rather than something it cannot stand behind.
    */
-  strategySync?: { version: number | null; added: number; removed: number; comparable: boolean }
+  strategySync?: {
+    version: number | null
+    added: number
+    removed: number
+    comparable: boolean
+    builtAt: string | null
+  }
   onRefreshClick: () => void
   onChatClick: () => void
   onEditClick: () => void
@@ -337,7 +343,14 @@ export function KnowledgeSummaryPanel({
   const syncLabel = (() => {
     if (!latestStrategyTraceId) return null
     const v = strategySync?.version ? `v${strategySync.version}` : 'Strategy'
-    if (!strategySync?.comparable) return strategyIsStale ? `${v} · context has changed` : v
+    if (!strategySync?.comparable) {
+      // Pre-`fragmentIds` snapshot: it cannot account for discards, so it says WHEN rather than
+      // from what. A bare version number is true and useless.
+      const built = strategySync?.builtAt
+        ? ` · built ${new Date(strategySync.builtAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+        : ''
+      return strategyIsStale ? `${v}${built} · context has changed since` : `${v}${built}`
+    }
     const { added, removed } = strategySync
     if (!added && !removed) return `${v} · built from these ${fragmentCount} ground truths`
     const parts: string[] = []

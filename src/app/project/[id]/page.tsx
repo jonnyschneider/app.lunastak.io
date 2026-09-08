@@ -105,7 +105,13 @@ interface ProjectStats {
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
   fragmentsSinceSummary: number
-  strategySync?: { version: number | null; added: number; removed: number; comparable: boolean }
+  strategySync?: {
+    version: number | null
+    added: number
+    removed: number
+    comparable: boolean
+    builtAt: string | null
+  }
 }
 
 interface ConversationSummary {
