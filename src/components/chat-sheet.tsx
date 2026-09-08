@@ -21,7 +21,6 @@ import { useGenerationStatusContext } from '@/components/providers/BackgroundTas
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'
-import ExtractionConfirm from '@/components/ExtractionConfirm'
 import ExtractionSummary from '@/components/ExtractionSummary'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import FeedbackButtons from '@/components/FeedbackButtons'
@@ -53,7 +52,35 @@ function ChatSkeleton() {
   )
 }
 
-type FlowStep = 'chat' | 'extracting' | 'extraction' | 'summary' | 'strategy'
+type FlowStep = 'chat' | 'extracting' | 'summary' | 'strategy'
+
+/**
+ * ⚠ ONE SOURCE for the extraction task copy. One caller today (`extractContext`), named and
+ * kept in one place because of how it went wrong.
+ *
+ * There were two hand-maintained copies — this path and `handleGenerate`, the
+ * `ExtractionConfirm` failure path. When the ground-truth review made an initial conversation
+ * stop after fragments, only `handleGenerate` was updated; `extractContext` went on telling
+ * users "Your strategy is ready" with a View link, on the PRIMARY onboarding path, while
+ * nothing had been generated and there was no traceId for the link to use. The fix landed on
+ * the rare path and the live path kept lying. Found by architecture review 2026-09-08;
+ * `handleGenerate` was deleted with `ExtractionConfirm` the same day.
+ *
+ * Since the split this call EXTRACTS and stops: the strategy is generated after the user has
+ * seen what it would be built from, so the copy promises the review, not the stack.
+ */
+const EXTRACTION_TASK_COPY = {
+  running: 'Reading what you told me...',
+  complete: 'Ready for you to check',
+  failed: 'Something went wrong reading your conversation',
+  completeDescription: "Have a look at what I took, then I'll build your strategy.",
+  completeAction: undefined,
+} as const
+
+const EXTRACTION_TOAST = {
+  title: 'Reading what you told me',
+  description: 'A few seconds — then you can check it before I build anything.',
+} as const
 
 export interface GapExploration {
   dimension: string
@@ -405,22 +432,12 @@ export function ChatSheet({
 
       if (data.status === 'started' && data.generationId) {
         // Track via generation polling (covers extracting → generating → complete)
-        startTask('generation', data.generationId, projectId, {
-          running: 'Building your strategy...',
-          complete: 'Your strategy is ready',
-          failed: 'Strategy generation failed',
-          completeDescription: 'Click to view your new strategy.',
-          completeAction: (data) => data.traceId
-            ? { label: 'View', href: `/strategy/${data.traceId}` }
-            : undefined,
-        })
+        startTask('generation', data.generationId, projectId, EXTRACTION_TASK_COPY)
 
         // Notify listeners
         window.dispatchEvent(new Event('strategySaved'))
 
-        toast.success('Building your strategy', {
-          description: "This will take a few moments. We'll notify you when it's ready.",
-        })
+        toast.success(EXTRACTION_TOAST.title, { description: EXTRACTION_TOAST.description })
         onOpenChange(false)
       }
     } catch (error) {
@@ -431,89 +448,7 @@ export function ChatSheet({
     }
   }
 
-  // Generate strategy - fire-and-forget with background processing
-  const handleGenerate = async () => {
-    if (!conversationId) return
 
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(`Generation failed: ${response.status} - ${errorData.error || response.statusText}`)
-      }
-
-      const data = await response.json()
-
-      if (data.status === 'started' && data.generationId) {
-        // Since the ground-truth review split, this call EXTRACTS and stops. The strategy is
-        // generated after the user has looked at what it will be built from, so the copy promises
-        // the review rather than the strategy — an initial run lands on the review, not a stack.
-        startTask('generation', data.generationId, projectId, {
-          running: 'Reading what you told me...',
-          complete: 'Ready for you to check',
-          failed: 'Something went wrong reading your conversation',
-          completeDescription: 'Have a look at what I took, then I\'ll build your strategy.',
-          completeAction: undefined,
-        })
-
-        // Notify listeners
-        window.dispatchEvent(new Event('strategySaved'))
-
-        // Close the sheet — extraction continues in the background and lands on the review.
-        toast.success('Reading what you told me', {
-          description: 'A few seconds — then you can check it before I build anything.',
-        })
-        onOpenChange(false)
-      } else {
-        throw new Error('Invalid response from generation API')
-      }
-    } catch (error) {
-      console.error('Failed to start strategy generation:', error)
-      toast.error('Failed to generate strategy', {
-        description: error instanceof Error ? error.message : 'Something went wrong',
-      })
-      setFlowStep('extraction')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Continue conversation after reviewing extraction
-  const handleContinue = async () => {
-    if (conversationId) {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          eventType: 'extraction_choice',
-          eventData: { choice: 'continue' },
-        }),
-      }).catch(err => console.error('Failed to log event:', err))
-    }
-
-    setCurrentPhase('QUESTIONING')
-    setFlowStep('chat')
-
-    if (extractedContext?.reflective_summary?.thought_prompt) {
-      const thoughtMessage: Message = {
-        id: `msg_${Date.now()}`,
-        conversationId: conversationId!,
-        role: 'assistant',
-        content: extractedContext.reflective_summary.thought_prompt,
-        stepNumber: messages.length + 1,
-        timestamp: new Date(),
-      }
-      setMessages(prev => [...prev, thoughtMessage])
-    }
-  }
 
   // End conversation explicitly - trigger extraction and close
   const handleEndConversation = () => {
@@ -538,7 +473,6 @@ export function ChatSheet({
                     : 'Chat'
               )}
               {flowStep === 'extracting' && 'Analyzing...'}
-              {flowStep === 'extraction' && 'Review Insights'}
               {flowStep === 'summary' && 'Insights Captured'}
               {flowStep === 'strategy' && 'Your Strategy'}
             </h2>
@@ -618,15 +552,6 @@ export function ChatSheet({
               currentStep={extractionStep}
               error={extractionError}
               mode="extraction"
-            />
-          )}
-
-          {flowStep === 'extraction' && extractedContext && (
-            <ExtractionConfirm
-              extractedContext={extractedContext}
-              onGenerate={handleGenerate}
-              onContinue={handleContinue}
-              isGenerating={isLoading}
             />
           )}
 

@@ -5,6 +5,55 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ---
 
+## 2026-09-08 — `ExtractionRun` retired (drop DEFERRED to deploy)
+
+**Destructive, deliberately not yet applied anywhere.** All code that read or wrote
+`ExtractionRun` was deleted on `feat/ground-truth-check-backend`; the model stays in
+`schema.prisma` marked `☠ DEAD` until that code has shipped. Code before destructive
+migration — dropping the table while old code is deployed causes 500s on every generation.
+
+**Why it went.** It was **write-only**. `createExtractionRun` ran on every generation
+(`pipeline/generation.ts`), and the only readers were two viewer pages that were unlinked,
+one middleware-shadowed and pinned to a single hardcoded conversation. No experiment or
+evaluation tooling ever consumed it — `src/lib/experiment/`, `src/lib/evaluation/`, `scripts/`
+and `tools/` contain no reference, and `scripts/one-offs/gate-fixture.ts:13` already classified
+it as telemetry and excluded it from capture. Legacy evals infrastructure that was never wired
+to anything.
+
+**Not `Trace`.** `Trace` is live — read by `/api/trace/[traceId]`, `/api/quality-rating`,
+`/api/strategies` and `/api/demo/strategy`. The deleted `/api/extraction/[id]` fell back to
+`Trace.id`, which made the two look related. They are not.
+
+**On deploy:** drop the `ExtractionRun` table, then
+`npm run db:approve-drift -- --env <env> --reason "in sync"` per environment.
+
+**Recovery:** tag `extraction-run-final` (`2812f38`) — `git checkout extraction-run-final -- <path>`.
+
+---
+
+## 2026-09-08 — `Fragment.contentType` gains `tension` (no migration)
+
+**No schema change.** `contentType` is a free-form `String`, so a new domain value needs no
+migration — which is exactly why this nearly went unrecorded. Logged here because the *domain*
+changed even though the *column* did not.
+
+- **`tension`** — written by the bundle-import transform (`src/lib/import/transforms/context-bundle.ts:74,195`,
+  since `6a05fa8`) and read at `src/lib/ground-truth/derive.ts:137`, which keeps tensions out of
+  the ground-truth review: a tension is the skill's reading across themes, not the user's own
+  words, so it is not something to ask a user to verify.
+
+**Values actually written today:** `theme`, `insight`, `tension`. Nothing writes `quote`,
+`stat` or `principle`.
+
+⚠ **Four declarations of this domain disagree** — `docs/architecture/intelligence-pipeline-v2.md`
+§3 ERD, `src/lib/contracts/extraction.ts:38` (`theme|insight|tension`),
+`src/lib/contracts/persistence.ts:71` (`'theme'` only, and `validateFragment` rejects the rest —
+though it is never called), and `src/lib/fragments.ts:46`
+(`theme|insight|quote|stat|principle`). Only `extraction.ts` matches reality. Not reconciled
+here: narrowing `fragments.ts` is a code change with callers, not a doc fix.
+
+---
+
 ## 2026-09-04 — `Evidence` table + two `Fragment` columns (ground truth check, slice 2)
 
 **Additive only. Nothing dropped.** Applied to **dev and preview** (preview 2026-09-08); prod

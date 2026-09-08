@@ -102,7 +102,7 @@ export async function POST(
   const generationWork = (async () => {
     try {
       const plan = planPipeline(trigger)
-      await executePipeline(plan, trigger)
+      await executePipeline(plan, trigger, { ownsGenerationStatus: true })
     } catch (error) {
       console.error('[GenerateOpportunities] Background generation failed:', error)
       await setGenerationStatus(projectId, null)

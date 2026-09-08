@@ -361,7 +361,7 @@ export async function POST(req: Request) {
           };
           const plan = planPipeline(trigger);
           console.log(`[Extract] Running initial pipeline for ${conversationId}...`);
-          await executePipeline(plan, trigger);
+          await executePipeline(plan, trigger, { ownsGenerationStatus: true });
           console.log(`[Extract] Initial pipeline complete for ${conversationId}`);
         }
 

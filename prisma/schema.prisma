@@ -403,6 +403,11 @@ model DimensionalSynthesis {
 }
 
 
+/// ☠ DEAD — no code reads or writes this as of 2026-09-08. Drops at deploy.
+/// Retired because it was write-only: created on every generation but read by nothing except
+/// two unreachable viewer pages. See docs/retired-extraction-run.md and SCHEMA_CHANGELOG.
+/// Kept in the schema only until the code deletion has shipped — code before destructive
+/// migration, per CLAUDE.md. Do NOT write to it.
 model ExtractionRun {
   id        String @id @default(cuid())
   projectId String

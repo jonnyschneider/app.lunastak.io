@@ -380,7 +380,7 @@ alone."*
 strategy a user ever sees is the least-grounded output the product produces was a side-effect, not
 a weighed trade. Worth re-testing once the invention work lands — but it is not an accidental gap.
 
-### `ExtractionConfirm` reachable only from a failed-generation `catch` — `open`
+### `ExtractionConfirm` reachable only from a failed-generation `catch` — ~~`open`~~ → **RESOLVED: deleted**
 **Applies to:** task 2.
 Separate from the synthesis decision. It is either revived (a "here's what I understood" step) or
 deleted. Leaving a component alive on one error path is the pattern that produced the dead fields.
@@ -548,7 +548,10 @@ type-level only, with the three observed consequences.
 
 ### Still `open`
 Nothing. Every weakness called out in the blueprints and the audit has been ruled — see the
-register above. `ExtractionConfirm` (task 2) is the one item still tagged `open`: it is either
+register above. ~~`ExtractionConfirm` (task 2) is the one item still tagged `open`~~ —
+**resolved 2026-09-08: deleted.** The ground-truth review superseded it on the happy path;
+rather than revive a second surface doing the same job, it went. See
+`retired-extraction-run.md`. Original wording: it is either
 revived or deleted, and that is a small product call rather than an investigation.
 
 ## What the phase view shows across all ten

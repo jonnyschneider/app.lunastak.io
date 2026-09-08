@@ -25,7 +25,7 @@ export interface FragmentForSynthesis {
  * One verbatim span from the `Evidence` table, as synthesis needs it.
  *
  * `verification` is carried only so `failed` can be filtered out — see
- * `renderEvidence` in ./evidence-block.ts.
+ * `renderEvidence` in @/lib/prompts/shared/evidence.
  */
 export interface EvidenceForSynthesis {
   text: string

@@ -16,7 +16,6 @@ interface ImportBundleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onImported: (result: { fragmentsCreated: number; questionsAdded: number }) => void
-  onGenerateStrategy?: () => void
 }
 
 export function ImportBundleDialog({
@@ -24,7 +23,6 @@ export function ImportBundleDialog({
   open,
   onOpenChange,
   onImported,
-  onGenerateStrategy,
 }: ImportBundleDialogProps) {
   const [jsonText, setJsonText] = useState('')
   const [importing, setImporting] = useState(false)
@@ -144,22 +142,12 @@ export function ImportBundleDialog({
               {imported.questionsAdded > 0 && <> — plus <span className="font-semibold text-foreground">{imported.questionsAdded} open questions</span> for Explore Next</>}.
             </p>
             <p className="text-sm">
-              Ready to generate your Decision Stack? Luna will synthesise your Vision, Strategy, and Objectives from everything you&apos;ve shared.
+              Have a look at what I took from your bundle, then I&apos;ll build your strategy.
             </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => handleClose(false)}>
-                Not yet
+            <div className="flex justify-end">
+              <Button onClick={() => handleClose(false)}>
+                Show me
               </Button>
-              {onGenerateStrategy && (
-                <Button
-                  onClick={() => {
-                    onGenerateStrategy()
-                    handleClose(false)
-                  }}
-                >
-                  Generate Decision Stack
-                </Button>
-              )}
             </div>
           </div>
         </DialogContent>

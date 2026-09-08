@@ -59,7 +59,8 @@ links to docs and data-security, footer credits, sign out.
 | `/extraction/[id]` | read-only | Extraction detail — fragments + syntheses for one run | `extraction/[id]/page.tsx` |
 | `/account` | page | Account settings | `account/page.tsx` |
 | `/auth/signin` · `/auth/verify-request` | auth | Sign-in, magic-link confirmation | `auth/*` |
-| `/demo/strategy` · `/demo/extraction` | demo | Standalone demo pages | `demo/*` |
+| `/demo/strategy` | demo | Standalone demo page | `demo/*` |
+| ~~`/demo/extraction`~~ | — | **deleted 2026-09-08** — see `retired-extraction-run.md` | — |
 | `/admin/eval` · `/admin/eval/[evalId]` | admin | Evaluation runs | `admin/eval/*` |
 | `/dev/playback` · `/dev/pipeline-test` | dev | Conversation playback, pipeline harness | `dev/*` |
 | `/prototype/graph` · `/prototype/ground-truth` · `/prototype/ground-truth-check` · `/prototype/ground-truth-gate` | prototype | Disposable. Two are retired instruments (design §11, §16.5) | `prototype/*` |
@@ -256,7 +257,8 @@ no-ops. Its project ids are hardcoded in three places.
 
 **Where the gate would have to go.** It needs a full-viewport moment between extraction and first
 generation. Today that moment is the Launchpad — the Decision Stack tab's empty state — and the only
-component built for it (`ExtractionConfirm`, 207 lines, tested) reaches a real user only from the
+component built for it (`ExtractionConfirm`, 207 lines, tested — **deleted 2026-09-08**, see
+`retired-extraction-run.md`) reached a real user only from the
 `catch` block of a failed generation — `setFlowStep('extraction')` at `chat-sheet.tsx:482`, verified
-still true. Its two other render sites are `/extraction/[id]` and `/demo/extraction`, neither on the
+still true. Its two other render sites were `/extraction/[id]` and `/demo/extraction`, neither on the
 live path. Blueprint task 2 has it tagged `open`: revive or delete.

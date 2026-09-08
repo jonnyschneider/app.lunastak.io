@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         experimentVariant: conversation.experimentVariant,
       };
       const plan = planPipeline(trigger);
-      await executePipeline(plan, trigger);
+      await executePipeline(plan, trigger, { ownsGenerationStatus: true });
     } catch (error) {
       console.error('[Generate API] Background pipeline failed:', error);
       await setGenerationStatus(conversation.projectId!, null);

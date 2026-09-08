@@ -2,7 +2,6 @@ import { prisma } from '@/lib/db'
 import { createMessage } from '@/lib/claude'
 import { extractXML, parseOKRObjectives, extractObjectivesXML } from '@/lib/utils'
 import { convertLegacyObjectives } from '@/lib/placeholders'
-import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
 import { notifySlackStrategyGenerated } from '@/lib/notifications'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
@@ -11,7 +10,7 @@ import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strat
 import type { OpportunityGenerationOutputContract } from '@/lib/contracts/opportunity-generation'
 import type { PipelineResult } from './types'
 import { extractText } from '@/lib/extract-text';
-import { renderEvidence } from '@/lib/synthesis/evidence-block'
+import { renderEvidence } from '@/lib/prompts/shared/evidence'
 
 /**
  * Initial strategy generation. Inlined 2026-08-27 from the retired prompt
@@ -446,24 +445,6 @@ export async function runInitialGeneration(
 
   // Clear generation status
   await setGenerationStatus(projectId, null)
-
-  // Create ExtractionRun (reuses fragments loaded at top of function)
-  const extractionRun = await createExtractionRun({
-    projectId,
-    conversationId: traceConversationId,
-    experimentVariant: experimentVariant || undefined,
-    fragmentIds: fragments.map(f => f.id),
-    modelUsed: response.model,
-    promptTokens: response.usage.input_tokens,
-    completionTokens: response.usage.output_tokens,
-    latencyMs: latency,
-  })
-
-  try {
-    await updateExtractionRunWithSyntheses(extractionRun.id, projectId)
-  } catch (err) {
-    console.error('[Pipeline] Failed to update extraction run with syntheses:', err)
-  }
 
   // Update conversation status (skip if no real conversation)
   if (conversationId) {

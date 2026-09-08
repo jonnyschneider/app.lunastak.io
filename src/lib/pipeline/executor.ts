@@ -13,7 +13,13 @@ import { runInitialGeneration, runRefreshGeneration, runOpportunityGeneration } 
  */
 export async function executePipeline(
   plan: PipelinePlan,
-  trigger: PipelineTrigger
+  trigger: PipelineTrigger,
+  /**
+   * Set by a caller that set `generationStatus` to 'generating' for THIS run, so the
+   * executor may clear it again if the plan turns out to generate nothing. Callers that
+   * did not set it must not pass it — see the clear below for why.
+   */
+  opts?: { ownsGenerationStatus?: boolean }
 ): Promise<PipelineResult> {
   const projectId = trigger.projectId
   let fragmentsCreated = 0
@@ -239,10 +245,17 @@ export async function executePipeline(
    * `generation: null`, and a plan that generates nothing would otherwise leave the project
    * polling 'generating' forever with the UI stuck in its busy state.
    *
-   * Clearing here is correct for every trigger, including ones not written yet. It is idempotent
-   * — the generation paths clear it too, and setting null twice is null.
+   * ⚠ Only clear a flag THIS run set — `opts.ownsGenerationStatus`. The condition is on the
+   * plan but the write is on the project, so an unconditional clear reaches a *concurrent*
+   * run's flag: a document upload or follow-up extraction finishing inside a
+   * `generate_from_knowledge` window would null that run's status, stopping the client
+   * polling mid-generation AND lifting the `409 already_generating` guard at the same moment
+   * — re-opening the double-generation the guard exists to prevent (observed 2026-09-08:
+   * v2 then v3). Found by architecture review, same day.
+   *
+   * Idempotent, yes; correct for every trigger, no. Ownership is the missing half.
    */
-  if (!plan.generation) {
+  if (!plan.generation && opts?.ownsGenerationStatus) {
     const { setGenerationStatus } = await import('@/lib/decision-stack')
     await setGenerationStatus(projectId, null)
   }

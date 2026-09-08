@@ -7,7 +7,7 @@ import { Tier1Dimension } from '@/lib/constants/dimensions'
 import { SynthesisResult, FragmentForSynthesis } from './types'
 import { DimensionalSynthesis } from '@prisma/client'
 import { extractJsonFromResponse } from './extract-json'
-import { renderEvidence } from './evidence-block'
+import { renderEvidence } from '@/lib/prompts/shared/evidence'
 import { StructuredProvocation } from '@/lib/types'
 import { extractText } from '@/lib/extract-text';
 

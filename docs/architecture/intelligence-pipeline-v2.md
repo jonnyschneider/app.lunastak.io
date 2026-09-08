@@ -245,7 +245,7 @@ erDiagram
     FRAGMENT ||--|{ DIMENSION_TAG : "tagged with 1-3"
     FRAGMENT {
         string content "theme name + summary text"
-        string contentType "theme | insight | quote"
+        string contentType "theme | insight"
         string confidence "HIGH | MEDIUM | LOW"
         string status "active | archived | soft_deleted"
     }
@@ -489,7 +489,7 @@ refresh and opportunity paths. Nothing to change here.
 **Result.** Verified on a real baseline project built across all three ingest paths (35 fragments,
 72 spans, all three verification states; fixtures in `Test-Data/2026-09-07-gate-baseline/`). The
 review's whole view model is a pure function over the fragments API response
-(`src/components/ground-truth/derive.ts`, 12 tests) — it moved from prototype to production
+(`src/lib/ground-truth/derive.ts`, 12 tests) — it moved from prototype to production
 unchanged, which is the check that the surface is data-shaped rather than screen-shaped.
 
 **Carried, not fixed:**
@@ -501,6 +501,11 @@ unchanged, which is the check that the surface is data-shaped rather than screen
   and extraction-sourced rows as topic labels. Most visible in exactly this list.
 
 **On deploy, update:** §1 Layer 3 (initial generation no longer fires on `conversation_ended`) ·
+**Drop the `ExtractionRun` table** — dead since 2026-09-08, code already deleted, kept in
+`schema.prisma` marked `☠ DEAD` only until this ships. See `retired-extraction-run.md`. ·
+`ARCHITECTURE.md` §22-38 **Intelligence Pipeline** — the Layer 3 line still reads as though
+output follows structuring automatically; an initial conversation now stops after Layer 1 and
+generates only on a later `generate_from_knowledge`. ·
 §2's decision matrix (`conversation_ended` + `isInitial` → no generation) ·
 `service-blueprints.md` Task 2, which currently ends *"the user never sees what was extracted from
 their own words before it becomes strategy."*
@@ -508,6 +513,36 @@ their own words before it becomes strategy."*
 **Architecture impact.** Layer 3 only, and by omission. Design record:
 `docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4-§7 and
 `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §21-§22.
+
+### 2026-09-08: The Harvey ball reads computed support (slice 3, ON A BRANCH)
+
+> ⚠ **Not deployed.** Same branch as the 2026-09-04 and 2026-09-08 review entries
+> (`feat/ground-truth-check-backend`). §5's LLM table and the module lists still describe
+> production and are correct until this deploys.
+
+Recorded 2026-09-08, after an architecture conformance review found slice 3 had shipped with no
+entry — leaving the 2026-09-04 entry asserting it was unbuilt. §6 says an entry accompanies a
+pipeline change; this one is the correction.
+
+**What shipped**
+
+- **`src/lib/support/dimension-support.ts`** (`226f71c`) — computes dimensional support from
+  evidence rather than reading a model self-report. Appears in no module-structure list in either
+  doc; only `screen-map.md:148` mentions it.
+- **Breaking API shape change** — `/api/project/[id]` `dimensionalCoverage[dim].averageConfidence`
+  → `.support` (`route.ts:164-176`), consumed at `page.tsx:104`. The old field is gone, not
+  deprecated.
+- **Four LLM stages changed input shape** (`452afd5`, `0c4991b`, `d0aaa4f`) — full synthesis,
+  incremental synthesis, initial generation, opportunity generation now receive evidence in their
+  payloads. No call was added, removed or moved; only the payload changed. §5's LLM table Input
+  column ("Fragments per dimension", "Active fragments from DB") is therefore now wrong for all
+  four, with nothing tracking it.
+
+**On deploy, update:** §5 LLM table (Input column for the four stages) · the module-structure
+lists in §5 and `ARCHITECTURE.md` (add `src/lib/support/`) · any consumer documentation naming
+`averageConfidence`.
+
+---
 
 ### 2026-09-04: Extraction cites its source — the `Evidence` layer (slices 1-2, ON A BRANCH)
 
@@ -570,6 +605,9 @@ fragments, 46 spans, 9/9 checks including multi-span index alignment.
   gate — untouched.
 - **`averageConfidence`** (`api/project/[id]/route.ts`) is computed and never read. Left dead on
   purpose; the Harvey ball's replacement input is designed but unbuilt (slice 3).
+  > ✎ **Superseded 2026-09-08.** Both claims are now false — slice 3 shipped and
+  > `averageConfidence` was replaced, not left dead. See the 2026-09-08 slice-3 entry below.
+  > Kept as written: §6 is a log, and this was true when recorded.
 
 **Measured 2026-09-06 — does NOT block.** Moving bundle evidence out of `content` reduces what
 `full_synthesis` receives (that stage reads `content` only; nothing reads `Evidence` rows). Measured
@@ -585,9 +623,12 @@ fragments): chunks-mode kept its `Source:` suffix, and documents/conversations n
 evidence in `content`. Detail: design doc §17.
 
 **On deploy, update:** §1 Layer 0 (extraction emits evidence + type) · §3 ERD (add `EVIDENCE`;
-`FRAGMENT` gains `interpretationType`, `reviewedAt`) · §5 LLM table (extraction output shape) ·
-`service-blueprints.md` Tasks 2, 3 and 4 (fragment creation now writes evidence) · and apply the
-schema to preview and prod, code before columns.
+`FRAGMENT` gains `interpretationType`, `reviewedAt`; add `contentType` value `tension` — written
+by the bundle-import transform since `6a05fa8`, and read at `ground-truth/derive.ts:137` to keep
+tensions out of the review) · §5 LLM table (extraction output shape) · `ARCHITECTURE.md` §112-124
+**Data Model** tree (add `Evidence` under `Fragments`) and §22-38 Layer 0 (extraction now emits
+verbatim spans + an `interpretationType`) · `service-blueprints.md` Tasks 2, 3 and 4 (fragment
+creation now writes evidence) · and apply the schema to preview and prod, code before columns.
 
 **Architecture impact.** New `src/lib/evidence/` layer. Design record:
 `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §13-§16.

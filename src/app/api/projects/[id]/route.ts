@@ -124,11 +124,6 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         where: { conversationId: { in: conversationIds } },
       });
 
-      // Delete extraction runs
-      await prisma.extractionRun.deleteMany({
-        where: { projectId },
-      });
-
       // Delete conversations
       await prisma.conversation.deleteMany({
         where: { projectId },

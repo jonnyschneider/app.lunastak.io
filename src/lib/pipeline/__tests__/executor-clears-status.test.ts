@@ -9,6 +9,15 @@
  *
  * Same class as the two silent-degradation defects already on this thread: a required step that
  * only ran on the happy path.
+ *
+ * ⚠ AND it must clear ONLY a flag this run set (`ownsGenerationStatus`). The condition is on the
+ * plan but the write is on the project, so an unconditional clear reaches a CONCURRENT run's
+ * flag: a document upload or follow-up extraction finishing inside a `generate_from_knowledge`
+ * window nulls that run's status, stopping the client polling mid-generation and lifting the
+ * `409 already_generating` guard at the same moment — re-opening the double-generation the guard
+ * exists to prevent (observed 2026-09-08: v2 then v3). Found by architecture review, same day.
+ *
+ * The two cases below are the whole contract: clear when it is ours, never when it is not.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -63,14 +72,19 @@ const trigger: PipelineTrigger = {
   experimentVariant: null,
 }
 
-describe('executePipeline clears the busy flag on a plan that does not generate', () => {
+describe('executePipeline and the busy flag on a plan that does not generate', () => {
   beforeEach(() => {
     setGenerationStatus.mockClear()
     projectUpdate.mockClear()
   })
 
-  it('clears generationStatus when generation is null', async () => {
-    await executePipeline(plan, trigger)
+  it('clears generationStatus when generation is null AND this run set the flag', async () => {
+    await executePipeline(plan, trigger, { ownsGenerationStatus: true })
     expect(setGenerationStatus).toHaveBeenCalledWith('proj-1', null)
+  })
+
+  it('does NOT clear a flag this run did not set — it may belong to a concurrent generation', async () => {
+    await executePipeline(plan, trigger)
+    expect(setGenerationStatus).not.toHaveBeenCalled()
   })
 })

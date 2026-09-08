@@ -36,11 +36,6 @@ vi.mock('@/lib/decision-stack', () => ({
   setGenerationStatus: vi.fn(),
 }))
 
-vi.mock('@/lib/extraction-runs', () => ({
-  createExtractionRun: vi.fn(async () => ({ id: 'run1' })),
-  updateExtractionRunWithSyntheses: vi.fn(),
-}))
-
 vi.mock('@/lib/statsig', () => ({ logStatsigEvent: vi.fn() }))
 vi.mock('@/lib/notifications', () => ({ notifySlackStrategyGenerated: vi.fn() }))
 

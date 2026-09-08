@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — `ExtractionRun` and the extraction-eval viewers (2026-09-08)
+
+A write-only table. `createExtractionRun` ran on every generation; the only readers were two
+viewer pages that were unlinked, one shadowed by the demo-slug middleware and pinned to a single
+hardcoded conversation. No experiment or evaluation tooling ever consumed it. Legacy evals
+infrastructure that was never wired to anything.
+
+Deleted `ExtractionConfirm` (resolving a blueprint `open` disposition), `/extraction/[id]`,
+`/demo/extraction`, both backing API routes, `src/lib/extraction-runs.ts`, and the write path —
+1,404 lines. `Trace` is unaffected and stays live. The table drops at deploy; recovery tag
+`extraction-run-final`, retro at `docs/architecture/retired-extraction-run.md`.
+
+### Fixed — from an architecture conformance review (2026-09-08)
+
+- **Guests were charged twice** for the conversation and document paths. The first-strategy
+  exemption keyed on `decisionStack === null`, and the new busy-flag clear created that row via
+  upsert, so it never fired. The exemption is removed rather than repaired — every generation is
+  charged, including the first.
+- **The primary onboarding path claimed a strategy was ready when none was built.** Extraction
+  copy existed twice; only the rarely-reached copy was updated when the review split landed. Both
+  now read from one source.
+- **The busy-flag clear could stop a concurrent generation.** It was conditioned on the plan but
+  written project-wide, so an upload finishing mid-generation nulled that run's status and lifted
+  the `409 already_generating` guard at the same moment. It now clears only a flag the run set.
+- **Bundle import could reach a generated strategy without the review** via a shortcut button
+  predating the review. Removed; import lands on the project page where the review is shown.
+- **The measured evidence heading had no protection.** It sat outside the ratchet §50 built for
+  measured wording, with no test at all — a reword would have halved its effect silently. Moved
+  into the prompt layer with coverage.
+
+
 ### Added — evidence spans: the words behind every fragment (2026-09-04)
 
 Extraction now emits verbatim evidence spans alongside each fragment, and they are persisted
