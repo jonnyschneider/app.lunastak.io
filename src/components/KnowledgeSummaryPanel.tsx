@@ -65,8 +65,9 @@ function Stat({ value, label, accent }: { value: number; label: string; accent?:
         accent ? 'bg-lunastak/15 text-lunastak' : 'bg-muted text-foreground')}>
         {value}
       </span>
+      {/* Same colour as its number: greying the label made the pair read as two things. */}
       <span className={cn('text-[10px] uppercase tracking-wider',
-        accent ? 'text-lunastak' : 'text-muted-foreground')}>
+        accent ? 'text-lunastak' : 'text-foreground')}>
         {label}
       </span>
     </span>
