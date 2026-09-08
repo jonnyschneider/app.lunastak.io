@@ -368,8 +368,17 @@ export function pickExample(confident: GateItem[]): GateItem | null {
   )[0]
 }
 
-export function buildGateModel(res: ApiResponse): GateModel {
-  const active = res.fragments.filter(f => f.status === 'active')
+/**
+ * @param status which rows to model. `'active'` is the review itself.
+ *
+ * ⚠ `'archived'` EXISTS BECAUSE THE STATUS FILTER IS NOT OPTIONAL HERE. The recovery list feeds
+ * this the `?status=archived` response, and with the filter hardcoded to active that returned an
+ * empty model every time — so "N discarded · show" opened onto "Nothing to show" for as long as
+ * it shipped (2026-09-08, caught the same day). A caller cannot fix it from outside, so it is a
+ * parameter rather than a convention.
+ */
+export function buildGateModel(res: ApiResponse, status: 'active' | 'archived' = 'active'): GateModel {
+  const active = res.fragments.filter(f => f.status === status)
   const usable = active.filter(f => !isLunaTalkingToItself(f) && !isNotGroundTruth(f))
   const filtered = active.length - usable.length
   // Number conversations in the order their fragments were captured, so the label is stable.

@@ -178,6 +178,8 @@ interface KnowledgeSummaryPanelProps {
     removed: number
     comparable: boolean
     builtAt: string | null
+    addedIds: string[]
+    removedIds: string[]
   }
   onRefreshClick: () => void
   onChatClick: () => void
@@ -275,6 +277,12 @@ export function KnowledgeSummaryPanel({
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
   const [truthCounts, setTruthCounts] = useState<{ total: number; archived: number } | null>(null)
   const [archivedOpen, setArchivedOpen] = useState(false)
+  /** Showing only what changed since the stack was built. Cleared when a dimension is picked —
+   *  two filters at once answers neither question. */
+  const [changedOnly, setChangedOnly] = useState(false)
+  const changedIds = strategySync
+    ? [...strategySync.addedIds, ...strategySync.removedIds]
+    : []
   const onTruthCount = useCallback((_r: number, total: number, archived: number) => {
     setTruthCounts({ total, archived })
   }, [])
@@ -293,6 +301,7 @@ export function KnowledgeSummaryPanel({
   const handleDimensionClick = useCallback((dimension: string) => {
     logAndFlush('cta_open_evidence', 'dimension-chip', { dimension })
     if (inPlace) {
+      setChangedOnly(false)
       setSelectedDimension(d => (d === dimension ? null : dimension))
       return
     }
@@ -353,14 +362,16 @@ export function KnowledgeSummaryPanel({
         ? `built ${new Date(strategySync.builtAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
         : null
       const changed = strategyIsStale ? 'context has changed since' : null
-      return { version, detail: [built, changed].filter(Boolean).join(' · ') || null }
+      return { version, detail: [built, changed].filter(Boolean).join(' · ') || null, changed: false }
     }
     const { added, removed } = strategySync
-    if (!added && !removed) return { version, detail: `built from these ${fragmentCount} ground truths` }
+    if (!added && !removed) {
+      return { version, detail: `built from these ${fragmentCount} ground truths`, changed: false }
+    }
     const parts: string[] = []
     if (added) parts.push(`${added} added`)
     if (removed) parts.push(`${removed} discarded`)
-    return { version, detail: `${parts.join(', ')} since` }
+    return { version, detail: `${parts.join(', ')} since`, changed: true }
   })()
 
   const summaryKey = projectId ? `project-${projectId}-kb-summary-open` : null
@@ -494,7 +505,29 @@ export function KnowledgeSummaryPanel({
                       ) : (
                         <span className="font-medium text-foreground">{sync.version}</span>
                       )}
-                      {sync.detail && <> · {sync.detail}</>}
+                      {sync.detail && (
+                        <>
+                          {' · '}
+                          {/*
+                            "3 added, 2 discarded" is a claim; this makes it checkable. Clicking it
+                            filters the ground truths to exactly those — the added ones live, the
+                            discarded ones in the recovery list — which answers "changed how?" in
+                            the surface the user is already in, with no navigation.
+                          */}
+                          {sync.changed ? (
+                            <button
+                              onClick={() => { setIsExpanded(true); setChangedOnly(o => !o) }}
+                              aria-pressed={changedOnly}
+                              className={cn('underline underline-offset-4 hover:text-foreground',
+                                changedOnly && 'font-medium text-foreground')}
+                            >
+                              {sync.detail}
+                            </button>
+                          ) : (
+                            sync.detail
+                          )}
+                        </>
+                      )}
                     </span>
                   )}
                   {strategyIsStale && (
@@ -652,16 +685,26 @@ export function KnowledgeSummaryPanel({
             <div>
               <div className={cn(SECTION_HEADING, SECTION_HEADING_STICKY)}>
                 <span>
-                  {selectedDimension
-                    ? DIMENSION_LABELS[selectedDimension as Tier1Dimension]
-                    : 'Ground truths'}
-                  {truthCounts && <span className={cn('ml-1.5', SECTION_HEADING_META)}>({truthCounts.total})</span>}
+                  {changedOnly
+                    ? `Changed since ${sync?.version ?? 'the last build'}`
+                    : selectedDimension
+                      ? DIMENSION_LABELS[selectedDimension as Tier1Dimension]
+                      : 'Ground truths'}
+                  {changedOnly ? (
+                    <span className={cn('ml-1.5', SECTION_HEADING_META)}>({changedIds.length})</span>
+                  ) : (
+                    truthCounts && <span className={cn('ml-1.5', SECTION_HEADING_META)}>({truthCounts.total})</span>
+                  )}
                 </span>
 
                 <div className={SECTION_HEADING_ACTION}>
-                  {selectedDimension && (
+                  {(selectedDimension || changedOnly) && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setSelectedDimension(null) }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedDimension(null)
+                        setChangedOnly(false)
+                      }}
                       className="underline underline-offset-4"
                     >
                       Show all
@@ -689,13 +732,15 @@ export function KnowledgeSummaryPanel({
               <Alert className="mb-3 mt-2 py-2.5">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
-                  Everything your vision, strategy and objectives get built from. Discard anything
-                  wrong — it saves straight away, and you can bring it back from the count above.
+                  {changedOnly
+                    ? `What is different from the context ${sync?.version ?? 'the last build'} was built from — ground truths added since, and ones discarded. Rebuild to bring the Decision Stack back in line.`
+                    : 'Everything your vision, strategy and objectives get built from. Discard anything wrong — it saves straight away, and you can bring it back from the count above.'}
                 </AlertDescription>
               </Alert>
               <GroundTruthReview
                 projectId={projectId!}
-                dimension={selectedDimension ?? undefined}
+                dimension={changedOnly ? undefined : selectedDimension ?? undefined}
+                idFilter={changedOnly ? changedIds : null}
                 onResumeConversation={onResumeConversation}
                 onCountChange={onTruthCount}
                 archivedOpen={archivedOpen}

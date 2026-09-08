@@ -111,6 +111,8 @@ interface ProjectStats {
     removed: number
     comparable: boolean
     builtAt: string | null
+    addedIds: string[]
+    removedIds: string[]
   }
 }
 

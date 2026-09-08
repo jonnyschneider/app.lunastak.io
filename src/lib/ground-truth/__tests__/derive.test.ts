@@ -117,3 +117,17 @@ describe('flagging', () => {
     expect(buildGateModel(res([frag({ status: 'archived' })])).total).toBe(0)
   })
 })
+
+describe('buildGateModel — the status it models', () => {
+  it('models archived rows when asked, which the recovery list depends on', () => {
+    // Regression: the filter was hardcoded to 'active', so feeding this the ?status=archived
+    // response returned an empty model and "N discarded · show" opened onto "Nothing to show".
+    const archived = frag({ id: 'a1', status: 'archived', title: 'Discarded thing' })
+    const res = { fragments: [archived], total: 1, activeCount: 0, archivedCount: 1 }
+
+    expect(buildGateModel(res, 'active').weak.concat(buildGateModel(res, 'active').confident)).toHaveLength(0)
+
+    const m = buildGateModel(res, 'archived')
+    expect([...m.weak, ...m.confident].map(i => i.id)).toEqual(['a1'])
+  })
+})

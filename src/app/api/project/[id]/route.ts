@@ -285,15 +285,20 @@ export async function GET(
 
     const activeIds = new Set(project.fragments.map(f => f.id))
 
-    const addedSinceStrategy = snapshotIds
-      ? project.fragments.filter(f => !snapshotIds.has(f.id)).length
+    // The ids, not just the tally: "3 added, 2 discarded" is only useful if the user can then ask
+    // WHICH, and the answer is a filter over lists the panel already renders.
+    const addedIds = snapshotIds
+      ? project.fragments.filter(f => !snapshotIds.has(f.id)).map(f => f.id)
       : latestSnapshot
-        ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).length
-        : project.fragments.length
+        ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).map(f => f.id)
+        : project.fragments.map(f => f.id)
 
-    const removedSinceStrategy = snapshotIds
-      ? Array.from(snapshotIds).filter(id => !activeIds.has(id)).length
-      : 0
+    const removedIds = snapshotIds
+      ? Array.from(snapshotIds).filter(id => !activeIds.has(id))
+      : []
+
+    const addedSinceStrategy = addedIds.length
+    const removedSinceStrategy = removedIds.length
 
     const fragmentsSinceStrategy = addedSinceStrategy
     const strategyIsStale = addedSinceStrategy > 0 || removedSinceStrategy > 0
@@ -341,6 +346,8 @@ export async function GET(
           // The one fact a pre-`fragmentIds` snapshot can still offer. Without it the degraded
           // label is a bare "v1", which says nothing a user could act on.
           builtAt: latestSnapshot?.createdAt.toISOString() ?? null,
+          addedIds,
+          removedIds,
         },
         fragmentsSinceSummary,
       },

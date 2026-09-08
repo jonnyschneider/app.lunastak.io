@@ -33,6 +33,7 @@ export function GroundTruthReview({
   onResumeConversation,
   archivedOpen: archivedOpenProp,
   onArchivedOpenChange,
+  idFilter,
 }: {
   projectId: string
   /** Remaining (not discarded), total, and how many sit archived — so a host can show volume. */
@@ -55,6 +56,14 @@ export function GroundTruthReview({
    */
   archivedOpen?: boolean
   onArchivedOpenChange?: (open: boolean) => void
+  /**
+   * Show only these ids, across BOTH the live list and the recovery list.
+   *
+   * Spanning both is the point: "what changed since v3" is partly ground truths that have been
+   * added since (live) and partly ones that have been discarded (archived). A filter that only
+   * knew about live rows could answer half the question.
+   */
+  idFilter?: string[] | null
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -71,7 +80,9 @@ export function GroundTruthReview({
   const [archivedCount, setArchivedCount] = useState(0)
   const [archivedOpenSelf, setArchivedOpenSelf] = useState(false)
   const controlled = archivedOpenProp !== undefined
-  const archivedOpen = controlled ? archivedOpenProp : archivedOpenSelf
+  // A filtered view has to open the recovery list itself — half its answer lives there, and
+  // making the user open it separately would hide the discards behind a second click.
+  const archivedOpen = idFilter ? true : controlled ? archivedOpenProp : archivedOpenSelf
   const [archivedItems, setArchivedItems] = useState<GateItem[] | null>(null)
   // Bumped after a restore: the row belongs in the live list again, and re-reading is the only
   // honest way to put it back in its dimension group and its sort position.
@@ -158,7 +169,11 @@ export function GroundTruthReview({
     let live = true
     fetch(`/api/project/${projectId}/fragments?status=archived`)
       .then(r => r.json() as Promise<ApiResponse>)
-      .then(res => { if (live) setArchivedItems([...buildGateModel(res).weak, ...buildGateModel(res).confident]) })
+      .then(res => {
+        if (!live) return
+        const m = buildGateModel(res, 'archived')
+        setArchivedItems([...m.weak, ...m.confident])
+      })
       .catch(() => { if (live) setError('Couldn’t load what you discarded.') })
     return () => { live = false }
   }, [archivedOpen, archivedItems, projectId])
@@ -191,12 +206,18 @@ export function GroundTruthReview({
     try {
       const res = await fetch(`/api/project/${projectId}/fragments?status=archived`)
         .then(r => r.json() as Promise<ApiResponse>)
-      const model = buildGateModel(res)
+      const model = buildGateModel(res, 'archived')
       setArchivedItems([...model.weak, ...model.confident])
     } catch {
       setError('Couldn’t load what you discarded.')
     }
   }, [projectId, archivedItems, controlled, archivedOpen, onArchivedOpenChange])
+
+  const filterSet = idFilter ? new Set(idFilter) : null
+  const shown: GateItem[] = filterSet ? (items ?? []).filter(i => filterSet.has(i.id)) : (items ?? [])
+  const shownArchived = filterSet
+    ? archivedItems?.filter(i => filterSet.has(i.id)) ?? null
+    : archivedItems
 
   if (error && !items) return <p className="py-6 text-sm text-destructive">{error}</p>
   if (!items) {
@@ -242,11 +263,11 @@ export function GroundTruthReview({
               <p className="flex items-center gap-2 py-3 text-sm text-foreground/60">
                 <Loader2 className="h-4 w-4 animate-spin" /> Reading what you discarded…
               </p>
-            ) : archivedItems.length === 0 ? (
+            ) : shownArchived === null || shownArchived.length === 0 ? (
               <p className="py-3 text-sm text-foreground/60">Nothing to show.</p>
             ) : (
               <div className="mt-2 divide-y divide-border">
-                {archivedItems.map(item => (
+                {shownArchived.map(item => (
                   <Row
                     key={item.id}
                     item={item}
@@ -265,11 +286,11 @@ export function GroundTruthReview({
       )}
 
       {/* A dimension the grid offers but nothing was filed under must say so, not render blank. */}
-      {dimension && !groupByDimension(items).some(g => g.dimension === dimension) && (
+      {dimension && !groupByDimension(shown).some(g => g.dimension === dimension) && (
         <p className="py-4 text-sm text-foreground/60">Nothing filed under this one yet.</p>
       )}
 
-      {groupByDimension(items)
+      {groupByDimension(shown)
         .filter(g => !dimension || g.dimension === dimension)
         .map(g => (
         <div key={g.dimension ?? 'none'}>
