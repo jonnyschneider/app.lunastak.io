@@ -11,18 +11,25 @@
  *
  * Second caller to migrate: the template page's six-step builder, which this API covers.
  *
- * THE RULE OF THE DESIGN: progress is carried by a filled top rule per step, not by subtly
- * different greys. The first version leaned on muted dots and a grey disc for "done", which made
- * the completed step look disabled and the sequence read as three similar things rather than a
- * path with a position on it. A rule you can see across the whole width says how far along you
- * are before you have read a single word; the number says which step; the tick says it is behind
- * you. Colour is the last signal, not the first.
+ * ONE BAR, TWO STATES. This is the third attempt and the reasoning is worth keeping. Muted dots
+ * read as three similar things rather than a path with a position on it. Per-step segments in
+ * three different colours read as a rainbow — done, current and upcoming each shouting a different
+ * hue, which makes the eye compare them instead of reading progress.
+ *
+ * So the track is ONE continuous bar filled to the current step, which is a shape people already
+ * know, and the labels carry only *reached* or *not yet* — a completed step and the current step
+ * are the same thing to a reader who wants to know how far along they are. Where you are is the
+ * edge of the fill, which needs no colour of its own.
+ *
+ * The bar is the shipped `Progress` (Radix, `bg-primary` on `bg-primary/20`) rather than a
+ * hand-rolled track: same component the rest of the app uses, so the fill matches everything else
+ * that reports progress.
  *
  * Deliberately NOT interactive. A step indicator says where you are; navigating between phases is
  * the host's job and differs per flow.
  */
-import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Progress } from '@/components/ui/progress'
 
 export interface StepsProps {
   /** Ordered labels, shortest that still reads. Three to six works; more wants a different device. */
@@ -33,49 +40,41 @@ export interface StepsProps {
 }
 
 export function Steps({ steps, current, className }: StepsProps) {
+  const pct = steps.length === 0 ? 0 : ((current + 1) / steps.length) * 100
+
   return (
-    <ol className={cn('flex w-full items-start gap-2', className)}>
-      {steps.map((label, i) => {
-        const done = i < current
-        const active = i === current
-        return (
-          <li key={label} className="flex-1" aria-current={active ? 'step' : undefined}>
-            {/* The rule IS the progress bar — one segment per step, read in a glance. */}
-            <span
-              aria-hidden
-              className={cn(
-                'block h-[3px] rounded-full transition-colors',
-                done && 'bg-foreground/70',
-                active && 'bg-luna',
-                !done && !active && 'bg-foreground/15',
-              )}
-            />
-            <span className="mt-1.5 flex items-baseline gap-1.5">
+    <div className={cn('w-full', className)}>
+      <Progress
+        value={pct}
+        className="h-1.5"
+        aria-label={`Step ${current + 1} of ${steps.length}: ${steps[current] ?? ''}`}
+      />
+      <ol className="mt-2 flex w-full items-baseline">
+        {steps.map((label, i) => {
+          const reached = i <= current
+          return (
+            <li
+              key={label}
+              className="flex flex-1 items-baseline gap-1.5"
+              aria-current={i === current ? 'step' : undefined}
+            >
               <span
                 aria-hidden
-                className={cn(
-                  'font-mono text-[10px] tabular-nums',
-                  done && 'text-foreground/70',
-                  active && 'font-bold text-foreground',
-                  !done && !active && 'text-foreground/40',
-                )}
+                className={cn('font-mono text-[10px] tabular-nums',
+                  reached ? 'text-foreground' : 'text-foreground/40')}
               >
-                {done ? <Check className="h-3 w-3 translate-y-[2px]" strokeWidth={3} /> : i + 1}
+                {i + 1}
               </span>
               <span
-                className={cn(
-                  'font-mono text-[10px] uppercase tracking-wider',
-                  done && 'text-foreground/70',
-                  active && 'font-bold text-foreground',
-                  !done && !active && 'text-foreground/40',
-                )}
+                className={cn('font-mono text-[10px] uppercase tracking-wider',
+                  reached ? 'text-foreground' : 'text-foreground/40')}
               >
                 {label}
               </span>
-            </span>
-          </li>
-        )
-      })}
-    </ol>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }
