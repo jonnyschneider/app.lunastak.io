@@ -3,14 +3,10 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2 } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2, Plus } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import { Steps } from '@/components/ui/steps'
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
@@ -26,10 +22,14 @@ const GROUND_TRUTH_PHASES = ['Your context', 'Ground truths', 'Your strategy'] a
  * Fragments exist and no strategy does: the user sees what their strategy will be built from
  * before it is built. Skipping stays available (§4's affirmative skip) — it just is not silent.
  */
-function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; onGenerate: () => void }) {
+function GroundTruthReviewPanel({ projectId, onGenerate, onAddContext }: {
+  projectId: string
+  onGenerate: () => void
+  /** Take the user where every ingest path lives, so "not finished adding" is a real option. */
+  onAddContext?: () => void
+}) {
   const [remaining, setRemaining] = useState<number | null>(null)
   const [total, setTotal] = useState<number | null>(null)
-  const [skipOpen, setSkipOpen] = useState(false)
   /**
    * Pressing Build must LOOK like it did something, immediately.
    *
@@ -42,7 +42,6 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
   const build = useCallback(() => {
     if (building) return
     setBuilding(true)
-    setSkipOpen(false)
     onGenerate()
   }, [building, onGenerate])
   // Stable identity: the review reports counts from an effect, and an inline arrow here would
@@ -92,13 +91,23 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
               </>
             )}
           </Button>
-          {!building && (
-            <button
-              onClick={() => setSkipOpen(true)}
-              className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground"
-            >
-              Skip the review
-            </button>
+          {/*
+            ⚠ "SKIP THE REVIEW" IS GONE, 2026-09-09, and it lost nothing.
+            It called `build()` — the same function as the primary button — logged no event, and
+            recorded nothing. `Fragment.reviewedAt` is stamped when rows are PRESENTED, not on the
+            choice, so skipping never changed a measurement either. What it actually was: a
+            confirm dialog nagging the user out of the thing they had just chosen, whose confirm
+            did what the button beside it did. A user engages or they don't; a second button
+            claiming to do something different when it doesn't is a lie about the interface.
+
+            Replaced by the move a user genuinely wants here — the review is a standing state, not
+            a gate, so "I'm not done adding things yet" is the real third option.
+          */}
+          {!building && onAddContext && (
+            <Button variant="outline" onClick={onAddContext} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              Add more context
+            </Button>
           )}
           {building && (
             <span className="text-xs text-foreground/45">
@@ -108,33 +117,6 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
         </div>
       </CardContent>
 
-      {/*
-        ⚠ NO STATISTIC HERE, DELIBERATELY. §20 measured what EVIDENCE in generation does (not-clean
-        25.0% → 0.0%). Nothing has ever measured what a USER REVIEWING does — that experiment does
-        not exist, and "users who check their ground truths get n% fewer inventions" would be the
-        exact invention this whole thread removed. The mechanism is true; the number is not ours.
-      */}
-      <AlertDialog open={skipOpen} onOpenChange={setSkipOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Skip the review?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <span className="block">
-                These are the context your strategy is generated from. Anything wrong here can carry
-                through into your vision, strategy, objectives and metrics.
-              </span>
-              <span className="block">
-                You can fix them any time — but it&rsquo;s about thirty seconds now, and it&rsquo;s
-                the single biggest influence on what you get back.
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Take a look</AlertDialogCancel>
-            <AlertDialogAction onClick={build}>Skip anyway</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   )
 }
@@ -210,6 +192,8 @@ const DEMO_PROJECTS = [
 interface LaunchpadProps {
   projectId: string
   fragmentCount: number
+  /** Switches to the knowledgebase, where chat, upload and import all live. */
+  onAddContext?: () => void
   onStartChat: () => void
   onImportBundle: () => void
   onGenerateNow?: () => void
@@ -218,6 +202,7 @@ interface LaunchpadProps {
 export function Launchpad({
   projectId,
   fragmentCount,
+  onAddContext,
   onStartChat,
   onImportBundle,
   onGenerateNow,
@@ -229,7 +214,7 @@ export function Launchpad({
       {/* The ground truth review. This slot is the one moment it belongs in — fragments exist, no
           strategy yet — and it is reached identically from all three ingest paths, which is why it
           needs no new route and no new state column. */}
-      {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} projectId={projectId} />}
+      {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} onAddContext={onAddContext} projectId={projectId} />}
 
       {/* Two onboarding paths */}
       <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">

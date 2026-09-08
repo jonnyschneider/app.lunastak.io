@@ -9,7 +9,9 @@
  * almost no population — a post-change project flags roughly one row in twenty-six. The pipeline
  * does the heavy lifting; pruning is the user's whole job.
  *
- * THE LIST ONLY. The project page owns the heading, the Build action and the skip. Design:
+ * THE LIST ONLY. The host owns the heading and the actions — Build and "Add more context" in the
+ * Launchpad gate, nothing in the knowledgebase panel. ("Skip the review" was removed 2026-09-09;
+ * it called the same function as Build.) Design:
  * `docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4–§7.
  */
 import { useCallback, useEffect, useState } from 'react'
@@ -71,14 +73,6 @@ export function GroundTruthReview({
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
   /**
-   * WHAT WAS DISCARDED HAS TO BE REACHABLE, or discarding is destructive.
-   *
-   * `discarded` above is in-session state only: this list fetches `?status=active`, so on the next
-   * load a discarded row is simply absent and its "Undo" is gone with the render that offered it.
-   * That was survivable while the Evidence sheet existed — it was the one surface reading
-   * `?status=archived`. Once the sheet is this component, it has to carry recovery itself.
-   */
-  /**
    * How many rows predate the evidence layer.
    *
    * ⚠ NOT BACKFILLED, DELIBERATELY (Jonny, 2026-09-08). Only conversation-sourced fragments could
@@ -114,6 +108,18 @@ export function GroundTruthReview({
         const model = buildGateModel(res)
         const all = [...model.weak, ...model.confident]
         setItems(all)
+        /**
+         * ⚠ THE FIRST ROW OPENS ITSELF.
+         *
+         * Collapsed, the list is twenty-odd headings and reads as a table of contents — a user can
+         * scan it, decide nothing looks wrong, and never learn the evidence is underneath (Jonny,
+         * 2026-09-09: "to show the user it's not just headings"). One open row teaches the shape of
+         * every other row, for the price of one row's height.
+         *
+         * The first RENDERED row, not `all[0]` — `groupByDimension` reorders, so they differ.
+         */
+        const firstShown = groupByDimension(all)[0]?.items[0]?.id
+        if (firstShown) setExpanded(firstShown)
         setNoEvidence(model.counts['no-evidence'])
         setArchivedCount(res.archivedCount ?? 0)
         // Reviewing is being SHOWN something, not clicking it. Everything rendered is stamped.

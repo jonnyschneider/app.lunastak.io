@@ -990,6 +990,10 @@ export default function ProjectPage() {
                   setChatSheetOpen(true)
                 }}
                 onImportBundle={() => { logAndFlush('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
+                onAddContext={() => {
+                  logAndFlush('tab_switch', 'ground-truth-add-context', { projectId })
+                  setActiveTab('knowledgebase')
+                }}
                 onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
               />
             )}
