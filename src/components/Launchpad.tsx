@@ -52,7 +52,7 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
             something else, with no signal that it is a step rather than the destination, or that
             it is waiting on them.
           */}
-          <Steps steps={GROUND_TRUTH_PHASES} current={1} hint="your turn" />
+          <Steps steps={GROUND_TRUTH_PHASES} current={1} />
 
           <div>
             <h2 className="text-xl font-semibold tracking-tight">
