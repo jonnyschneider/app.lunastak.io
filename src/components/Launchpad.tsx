@@ -75,8 +75,8 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
               {total === null ? 'Check your ground truths' : `Check your ${total} ground truths`}
             </h2>
             <p className="mt-1 text-sm text-foreground/60">
-              Everything your vision, strategy and objectives get built from. Discard anything
-              wrong, then build.
+              Everything your Decision Stack is built from. Discard any items that are wrong, you
+              can restore anytime.
             </p>
           </div>
         </div>

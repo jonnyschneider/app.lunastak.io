@@ -272,11 +272,20 @@ export default function ProjectPage() {
   useEffect(() => {
     if (!evidenceParam) return
     setActiveTab('knowledgebase')
+    /**
+     * ⚠ WRITTEN HERE TOO, not left to the effect above.
+     *
+     * `router.replace` can remount this page, and the tab's initial state reads localStorage — so
+     * the persist effect had not flushed 'knowledgebase' yet and the remount read back the stale
+     * value. The param was consumed and the user landed on the tab they came from, which is the
+     * one thing this effect exists to prevent (caught on preview, 2026-09-08).
+     */
+    localStorage.setItem(`project-${projectId}-tab`, 'knowledgebase')
     const url = new URL(window.location.href)
     url.searchParams.delete('evidence')
     url.searchParams.delete('dimension')
     router.replace(url.pathname + url.search, { scroll: false })
-  }, [evidenceParam, router])
+  }, [evidenceParam, router, projectId])
 
   // Derived state needed by header injection
   const hasStrategy = projectData?.hasStrategy === true || (projectData?.strategyOutputs?.length ?? 0) > 0
