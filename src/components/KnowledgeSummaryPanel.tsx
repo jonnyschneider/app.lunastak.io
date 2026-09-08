@@ -354,7 +354,9 @@ export function KnowledgeSummaryPanel({
    */
   const sync = (() => {
     if (!latestStrategyTraceId) return null
-    const version = strategySync?.version ? `v${strategySync.version}` : 'Strategy'
+    // "Stack v3", not "v3": the number alone names nothing, and this label's whole job is to
+    // connect the context to the thing it built.
+    const version = strategySync?.version ? `Stack v${strategySync.version}` : 'Decision Stack'
     if (!strategySync?.comparable) {
       // Pre-`fragmentIds` snapshot: it cannot account for discards, so it says WHEN rather than
       // from what. A bare version number is true and useless.
@@ -710,7 +712,9 @@ export function KnowledgeSummaryPanel({
                       Show all
                     </button>
                   )}
-                  {!!truthCounts?.archived && (
+                  {/* Not in the diff: it already shows the discards, and "13 discarded" beside
+                      "(1)" is two counts of different things a step apart. */}
+                  {!changedOnly && !!truthCounts?.archived && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setArchivedOpen(o => !o) }}
                       aria-expanded={archivedOpen}
@@ -733,7 +737,7 @@ export function KnowledgeSummaryPanel({
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
                   {changedOnly
-                    ? `What is different from the context ${sync?.version ?? 'the last build'} was built from — ground truths added since, and ones discarded. Rebuild to bring the Decision Stack back in line.`
+                    ? `What has changed since ${sync?.version ?? 'the last build'}. Rebuild to catch it up.`
                     : 'Everything your vision, strategy and objectives get built from. Discard anything wrong — it saves straight away, and you can bring it back from the count above.'}
                 </AlertDescription>
               </Alert>

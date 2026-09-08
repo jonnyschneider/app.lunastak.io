@@ -231,6 +231,59 @@ export function GroundTruthReview({
     return <p className="py-6 text-sm text-foreground/60">Nothing to review yet.</p>
   }
 
+  /**
+   * ⚠ THE CHANGED VIEW IS A DIFF, SO IT IS SHAPED LIKE ONE.
+   *
+   * Reusing the ordinary list plus the recovery disclosure made this read as one list with a
+   * mystery attached: the discarded row appeared under a "13 discarded" toggle that disagreed with
+   * the heading's count, greyed as though it were less real, offering "Undo" — undo what?
+   *
+   * Two named sections, both always rendered. An empty "Added" is not a gap to hide; it is the
+   * answer to half the question, and saying "nothing added" is what makes "1 discarded" mean
+   * something.
+   */
+  if (filterSet) {
+    return (
+      <div className="space-y-5">
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <DiffSection
+          label="Added"
+          items={shown}
+          empty="Nothing added since."
+          renderRow={item => (
+            <Row
+              key={item.id}
+              item={item}
+              discarded={false}
+              pending={pending.has(item.id)}
+              open={expanded === item.id}
+              onToggleDiscard={() => discard(item)}
+              onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
+              onResumeConversation={onResumeConversation}
+            />
+          )}
+        />
+        <DiffSection
+          label="Discarded"
+          items={shownArchived}
+          empty="Nothing discarded since."
+          renderRow={item => (
+            <Row
+              key={item.id}
+              item={item}
+              discarded
+              pending={pending.has(item.id)}
+              open={expanded === item.id}
+              onToggleDiscard={() => restore(item)}
+              onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
+              onResumeConversation={onResumeConversation}
+            />
+          )}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5">
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -321,6 +374,31 @@ export function GroundTruthReview({
   )
 }
 
+/** One side of the diff. Always rendered, empty or not — see the note at the call site. */
+function DiffSection({ label, items, empty, renderRow }: {
+  label: string
+  items: GateItem[] | null
+  empty: string
+  renderRow: (item: GateItem) => React.ReactNode
+}) {
+  return (
+    <div>
+      <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+        {label}{items && ` (${items.length})`}
+      </h3>
+      {items === null ? (
+        <p className="flex items-center gap-2 py-3 text-sm text-foreground/60">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        </p>
+      ) : items.length === 0 ? (
+        <p className="py-3 text-sm text-foreground/50">{empty}</p>
+      ) : (
+        <div className="divide-y divide-border">{items.map(renderRow)}</div>
+      )}
+    </div>
+  )
+}
+
 function Row({
   item, discarded, pending, open, onToggleDiscard, onToggleOpen, onResumeConversation,
 }: {
@@ -335,8 +413,7 @@ function Row({
   const SourceIcon = SOURCE_ICON[item.sourceKind]
   return (
     <div className={cn('-mx-2 rounded px-2 transition-colors',
-      /* Discarded must be scannable, not inferred from a faded glyph. */
-      discarded ? 'bg-muted/70' : 'hover:bg-muted/40')}>
+      discarded ? 'hover:bg-muted/30' : 'hover:bg-muted/40')}>
       <div className="flex items-start gap-2 py-2.5">
         {/*
           ⚠ ONE GLYPH, ONE MEANING. This button used to swap ✕ for ✓ once a row was discarded,
@@ -362,7 +439,7 @@ function Row({
             disabled={pending}
             className="mt-px shrink-0 border-foreground/15 bg-foreground/[0.07] px-2 text-foreground/60 shadow-none hover:bg-foreground/[0.07] hover:text-foreground"
           >
-            Undo
+            Restore
           </Button>
         ) : (
           <Button
@@ -381,8 +458,9 @@ function Row({
         <div className="min-w-0 flex-1">
           <button
             onClick={onToggleOpen}
-            className={cn('flex w-full items-center justify-between gap-3 text-left text-sm leading-snug transition-opacity',
-              discarded ? 'opacity-45' : 'text-foreground',
+            /* No fading. Muting a discarded row made sense when it sat among live ones; in a list
+               where everything is discarded it just makes the text hard to read. */
+            className={cn('flex w-full items-center justify-between gap-3 text-left text-sm leading-snug text-foreground',
               open && 'font-medium')}
           >
             <span className="min-w-0">{item.claim}</span>
