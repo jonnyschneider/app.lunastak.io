@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
+import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
 import { isGuestUser, createGuestUser } from '@/lib/projects'
 import { computeDimensionSupport, type SupportLevel } from '@/lib/support/dimension-support'
 
@@ -91,7 +92,7 @@ export async function GET(
               select: { id: true, content: true, role: true },
               orderBy: { stepNumber: 'asc' as const },
             },
-            fragments: { where: { status: 'active' }, select: { id: true } },
+            fragments: { where: { status: 'active' }, select: GROUND_TRUTH_SELECT },
             traces: {
               where: { starred: true },
               select: { starred: true, starredAt: true },
@@ -103,15 +104,16 @@ export async function GET(
           where: { status: 'active' },
           include: {
             dimensionTags: true,
-            // Read by the support calculator only: evidence state and substance can pull a
-            // dimension's ball down one band, never lift it (design §16.4).
-            evidence: { select: { text: true, verification: true } },
+            // Read by the support calculator — evidence state and substance can pull a
+            // dimension's ball down one band, never lift it (design §16.4) — and by isGroundTruth,
+            // which needs sourceRole to tell the assistant's own words from the user's.
+            evidence: { select: { text: true, verification: true, sourceRole: true } },
           },
         },
         documents: {
           orderBy: { createdAt: 'desc' },
           include: {
-            fragments: { where: { status: 'active' }, select: { id: true } },
+            fragments: { where: { status: 'active' }, select: GROUND_TRUTH_SELECT },
           },
         },
         deepDives: {
@@ -161,6 +163,18 @@ export async function GET(
       },
     })
 
+    /**
+     * What the user is told they have.
+     *
+     * ⚠ NOT `project.fragments` — that includes system context (bundle tensions, Luna's own
+     * turns), which the review deliberately never shows. Counting it at the user produced a
+     * knowledgebase total the review could not account for. See `lib/ground-truth/count.ts`.
+     *
+     * The support model below still reads the FULL set, deliberately: §16.4 is measured, and a
+     * dimension's evidence quality does not stop mattering because a row is not user-reviewable.
+     */
+    const groundTruths = onlyGroundTruths(project.fragments)
+
     // Dimensional coverage: fragment volume plus the computed support the Harvey ball reads.
     // Support is computed on every read and never stored — a stored field is one refactor away
     // from being fed back to the producer whose work it scores (design §16.4).
@@ -189,7 +203,7 @@ export async function GET(
         createdAt: conv.createdAt.toISOString(),
         status: conv.status,
         messageCount: conv.messages.length,
-        fragmentCount: conv.fragments.length,
+        fragmentCount: onlyGroundTruths(conv.fragments).length,
         starred: hasStarredTrace,
         starredAt: hasStarredTrace ? conv.traces[0].starredAt?.toISOString() || null : null,
         deepDiveId: conv.deepDiveId || null,
@@ -207,7 +221,7 @@ export async function GET(
       fileType: doc.fileType,
       status: doc.status as 'pending' | 'processing' | 'complete' | 'failed',
       createdAt: doc.createdAt.toISOString(),
-      fragmentCount: doc.fragments.length,
+      fragmentCount: onlyGroundTruths(doc.fragments).length,
     }))
 
     // Format strategy outputs from traces
@@ -283,15 +297,19 @@ export async function GET(
       ? new Set(latestSnapshot!.fragmentIds as string[])
       : null
 
-    const activeIds = new Set(project.fragments.map(f => f.id))
+    const activeIds = new Set(groundTruths.map(f => f.id))
 
     // The ids, not just the tally: "3 added, 2 discarded" is only useful if the user can then ask
     // WHICH, and the answer is a filter over lists the panel already renders.
+    //
+    // Ground truths only, for the same reason as every other user-facing count: the diff is a
+    // clickable filter over the review, so an id the review will never render would be counted and
+    // then vanish when clicked.
     const addedIds = snapshotIds
-      ? project.fragments.filter(f => !snapshotIds.has(f.id)).map(f => f.id)
+      ? groundTruths.filter(f => !snapshotIds.has(f.id)).map(f => f.id)
       : latestSnapshot
-        ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).map(f => f.id)
-        : project.fragments.map(f => f.id)
+        ? groundTruths.filter(f => f.createdAt > latestSnapshot.createdAt).map(f => f.id)
+        : groundTruths.map(f => f.id)
 
     const removedIds = snapshotIds
       ? Array.from(snapshotIds).filter(id => !activeIds.has(id))
@@ -305,8 +323,8 @@ export async function GET(
 
     // Count fragments since last knowledge summary
     const fragmentsSinceSummary = project.knowledgeUpdatedAt
-      ? project.fragments.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
-      : project.fragments.length
+      ? groundTruths.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
+      : groundTruths.length
 
     // Return project data
     return NextResponse.json({
@@ -314,7 +332,7 @@ export async function GET(
       name: project.name,
       isDemo: project.isDemo,
       stats: {
-        fragmentCount: project.fragments.length,
+        fragmentCount: groundTruths.length,
         conversationCount: project.conversations.length,
         documentCount: project.documents.length,
         /**

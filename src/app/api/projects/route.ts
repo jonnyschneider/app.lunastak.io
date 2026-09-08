@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
 import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
@@ -48,9 +49,9 @@ export async function GET() {
         status: 'active',
       },
       include: {
+        fragments: { where: { status: 'active' }, select: GROUND_TRUTH_SELECT },
         _count: {
           select: {
-            fragments: { where: { status: 'active' } },
             conversations: { where: { status: { not: 'abandoned' } } },
           },
         },
@@ -64,7 +65,8 @@ export async function GET() {
       id: project.id,
       name: project.name,
       isDemo: project.isDemo,
-      fragmentCount: project._count.fragments,
+      // Ground truths, matching every other count the user sees. See lib/ground-truth/count.ts.
+      fragmentCount: onlyGroundTruths(project.fragments).length,
       conversationCount: project._count.conversations,
       hasStrategy: !!project.decisionStack && project.decisionStack.vision !== '',
       updatedAt: project.updatedAt.toISOString(),

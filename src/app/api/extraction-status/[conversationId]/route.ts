@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
 import { prisma } from '@/lib/db'
 import type { ExtractionStatusResponseContract } from '@/lib/contracts/extraction-status'
 
@@ -26,13 +27,9 @@ export async function GET(
     where: { id: conversationId },
     select: {
       status: true,
-      _count: {
-        select: {
-          fragments: {
-            where: { status: 'active' },
-          },
-        },
-      },
+      // Ground truths, not raw fragments — the completion message promises rows the review will
+      // actually show. See lib/ground-truth/count.ts.
+      fragments: { where: { status: 'active' }, select: GROUND_TRUTH_SELECT },
     },
   })
 
@@ -53,7 +50,7 @@ export async function GET(
     case 'extracted':
       response = {
         status: 'extracted',
-        fragmentCount: conversation._count.fragments,
+        fragmentCount: onlyGroundTruths(conversation.fragments).length,
       }
       break
     case 'extraction_failed':

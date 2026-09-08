@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { onlyGroundTruths } from '@/lib/ground-truth/count'
 import { randomUUID } from 'crypto'
 import type { ImportPlan, ImportTrigger, ImportResult } from './types'
 import { transformContextBundle, transformContextBundleDirect } from './transforms'
@@ -32,8 +33,21 @@ export async function executeImport(
       importBatchId,
       themes
     )
-    fragmentsCreated = fragments.length
-    console.log(`[Import] Created ${fragmentsCreated} fragments`)
+    /**
+     * The number the user is told — ground truths, not rows written.
+     *
+     * A bundle's tensions become fragments and are deliberately never shown in the review (they
+     * are the skill's reading across themes, not the user's words). Reporting them here promised
+     * "20 ground truths" over a list of 14. See `lib/ground-truth/count.ts`.
+     */
+    fragmentsCreated = onlyGroundTruths(
+      fragments.map(f => ({
+        contentType: f.contentType,
+        title: f.title,
+        evidence: [] as { sourceRole: string | null }[],
+      }))
+    ).length
+    console.log(`[Import] Created ${fragments.length} fragments (${fragmentsCreated} ground truths)`)
   }
 
   // Step 3: Store open questions as suggested questions

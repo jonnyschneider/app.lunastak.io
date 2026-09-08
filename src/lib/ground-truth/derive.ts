@@ -136,7 +136,9 @@ const REASONS: Record<WeakReason, string | null> = {
  * elicited the answer") and treated it as an upper bound on a statistic. It is not only that — it
  * manufactures fragments. Task 15-29.
  */
-export function isLunaTalkingToItself(f: ApiFragment): boolean {
+export function isLunaTalkingToItself(f: {
+  evidence: { sourceRole: string | null }[]
+}): boolean {
   return f.evidence.length > 0 && f.evidence.every(e => e.sourceRole === 'assistant')
 }
 
@@ -153,8 +155,31 @@ export function isLunaTalkingToItself(f: ApiFragment): boolean {
  * not something to ask a user to verify. `contentType: 'tension'` is set by the import transform;
  * the title check covers rows imported before that change.
  */
-export function isNotGroundTruth(f: ApiFragment): boolean {
+export function isNotGroundTruth(f: { contentType: string; title: string | null }): boolean {
   return f.contentType === 'tension' || f.title?.trim() === 'Strategic tension'
+}
+
+/**
+ * Is this a ground truth — something the user can be asked to verify?
+ *
+ * ⚠ THE ONE DEFINITION, USED ON BOTH SIDES OF THE WIRE. The review filtered these rows out while
+ * every count in the app still included them, so the knowledgebase said 32 and the review showed
+ * 24, and a single document upload could report "5 since last strategy" above three visible rows.
+ * The user has no way to reconcile that, and the missing two are not theirs to reconcile: a bundle
+ * tension is the skill's reading across themes, and a Luna turn is the assistant's own words.
+ *
+ * They remain SYSTEM CONTEXT — still stored, still fed to synthesis and generation, still counted
+ * by the support model (§16.4, which is measured and must not move). They are simply not counted
+ * at the user, because a number a user cannot account for is worse than a smaller true one.
+ *
+ * Structural parameters, not `ApiFragment`, so the API route can call it on Prisma rows.
+ */
+export function isGroundTruth(f: {
+  contentType: string
+  title: string | null
+  evidence: { sourceRole: string | null }[]
+}): boolean {
+  return !isNotGroundTruth(f) && !isLunaTalkingToItself(f)
 }
 
 /**

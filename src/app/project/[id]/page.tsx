@@ -912,8 +912,10 @@ export default function ProjectPage() {
                 )}
                 {/* Branding leads, version stamp trails — the mark says what this is, the stamp
                     says which one of it you are looking at. */}
-                <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2 order-2">
+                {/* The mark centres and the version stamp sits right, so the row reads as a
+                    masthead rather than two things pushed to opposite ends. */}
+                <div className="relative flex items-center justify-center gap-3 text-xs text-muted-foreground">
+                <div className="absolute right-0 flex items-center gap-2">
                   {isDemo ? (
                     (() => {
                       const episodeUrls: Record<string, string> = {
@@ -953,8 +955,8 @@ export default function ProjectPage() {
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="order-1">
-                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-7" />
+                    <button>
+                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-10" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="bottom" align="end" className="w-64 text-xs space-y-2">
