@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import { Steps } from '@/components/ui/steps'
@@ -35,6 +35,21 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
   const [remaining, setRemaining] = useState<number | null>(null)
   const [total, setTotal] = useState<number | null>(null)
   const [skipOpen, setSkipOpen] = useState(false)
+  /**
+   * Pressing Build must LOOK like it did something, immediately.
+   *
+   * `handleGenerateStrategy` only reports through the background-task toast once the POST
+   * resolves — and in the dev server that route awaits the whole run, so the screen sat unchanged
+   * for ~37s. A user reasonably concludes nothing happened and presses something else; on
+   * 2026-09-08 that produced two generations landing as consecutive versions.
+   */
+  const [building, setBuilding] = useState(false)
+  const build = useCallback(() => {
+    if (building) return
+    setBuilding(true)
+    setSkipOpen(false)
+    onGenerate()
+  }, [building, onGenerate])
   // Stable identity: the review reports counts from an effect, and an inline arrow here would
   // change on every render and re-fire it. It settles today only because React bails on identical
   // state — which is luck, not design.
@@ -72,16 +87,29 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
         />
 
         <div className="flex flex-wrap items-center gap-4 border-t pt-4">
-          <Button onClick={onGenerate}>
-            Build my strategy{remaining !== null && total !== null && remaining < total ? ` from ${remaining}` : ''}
-            <ArrowRight className="ml-1 h-4 w-4" />
+          <Button onClick={build} disabled={building}>
+            {building ? (
+              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Building your strategy…</>
+            ) : (
+              <>
+                Build my strategy{remaining !== null && total !== null && remaining < total ? ` from ${remaining}` : ''}
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </>
+            )}
           </Button>
-          <button
-            onClick={() => setSkipOpen(true)}
-            className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground"
-          >
-            Skip the review
-          </button>
+          {!building && (
+            <button
+              onClick={() => setSkipOpen(true)}
+              className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground"
+            >
+              Skip the review
+            </button>
+          )}
+          {building && (
+            <span className="text-xs text-foreground/45">
+              This takes about half a minute. You can leave this page.
+            </span>
+          )}
         </div>
       </CardContent>
 
@@ -108,7 +136,7 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Take a look</AlertDialogCancel>
-            <AlertDialogAction onClick={onGenerate}>Skip anyway</AlertDialogAction>
+            <AlertDialogAction onClick={build}>Skip anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
