@@ -180,7 +180,17 @@ complete cost picture until this is closed.
 
 - `cta_view_fragments` — folded into `cta_open_evidence` in v2.4.2.
 - `pro_interstitial_view`, `pro_upgrade_click`, `pro_coming_soon_view` — replaced by `paywall_*` and `fake_door_*` taxonomy in the v2.4.5 cutover. Hard removed.
-- `fake_door_view` / `fake_door_click` with feature key **`model-selection`** — the surface was
-  removed 2026-09-08. It read "Use Claude Opus 4.7" and was the only fake door that named a model
-  version, so it dated on every model bump. The series simply stops; it was not renamed or folded
-  into another key. `unlimited-projects`, `knowledge-chat` and `knowledge-edit` are unaffected.
+- `fake_door_view` / `fake_door_click` — **the whole taxonomy is retired, 2026-09-08.** Every fake
+  door was removed: `model-selection`, `knowledge-chat`, `knowledge-edit`, `ai-improve`,
+  `monthly-review`, `quarterly-review`, `strategic-narrative`, `connect-data` and the unreachable
+  `audio-memo`.
+
+  **Why: they measured nothing.** Checked via the Statsig Console API on 2026-09-08 —
+  `fake_door_view::event_count` exists, and `fake_door_click::event_count` **does not exist at
+  all**. Statsig creates a metric on an event's first log, so no user has ever clicked Upgrade from
+  any fake door. Eight surfaces, indefinite maintenance, zero signal. (`paywall_upgrade_click` is
+  likewise absent, so the real paywall has never converted either — that is a product finding, not
+  a reason to remove the paywall.)
+
+  `paywall_prompt_view` and `paywall_upgrade_click` continue, and now carry the only remaining
+  Pro surface, `unlimited-projects` — which is a real cap, not a fake door.

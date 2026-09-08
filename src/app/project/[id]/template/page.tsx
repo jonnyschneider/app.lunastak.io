@@ -231,15 +231,8 @@ export default function TemplateEntryPage() {
                     value={visionHeadline}
                     onChange={(e) => setVisionHeadline(e.target.value)}
                     placeholder="A world where..."
-                    className="text-lg bg-white border-border pr-36"
+                    className="text-lg bg-white border-border"
                   />
-                  <button
-                    onClick={() => pro.triggerUpgrade('ai-improve')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-ds-teal transition-colors rounded-md hover:bg-muted"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    Improve with AI
-                  </button>
                 </div>
                 {/* Progressive disclosure examples */}
                 <div className="mt-2">
@@ -300,15 +293,8 @@ export default function TemplateEntryPage() {
                     onChange={(e) => setStrategyHeadline(e.target.value)}
                     placeholder="We will focus on... by... while choosing not to..."
                     rows={2}
-                    className="text-lg bg-white border-border pr-36"
+                    className="text-lg bg-white border-border"
                   />
-                  <button
-                    onClick={() => pro.triggerUpgrade('ai-improve')}
-                    className="absolute right-2 top-3 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-ds-teal transition-colors rounded-md hover:bg-muted"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    Improve with AI
-                  </button>
                 </div>
               </div>
               <div>
@@ -356,13 +342,6 @@ export default function TemplateEntryPage() {
                     Objective {index + 1}
                   </h4>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => pro.triggerUpgrade('ai-improve')}
-                      className="flex items-center gap-1 text-xs text-ds-neon/70 hover:text-ds-neon transition-colors"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      Improve with AI
-                    </button>
                     {objectives.length > 1 && (
                       <button
                         onClick={() => handleRemoveObjective(index)}

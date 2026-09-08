@@ -2,10 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
+import { ChevronDown, ChevronUp, ArrowRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
@@ -201,8 +200,6 @@ interface KnowledgeSummaryPanelProps {
     removedIds: string[]
   }
   onRefreshClick: () => void
-  onChatClick: () => void
-  onEditClick: () => void
   /**
    * Fallback for hosts that cannot show the ground truths in place — demo mode, and anywhere
    * `projectId` is absent. When the list IS in place, a ball filters it instead of navigating.
@@ -241,8 +238,6 @@ export function KnowledgeSummaryPanel({
   strategySync,
   onOpenStrategy,
   onRefreshClick,
-  onChatClick,
-  onEditClick,
   onDimensionClick,
   projectId,
   onResumeConversation,
@@ -275,16 +270,6 @@ export function KnowledgeSummaryPanel({
     logAndFlush('cta_refresh_strategy', 'knowledge-panel')
     onRefreshClick()
   }, [onRefreshClick])
-
-  const handleChatClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    onChatClick()
-  }, [onChatClick])
-
-  const handleEditClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    onEditClick()
-  }, [onEditClick])
 
   /**
    * A ball is a FILTER when the list is in place, and a link only when it cannot be.
@@ -644,32 +629,12 @@ export function KnowledgeSummaryPanel({
                   : <ChevronDown className="h-4 w-4 shrink-0 md:hidden" />}
               </button>
 
-              {knowledgeSummary && fragmentCount > 0 && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className={cn(SECTION_HEADING_ACTION, 'normal-case')} aria-label="Refine this summary">
-                      <Pencil className="h-3 w-3" />
-                      Refine
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-44 p-1">
-                    <button
-                      onClick={handleChatClick}
-                      className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors hover:bg-muted"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                      Talk it through
-                    </button>
-                    <button
-                      onClick={handleEditClick}
-                      className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm transition-colors hover:bg-muted"
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      Edit directly
-                    </button>
-                  </PopoverContent>
-                </Popover>
-              )}
+              {/*
+                ⚠ NO REFINE ACTION. The bar carried "✎ Refine", whose two options — Talk it through
+                and Edit directly — were both fake doors, and Statsig has never recorded a single
+                click on any fake door in the project. A control that cannot do its own job is
+                worse than no control: it invites the user to try, and then tells them no.
+              */}
             </div>
 
             <div className={cn('space-y-3', !summaryOpen && 'hidden md:block')}>

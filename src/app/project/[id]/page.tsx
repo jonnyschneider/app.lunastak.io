@@ -451,7 +451,6 @@ export default function ProjectPage() {
     comingSoonOpen,
     setComingSoonOpen,
     currentFeature,
-    triggerUpgrade,
     handleUpgrade,
     handleContinue,
   } = useProUpgradeFlow()
@@ -1016,8 +1015,6 @@ export default function ProjectPage() {
               dimensionalCoverage={stats.dimensionalCoverage}
               latestStrategyTraceId={null}
               onRefreshClick={() => {}}
-              onChatClick={() => {}}
-              onEditClick={() => {}}
               onDimensionClick={() => {}}
               knowledgeBusyMessage={null}
               strategyBusyMessage={null}
@@ -1077,8 +1074,6 @@ export default function ProjectPage() {
                   handleGenerateStrategy()
                 }
               }}
-              onChatClick={() => triggerUpgrade('knowledge-chat')}
-              onEditClick={() => triggerUpgrade('knowledge-edit')}
               // Unreachable while `projectId` is set — the panel filters in place and only falls
               // back to this when it cannot. Kept honest rather than thrown away.
               onDimensionClick={() => setActiveTab('knowledgebase')}
