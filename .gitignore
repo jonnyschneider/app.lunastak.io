@@ -25,7 +25,6 @@ dist/
 coverage/
 *.lcov
 .nyc_output
-playwright-report/
 test-results/
 
 # IDE
@@ -119,7 +118,6 @@ TECH_DILIGENCE_BRIEFING.md
 # (analytics/events.md moved to architecture/analytics-events.md, 2026-08-29)
 docs/*
 !docs/architecture/
-e2e/
 evals/
 scripts/
 

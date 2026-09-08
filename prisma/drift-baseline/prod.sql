@@ -1,4 +1,6 @@
 -- AlterTable
+ALTER TABLE "DecisionStackSnapshot" ADD COLUMN     "fragmentIds" JSONB;
+-- AlterTable
 ALTER TABLE "Fragment" ADD COLUMN     "interpretationType" TEXT,
 ADD COLUMN     "reviewedAt" TIMESTAMP(3);
 -- CreateTable
