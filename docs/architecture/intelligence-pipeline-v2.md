@@ -435,6 +435,80 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
 
+### 2026-09-08: The first strategy waits for the user — the ground truth review (slice 4, ON A BRANCH)
+
+> ⚠ **Not deployed.** Same branch as the 2026-09-04 entry (`feat/ground-truth-check-backend`,
+> schema on dev only). §1 Layer 3 and §2's decision matrix still describe production and are
+> correct until this deploys; the "on deploy" list at the end is what changes then.
+
+**Context.** The gate exists because of what the evidence layer *fixed*, not because fragments are
+doubtful. §20 measured evidence in initial generation taking not-clean output from 25.0% to 0.0%
+(Fisher exact p = 0.022) — the invention problem was solved in the **data** layer. What remains is
+the thing no data change can do: the user has never seen what was taken from their own words before
+it becomes strategy. §21 and §22 record what that removed from the interaction — editing went
+(it only ever wrote `Fragment.title`, which no downstream stage reads), and the confident/doubtful
+split went with it, because on a post-evidence project it flags roughly one row in twenty-six.
+What is left is a **pruning surface**: one list, discard only.
+
+**Change.** No new trigger, no new state column, no new archive path. The split is one field in the
+plan and one existing trigger:
+
+- `planPipeline()` — `conversation_ended{isInitial: true}` now returns `generation: null`. The
+  extraction path stops at fragments.
+- The first strategy is produced only by `generate_from_knowledge`, which already meant "generate
+  from fragments that exist, without extracting". The review needs no trigger of its own.
+- `executePipeline()` — a plan that generates nothing now clears the busy flag itself
+  (`setGenerationStatus(projectId, null)`). This fixes a real defect, not just the new path: that
+  call lived only inside `pipeline/generation.ts`, so **any** plan with `generation: null` left the
+  project polling `'generating'` forever.
+- `POST /api/project/[id]/generate-strategy` returns **409 `already_generating`** when
+  `decisionStack.generationStatus === 'generating'`, and exempts a first strategy from the guest
+  quota (`project.decisionStack === null`) — the review now sits between the guest and the thing
+  they came for.
+- `PATCH /api/project/[id]/fragments` accepts `{ ids, reviewed: true }`, stamping `reviewedAt`
+  without touching status. Reviewing is being **shown** something, not clicking it.
+- Discards are `status: 'archived'` with `archivedReason: 'ground_truth_review'`, persisted one
+  fragment at a time, immediately — never staged awaiting a submit.
+
+**Latency, measured — the wait is split, not added to.** First render on the extraction paths drops
+from ~55s (fragments + generation) to ~20-25s (fragments only), and on bundle import to **zero**:
+`transformContextBundleDirect` makes no LLM call, so the review is there as soon as the import is.
+Generation's ~37s then happens **after** the user's decision rather than before it. Sources: prod
+`DecisionStackSnapshot` `post_generation` median 37.1s (n=94, `scripts/one-offs/gate-latency.ts`);
+model-bump `metrics.csv` `document_extraction` 25.1s on Sonnet 5. Total time to a strategy is
+unchanged.
+
+**Checked and left alone — synthesis is parallel, not wasted.** `generate_from_knowledge` sets
+`runSynthesis` and `runKnowledgeSummary`, and `runInitialGeneration` does **not** read
+`DimensionalSynthesis` — which looks like eleven pointless calls in the user's path. It is not.
+Only `refresh_requested` takes the executor's foreground synthesis branch, and it must, because
+`runRefreshGeneration` reads the syntheses. Every other trigger routes through
+`runBackgroundTasks`, parallel to Layer 3. The syntheses feed the knowledge summary and the later
+refresh and opportunity paths. Nothing to change here.
+
+**Result.** Verified on a real baseline project built across all three ingest paths (35 fragments,
+72 spans, all three verification states; fixtures in `Test-Data/2026-09-07-gate-baseline/`). The
+review's whole view model is a pure function over the fragments API response
+(`src/components/ground-truth/derive.ts`, 12 tests) — it moved from prototype to production
+unchanged, which is the check that the surface is data-shaped rather than screen-shaped.
+
+**Carried, not fixed:**
+- **The backfill is the ship blocker for existing users.** A pre-evidence fragment has no span, so
+  the review can show it a title and nothing else.
+- The verifier fix is **not retroactive** — spans verify at ingest and source text is not
+  persisted, so existing `failed` rows may carry a false positive.
+- Extraction asks for a theme *name*, not a claim, which is why bundle-sourced rows read as claims
+  and extraction-sourced rows as topic labels. Most visible in exactly this list.
+
+**On deploy, update:** §1 Layer 3 (initial generation no longer fires on `conversation_ended`) ·
+§2's decision matrix (`conversation_ended` + `isInitial` → no generation) ·
+`service-blueprints.md` Task 2, which currently ends *"the user never sees what was extracted from
+their own words before it becomes strategy."*
+
+**Architecture impact.** Layer 3 only, and by omission. Design record:
+`docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4-§7 and
+`docs/_plans/2026-08-27-ground-truth-preflight-design.md` §21-§22.
+
 ### 2026-09-04: Extraction cites its source — the `Evidence` layer (slices 1-2, ON A BRANCH)
 
 > ⚠ **Not deployed.** This lands on `feat/ground-truth-check-backend` (app) and
