@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { isGuestUser, createGuestUser } from '@/lib/projects'
+import { computeDimensionSupport, type SupportLevel } from '@/lib/support/dimension-support'
 
 const GUEST_COOKIE_NAME = 'guestUserId'
 
@@ -102,6 +103,9 @@ export async function GET(
           where: { status: 'active' },
           include: {
             dimensionTags: true,
+            // Read by the support calculator only: evidence state and substance can pull a
+            // dimension's ball down one band, never lift it (design §16.4).
+            evidence: { select: { text: true, verification: true } },
           },
         },
         documents: {
@@ -157,30 +161,19 @@ export async function GET(
       },
     })
 
-    // Calculate dimensional coverage
-    const dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }> = {}
+    // Dimensional coverage: fragment volume plus the computed support the Harvey ball reads.
+    // Support is computed on every read and never stored — a stored field is one refactor away
+    // from being fed back to the producer whose work it scores (design §16.4).
+    const dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }> = {}
 
     for (const dimension of TIER_1_DIMENSIONS) {
       const dimensionFragments = project.fragments.filter(f =>
         f.dimensionTags.some(t => t.dimension === dimension)
       )
 
-      // Calculate average confidence
-      let totalConfidence = 0
-      let confidenceCount = 0
-
-      for (const fragment of dimensionFragments) {
-        const tag = fragment.dimensionTags.find(t => t.dimension === dimension)
-        if (tag?.confidence) {
-          const confValue = tag.confidence === 'HIGH' ? 3 : tag.confidence === 'MEDIUM' ? 2 : 1
-          totalConfidence += confValue
-          confidenceCount++
-        }
-      }
-
       dimensionalCoverage[dimension] = {
         fragmentCount: dimensionFragments.length,
-        averageConfidence: confidenceCount > 0 ? totalConfidence / confidenceCount : 0,
+        support: computeDimensionSupport(dimensionFragments),
       }
     }
 

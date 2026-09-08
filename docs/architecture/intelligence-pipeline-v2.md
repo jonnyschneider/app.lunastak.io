@@ -435,6 +435,163 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
 
+### 2026-09-08: The first strategy waits for the user — the ground truth review (slice 4, ON A BRANCH)
+
+> ⚠ **Not deployed.** Same branch as the 2026-09-04 entry (`feat/ground-truth-check-backend`,
+> schema on dev only). §1 Layer 3 and §2's decision matrix still describe production and are
+> correct until this deploys; the "on deploy" list at the end is what changes then.
+
+**Context.** The gate exists because of what the evidence layer *fixed*, not because fragments are
+doubtful. §20 measured evidence in initial generation taking not-clean output from 25.0% to 0.0%
+(Fisher exact p = 0.022) — the invention problem was solved in the **data** layer. What remains is
+the thing no data change can do: the user has never seen what was taken from their own words before
+it becomes strategy. §21 and §22 record what that removed from the interaction — editing went
+(it only ever wrote `Fragment.title`, which no downstream stage reads), and the confident/doubtful
+split went with it, because on a post-evidence project it flags roughly one row in twenty-six.
+What is left is a **pruning surface**: one list, discard only.
+
+**Change.** No new trigger, no new state column, no new archive path. The split is one field in the
+plan and one existing trigger:
+
+- `planPipeline()` — `conversation_ended{isInitial: true}` now returns `generation: null`. The
+  extraction path stops at fragments.
+- The first strategy is produced only by `generate_from_knowledge`, which already meant "generate
+  from fragments that exist, without extracting". The review needs no trigger of its own.
+- `executePipeline()` — a plan that generates nothing now clears the busy flag itself
+  (`setGenerationStatus(projectId, null)`). This fixes a real defect, not just the new path: that
+  call lived only inside `pipeline/generation.ts`, so **any** plan with `generation: null` left the
+  project polling `'generating'` forever.
+- `POST /api/project/[id]/generate-strategy` returns **409 `already_generating`** when
+  `decisionStack.generationStatus === 'generating'`, and exempts a first strategy from the guest
+  quota (`project.decisionStack === null`) — the review now sits between the guest and the thing
+  they came for.
+- `PATCH /api/project/[id]/fragments` accepts `{ ids, reviewed: true }`, stamping `reviewedAt`
+  without touching status. Reviewing is being **shown** something, not clicking it.
+- Discards are `status: 'archived'` with `archivedReason: 'ground_truth_review'`, persisted one
+  fragment at a time, immediately — never staged awaiting a submit.
+
+**Latency, measured — the wait is split, not added to.** First render on the extraction paths drops
+from ~55s (fragments + generation) to ~20-25s (fragments only), and on bundle import to **zero**:
+`transformContextBundleDirect` makes no LLM call, so the review is there as soon as the import is.
+Generation's ~37s then happens **after** the user's decision rather than before it. Sources: prod
+`DecisionStackSnapshot` `post_generation` median 37.1s (n=94, `scripts/one-offs/gate-latency.ts`);
+model-bump `metrics.csv` `document_extraction` 25.1s on Sonnet 5. Total time to a strategy is
+unchanged.
+
+**Checked and left alone — synthesis is parallel, not wasted.** `generate_from_knowledge` sets
+`runSynthesis` and `runKnowledgeSummary`, and `runInitialGeneration` does **not** read
+`DimensionalSynthesis` — which looks like eleven pointless calls in the user's path. It is not.
+Only `refresh_requested` takes the executor's foreground synthesis branch, and it must, because
+`runRefreshGeneration` reads the syntheses. Every other trigger routes through
+`runBackgroundTasks`, parallel to Layer 3. The syntheses feed the knowledge summary and the later
+refresh and opportunity paths. Nothing to change here.
+
+**Result.** Verified on a real baseline project built across all three ingest paths (35 fragments,
+72 spans, all three verification states; fixtures in `Test-Data/2026-09-07-gate-baseline/`). The
+review's whole view model is a pure function over the fragments API response
+(`src/components/ground-truth/derive.ts`, 12 tests) — it moved from prototype to production
+unchanged, which is the check that the surface is data-shaped rather than screen-shaped.
+
+**Carried, not fixed:**
+- **The backfill is the ship blocker for existing users.** A pre-evidence fragment has no span, so
+  the review can show it a title and nothing else.
+- The verifier fix is **not retroactive** — spans verify at ingest and source text is not
+  persisted, so existing `failed` rows may carry a false positive.
+- Extraction asks for a theme *name*, not a claim, which is why bundle-sourced rows read as claims
+  and extraction-sourced rows as topic labels. Most visible in exactly this list.
+
+**On deploy, update:** §1 Layer 3 (initial generation no longer fires on `conversation_ended`) ·
+§2's decision matrix (`conversation_ended` + `isInitial` → no generation) ·
+`service-blueprints.md` Task 2, which currently ends *"the user never sees what was extracted from
+their own words before it becomes strategy."*
+
+**Architecture impact.** Layer 3 only, and by omission. Design record:
+`docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4-§7 and
+`docs/_plans/2026-08-27-ground-truth-preflight-design.md` §21-§22.
+
+### 2026-09-04: Extraction cites its source — the `Evidence` layer (slices 1-2, ON A BRANCH)
+
+> ⚠ **Not deployed.** This lands on `feat/ground-truth-check-backend` (app) and
+> `feat/verbatim-bundle-evidence` (`lunastak/tools`), with schema applied to **dev only** —
+> `db:check-drift` therefore reports drift on preview and prod, deliberately. §1, §3, §4 and §5
+> above still describe production and are correct until this deploys. The "on deploy" list at the
+> end of this entry is what changes then.
+
+**Context.** Groundedness was measured at 26% of factual claims clearly invented (2026-08-26), and
+two attempts at an LLM groundedness judge failed calibration (40-45% precision, 25-62% recall). A
+user-facing adjudication UI was designed, prototyped, and then **retired** — it duplicated the
+shipped `FragmentExplorer` and adjudicated the wrong layer. What replaced it came from one finding:
+**a model asked to QUOTE its evidence is reliable where the same model asked to JUDGE quality is
+not.** No producer in the pipeline had ever been asked to cite its source.
+
+**Change.** All three ingest paths now emit a verbatim span per theme plus a self-reported
+`verbatim | interpretation` type, and spans are verified **at ingest** while the source is briefly
+in hand. Source material is still **not persisted** — only the span and the verification result are.
+
+- Layer 0 — `EMERGENT_EXTRACTION_PROMPT` and `DOCUMENT_EXTRACTION_PROMPT` gain `<type>` and
+  `<evidence><span>`; parsing is shared via `src/lib/evidence/parse.ts`.
+- New `src/lib/evidence/verify.ts` — pure, markdown-tolerant matching.
+- Layer 1 — all three creators write `Evidence` rows in the same transaction as the fragment.
+- Import — `lunastak/tools` bundle spec now demands verbatim spans (both modes); the transform
+  carries them structurally instead of flattening them into `content`.
+- Schema — `Evidence` table plus `Fragment.interpretationType` / `Fragment.reviewedAt`, additive.
+
+`verification` is **three states and they are not interchangeable**: `verified`,
+`unverifiable` (no source retained — every bundle import, ~half of production fragments), `failed`.
+Conflating the last two would penalise a whole ingest path for a reason unrelated to quality.
+Conversation spans verify against the **user's turns only**; a span matching only the assistant is
+`failed` with `sourceRole: 'assistant'`.
+
+**Evidence.** Four spikes, all re-runnable, in `scripts/one-offs/`:
+
+| measurement | before | after |
+|---|---|---|
+| document extraction citing its source | no evidence at all | **119/119 spans verified**, 4 real docs |
+| bundle, themes mode | 63.1% traceable — the rest *near-quotes* | **100%** |
+| bundle, chunks mode | no evidence field | **100%** (68/68) |
+| retained per document | — | **8-18% of source**, ~850-1,200 chars |
+| real bundle, real voice memo (2026-09-05) | — | **46/46 verified**, 42/42 themes carrying evidence |
+
+Theme yield unchanged (−3.4% to +3.8%). A human-produced bundle imported end-to-end on dev: 47
+fragments, 46 spans, 9/9 checks including multi-span index alignment.
+
+**Two prompt changes were measured and NOT made**, recorded so they are not re-opened:
+- A "prefer the USER's own words" clause in the conversation prompt moved user-sourced spans 96% →
+  97.2% — one span in seventy-five. Not worth deviating from measured wording.
+- Removing the extraction count instruction entirely **increases** output up to 42%; the range acts
+  as a ceiling, not only a floor.
+
+**Deliberately unchanged, with reasons — do not "fix" these:**
+- **`Fragment.confidence`** — measured as a **constant** (1,901 of 1,901 prod rows `MEDIUM`; it
+  encodes only "did dimension tagging produce tags"). But the slot is live: holding fragments
+  constant and varying only the label moved **gap count ~40%** (3.5 HIGH vs 6.0 LOW). It belongs to
+  the confidence refactor, not here.
+- **`DimensionalSynthesis`** (every field), gaps generation, Explore Next, the opportunity coverage
+  gate — untouched.
+- **`averageConfidence`** (`api/project/[id]/route.ts`) is computed and never read. Left dead on
+  purpose; the Harvey ball's replacement input is designed but unbuilt (slice 3).
+
+**Measured 2026-09-06 — does NOT block.** Moving bundle evidence out of `content` reduces what
+`full_synthesis` receives (that stage reads `content` only; nothing reads `Evidence` rows). Measured
+on a real bundle, 60 calls paired by dimension: the payload falls **−60.6%**, and **gap count moves
+−3.6%** — flat. The worry was that thinner input would *manufacture* more "what's missing"; it does
+not, which independently confirms the near-flat gap quota. The cost is a **−19.4% summary**, which
+propagates to refresh and opportunity generation.
+
+Two things worth carrying: **a `Confidence: HIGH` label moves gaps 40% while removing 60% of the
+actual material moves them 3.6%** — this stage responds more to a metadata claim about quality than
+to how much real content it has. And the blast radius is **themes-mode bundles only** (~15% of prod
+fragments): chunks-mode kept its `Source:` suffix, and documents/conversations never carried
+evidence in `content`. Detail: design doc §17.
+
+**On deploy, update:** §1 Layer 0 (extraction emits evidence + type) · §3 ERD (add `EVIDENCE`;
+`FRAGMENT` gains `interpretationType`, `reviewedAt`) · §5 LLM table (extraction output shape) ·
+`service-blueprints.md` Tasks 2, 3 and 4 (fragment creation now writes evidence) · and apply the
+schema to preview and prod, code before columns.
+
+**Architecture impact.** New `src/lib/evidence/` layer. Design record:
+`docs/_plans/2026-08-27-ground-truth-preflight-design.md` §13-§16.
+
 ### 2026-08-29: Documentation corrected against a full schema/code cross-reference
 
 **Context:** A cross-reference of all 225 scalar schema fields against their readers found §3 and §4 describing a system that no longer existed. The ERD named `GeneratedOutput`, `StrategyVersion` and (in the 2026-03-28 log entry) `UserContent` — all retired when the strategy side moved to `DecisionStack`. §4 showed a "Key Themes (Strategy Page)" surface removed in an earlier refactor. §5 named three prompt constants renamed by the 2026-08-27 seam consolidation.

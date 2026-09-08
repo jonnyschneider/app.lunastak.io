@@ -3,7 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
+import { Steps } from '@/components/ui/steps'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
@@ -16,6 +23,126 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+
+/** The user has given context; they are checking it; then it becomes a strategy. */
+const GROUND_TRUTH_PHASES = ['Your context', 'Ground truths', 'Your strategy'] as const
+
+/**
+ * Fragments exist and no strategy does: the user sees what their strategy will be built from
+ * before it is built. Skipping stays available (§4's affirmative skip) — it just is not silent.
+ */
+function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; onGenerate: () => void }) {
+  const [remaining, setRemaining] = useState<number | null>(null)
+  const [total, setTotal] = useState<number | null>(null)
+  const [skipOpen, setSkipOpen] = useState(false)
+  /**
+   * Pressing Build must LOOK like it did something, immediately.
+   *
+   * `handleGenerateStrategy` only reports through the background-task toast once the POST
+   * resolves — and in the dev server that route awaits the whole run, so the screen sat unchanged
+   * for ~37s. A user reasonably concludes nothing happened and presses something else; on
+   * 2026-09-08 that produced two generations landing as consecutive versions.
+   */
+  const [building, setBuilding] = useState(false)
+  const build = useCallback(() => {
+    if (building) return
+    setBuilding(true)
+    setSkipOpen(false)
+    onGenerate()
+  }, [building, onGenerate])
+  // Stable identity: the review reports counts from an effect, and an inline arrow here would
+  // change on every render and re-fire it. It settles today only because React bails on identical
+  // state — which is luck, not design.
+  const handleCount = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
+
+  // The whole panel takes the reading measure, not just its contents — a narrow column inside a
+  // full-width card read as a mistake rather than a choice.
+  return (
+    <Card className="mx-auto max-w-3xl overflow-hidden">
+      {/* Chrome, not content: the bar sits on the card's top edge and the block is ruled off, so
+          the frame says where you are and the content below is only the ground truths. */}
+      <Steps steps={GROUND_TRUTH_PHASES} current={1} flush labelsClassName="px-6 md:px-8" />
+      <CardContent className="space-y-4 p-6 md:p-8">
+        <div>
+          {/*
+            WHERE AM I, WHAT HAPPENS NEXT, AND WHY BOTHER. Without this the review is a list of
+            sentences with no frame: the user has just asked for a strategy and been handed
+            something else, with no signal that it is a step rather than the destination, or that
+            it is waiting on them.
+          */}
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              {total === null ? 'Check your ground truths' : `Check your ${total} ground truths`}
+            </h2>
+            <p className="mt-1 text-sm text-foreground/60">
+              This is everything I took from what you gave me — and everything your vision, strategy
+              and objectives get built from. Discard anything I got wrong, then I&rsquo;ll build it.
+            </p>
+          </div>
+        </div>
+
+        <GroundTruthReview
+          projectId={projectId}
+          onCountChange={handleCount}
+        />
+
+        <div className="flex flex-wrap items-center gap-4 border-t pt-4">
+          <Button onClick={build} disabled={building}>
+            {building ? (
+              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Building your strategy…</>
+            ) : (
+              <>
+                Build my strategy{remaining !== null && total !== null && remaining < total ? ` from ${remaining}` : ''}
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </>
+            )}
+          </Button>
+          {!building && (
+            <button
+              onClick={() => setSkipOpen(true)}
+              className="text-sm text-foreground/45 underline underline-offset-4 hover:text-foreground"
+            >
+              Skip the review
+            </button>
+          )}
+          {building && (
+            <span className="text-xs text-foreground/45">
+              This takes about half a minute. You can leave this page.
+            </span>
+          )}
+        </div>
+      </CardContent>
+
+      {/*
+        ⚠ NO STATISTIC HERE, DELIBERATELY. §20 measured what EVIDENCE in generation does (not-clean
+        25.0% → 0.0%). Nothing has ever measured what a USER REVIEWING does — that experiment does
+        not exist, and "users who check their ground truths get n% fewer inventions" would be the
+        exact invention this whole thread removed. The mechanism is true; the number is not ours.
+      */}
+      <AlertDialog open={skipOpen} onOpenChange={setSkipOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Skip the review?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                These are the context your strategy is generated from. Anything wrong here can carry
+                through into your vision, strategy, objectives and metrics.
+              </span>
+              <span className="block">
+                You can fix them any time — but it&rsquo;s about thirty seconds now, and it&rsquo;s
+                the single biggest influence on what you get back.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Take a look</AlertDialogCancel>
+            <AlertDialogAction onClick={build}>Skip anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  )
+}
 
 // --- Shared onboarding cards (used in Launchpad + KB empty state) ---
 
@@ -97,19 +224,10 @@ export function Launchpad({
 
   return (
     <div className="space-y-8">
-      {/* Contextual nudge when fragments exist */}
-      {fragmentCount > 0 && onGenerateNow && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4 flex items-center justify-between">
-            <p className="text-sm">
-              <span className="font-semibold">{fragmentCount} fragments</span> imported. Ready when you are — generate your Decision Stack to see Vision, Strategy, and Objectives.
-            </p>
-            <Button size="sm" onClick={onGenerateNow}>
-              Generate strategy
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* The ground truth review. This slot is the one moment it belongs in — fragments exist, no
+          strategy yet — and it is reached identically from all three ingest paths, which is why it
+          needs no new route and no new state column. */}
+      {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} projectId={projectId} />}
 
       {/* Two onboarding paths */}
       <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">

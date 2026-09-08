@@ -22,6 +22,20 @@ export interface EmergentThemeContract {
     name: string;
     confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   }>;
+  /** Verbatim spans the theme rests on. Optional: a producer that omits them still parses. */
+  evidence?: string[];
+  /** How the theme was made. Self-reported by the extractor (§14). */
+  type?: 'verbatim' | 'interpretation';
+  /**
+   * What KIND of thing this is, when the producer knows. Defaults to the caller's own default.
+   *
+   * `tension` exists because a context bundle's `tensions` are not ground truth: they are the
+   * skill's own reading ACROSS themes — a conclusion drawn in a conversation this app never saw.
+   * They cannot cite a verbatim span because they are not a quote, and asking them to would invite
+   * exactly the laundering §13 named. They are still context and still feed synthesis and
+   * generation; they are simply not something to ask a user to verify.
+   */
+  contentType?: 'theme' | 'insight' | 'tension';
 }
 
 // Emergent extraction output (E1a, E3)

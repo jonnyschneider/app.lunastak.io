@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { createFragmentsFromThemes, createFragmentsFromDocument, type ThemeWithDimensions } from '@/lib/fragments'
+import { createFragmentsFromThemes, createFragmentsFromDocument, type ThemeWithDimensions, type ConversationSource } from '@/lib/fragments'
 import { updateAllSyntheses } from '@/lib/synthesis'
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
 import { runBackgroundTasks } from '@/lib/background-tasks'
@@ -25,12 +25,39 @@ export async function executePipeline(
 
   // Layer 1: Persist fragments
   if (plan.persistFragments && trigger.type === 'conversation_ended' && trigger.extractionResult?.themes) {
+    // Evidence spans are verified at ingest against the USER's turns only — a span quoting the
+    // coach back at the user is not evidence of what the user thinks. One query, split in memory;
+    // the assistant half is carried so a wrong-speaker match can be recorded as such.
+    //
+    // This read is SUPPLEMENTARY and gets its own try: the fragments are the primary artefact of
+    // an extraction, and a transient failure fetching the transcript must not discard them. On
+    // failure the source is null, so the spans store as `unverifiable` — "could not be checked",
+    // which is exactly what happened.
+    let source: ConversationSource | null = null
+    try {
+      const messages = await prisma.message.findMany({
+        where: { conversationId: trigger.conversationId },
+        select: { role: true, content: true },
+        orderBy: { timestamp: 'asc' },
+      })
+      // No turns of a role is NOT an empty source that everything fails against — it is no source.
+      // Hence null, which stores `unverifiable`.
+      const joinTurns = (role: string): string | null => {
+        const turns = messages.filter(m => m.role === role)
+        return turns.length > 0 ? turns.map(m => m.content).join('\n\n') : null
+      }
+      source = { user: joinTurns('user'), assistant: joinTurns('assistant') }
+    } catch (error) {
+      console.error('[Pipeline] Failed to read transcript for evidence verification — spans will store as unverifiable:', error)
+    }
+
     try {
       console.log(`[Pipeline] Creating fragments from ${trigger.extractionResult.themes.length} themes...`)
       const fragments = await createFragmentsFromThemes(
         projectId,
         trigger.conversationId,
-        trigger.extractionResult.themes as ThemeWithDimensions[]
+        trigger.extractionResult.themes as ThemeWithDimensions[],
+        source
       )
       fragmentsCreated = fragments.length
       console.log(`[Pipeline] Created ${fragmentsCreated} fragments`)
@@ -49,7 +76,9 @@ export async function executePipeline(
       const fragments = await createFragmentsFromDocument(
         projectId,
         trigger.documentId,
-        trigger.extractionResult.themes as ThemeWithDimensions[]
+        trigger.extractionResult.themes as ThemeWithDimensions[],
+        // The document text is never persisted — this is the only moment its spans can be checked.
+        trigger.documentText
       )
       fragmentsCreated = fragments.length
       console.log(`[Pipeline] Created ${fragmentsCreated} document fragments`)
@@ -200,6 +229,22 @@ export async function executePipeline(
         break
       }
     }
+  }
+
+  /**
+   * The busy flag is cleared by the EXECUTOR, not by whatever the plan happened to do.
+   *
+   * It used to be cleared only inside `pipeline/generation.ts`, which was invisible while every
+   * plan generated. The ground-truth review split makes an initial conversation plan
+   * `generation: null`, and a plan that generates nothing would otherwise leave the project
+   * polling 'generating' forever with the UI stuck in its busy state.
+   *
+   * Clearing here is correct for every trigger, including ones not written yet. It is idempotent
+   * — the generation paths clear it too, and setting null twice is null.
+   */
+  if (!plan.generation) {
+    const { setGenerationStatus } = await import('@/lib/decision-stack')
+    await setGenerationStatus(projectId, null)
   }
 
   return {

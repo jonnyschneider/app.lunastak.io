@@ -14,7 +14,7 @@
  */
 import { z } from 'zod'
 
-export const BUNDLE_VERSION = 2 as const
+export const BUNDLE_VERSION = 3 as const
 
 const ConfidenceSchema = z.enum(['HIGH', 'MEDIUM', 'LOW'])
 
@@ -24,12 +24,31 @@ const ComponentSchema = z
   })
   .passthrough() // component shape varies by type and may evolve; preserve unknown fields
 
+/**
+ * The verbatim span a fragment rests on. Three verification states, not a
+ * boolean: `unverifiable` means the source was not retained so the span COULD
+ * NOT be checked — which is not the same failure as a span that was checked and
+ * did not match. See docs/_plans/2026-08-27-ground-truth-preflight-design.md §16.1.
+ */
+const EvidenceSchema = z.object({
+  text: z.string(),
+  sourceRole: z.string().nullable().optional(), // user | assistant | document | bundle
+  verification: z.enum(['verified', 'unverifiable', 'failed']),
+  ordinal: z.number().int().nonnegative(),
+})
+
 const FragmentSchema = z.object({
   title: z.string().nullable(),
   content: z.string(),
   contentType: z.string(), // theme | insight | quote | stat | principle (free-form for forward-compat)
   confidence: ConfidenceSchema.nullable(),
   sourceType: z.string(), // extraction | import | manual
+  // The three below are optional so a bundle exported before the ground truth
+  // check still restores. Absent means "this export predates evidence", which is
+  // exactly `null` / no rows — not a validation failure.
+  interpretationType: z.string().nullable().optional(), // verbatim | interpretation
+  reviewedAt: z.string().datetime().nullable().optional(),
+  evidence: z.array(EvidenceSchema).optional(),
 })
 
 const GapSchema = z.object({
@@ -77,6 +96,7 @@ export const ProjectBundleSchema = z.object({
 export type ProjectBundle = z.infer<typeof ProjectBundleSchema>
 export type BundleComponent = z.infer<typeof ComponentSchema>
 export type BundleFragment = z.infer<typeof FragmentSchema>
+export type BundleEvidence = z.infer<typeof EvidenceSchema>
 export type BundleSynthesis = z.infer<typeof SynthesisSchema>
 
 export function parseBundle(raw: unknown): ProjectBundle {

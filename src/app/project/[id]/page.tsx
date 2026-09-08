@@ -49,6 +49,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useHeaderTabNav } from '@/components/HeaderContext'
 import { cn } from '@/lib/utils'
+import type { SupportLevel } from '@/lib/support/dimension-support'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   useProUpgradeFlow,
@@ -100,7 +101,7 @@ interface ProjectStats {
   fragmentCount: number
   conversationCount: number
   documentCount: number
-  dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
+  dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }>
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
   fragmentsSinceSummary: number
@@ -400,7 +401,9 @@ export default function ProjectPage() {
         )}
       </div>
       {!isDemo && hasStrategy && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => {
             logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
             if (isSignedUp) {
@@ -409,11 +412,11 @@ export default function ProjectPage() {
               setShareSignInGateOpen(true)
             }
           }}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
         >
-          <Share2 className="h-3.5 w-3.5" />
+          <Share2 />
           Share
-        </button>
+        </Button>
       )}
       </div>
     )
@@ -1018,7 +1021,6 @@ export default function ProjectPage() {
               knowledgeUpdatedAt={null}
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
-              syntheses={projectData?.syntheses || []}
               latestStrategyTraceId={null}
               onRefreshClick={() => {}}
               onChatClick={() => {}}
@@ -1067,7 +1069,6 @@ export default function ProjectPage() {
               knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
-              syntheses={projectData?.syntheses || []}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
               onRefreshClick={() => {
                 if (hasStrategy) {

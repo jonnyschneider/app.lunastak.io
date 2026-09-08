@@ -22,6 +22,20 @@
  * The script also accepts `--write` which captures the current diffs to
  * the baseline files instead of comparing. That's the implementation behind
  * `npm run db:approve-drift` — never call it manually unless you mean it.
+ *
+ * ⚠ Blanket `--write` is the blunt instrument: it rewrites EVERY env's baseline,
+ * so accidental drift on one env gets blessed alongside the change you meant.
+ * That is why SCHEMA_CHANGELOG entries have had to say "must NOT be approved
+ * away" — the only available tool was too broad to trust.
+ *
+ * For drift that is deliberate and pending a deploy, scope it and say why:
+ *
+ *   npm run db:approve-drift -- --env prod --reason "Evidence table + two
+ *     Fragment columns; applied to dev+preview, prod lands at deploy"
+ *
+ * That writes only `prod.sql` and records the reason in `prod.why.md`. Every
+ * later run prints the reason next to the approved drift, so a pending
+ * migration announces itself on every push instead of going quiet.
  */
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
@@ -71,6 +85,28 @@ function loadBaseline(envName: EnvName): string | null {
   return normalise(readFileSync(path, 'utf8'))
 }
 
+function whyPath(envName: EnvName): string {
+  return join(BASELINE_DIR, `${envName}.why.md`)
+}
+
+function loadWhy(envName: EnvName): string | null {
+  const p = whyPath(envName)
+  if (!existsSync(p)) return null
+  const first = readFileSync(p, 'utf8').split('\n').find((l) => l.trim() && !l.startsWith('#'))
+  return first ? first.trim() : null
+}
+
+function writeWhy(envName: EnvName, reason: string): void {
+  const today = new Date().toISOString().slice(0, 10)
+  writeFileSync(
+    whyPath(envName),
+    `# Why \`${envName}\` has approved drift\n\n${reason}\n\n` +
+      `Approved ${today}. Clears when the migration is applied to ${envName} — ` +
+      `re-run \`npm run db:approve-drift -- --env ${envName} --reason "in sync"\` ` +
+      `or, once every env is in sync, plain \`npm run db:approve-drift\`.\n`,
+  )
+}
+
 function writeBaseline(envName: EnvName, sql: string): void {
   if (!existsSync(BASELINE_DIR)) mkdirSync(BASELINE_DIR, { recursive: true })
   const path = join(BASELINE_DIR, `${envName}.sql`)
@@ -79,10 +115,28 @@ function writeBaseline(envName: EnvName, sql: string): void {
 }
 
 async function main() {
-  const writeMode = process.argv.includes('--write')
+  const argv = process.argv
+  const writeMode = argv.includes('--write')
+  const envFlagIdx = argv.indexOf('--env')
+  const onlyEnv = envFlagIdx !== -1 ? (argv[envFlagIdx + 1] as EnvName | undefined) : undefined
+  const reasonIdx = argv.indexOf('--reason')
+  const reason = reasonIdx !== -1 ? argv[reasonIdx + 1] : undefined
+
+  if (onlyEnv && !ENV_NAMES.includes(onlyEnv)) {
+    console.error(`unknown --env "${onlyEnv}" (expected one of ${ENV_NAMES.join(', ')})`)
+    process.exit(1)
+  }
+  // A scoped approval must say why. The reason is the whole point: it turns a
+  // silent baseline into a pending-deploy note that every future push prints.
+  if (writeMode && onlyEnv && !reason) {
+    console.error('--env requires --reason "<why this drift is intentional>"')
+    process.exit(1)
+  }
+
   let failed = false
 
   for (const name of ENV_NAMES) {
+    if (onlyEnv && name !== onlyEnv) continue
     let env
     try {
       env = loadDbEnv(name)
@@ -95,7 +149,8 @@ async function main() {
 
     if (writeMode) {
       writeBaseline(name, actual)
-      console.log(`[${name}] baseline written (${actual.length} chars)`)
+      if (reason) writeWhy(name, reason)
+      console.log(`[${name}] baseline written (${actual.length} chars)${reason ? ' + reason recorded' : ''}`)
       continue
     }
 
@@ -110,7 +165,13 @@ async function main() {
     }
 
     if (actual === baseline) {
-      console.log(`[${name}] ok (${actual.length === 0 ? 'in sync' : `${actual.length} chars of approved drift`})`)
+      if (actual.length === 0) {
+        console.log(`[${name}] ok (in sync)`)
+      } else {
+        const why = loadWhy(name)
+        console.log(`[${name}] ok (${actual.length} chars of approved drift)`)
+        console.log(`  pending: ${why ?? `no reason recorded — see prisma/drift-baseline/${name}.why.md`}`)
+      }
       continue
     }
 
@@ -119,7 +180,9 @@ async function main() {
     console.error(indent(baseline) || '  (empty)')
     console.error(`  actual (${actual.length} chars):`)
     console.error(indent(actual) || '  (empty)')
-    console.error(`  if this drift is intentional, run \`npm run db:approve-drift\``)
+    console.error(`  if this drift is intentional and PENDING A DEPLOY, scope it and say why:`)
+    console.error(`    npm run db:approve-drift -- --env ${name} --reason "<why>"`)
+    console.error(`  blanket \`npm run db:approve-drift\` rewrites every env — only when all are settled.`)
     failed = true
   }
 

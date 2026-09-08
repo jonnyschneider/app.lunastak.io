@@ -10,6 +10,7 @@ import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
 import { InlineMarkdown } from '@/components/InlineMarkdown'
+import type { SupportLevel } from '@/lib/support/dimension-support'
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -26,58 +27,48 @@ const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
   STRATEGIC_INTENT: 'Strategic Intent',
 }
 
-// Harvey ball for confidence visualization
-function HarveyBall({ confidence }: { confidence: string | null }) {
+/**
+ * Five-state Harvey ball over computed support (design §16.4).
+ *
+ * The fill sweeps from the top anticlockwise — quarter is the bottom-left quadrant, half the left
+ * half, three-quarter those plus the bottom-right — so each state visibly contains the one below.
+ */
+export function HarveyBall({ support }: { support: SupportLevel }) {
   const size = 14
   const radius = 6
   const cx = 7
   const cy = 7
 
-  // null/no fragments = empty, LOW = quarter, MEDIUM = half, HIGH/MEDIUM-HIGH = full
-  const level = !confidence ? 0
-    : confidence === 'LOW' ? 1
-    : confidence === 'MEDIUM' ? 2
-    : 3 // HIGH, MEDIUM-HIGH
-
   // Empty circle
-  if (level === 0) {
+  if (support === 'empty') {
     return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-muted-foreground/40">
+      <svg data-support={support} width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-muted-foreground/40">
         <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     )
   }
 
   // Full circle
-  if (level === 3) {
+  if (support === 'full') {
     return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
+      <svg data-support={support} width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
         <circle cx={cx} cy={cy} r={radius} fill="currentColor" />
       </svg>
     )
   }
 
-  // Half circle (left half filled)
-  if (level === 2) {
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
-        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <path
-          d={`M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`}
-          fill="currentColor"
-        />
-      </svg>
-    )
-  }
+  // Wedge on an outline: quarter (bottom-left), half (left), three-quarter (all but top-right)
+  const wedge =
+    support === 'quarter'
+      ? `M ${cx} ${cy} L ${cx} ${cy + radius} A ${radius} ${radius} 0 0 1 ${cx - radius} ${cy} Z`
+      : support === 'half'
+        ? `M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} Z`
+        : `M ${cx} ${cy - radius} A ${radius} ${radius} 0 1 0 ${cx + radius} ${cy} L ${cx} ${cy} Z`
 
-  // Quarter circle (bottom-left quadrant filled)
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
+    <svg data-support={support} width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="text-luna">
       <circle cx={cx} cy={cy} r={radius} fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d={`M ${cx} ${cy} L ${cx} ${cy + radius} A ${radius} ${radius} 0 0 1 ${cx - radius} ${cy} Z`}
-        fill="currentColor"
-      />
+      <path d={wedge} fill="currentColor" />
     </svg>
   )
 }
@@ -98,12 +89,6 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-interface DimensionalSynthesis {
-  dimension: string
-  confidence: string
-  fragmentCount: number
-}
-
 interface KnowledgeSummaryPanelProps {
   fragmentCount: number
   chatCount: number
@@ -113,8 +98,8 @@ interface KnowledgeSummaryPanelProps {
   fragmentsSinceSummary: number
   knowledgeUpdatedAt: string | null
   knowledgeSummary: string | null
-  dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
-  syntheses: DimensionalSynthesis[]
+  /** Per-dimension fragment volume plus the computed support the ball reads (design §16.4). */
+  dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }>
   latestStrategyTraceId: string | null
   onRefreshClick: () => void
   onChatClick: () => void
@@ -142,7 +127,6 @@ export function KnowledgeSummaryPanel({
   knowledgeUpdatedAt,
   knowledgeSummary,
   dimensionalCoverage,
-  syntheses,
   latestStrategyTraceId,
   onRefreshClick,
   onChatClick,
@@ -328,10 +312,9 @@ export function KnowledgeSummaryPanel({
           {fragmentCount > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-1">
               {TIER_1_DIMENSIONS.map((dimension) => {
-                const coverage = dimensionalCoverage[dimension]
-                const dimFragmentCount = coverage?.fragmentCount || 0
-                const synthesis = syntheses?.find(s => s.dimension === dimension)
-                const confidence = synthesis?.confidence || (dimFragmentCount > 0 ? 'MEDIUM' : null)
+                // Computed support, not the synthesis self-report: the old input reached the ball
+                // as a boolean before synthesis ran and flickered per run after it (design §16.3).
+                const support = dimensionalCoverage[dimension]?.support ?? 'empty'
 
                 return (
                   <button
@@ -342,7 +325,7 @@ export function KnowledgeSummaryPanel({
                     }}
                     className="flex items-center gap-2 py-1 text-xs hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
                   >
-                    <HarveyBall confidence={confidence} />
+                    <HarveyBall support={support} />
                     <span className="text-muted-foreground truncate">
                       {DIMENSION_LABELS[dimension]}
                     </span>

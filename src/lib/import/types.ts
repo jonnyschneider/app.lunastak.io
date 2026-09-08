@@ -26,6 +26,7 @@ export interface ContextBundle {
 export interface BundleChunk {
   topic: string
   content: string
+  evidence?: string[]
   sources?: string[]
 }
 

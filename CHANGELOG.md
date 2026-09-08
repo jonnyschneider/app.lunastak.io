@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — evidence spans: the words behind every fragment (2026-09-04)
+
+Extraction now emits verbatim evidence spans alongside each fragment, and they are persisted
+in a new `Evidence` table on all three ingest paths (conversation, document, bundle). Spans
+are verified against the source at ingest — `verified`, `failed`, or `unverifiable` when no
+source was retained (every bundle import). `unverifiable` never counts against a fragment: it
+is a property of the path, not the evidence.
+
+Downstream, synthesis, initial generation and opportunity generation all read the `Evidence`
+table, and the Harvey ball now reads computed support rather than a model self-report.
+
+Schema: `Evidence` table; `Fragment.interpretationType`, `Fragment.reviewedAt`. See
+`prisma/SCHEMA_CHANGELOG.md` (2026-09-04).
+
+### Added — the ground truth review (2026-09-08)
+
+A review surface between extraction and generation: the user sees what was taken from their
+own words before a strategy is built on it. Rows group by dimension, carry source icons and
+dimension context, and offer two verdicts — keep or discard. Gold marks the user's own words
+and nothing else.
+
+An initial conversation now **stops after fragments** — the review comes first, and generation
+happens on a later `generate_from_knowledge` call rather than immediately.
+
+New in the component library: `Steps`, `CopyButton`, `Switch`, `ReviewPass`.
+
+### Added — public project sharing (2026-09-06)
+
+A rolling share link per project (`Project.shareToken` / `shareEnabled` / `sharedAt`); the
+token is the security mechanism and persists across on/off toggles.
+
+### Fixed
+
+- The executor clears the busy flag when a plan has no generation path — projects no longer
+  poll `generating` forever.
+- The span verifier expands contractions before matching, and verifies conversation evidence
+  against the user's turns only.
+- An absent `<type>` is treated as no self-report rather than a defaulted `verbatim`; an empty
+  source is `unverifiable`, not `failed`.
+- A failed transcript read no longer discards the extraction's fragments.
+- Evidence blocks no longer collide with the following bullet in prompt rendering.
+
+### Changed
+
+- `type-check` regenerates the Prisma client before `tsc` — stale client types were passing
+  local verification and failing on preview.
+- Analytics events catalog consolidated to `docs/architecture/analytics-events.md`; service
+  blueprints promoted to `docs/architecture/`.
+
+> **On deploy:** `intelligence-pipeline-v2.md` §1 Layer 3, §2's decision matrix, and
+> `service-blueprints.md` Task 2 still describe pre-deploy production behaviour and must be
+> updated when this ships. Both Decision Log entries carry their own `⚠ Not deployed` banner
+> and checklist.
+
 ## [2.6.1] - 2026-09-02
 
 ### Removed — four `DimensionalSynthesis` columns nothing read (2026-08-29)

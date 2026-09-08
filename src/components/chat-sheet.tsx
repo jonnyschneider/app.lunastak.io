@@ -452,23 +452,23 @@ export function ChatSheet({
       const data = await response.json()
 
       if (data.status === 'started' && data.generationId) {
-        // Start tracking generation in context (handles polling and toast)
+        // Since the ground-truth review split, this call EXTRACTS and stops. The strategy is
+        // generated after the user has looked at what it will be built from, so the copy promises
+        // the review rather than the strategy — an initial run lands on the review, not a stack.
         startTask('generation', data.generationId, projectId, {
-          running: 'Generating your strategy...',
-          complete: 'Your strategy is ready',
-          failed: 'Strategy generation failed',
-          completeDescription: 'Click to view your new strategy.',
-          completeAction: (data) => data.traceId
-            ? { label: 'View', href: `/strategy/${data.traceId}` }
-            : undefined,
+          running: 'Reading what you told me...',
+          complete: 'Ready for you to check',
+          failed: 'Something went wrong reading your conversation',
+          completeDescription: 'Have a look at what I took, then I\'ll build your strategy.',
+          completeAction: undefined,
         })
 
         // Notify listeners
         window.dispatchEvent(new Event('strategySaved'))
 
-        // Close the sheet - generation continues in background
-        toast.success('Generating your strategy', {
-          description: 'This will take a few moments. We\'ll notify you when it\'s ready.',
+        // Close the sheet — extraction continues in the background and lands on the review.
+        toast.success('Reading what you told me', {
+          description: 'A few seconds — then you can check it before I build anything.',
         })
         onOpenChange(false)
       } else {

@@ -16,7 +16,15 @@ describe('planPipeline', () => {
   }
 
   describe('conversation_ended (initial)', () => {
-    it('should extract + fragments + generate, synthesis/summary deferred to executor threshold', () => {
+    /**
+     * THE GROUND TRUTH REVIEW SPLIT (2026-09-08). An initial conversation extracts and persists
+     * fragments and then STOPS. The user sees what was taken from their words and discards
+     * anything wrong; only then is a strategy generated, via `generate_from_knowledge`.
+     *
+     * Nothing else about the plan changes, and no new trigger exists — the split is this one
+     * field. Design: 2026-08-27-ground-truth-preflight-design.md §13.
+     */
+    it('extracts and persists fragments but does NOT generate — the review comes first', () => {
       const plan = planPipeline(baseConversation)
 
       expect(plan.trigger).toBe('conversation_ended')
@@ -24,8 +32,24 @@ describe('planPipeline', () => {
       expect(plan.persistFragments).toBe(true)
       expect(plan.runSynthesis).toBe(false)
       expect(plan.runKnowledgeSummary).toBe(false)
-      expect(plan.generation).toEqual({ mode: 'initial', source: 'extracted_context' })
+      expect(plan.generation).toBeNull()
       expect(plan.backgroundSteps).toEqual([])
+    })
+
+    it('is otherwise identical to the follow-up plan — only generation differs', () => {
+      const initial = planPipeline(baseConversation)
+      const followUp = planPipeline({ ...baseConversation, isInitial: false })
+      expect(initial).toEqual(followUp)
+    })
+  })
+
+  describe('generate_from_knowledge is now the only path to a first strategy', () => {
+    it('still generates in initial mode from fragments that already exist', () => {
+      const plan = planPipeline({ type: 'generate_from_knowledge', projectId: 'p1', userId: 'u1' })
+
+      expect(plan.extraction).toBeNull()
+      expect(plan.persistFragments).toBe(false)
+      expect(plan.generation).toEqual({ mode: 'initial', source: 'extracted_context' })
     })
   })
 
