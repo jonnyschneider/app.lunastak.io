@@ -50,22 +50,50 @@ export function EvidenceSheet({
 }: EvidenceSheetProps) {
   const [remaining, setRemaining] = useState<number | null>(null)
   const [total, setTotal] = useState<number | null>(null)
-  const onCountChange = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
-  const discarded = remaining !== null && total !== null ? total - remaining : 0
+  const [archived, setArchived] = useState(0)
+  const onCountChange = useCallback((r: number, t: number, a: number) => {
+    setRemaining(r); setTotal(t); setArchived(a)
+  }, [])
+  const discardedNow = remaining !== null && total !== null ? total - remaining : 0
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col overflow-y-auto bg-background p-0 sm:max-w-3xl">
-        <SheetHeader className="sticky top-0 z-20 flex-row items-center justify-between space-y-0 border-b bg-card px-6 py-4">
-          <SheetTitle>Your ground truths</SheetTitle>
+        {/*
+          ⚠ VOLUME AND EXIT LIVE IN THE STICKY HEADER, not a footer.
+          Both were briefly at the bottom. Below fifty rows, a count is not a frame for the list
+          and a Done button is not an exit — they are things nobody scrolls to. Up here the count
+          says how much there is to get through before the user starts, and the header stays put
+          while the list scrolls under it.
+        */}
+        <SheetHeader className="sticky top-0 z-20 space-y-0 border-b bg-card px-6 py-4">
+          <div className="flex flex-row items-center justify-between gap-4">
+            <div className="min-w-0">
+              <SheetTitle>
+                {total === null ? 'Your ground truths' : `Your ${total} ground truths`}
+              </SheetTitle>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {discardedNow > 0
+                  ? `${discardedNow} discarded · saved`
+                  : archived > 0
+                    ? `${archived} already discarded · changes save as you make them`
+                    : 'Changes save as you make them'}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                Done
+              </Button>
+              <SheetClose className="rounded-sm p-1 opacity-70 transition-opacity hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+              </SheetClose>
+            </div>
+          </div>
           <SheetDescription className="sr-only">
             Everything extracted from your conversations, documents and context bundles. Discard
             anything wrong, or restore something discarded earlier.
           </SheetDescription>
-          <SheetClose className="rounded-sm p-1 opacity-70 transition-opacity hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </SheetClose>
         </SheetHeader>
         <div className="space-y-4 px-6 py-4">
           {/*
@@ -85,26 +113,6 @@ export function EvidenceSheet({
           />
         </div>
 
-        {/*
-          ⚠ THERE IS NOTHING TO SUBMIT — SO SAY SO.
-          Every discard is written on the click that makes it; there is no staged state and no
-          save. But a surface with no closing move reads as one that did not take, which is
-          exactly how it was reported on preview: "doesn't have a submit mechanism, and X doesn't
-          persist it" — on a build where the write had in fact persisted every time.
-          So the footer does the two jobs a submit button was standing in for: it states that the
-          work is saved, and it gives the user a way to be finished. It does NOT pretend to
-          commit anything.
-        */}
-        <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-4 border-t bg-card px-6 py-3">
-          <p className="text-xs text-muted-foreground">
-            {discarded > 0
-              ? `${discarded} discarded · saved`
-              : 'Changes save as you make them'}
-          </p>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            Done
-          </Button>
-        </div>
       </SheetContent>
     </Sheet>
   )

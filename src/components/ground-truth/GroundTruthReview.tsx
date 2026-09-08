@@ -33,8 +33,8 @@ export function GroundTruthReview({
   onResumeConversation,
 }: {
   projectId: string
-  /** Remaining (not discarded), so the page can label its Build action. */
-  onCountChange?: (remaining: number, total: number) => void
+  /** Remaining (not discarded), total, and how many sit archived — so a host can show volume. */
+  onCountChange?: (remaining: number, total: number, archived: number) => void
   /**
    * Show only this dimension. Set when the user arrived by clicking one in the coverage grid —
    * they asked a narrower question than "show me everything" and the surface should answer it.
@@ -97,8 +97,8 @@ export function GroundTruthReview({
   }, [projectId, reloadKey])
 
   useEffect(() => {
-    if (items) onCountChange?.(items.length - discarded.size, items.length)
-  }, [items, discarded, onCountChange])
+    if (items) onCountChange?.(items.length - discarded.size, items.length, archivedCount)
+  }, [items, discarded, archivedCount, onCountChange])
 
   /**
    * Persisted IMMEDIATELY, one fragment at a time — never staged awaiting a submit.
@@ -201,38 +201,19 @@ export function GroundTruthReview({
     <div className="space-y-5">
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {groupByDimension(items)
-        .filter(g => !dimension || g.dimension === dimension)
-        .map(g => (
-        <div key={g.dimension ?? 'none'}>
-          <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
-            {g.label}
-          </h3>
-          <div className="divide-y divide-border">
-            {g.items.map(item => (
-              <Row
-                key={item.id}
-                item={item}
-                discarded={discarded.has(item.id)}
-                pending={pending.has(item.id)}
-                open={expanded === item.id}
-                onToggleDiscard={() => toggle(item)}
-                onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
-                onResumeConversation={onResumeConversation}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-
       {/*
-        The recovery path, deliberately a footer and not a tab. It is the second state of the
-        eventual two-state surface (`15-31`) delivered at the size the interim can afford: closed
-        by default, because a list of things you already rejected is not what you came for, and
-        absent entirely when there is nothing to recover.
+        The recovery path, AT THE TOP. It was a footer for one build, on the reasoning that a list
+        of things you already rejected is not what you came for. That was wrong for the reason
+        Jonny gave on preview: "users won't find archived all the way down there" — a control
+        below fifty rows is a control nobody knows exists, and the volume belongs up front where
+        it frames the list rather than trailing it.
+
+        Still closed by default, and still absent entirely when there is nothing to recover.
+        The second state of the eventual two-state surface (`15-31`), at the size the interim
+        can afford.
       */}
       {archivedCount > 0 && (
-        <div className="border-t pt-3">
+        <div className="border-b pb-3">
           <button
             onClick={openArchived}
             className="flex items-center gap-1.5 text-xs text-foreground/50 underline underline-offset-4 hover:text-foreground"
@@ -267,6 +248,31 @@ export function GroundTruthReview({
           )}
         </div>
       )}
+
+      {groupByDimension(items)
+        .filter(g => !dimension || g.dimension === dimension)
+        .map(g => (
+        <div key={g.dimension ?? 'none'}>
+          <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+            {g.label}
+          </h3>
+          <div className="divide-y divide-border">
+            {g.items.map(item => (
+              <Row
+                key={item.id}
+                item={item}
+                discarded={discarded.has(item.id)}
+                pending={pending.has(item.id)}
+                open={expanded === item.id}
+                onToggleDiscard={() => toggle(item)}
+                onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
+                onResumeConversation={onResumeConversation}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+
     </div>
   )
 }
