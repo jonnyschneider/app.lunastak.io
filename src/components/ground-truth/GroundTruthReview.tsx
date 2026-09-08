@@ -249,13 +249,21 @@ export function GroundTruthReview({
         </div>
       )}
 
+      {/* A dimension the grid offers but nothing was filed under must say so, not render blank. */}
+      {dimension && !groupByDimension(items).some(g => g.dimension === dimension) && (
+        <p className="py-4 text-sm text-foreground/60">Nothing filed under this one yet.</p>
+      )}
+
       {groupByDimension(items)
         .filter(g => !dimension || g.dimension === dimension)
         .map(g => (
         <div key={g.dimension ?? 'none'}>
-          <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
-            {g.label}
-          </h3>
+          {/* Filtered to one dimension, the host has already named it — saying it twice is noise. */}
+          {!dimension && (
+            <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+              {g.label}
+            </h3>
+          )}
           <div className="divide-y divide-border">
             {g.items.map(item => (
               <Row

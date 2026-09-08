@@ -38,7 +38,7 @@ export function EvidencePanel({ projectId, fragmentCount, onOpen, readOnly = fal
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span>{fragmentCount} fragment{fragmentCount !== 1 ? 's' : ''}</span>
             <span>&middot;</span>
-            <span>discard anything Luna got wrong</span>
+            <span>discard anything wrong</span>
           </div>
         ) : (
           <div className="text-xs text-muted-foreground">

@@ -1097,6 +1097,14 @@ export default function ProjectPage() {
               }
               className={isKnowledgeSummaryExpanded ? 'md:col-span-2' : ''}
               onExpandedChange={setIsKnowledgeSummaryExpanded}
+              // With these set the panel shows the ground truths in place, and `onDimensionClick`
+              // above becomes the fallback it now only takes in demo mode.
+              projectId={projectId}
+              onResumeConversation={(convId: string) => {
+                setChatResumeConversationId(convId)
+                setChatViewOnly(false)
+                setChatSheetOpen(true)
+              }}
             />
             <EvidencePanel
               projectId={projectId}

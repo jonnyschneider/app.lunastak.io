@@ -10,6 +10,7 @@ import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
 import { InlineMarkdown } from '@/components/InlineMarkdown'
+import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import type { SupportLevel } from '@/lib/support/dimension-support'
 
 // Dimension display names
@@ -104,7 +105,19 @@ interface KnowledgeSummaryPanelProps {
   onRefreshClick: () => void
   onChatClick: () => void
   onEditClick: () => void
+  /**
+   * Fallback for hosts that cannot show the ground truths in place — demo mode, and anywhere
+   * `projectId` is absent. When the list IS in place, a ball filters it instead of navigating.
+   */
   onDimensionClick: (dimension: string) => void
+  /**
+   * Set to bring the ground truths INTO this panel. Design: `docs/_plans/2026-09-08-post-uat-batch.md`
+   * §4. The coverage grid asks "how well covered is this dimension?" and the fragments behind it
+   * answer "here is what that judgement is made of" — one thought, which was spanning two surfaces
+   * and a sheet that took over the screen.
+   */
+  projectId?: string
+  onResumeConversation?: (conversationId: string) => void
   /** Knowledge-side busy message (extraction, doc processing, syncing) */
   knowledgeBusyMessage?: string | null
   /** Strategy-side busy message (generation, refresh) — shown on RHS */
@@ -132,6 +145,8 @@ export function KnowledgeSummaryPanel({
   onChatClick,
   onEditClick,
   onDimensionClick,
+  projectId,
+  onResumeConversation,
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
   readOnly = false,
@@ -174,10 +189,27 @@ export function KnowledgeSummaryPanel({
     onEditClick()
   }, [onEditClick])
 
+  /**
+   * A ball is a FILTER when the list is in place, and a link only when it cannot be.
+   *
+   * Clicking the selected one clears it — the grid has no "all" affordance of its own and does not
+   * need one, because the unfiltered list is the resting state.
+   */
+  const inPlace = !!projectId && !readOnly
+  const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
+  const [truthCounts, setTruthCounts] = useState<{ total: number; archived: number } | null>(null)
+  const onTruthCount = useCallback((_r: number, total: number, archived: number) => {
+    setTruthCounts({ total, archived })
+  }, [])
+
   const handleDimensionClick = useCallback((dimension: string) => {
     logAndFlush('cta_open_evidence', 'dimension-chip', { dimension })
+    if (inPlace) {
+      setSelectedDimension(d => (d === dimension ? null : dimension))
+      return
+    }
     onDimensionClick(dimension)
-  }, [onDimensionClick])
+  }, [inPlace, onDimensionClick])
 
   // Header timestamp
   const updatedLabel = knowledgeUpdatedAt
@@ -316,6 +348,7 @@ export function KnowledgeSummaryPanel({
                 // as a boolean before synthesis ran and flickered per run after it (design §16.3).
                 const support = dimensionalCoverage[dimension]?.support ?? 'empty'
 
+                const selected = selectedDimension === dimension
                 return (
                   <button
                     key={dimension}
@@ -323,15 +356,55 @@ export function KnowledgeSummaryPanel({
                       e.stopPropagation()
                       handleDimensionClick(dimension)
                     }}
-                    className="flex items-center gap-2 py-1 text-xs hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                    aria-pressed={inPlace ? selected : undefined}
+                    className={cn(
+                      'flex items-center gap-2 py-1 text-xs rounded px-1 -mx-1 transition-colors',
+                      selected ? 'bg-muted' : 'hover:bg-muted/50')}
                   >
                     <HarveyBall support={support} />
-                    <span className="text-muted-foreground truncate">
+                    <span className={cn('truncate', selected ? 'text-foreground font-medium' : 'text-muted-foreground')}>
                       {DIMENSION_LABELS[dimension]}
                     </span>
                   </button>
                 )
               })}
+            </div>
+          )}
+
+          {/*
+            ⚠ THE GROUND TRUTHS LIVE HERE NOW, not behind a sheet.
+            Two things on preview pointed the same way (design §4): the dimension link read well —
+            the ball is the summary and the list is what the summary is made of — and the sheet
+            could not hold a second job, because following a fragment to its conversation replaced
+            the very list the user was working.
+
+            So this is an EXPANSION, not a navigation. The list mounts once with the panel open and
+            the grid narrows it, which is why clicking through dimensions costs no fetch and never
+            loses the user's place.
+          */}
+          {inPlace && fragmentCount > 0 && (
+            <div className="border-t border-border pt-3">
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {selectedDimension
+                    ? DIMENSION_LABELS[selectedDimension as Tier1Dimension]
+                    : `Ground truths${truthCounts ? ` · ${truthCounts.total}` : ''}`}
+                </h4>
+                {selectedDimension && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelectedDimension(null) }}
+                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  >
+                    Show all
+                  </button>
+                )}
+              </div>
+              <GroundTruthReview
+                projectId={projectId!}
+                dimension={selectedDimension ?? undefined}
+                onResumeConversation={onResumeConversation}
+                onCountChange={onTruthCount}
+              />
             </div>
           )}
 
