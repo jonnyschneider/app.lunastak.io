@@ -368,7 +368,14 @@ export function KnowledgeSummaryPanel({
       >
         {/* Row 1: title + strategy action + chevron */}
         <div className="flex items-center justify-between gap-3 w-full">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Leading, not trailing: the control that opens the panel belongs at the start of the
+                thing it opens, where the eye already is. */}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
             <span className={cn("font-medium text-sm", knowledgeBusy && "animate-pulse text-muted-foreground")}>
               {knowledgeBusy ? knowledgeBusyMessage : 'Summary and ground truths'}
             </span>
@@ -379,14 +386,6 @@ export function KnowledgeSummaryPanel({
             )}
           </div>
 
-          <div className="flex items-center shrink-0">
-            {/* Chevron */}
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
         </div>
 
         {/* Row 2: stats meta + strategy action */}
