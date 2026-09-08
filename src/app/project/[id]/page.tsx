@@ -401,7 +401,9 @@ export default function ProjectPage() {
         )}
       </div>
       {!isDemo && hasStrategy && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => {
             logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
             if (isSignedUp) {
@@ -410,11 +412,11 @@ export default function ProjectPage() {
               setShareSignInGateOpen(true)
             }
           }}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
         >
-          <Share2 className="h-3.5 w-3.5" />
+          <Share2 />
           Share
-        </button>
+        </Button>
       )}
       </div>
     )

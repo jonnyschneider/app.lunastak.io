@@ -49,6 +49,17 @@ export const VALID_DIMENSIONS = [
 
 export type DimensionKey = typeof VALID_DIMENSIONS[number];
 
+// Evidence span attached to a fragment at creation (nested write in createFragment)
+export const EVIDENCE_VERIFICATIONS = ['verified', 'unverifiable', 'failed'] as const;
+export type EvidenceVerification = typeof EVIDENCE_VERIFICATIONS[number];
+
+export interface EvidenceContract {
+  text: string;                        // the span, copied verbatim from the source
+  verification: EvidenceVerification;  // defaults to 'unverifiable' at the DB layer
+  sourceRole?: string | null;          // user | assistant | document | bundle
+  ordinal: number;
+}
+
 // Fragment record created from extraction
 export interface FragmentContract {
   id: string;
@@ -60,6 +71,8 @@ export interface FragmentContract {
   contentType: 'theme'; // Currently only themes
   status: 'active';
   confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
+  interpretationType?: string | null; // verbatim | interpretation
+  evidence?: EvidenceContract[];      // nested-created alongside the fragment
 }
 
 // Dimension tag attached to fragment
@@ -96,6 +109,20 @@ export function validateFragment(data: unknown): data is FragmentContract {
   if (typeof obj.content !== 'string' || !obj.content) return false;
   if (obj.contentType !== 'theme') return false;
   if (obj.status !== 'active') return false;
+  // interpretationType is optional (null for fragments predating the ground-truth work)
+  if (obj.interpretationType !== undefined && obj.interpretationType !== null && typeof obj.interpretationType !== 'string') return false;
+  // evidence is optional; when present every span must carry text + a known verification
+  if (obj.evidence !== undefined) {
+    if (!Array.isArray(obj.evidence)) return false;
+    for (const span of obj.evidence) {
+      if (typeof span !== 'object' || span === null) return false;
+      const s = span as Record<string, unknown>;
+      if (typeof s.text !== 'string' || !s.text) return false;
+      if (typeof s.verification !== 'string' || !EVIDENCE_VERIFICATIONS.includes(s.verification as EvidenceVerification)) return false;
+      if (s.sourceRole !== undefined && s.sourceRole !== null && typeof s.sourceRole !== 'string') return false;
+      if (typeof s.ordinal !== 'number') return false;
+    }
+  }
 
   return true;
 }
@@ -189,6 +216,7 @@ export interface ProjectContract {
   // Public sharing (rolling link; token is the security mechanism)
   shareEnabled?: boolean;
   shareToken?: string | null;
+  sharedAt?: Date | null; // last time sharing was turned on
 }
 
 export function isValidProjectStatus(status: string): status is ProjectStatus {
@@ -209,6 +237,7 @@ export function validateProject(data: unknown): data is ProjectContract {
   if (obj.description !== undefined && obj.description !== null && typeof obj.description !== 'string') return false;
   if (obj.shareEnabled !== undefined && typeof obj.shareEnabled !== 'boolean') return false;
   if (obj.shareToken !== undefined && obj.shareToken !== null && typeof obj.shareToken !== 'string') return false;
+  if (obj.sharedAt !== undefined && obj.sharedAt !== null && !(obj.sharedAt instanceof Date)) return false;
 
   return true;
 }

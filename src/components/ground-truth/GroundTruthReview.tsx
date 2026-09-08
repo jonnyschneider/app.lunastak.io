@@ -15,7 +15,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { X, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from './derive'
+import { Button } from '@/components/ui/button'
+import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from '@/lib/ground-truth/derive'
 import { EvidenceQuote } from './EvidenceQuote'
 
 const SOURCE_ICON = {
@@ -168,23 +169,27 @@ function Row({
           self-describing where a second icon cannot be.
         */}
         {discarded ? (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onToggleDiscard}
             disabled={pending}
-            className="mt-px flex h-8 shrink-0 items-center justify-center rounded-md border border-foreground/15 bg-foreground/[0.07] px-2 text-xs font-medium text-foreground/60 transition-colors hover:text-foreground disabled:opacity-40"
+            className="mt-px shrink-0 border-foreground/15 bg-foreground/[0.07] px-2 text-foreground/60 shadow-none hover:bg-foreground/[0.07] hover:text-foreground disabled:opacity-40"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Undo'}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={onToggleDiscard}
             disabled={pending}
             title="Discard"
             aria-label="Discard"
-            className="mt-px flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-foreground/25 text-foreground/55 transition-colors hover:border-foreground/50 hover:text-foreground disabled:opacity-40"
+            className="mt-px shrink-0 border-foreground/25 bg-transparent text-foreground/55 shadow-none hover:border-foreground/50 hover:bg-transparent hover:text-foreground disabled:opacity-40"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-[18px] w-[18px]" strokeWidth={2.25} />}
-          </button>
+          </Button>
         )}
 
         <div className="min-w-0 flex-1">
