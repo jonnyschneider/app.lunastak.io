@@ -2,11 +2,10 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
@@ -58,6 +57,26 @@ const SECTION_HEADING_STICKY = 'md:sticky md:top-[calc(3.5rem+var(--ks-head,0px)
  * An icon-and-number treatment was tried before that and rejected on sight: at this size the
  * glyphs carried nothing the label did not.
  */
+/** One option in the ground-truths filter row. */
+function FilterChip({ active, onClick, children }: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn('rounded-full border px-2.5 py-1 text-[11px] transition-colors',
+        active
+          ? 'border-foreground/20 bg-foreground/10 font-medium text-foreground'
+          : 'border-border text-muted-foreground hover:text-foreground')}
+    >
+      {children}
+    </button>
+  )
+}
+
 function Stat({ value, label, accent }: { value: number; label: string; accent?: boolean }) {
   return (
     <span className="flex items-center gap-1.5">
@@ -700,13 +719,11 @@ export function KnowledgeSummaryPanel({
                 </span>
 
                 <div className={SECTION_HEADING_ACTION}>
-                  {(selectedDimension || changedOnly) && (
+                  {/* Only for the dimension filter. The changed/all pair has its own control
+                      below; two ways to clear the same state is one too many. */}
+                  {selectedDimension && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedDimension(null)
-                        setChangedOnly(false)
-                      }}
+                      onClick={(e) => { e.stopPropagation(); setSelectedDimension(null) }}
                       className="underline underline-offset-4"
                     >
                       Show all
@@ -728,19 +745,37 @@ export function KnowledgeSummaryPanel({
               </div>
 
               {/*
-                ⚠ THE EXPLAINER IS NOT DECORATION. Moved here from the Launchpad gate, which is the
-                only place it ever existed — so on this surface the list arrived with nothing saying
-                what it was or what to do with it. It also carries the save model, because there is
-                no submit and a user who expects one needs telling, not guessing.
+                ⚠ A FILTER, NOT A DEAD END. Arriving here from "1 discarded since" dropped the user
+                into a filtered list with no visible way back and nothing saying they were in one —
+                the deep link disoriented precisely because the view carried no control of its own.
+                Two options, shown whenever there is a diff to see, so the state is legible whether
+                the user chose it or was sent to it.
               */}
-              <Alert className="mb-3 mt-2 py-2.5">
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
-                  {changedOnly
-                    ? `What has changed since ${sync?.version ?? 'the last build'}. Rebuild to catch it up.`
-                    : 'Everything your vision, strategy and objectives get built from. Discard anything wrong — it saves straight away, and you can bring it back from the count above.'}
-                </AlertDescription>
-              </Alert>
+              {sync?.changed && (
+                <div className="mb-2 mt-2 flex flex-wrap items-center gap-1.5">
+                  <FilterChip active={!changedOnly} onClick={() => setChangedOnly(false)}>
+                    All
+                  </FilterChip>
+                  <FilterChip active={changedOnly} onClick={() => setChangedOnly(true)}>
+                    Changed since {sync.version}
+                  </FilterChip>
+                </div>
+              )}
+
+              {/*
+                ⚠ THE EXPLAINER IS NOT DECORATION. It came from the Launchpad gate, the only place
+                it ever existed — without it the list arrives with nothing saying what it is or what
+                to do with it. It carries the save model too, because there is no submit and a user
+                expecting one should be told rather than left to infer.
+
+                An Alert box was too heavy for one line of guidance. It sits under the control it
+                describes instead.
+              */}
+              <p className="mb-3 mt-2 text-xs leading-relaxed text-muted-foreground">
+                {changedOnly
+                  ? `What has changed since ${sync?.version ?? 'the last build'}. Rebuild to catch it up.`
+                  : 'Everything your Decision Stack is built from. Discard any items that are wrong, you can restore anytime.'}
+              </p>
               <GroundTruthReview
                 projectId={projectId!}
                 dimension={changedOnly ? undefined : selectedDimension ?? undefined}
