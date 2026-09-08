@@ -13,7 +13,7 @@
  * `docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4–§7.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { X, Check, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2 } from 'lucide-react'
+import { X, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from './derive'
 
@@ -156,22 +156,35 @@ function Row({
       /* Discarded must be scannable, not inferred from a faded glyph. */
       discarded ? 'bg-muted/70' : 'hover:bg-muted/40')}>
       <div className="flex items-start gap-2 py-2.5">
-        <button
-          onClick={onToggleDiscard}
-          disabled={pending}
-          title={discarded ? 'Put it back' : 'Discard'}
-          aria-label={discarded ? 'Put it back' : 'Discard'}
-          aria-pressed={discarded}
-          className={cn(
-            'mt-px flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors disabled:opacity-40',
-            discarded
-              ? 'border-foreground/15 bg-foreground/[0.07] text-foreground/60'
-              : 'border-foreground/25 text-foreground/55 hover:border-foreground/50 hover:text-foreground')}
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" />
-            : discarded ? <Check className="h-[18px] w-[18px]" strokeWidth={2.25} />
-            : <X className="h-[18px] w-[18px]" strokeWidth={2.25} />}
-        </button>
+        {/*
+          ⚠ ONE GLYPH, ONE MEANING. This button used to swap ✕ for ✓ once a row was discarded,
+          which made the icon show the ACTION while a list invites you to read it as the STATE —
+          twenty-six ✕ rows look like an opt-in list where nothing is included yet.
+
+          The fix is the rule the controls already followed everywhere else: the glyph names the
+          action and never changes; whether it is engaged is carried by fill and by the row. So a
+          live row offers ✕ (discard), and a discarded row offers the reverse as WORDS — "Undo" is
+          self-describing where a second icon cannot be.
+        */}
+        {discarded ? (
+          <button
+            onClick={onToggleDiscard}
+            disabled={pending}
+            className="mt-px flex h-8 shrink-0 items-center justify-center rounded-md border border-foreground/15 bg-foreground/[0.07] px-2 text-xs font-medium text-foreground/60 transition-colors hover:text-foreground disabled:opacity-40"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Undo'}
+          </button>
+        ) : (
+          <button
+            onClick={onToggleDiscard}
+            disabled={pending}
+            title="Discard"
+            aria-label="Discard"
+            className="mt-px flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-foreground/25 text-foreground/55 transition-colors hover:border-foreground/50 hover:text-foreground disabled:opacity-40"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-[18px] w-[18px]" strokeWidth={2.25} />}
+          </button>
+        )}
 
         <div className="min-w-0 flex-1">
           <button

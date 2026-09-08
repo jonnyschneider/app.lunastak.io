@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MessageSquare, Upload, ExternalLink, ChevronDown, ShieldCheck, ArrowRight } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -31,10 +31,16 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
   const [remaining, setRemaining] = useState<number | null>(null)
   const [total, setTotal] = useState<number | null>(null)
   const [skipOpen, setSkipOpen] = useState(false)
+  // Stable identity: the review reports counts from an effect, and an inline arrow here would
+  // change on every render and re-fire it. It settles today only because React bails on identical
+  // state — which is luck, not design.
+  const handleCount = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
 
   return (
     <Card>
-      <CardContent className="space-y-4 p-6 md:p-8">
+      {/* Constrained: the page container is max-w-7xl, which left claims stranded in white space
+          and made a scan list read as a spreadsheet. Reading measure, not page width. */}
+      <CardContent className="mx-auto max-w-3xl space-y-4 p-6 md:p-8">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">
             {total === null ? 'Your ground truths' : `Your ${total} ground truths`}
@@ -47,7 +53,7 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
 
         <GroundTruthReview
           projectId={projectId}
-          onCountChange={(r, t) => { setRemaining(r); setTotal(t) }}
+          onCountChange={handleCount}
         />
 
         <div className="flex flex-wrap items-center gap-4 border-t pt-4">
@@ -61,7 +67,6 @@ function GroundTruthReviewPanel({ projectId, onGenerate }: { projectId: string; 
           >
             Skip the review
           </button>
-          <span className="text-xs text-foreground/45">you can change these any time</span>
         </div>
       </CardContent>
 
