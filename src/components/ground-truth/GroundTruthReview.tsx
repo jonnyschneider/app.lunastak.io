@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { X, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from './derive'
+import { EvidenceQuote } from './EvidenceQuote'
 
 const SOURCE_ICON = {
   document: FileText,
@@ -203,14 +204,7 @@ function Row({
           {open && (
             <div className="mt-2">
               {item.evidence && (
-                /* ONE quotation device: the rule. A span that did not verify carries a
-                   destructive rule rather than the luna one — rendering it as "your words" would
-                   be false attribution, which this thread has on record as worse than an honest
-                   summary. */
-                <p className={cn('border-l-2 pl-3 text-sm italic',
-                  item.verification === 'failed' ? 'border-destructive/40 text-foreground/60' : 'border-luna')}>
-                  {item.evidence}
-                </p>
+                <EvidenceQuote text={item.evidence} verification={item.verification} className="text-sm" />
               )}
               <p className="mt-1.5 flex items-center gap-1.5 pl-3 text-xs text-foreground/45">
                 <SourceIcon className="h-3.5 w-3.5" />

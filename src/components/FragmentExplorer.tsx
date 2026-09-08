@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
+import { EvidenceQuote } from '@/components/ground-truth/EvidenceQuote'
 
 interface FragmentData {
   id: string
@@ -25,6 +26,8 @@ interface FragmentData {
   dimensions: { dimension: string; confidence: string | null }[]
   source: { type: 'conversation' | 'document'; id: string; name: string } | null
   capturedAt: string
+  /** Ordinal-ordered spans behind this fragment. Empty for anything created before the evidence layer. */
+  evidence?: { text: string; verification: string; sourceRole: string | null; ordinal: number }[]
 }
 
 interface FragmentExplorerProps {
@@ -297,10 +300,34 @@ export function FragmentExplorer({ projectId, initialDimensionFilter, onResumeCo
                       </div>
                     )}
 
-                    {/* Expanded: full content */}
+                    {/*
+                      Expanded: the content, and THEN the words it came from.
+
+                      Until now this surface showed strictly less than the ground truth review did
+                      — content only, no span, no verification — so a user coming back to check
+                      something saw less than they were shown before they approved it. The review
+                      picks one best span because it is a triage screen; this is the reference
+                      surface, so it shows every span in ordinal order.
+                    */}
                     {isExpanded && (
-                      <div className="mt-2 pl-0 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                        {fragment.content}
+                      <div className="mt-2 space-y-2">
+                        <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                          {fragment.content}
+                        </div>
+                        {fragment.evidence && fragment.evidence.length > 0 && (
+                          <div className="space-y-1.5">
+                            {[...fragment.evidence]
+                              .sort((a, b) => a.ordinal - b.ordinal)
+                              .map(e => (
+                                <EvidenceQuote
+                                  key={e.ordinal}
+                                  text={e.text}
+                                  verification={e.verification}
+                                  className="text-xs"
+                                />
+                              ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
