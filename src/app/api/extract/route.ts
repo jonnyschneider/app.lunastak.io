@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createMessage } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
-import { parseThemeEvidence } from '@/lib/evidence/parse';
+import { parseEmergentThemes } from '@/lib/evidence/parse';
 import { isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { logStatsigEvent } from '@/lib/statsig';
@@ -141,59 +141,6 @@ function extractAllXML(xml: string, tag: string): string[] {
     }
   }
   return matches;
-}
-
-interface ParsedTheme {
-  theme_name: string;
-  content: string;
-  dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[];
-  /** Verbatim spans the theme rests on. Empty for a response in today's format. */
-  evidence: string[];
-  /** Self-reported by the extractor. Absent when it reported nothing — that is not a claim. */
-  type?: 'verbatim' | 'interpretation';
-}
-
-/** Exported for test. Must keep parsing responses that carry neither <type> nor <evidence>. */
-export function parseEmergentThemes(xml: string): ParsedTheme[] {
-  const themes: ParsedTheme[] = [];
-  const themeRegex = /<theme>([\s\S]*?)<\/theme>/g;
-  let match;
-
-  while ((match = themeRegex.exec(xml)) !== null) {
-    const themeXML = match[1];
-    const theme_name = extractXML(themeXML, 'theme_name');
-    const content = extractXML(themeXML, 'content');
-
-    // Ground-truth check (2026-09-04): the verbatim span the theme rests on, plus the extractor's
-    // own verbatim|interpretation call. Both absent in today's format — that must still parse.
-    // Shared with the document extractor; see src/lib/evidence/parse.ts.
-    const { evidence, type } = parseThemeEvidence(themeXML);
-
-    // Parse inline dimensions
-    const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
-    const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g;
-    let dimMatch;
-
-    while ((dimMatch = dimensionRegex.exec(themeXML)) !== null) {
-      const name = dimMatch[1];
-      const confidence = dimMatch[2].toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW';
-      if (['HIGH', 'MEDIUM', 'LOW'].includes(confidence)) {
-        dimensions.push({ name, confidence });
-      }
-    }
-
-    if (theme_name && content) {
-      themes.push({
-        theme_name,
-        content,
-        dimensions,
-        evidence,
-        type,
-      });
-    }
-  }
-
-  return themes;
 }
 
 export async function POST(req: Request) {

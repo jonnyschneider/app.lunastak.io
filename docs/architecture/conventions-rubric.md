@@ -36,6 +36,7 @@ confirmed by Jonny; the rubric row is itself the written source.
 | C15 | Adding telemetry must never add an `apiCallCount` increment — it is the guest quota, not a counter | `ARCHITECTURE.md:240` | GREP *(code paths only — never `.md`)* ✎ | `src/**`, `prisma/**` |
 | C16 | Schema changes in a release must be applied to preview AND production as part of that release | `CLAUDE.md:116` | JUDGMENT | `prisma/**` |
 | C17 | Core logic, types and utilities live in `src/lib/`; `src/components/` is React components | `CLAUDE.md:44-46` | JUDGMENT | `src/**` |
+| C27 | An App Router `route.ts` exports only handlers and route-segment config — a helper a test wants goes to `src/lib/`, not into the route's exports | `src/lib/__tests__/route-exports.test.ts` (added 2026-09-08 after a preview build failure) | TEST → same file | `src/app/**/route.ts` |
 
 ## Doc-currency rows
 

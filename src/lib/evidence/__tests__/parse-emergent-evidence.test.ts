@@ -17,7 +17,7 @@ vi.hoisted(() => {
   process.env.ANTHROPIC_API_KEY ||= 'test-key-not-used';
 });
 
-import { parseEmergentThemes } from '../route';
+import { parseEmergentThemes } from '@/lib/evidence/parse';
 
 describe('parseEmergentThemes — evidence and type', () => {
   it('parses type and evidence spans per theme, preserving order', () => {
