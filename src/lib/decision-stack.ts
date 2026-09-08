@@ -389,12 +389,28 @@ export async function captureSnapshot(
 
   const version = (lastVersion?.version ?? 0) + 1
 
+  /**
+   * The ground truths this snapshot was taken over.
+   *
+   * Captured on EVERY snapshot, read only from `post_*` ones — a pre/post pair brackets a
+   * generation and nothing changes the fragment set between them, so recording both costs one
+   * cheap query and saves a caller having to know which triggers matter.
+   *
+   * Active only: a fragment the user discarded is not context the stack was built from, which is
+   * the whole point of storing this rather than a timestamp.
+   */
+  const activeFragments = await prisma.fragment.findMany({
+    where: { projectId, status: 'active' },
+    select: { id: true },
+  })
+
   const snapshot = await prisma.decisionStackSnapshot.create({
     data: {
       projectId,
       version,
       trigger,
       content,
+      fragmentIds: activeFragments.map(f => f.id),
       modelUsed: metadata?.modelUsed,
       promptTokens: metadata?.promptTokens,
       completionTokens: metadata?.completionTokens,

@@ -5,6 +5,42 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ---
 
+## 2026-09-08 — `DecisionStackSnapshot.fragmentIds` (additive, dev only)
+
+**Why.** Staleness was a timestamp comparison — "are there active fragments created after the
+last `post_*` snapshot" (`api/project/[id]/route.ts`). That can only ever see **additions**.
+Discarding a fragment created *before* the snapshot moved nothing, so the app reported
+"Strategy in sync" about a strategy built on context the user had since removed.
+
+The bug was latent for as long as it existed, because pruning was not reachable after the first
+strategy — the review lived only in the Launchpad, which stops rendering once a stack exists. It
+became live on 2026-09-08 when the ground truths moved into the Knowledge Summary and could be
+pruned at any time.
+
+Storing the set the stack was generated from makes the comparison a set difference, which sees
+both directions and can say **which** rather than just whether: "v3 · 3 added, 2 discarded since".
+That is the thing that teaches a user that context and Decision Stack are connected at all —
+which is why it is worth a column rather than a heuristic.
+
+**Shape.** `fragmentIds Json?` on `DecisionStackSnapshot` — the active fragment ids at capture
+time. Written by `captureSnapshot()` for every snapshot; only `post_*` ones are read (a pre/post
+pair brackets one generation and nothing changes the set between them, so recording both costs one
+query and saves callers knowing which triggers matter).
+
+**Ordering.** Additive and nullable, so it can be applied before or after the code. Applied to
+**dev only** so far — it joins the `Evidence` layer's pending set for preview and prod. Update
+`prisma/drift-baseline/prod.why.md` when the deploy is scoped.
+
+**Null is UNKNOWN, not empty.** Every snapshot written before this column carries null. Readers
+fall back to the timestamp heuristic and the UI says less (`comparable: false`) rather than
+treating null as an empty set — which would report every existing ground truth as newly added on
+every pre-change project.
+
+**Recovery.** Drop the column; the fallback path is the pre-change behaviour, unchanged and still
+exercised by every old snapshot.
+
+---
+
 ## 2026-09-08 — `ExtractionRun` retired (drop DEFERRED to deploy)
 
 **Destructive, deliberately not yet applied anywhere.** All code that read or wrote

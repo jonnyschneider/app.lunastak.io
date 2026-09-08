@@ -589,6 +589,20 @@ model DecisionStackSnapshot {
   latencyMs        Int?
   changeSummary    String? @db.Text
 
+  // The ground truths this stack was generated FROM — active fragment ids at capture time.
+  //
+  // Staleness used to be "are there fragments newer than the last snapshot", which can only ever
+  // see ADDITIONS. Pruning a fragment created before the snapshot changed nothing, so the app
+  // claimed a strategy was in sync with context the user had since discarded. Latent until
+  // 2026-09-08, when pruning became reachable after the first strategy.
+  //
+  // A set comparison sees both directions, and says something more useful than a boolean: which
+  // ground truths have been added and which removed since v3 was built.
+  //
+  // Null on every snapshot written before this column existed — unknown, not empty. Readers fall
+  // back to the timestamp heuristic rather than reporting a wholesale change.
+  fragmentIds Json?
+
   createdAt DateTime @default(now())
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

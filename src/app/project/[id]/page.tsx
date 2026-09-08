@@ -105,6 +105,7 @@ interface ProjectStats {
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
   fragmentsSinceSummary: number
+  strategySync?: { version: number | null; added: number; removed: number; comparable: boolean }
 }
 
 interface ConversationSummary {
@@ -1070,6 +1071,7 @@ export default function ProjectPage() {
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
+              strategySync={stats.strategySync}
               onRefreshClick={() => {
                 if (hasStrategy) {
                   { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) }
@@ -1283,7 +1285,7 @@ export default function ProjectPage() {
                                   <ItemTitle className="text-sm truncate">{doc.fileName}</ItemTitle>
                                   <ItemDescription className="text-sm">
                                     {doc.status === 'complete'
-                                      ? `${doc.fragmentCount} fragments`
+                                      ? `${doc.fragmentCount} ground truth${doc.fragmentCount === 1 ? '' : 's'}`
                                       : doc.status === 'processing'
                                         ? 'Processing...'
                                         : doc.status}

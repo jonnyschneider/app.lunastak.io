@@ -256,18 +256,47 @@ export async function GET(
     const latestSnapshot = await prisma.decisionStackSnapshot.findFirst({
       where: { projectId, trigger: { startsWith: 'post_' } },
       orderBy: { createdAt: 'desc' },
-      select: { createdAt: true, version: true },
+      select: { createdAt: true, version: true, fragmentIds: true },
     })
     // Display version = count of post-snapshots (not raw snapshot version)
     const postSnapshotCount = await prisma.decisionStackSnapshot.count({
       where: { projectId, trigger: { startsWith: 'post_' } },
     })
 
-    const fragmentsSinceStrategy = latestSnapshot
-      ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).length
-      : project.fragments.length
+    /**
+     * IS THE STACK STILL BUILT FROM THIS CONTEXT?
+     *
+     * The old answer compared timestamps — "are there fragments newer than the last snapshot" —
+     * which can only see ADDITIONS. Discarding a fragment created before the snapshot moved
+     * nothing, so the app reported "in sync" about a strategy built on context the user had since
+     * removed. Latent until pruning became reachable after the first strategy (2026-09-08).
+     *
+     * `DecisionStackSnapshot.fragmentIds` records the set the stack was generated from, so the
+     * comparison is a set difference and sees both directions — and can say WHICH, not just
+     * whether.
+     *
+     * Snapshots written before that column exists carry null. That is UNKNOWN, not empty: falling
+     * through to the timestamp heuristic is wrong in one direction, where treating null as an
+     * empty set would report every ground truth as newly added.
+     */
+    const snapshotIds = Array.isArray(latestSnapshot?.fragmentIds)
+      ? new Set(latestSnapshot!.fragmentIds as string[])
+      : null
 
-    const strategyIsStale = fragmentsSinceStrategy > 0
+    const activeIds = new Set(project.fragments.map(f => f.id))
+
+    const addedSinceStrategy = snapshotIds
+      ? project.fragments.filter(f => !snapshotIds.has(f.id)).length
+      : latestSnapshot
+        ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).length
+        : project.fragments.length
+
+    const removedSinceStrategy = snapshotIds
+      ? Array.from(snapshotIds).filter(id => !activeIds.has(id)).length
+      : 0
+
+    const fragmentsSinceStrategy = addedSinceStrategy
+    const strategyIsStale = addedSinceStrategy > 0 || removedSinceStrategy > 0
 
     // Count fragments since last knowledge summary
     const fragmentsSinceSummary = project.knowledgeUpdatedAt
@@ -302,6 +331,14 @@ export async function GET(
         dimensionalCoverage,
         strategyIsStale,
         fragmentsSinceStrategy,
+        /** What changed since the stack was built. `comparable: false` means the snapshot predates
+         *  `fragmentIds`, so only additions can be seen and the UI should say less. */
+        strategySync: {
+          version: postSnapshotCount || null,
+          added: addedSinceStrategy,
+          removed: removedSinceStrategy,
+          comparable: snapshotIds !== null,
+        },
         fragmentsSinceSummary,
       },
       conversations,

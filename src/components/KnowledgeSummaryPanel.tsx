@@ -165,6 +165,12 @@ interface KnowledgeSummaryPanelProps {
   /** Per-dimension fragment volume plus the computed support the ball reads (design §16.4). */
   dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }>
   latestStrategyTraceId: string | null
+  /**
+   * What changed since the stack was generated. `comparable: false` means the snapshot predates
+   * `DecisionStackSnapshot.fragmentIds`, so only additions are visible and the panel says less
+   * rather than something it cannot stand behind.
+   */
+  strategySync?: { version: number | null; added: number; removed: number; comparable: boolean }
   onRefreshClick: () => void
   onChatClick: () => void
   onEditClick: () => void
@@ -203,6 +209,7 @@ export function KnowledgeSummaryPanel({
   knowledgeSummary,
   dimensionalCoverage,
   latestStrategyTraceId,
+  strategySync,
   onRefreshClick,
   onChatClick,
   onEditClick,
@@ -320,6 +327,25 @@ export function KnowledgeSummaryPanel({
       ? `updates in ${remainingToUpdate}`
       : 'updating soon'
 
+  /**
+   * What the slot says, in words the user can act on.
+   *
+   * Version FIRST when there is one — "v3" is the anchor, and everything else is said relative to
+   * it. A pre-`fragmentIds` snapshot cannot account for discards, so it claims nothing beyond the
+   * version it can prove.
+   */
+  const syncLabel = (() => {
+    if (!latestStrategyTraceId) return null
+    const v = strategySync?.version ? `v${strategySync.version}` : 'Strategy'
+    if (!strategySync?.comparable) return strategyIsStale ? `${v} · context has changed` : v
+    const { added, removed } = strategySync
+    if (!added && !removed) return `${v} · built from these ${fragmentCount} ground truths`
+    const parts: string[] = []
+    if (added) parts.push(`${added} added`)
+    if (removed) parts.push(`${removed} discarded`)
+    return `${v} · ${parts.join(', ')} since`
+  })()
+
   const summaryKey = projectId ? `project-${projectId}-kb-summary-open` : null
   const [summaryOpen, setSummaryOpen] = useState(true)
   useEffect(() => {
@@ -412,24 +438,32 @@ export function KnowledgeSummaryPanel({
                 <Stat value={fragmentsSinceStrategy} label="since last strategy" accent />
               )}
             </div>
-            <div className="shrink-0">
+            {/*
+              ⚠ THIS SLOT NAMES THE RELATIONSHIP BETWEEN CONTEXT AND STACK.
+              It used to say "Strategy in sync" or offer a button, off a boolean that could only
+              see fragments ADDED since the last generation. It now reads the set the stack was
+              actually built from, so it can say which version, and what has changed on both
+              sides — which is the thing that teaches the user that the two are connected at all.
+            */}
+            <div className="flex shrink-0 items-center gap-3">
               {strategyBusy ? (
-                <span className="text-xs text-muted-foreground animate-pulse">
+                <span className="animate-pulse text-xs text-muted-foreground">
                   {strategyBusyMessage}
                 </span>
-              ) : strategyIsStale ? (
-                <Button
-                  size="sm"
-                  onClick={handleRefreshClick}
-                  className="h-7 text-xs bg-[#b18225] hover:bg-[#9a7120] text-white"
-                >
-                  Create strategy
-                </Button>
-              ) : latestStrategyTraceId ? (
-                <span className="text-xs text-muted-foreground">
-                  Strategy in sync
-                </span>
-              ) : null}
+              ) : (
+                <>
+                  {syncLabel && <span className="text-xs text-muted-foreground">{syncLabel}</span>}
+                  {strategyIsStale && (
+                    <Button
+                      size="sm"
+                      onClick={handleRefreshClick}
+                      className="h-7 bg-[#b18225] text-xs text-white hover:bg-[#9a7120]"
+                    >
+                      {latestStrategyTraceId ? 'Rebuild' : 'Create strategy'}
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

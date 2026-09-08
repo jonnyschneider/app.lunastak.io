@@ -83,7 +83,7 @@ export function ImportBundleDialog({
       // Advance phase after a short delay — LLM tagging is the slow part,
       // fragment creation is now bulk and fast.
       const phaseTimer = setTimeout(() => {
-        setImportPhase('Creating fragments...')
+        setImportPhase('Creating ground truths...')
       }, 8000)
 
       const res = await fetch(`/api/project/${projectId}/import-bundle`, {
@@ -100,7 +100,7 @@ export function ImportBundleDialog({
       }
 
       const result = await res.json()
-      toast.success(`Imported ${result.fragmentsCreated} fragments`, {
+      toast.success(`Imported ${result.fragmentsCreated} ground truths`, {
         description: result.questionsAdded > 0
           ? `Plus ${result.questionsAdded} open questions for Explore Next`
           : undefined,
@@ -138,7 +138,7 @@ export function ImportBundleDialog({
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{imported.fragmentsCreated} fragments</span> added to your knowledge base
+              <span className="font-semibold text-foreground">{imported.fragmentsCreated} ground truths</span> added to your knowledge base
               {imported.questionsAdded > 0 && <> — plus <span className="font-semibold text-foreground">{imported.questionsAdded} open questions</span> for Explore Next</>}.
             </p>
             <p className="text-sm">
