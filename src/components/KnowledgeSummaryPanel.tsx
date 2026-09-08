@@ -170,6 +170,8 @@ interface KnowledgeSummaryPanelProps {
    * `DecisionStackSnapshot.fragmentIds`, so only additions are visible and the panel says less
    * rather than something it cannot stand behind.
    */
+  /** Take the user to the Decision Stack this context built. */
+  onOpenStrategy?: () => void
   strategySync?: {
     version: number | null
     added: number
@@ -216,6 +218,7 @@ export function KnowledgeSummaryPanel({
   dimensionalCoverage,
   latestStrategyTraceId,
   strategySync,
+  onOpenStrategy,
   onRefreshClick,
   onChatClick,
   onEditClick,
@@ -340,23 +343,24 @@ export function KnowledgeSummaryPanel({
    * it. A pre-`fragmentIds` snapshot cannot account for discards, so it claims nothing beyond the
    * version it can prove.
    */
-  const syncLabel = (() => {
+  const sync = (() => {
     if (!latestStrategyTraceId) return null
-    const v = strategySync?.version ? `v${strategySync.version}` : 'Strategy'
+    const version = strategySync?.version ? `v${strategySync.version}` : 'Strategy'
     if (!strategySync?.comparable) {
       // Pre-`fragmentIds` snapshot: it cannot account for discards, so it says WHEN rather than
       // from what. A bare version number is true and useless.
       const built = strategySync?.builtAt
-        ? ` · built ${new Date(strategySync.builtAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
-        : ''
-      return strategyIsStale ? `${v}${built} · context has changed since` : `${v}${built}`
+        ? `built ${new Date(strategySync.builtAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+        : null
+      const changed = strategyIsStale ? 'context has changed since' : null
+      return { version, detail: [built, changed].filter(Boolean).join(' · ') || null }
     }
     const { added, removed } = strategySync
-    if (!added && !removed) return `${v} · built from these ${fragmentCount} ground truths`
+    if (!added && !removed) return { version, detail: `built from these ${fragmentCount} ground truths` }
     const parts: string[] = []
     if (added) parts.push(`${added} added`)
     if (removed) parts.push(`${removed} discarded`)
-    return `${v} · ${parts.join(', ')} since`
+    return { version, detail: `${parts.join(', ')} since` }
   })()
 
   const summaryKey = projectId ? `project-${projectId}-kb-summary-open` : null
@@ -401,13 +405,21 @@ export function KnowledgeSummaryPanel({
         className={cn(isExpanded && 'md:sticky md:top-14 z-30 rounded-t-lg border-b border-border bg-background')}
       >
       {/* Header Bar */}
-      <button
-        onClick={handleToggle}
-        className="w-full px-4 py-3 flex flex-col gap-2 hover:bg-muted/50 transition-colors text-left"
-      >
-        {/* Row 1: title + strategy action + chevron */}
+      {/*
+        ⚠ NOT A BUTTON AROUND EVERYTHING.
+        This whole block used to be one <button>, which made the version un-linkable — you cannot
+        nest a link or a button inside one — and had already produced invalid markup, since the
+        Rebuild action sat inside it. Only the title row toggles now; the counts and the strategy
+        slot are siblings, free to hold their own controls.
+      */}
+      <div className="flex w-full flex-col gap-2 px-4 py-3">
+        {/* Row 1: title + strategy state */}
         <div className="flex items-center justify-between gap-3 w-full">
-          <div className="flex items-center gap-2 min-w-0">
+          <button
+            onClick={handleToggle}
+            aria-expanded={isExpanded}
+            className="-mx-1 flex items-center gap-2 rounded px-1 min-w-0 text-left transition-colors hover:bg-muted/50"
+          >
             {/* Leading, not trailing: the control that opens the panel belongs at the start of the
                 thing it opens, where the eye already is. */}
             {isExpanded ? (
@@ -423,7 +435,7 @@ export function KnowledgeSummaryPanel({
                 ({updatedLabel})
               </span>
             )}
-          </div>
+          </button>
 
         </div>
 
@@ -465,7 +477,26 @@ export function KnowledgeSummaryPanel({
                 </span>
               ) : (
                 <>
-                  {syncLabel && <span className="text-xs text-muted-foreground">{syncLabel}</span>}
+                  {sync && (
+                    <span className="text-xs text-muted-foreground">
+                      {/*
+                        The version is a REFERENCE, so it behaves like one. Without this the label
+                        names a Decision Stack the user cannot get to from the thing that built it,
+                        which is the connection this line exists to make.
+                      */}
+                      {onOpenStrategy ? (
+                        <button
+                          onClick={onOpenStrategy}
+                          className="font-medium text-foreground underline underline-offset-4 hover:text-lunastak"
+                        >
+                          {sync.version}
+                        </button>
+                      ) : (
+                        <span className="font-medium text-foreground">{sync.version}</span>
+                      )}
+                      {sync.detail && <> · {sync.detail}</>}
+                    </span>
+                  )}
                   {strategyIsStale && (
                     <Button
                       size="sm"
@@ -480,7 +511,7 @@ export function KnowledgeSummaryPanel({
             </div>
           </div>
         )}
-      </button>
+      </div>
 
         {/* Expanded, the header rows need a floor — without it "Strategy in sync" hangs over the
             grid, belonging to neither. */}

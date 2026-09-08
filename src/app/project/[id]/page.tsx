@@ -1078,6 +1078,10 @@ export default function ProjectPage() {
               dimensionalCoverage={stats.dimensionalCoverage}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
               strategySync={stats.strategySync}
+              onOpenStrategy={() => {
+                logAndFlush('tab_switch', 'sync-version', { projectId })
+                setActiveTab('decision-stack')
+              }}
               onRefreshClick={() => {
                 if (hasStrategy) {
                   { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) }
