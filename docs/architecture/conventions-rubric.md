@@ -36,6 +36,7 @@ confirmed by Jonny; the rubric row is itself the written source.
 | C15 | Adding telemetry must never add an `apiCallCount` increment — it is the guest quota, not a counter | `ARCHITECTURE.md:240` | GREP *(code paths only — never `.md`)* ✎ | `src/**`, `prisma/**` |
 | C16 | Schema changes in a release must be applied to preview AND production as part of that release | `CLAUDE.md:116` | JUDGMENT | `prisma/**` |
 | C17 | Core logic, types and utilities live in `src/lib/`; `src/components/` is React components | `CLAUDE.md:44-46` | JUDGMENT | `src/**` |
+| C28 | **Narrows G6.** Tombstones live in `docs/architecture/retired-<name>.md`, not `docs/retired-<name>.md` — `docs/*` is gitignored in this repo and an untracked tombstone is not a tombstone. Precedent: `retired-prompt-registry.md` (2026-08-27). | `.gitignore:118-121` + `base-rubric.md` G6 | GREP | `docs/**` |
 | C27 | An App Router `route.ts` exports only handlers and route-segment config — a helper a test wants goes to `src/lib/`, not into the route's exports | `src/lib/__tests__/route-exports.test.ts` (added 2026-09-08 after a preview build failure) | TEST → same file | `src/app/**/route.ts` |
 
 ## Doc-currency rows
@@ -61,6 +62,12 @@ Pair the *specific section* where one exists: touched ≠ accurate.
 | ~~C24~~ | *demoted 2026-09-08 — see Candidates (watching); adopted on one-sided evidence* | — | — | — |
 | C25 | `type-check` regenerates the Prisma client before `tsc` — stale client types must not pass local verify | emergence 2026-09-08, `package.json` | GREP | `package.json` |
 | C26 | A Decision Log entry landing on a feature branch carries a `⚠ Not deployed` banner AND an explicit "On deploy, update:" checklist naming the sections that go stale | emergence 2026-09-08, 2 sites (`intelligence-pipeline-v2.md:440-442,503-506` and `:514-518,587-590`) | JUDGMENT | `docs/architecture/**` |
+
+## Narrowings of the base rubric
+
+| row | narrows | why |
+|---|---|---|
+| C28 | G6 (tombstone path) | Written after the fact: the `ExtractionRun` retirement put its tombstone in `docs/architecture/` **without** flagging that G6 says `docs/`. That is the routed-around-the-rule failure this rubric exists to catch, committed while writing the rubric. The placement was right and the rule was wrong for this repo; recording it is what makes the deviation visible rather than folklore. |
 
 ## Amendments applied 2026-09-08
 
