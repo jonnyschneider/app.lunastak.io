@@ -99,6 +99,8 @@ interface ProjectStats {
   fragmentCount: number
   conversationCount: number
   documentCount: number
+  /** Context bundles imported — derived from distinct capture timestamps, see the API route. */
+  importCount: number
   dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }>
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
@@ -734,6 +736,7 @@ export default function ProjectPage() {
     fragmentCount: 0,
     conversationCount: 0,
     documentCount: 0,
+    importCount: 0,
     dimensionalCoverage: {},
     strategyIsStale: false,
     fragmentsSinceStrategy: 0,
@@ -1008,6 +1011,7 @@ export default function ProjectPage() {
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={0}
+              importCount={0}
               documentCount={0}
               strategyIsStale={false}
               fragmentsSinceStrategy={0}
@@ -1057,6 +1061,7 @@ export default function ProjectPage() {
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={stats.conversationCount}
+              importCount={stats.importCount}
               documentCount={stats.documentCount}
               strategyIsStale={stats.strategyIsStale}
               fragmentsSinceStrategy={stats.fragmentsSinceStrategy}

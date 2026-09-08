@@ -283,6 +283,22 @@ export async function GET(
         fragmentCount: project.fragments.length,
         conversationCount: project.conversations.length,
         documentCount: project.documents.length,
+        /**
+         * How many context bundles were imported — NOT how many fragments came from them.
+         *
+         * There is no import record to count: a bundle writes fragments with
+         * `sourceType: 'import'` and no `conversationId` or `documentId`, so the artefact leaves
+         * no row of its own. What it does leave is one `capturedAt` shared by every fragment in
+         * the transaction, so distinct timestamps ARE the distinct imports. Two bundles landing in
+         * the same millisecond would undercount; nothing else does.
+         *
+         * If an Import table ever exists, count that instead and delete this.
+         */
+        importCount: new Set(
+          project.fragments
+            .filter(f => f.sourceType === 'import')
+            .map(f => f.capturedAt.getTime())
+        ).size,
         dimensionalCoverage,
         strategyIsStale,
         fragmentsSinceStrategy,

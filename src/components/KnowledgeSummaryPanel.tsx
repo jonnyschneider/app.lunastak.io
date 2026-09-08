@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageCircle, ArrowRight, Pencil, Info, FileText, Package, Sparkles } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -47,6 +48,28 @@ const SECTION_HEADING_ACTION =
  * every other. `md:` only, matching the block it hangs from.
  */
 const SECTION_HEADING_STICKY = 'md:sticky md:top-[calc(3.5rem+var(--ks-head,0px))] md:z-20'
+
+/**
+ * One input count. The icon runs the full height of the number-and-label stack rather than sitting
+ * beside the label, so the three read as a row of equal things at a glance instead of as a
+ * sentence you have to parse left to right.
+ */
+function Stat({ icon: Icon, value, label, accent }: {
+  icon: LucideIcon
+  value: number
+  label: string
+  accent?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className={cn('h-7 w-7 stroke-[1.25]', accent ? 'text-lunastak' : 'text-muted-foreground/50')} />
+      <div className="leading-none">
+        <div className={cn('text-lg font-semibold tabular-nums', accent && 'text-lunastak')}>{value}</div>
+        <div className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      </div>
+    </div>
+  )
+}
 
 // Dimension display names
 const DIMENSION_LABELS: Record<Tier1Dimension, string> = {
@@ -129,6 +152,8 @@ interface KnowledgeSummaryPanelProps {
   fragmentCount: number
   chatCount: number
   documentCount: number
+  /** Context bundles imported. A whole ingest path was invisible in this row without it. */
+  importCount?: number
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
   fragmentsSinceSummary: number
@@ -167,6 +192,7 @@ export function KnowledgeSummaryPanel({
   fragmentCount,
   chatCount,
   documentCount,
+  importCount = 0,
   strategyIsStale,
   fragmentsSinceStrategy,
   fragmentsSinceSummary,
@@ -363,24 +389,29 @@ export function KnowledgeSummaryPanel({
         {/* Row 2: stats meta + strategy action */}
         {!isBusy && fragmentCount > 0 && (
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{chatCount} chat{chatCount !== 1 ? 's' : ''}</span>
-              <span>&middot;</span>
-              <span>{documentCount} doc{documentCount !== 1 ? 's' : ''}</span>
-              {/*
-                ⚠ NO INSIGHT COUNT HERE. It used to read "33 insights" directly above
-                "Ground truths (24)" — two numbers for the same thing, disagreeing, because the
-                review filters what is not the user's to verify. Side by side on different screens
-                that was defensible; stacked in one panel it reads as a bug. The panel now states
-                the number it can stand behind, once, next to the list it counts.
-              */}
+            {/*
+              THE INPUTS, AS A READING. Three counts on one line of small grey text said what had
+              gone in without ever making it look like anything; at full width there is room for
+              them to be read at a glance instead. Icon at full height, number over label.
+
+              ⚠ NO INSIGHT COUNT HERE. It used to read "33 insights" directly above
+              "Ground truths (24)" — two numbers for one thing, disagreeing, because the review
+              filters what is not the user's to verify. These three are INPUTS: what you put in,
+              which nothing downstream contradicts. The output count lives on its own heading.
+            */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <Stat icon={MessageCircle} value={chatCount} label={chatCount === 1 ? 'chat' : 'chats'} />
+              <Stat icon={FileText} value={documentCount} label={documentCount === 1 ? 'doc' : 'docs'} />
+              {importCount > 0 && (
+                <Stat icon={Package} value={importCount} label={importCount === 1 ? 'import' : 'imports'} />
+              )}
               {strategyIsStale && fragmentsSinceStrategy > 0 && (
-                <>
-                  <span>&middot;</span>
-                  <span className="font-medium text-lunastak dark:text-lunastak">
-                    {fragmentsSinceStrategy} since last strategy
-                  </span>
-                </>
+                <Stat
+                  icon={Sparkles}
+                  value={fragmentsSinceStrategy}
+                  label="since last strategy"
+                  accent
+                />
               )}
             </div>
             <div className="shrink-0">
