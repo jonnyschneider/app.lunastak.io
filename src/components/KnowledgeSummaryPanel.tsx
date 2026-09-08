@@ -49,23 +49,27 @@ const SECTION_HEADING_ACTION =
 const SECTION_HEADING_STICKY = 'md:sticky md:top-[calc(3.5rem+var(--ks-head,0px))] md:z-20'
 
 /**
- * One input count, typographic only.
+ * One input count: number badge, label beside it.
  *
- * An icon-and-number treatment was tried and rejected on sight: at this size the glyphs carried no
- * information the label did not, and three of them turned a quiet header into a toolbar. The
- * number is the thing worth seeing, so nothing competes with it — scale and case do the work.
+ * Stacked number-over-label was tried first and read as a dashboard the header did not want — four
+ * two-line blocks make a quiet row into a panel of its own. Collapsed onto one line the counts sit
+ * where they belong, as a caption under the title rather than a display above the content.
+ *
+ * An icon-and-number treatment was tried before that and rejected on sight: at this size the
+ * glyphs carried nothing the label did not.
  */
 function Stat({ value, label, accent }: { value: number; label: string; accent?: boolean }) {
   return (
-    <div className="leading-none">
-      <div className={cn('text-lg font-semibold tabular-nums', accent ? 'text-lunastak' : 'text-foreground')}>
+    <span className="flex items-center gap-1.5">
+      <span className={cn('rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums',
+        accent ? 'bg-lunastak/15 text-lunastak' : 'bg-muted text-foreground')}>
         {value}
-      </div>
-      <div className={cn('mt-1 text-[10px] uppercase tracking-wider',
+      </span>
+      <span className={cn('text-[10px] uppercase tracking-wider',
         accent ? 'text-lunastak' : 'text-muted-foreground')}>
         {label}
-      </div>
-    </div>
+      </span>
+    </span>
   )
 }
 
@@ -388,16 +392,17 @@ export function KnowledgeSummaryPanel({
         {!isBusy && fragmentCount > 0 && (
           <div className="flex items-center justify-between gap-3">
             {/*
-              THE INPUTS, AS A READING. Three counts on one line of small grey text said what had
-              gone in without ever making it look like anything; at full width there is room for
-              them to be read at a glance instead. Number over label, no icons — see `Stat`.
+              THE INPUTS, AS A CAPTION. Three counts in one line of small grey text said what had
+              gone in without ever making it look like anything. Badged, they can be picked out at
+              a glance and still sit under the title rather than becoming a display of their
+              own — see `Stat` for the two treatments tried and dropped on the way here.
 
               ⚠ NO INSIGHT COUNT HERE. It used to read "33 insights" directly above
               "Ground truths (24)" — two numbers for one thing, disagreeing, because the review
               filters what is not the user's to verify. These three are INPUTS: what you put in,
               which nothing downstream contradicts. The output count lives on its own heading.
             */}
-            <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <Stat value={chatCount} label={chatCount === 1 ? 'chat' : 'chats'} />
               <Stat value={documentCount} label={documentCount === 1 ? 'doc' : 'docs'} />
               {importCount > 0 && (
