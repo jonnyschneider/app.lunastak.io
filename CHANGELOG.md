@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-09-09
+
 ### Removed — `ExtractionRun` and the extraction-eval viewers (2026-09-08)
 
 A write-only table. `createExtractionRun` ran on every generation; the only readers were two
