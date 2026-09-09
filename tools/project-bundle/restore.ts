@@ -15,6 +15,7 @@
 import { readFileSync } from 'node:fs'
 import { loadDbEnv, EnvName } from '../../prisma/env'
 import { parseBundle } from './schema'
+import { writeFragments } from './fragments'
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -46,7 +47,8 @@ async function main() {
     console.log(`Restoring ${bundle.projectName} (${bundle.projectId}) into ${envName}`)
     console.log(`  bundleVersion=${bundle.bundleVersion}, exportedAt=${bundle.exportedAt}`)
     console.log(`  ${bundle.decisionStack.objectives.length} obj, ${bundle.decisionStack.opportunities.length} opp, ${bundle.decisionStack.principles.length} prin`)
-    console.log(`  ${bundle.fragments.length} fragments, ${bundle.syntheses.length} syntheses`)
+    const evidenceCount = bundle.fragments.reduce((n, f) => n + (f.evidence?.length ?? 0), 0)
+    console.log(`  ${bundle.fragments.length} fragments (${evidenceCount} evidence spans), ${bundle.syntheses.length} syntheses`)
     if (dry) {
       console.log('--dry: not writing.')
       return
@@ -118,22 +120,14 @@ async function main() {
 
       const oldFragIds = (await tx.fragment.findMany({ where: { projectId: bundle.projectId }, select: { id: true } })).map((f) => f.id)
       if (oldFragIds.length > 0) {
+        // Evidence needs no line here: `Evidence.fragmentId` is ON DELETE CASCADE,
+        // the same FK treatment FragmentDimensionTag has — the explicit tag delete
+        // below is belt-and-braces, not a requirement. Verified against the SQL
+        // Prisma generates from the schema (`prisma migrate diff --from-empty`).
         await tx.fragmentDimensionTag.deleteMany({ where: { fragmentId: { in: oldFragIds } } })
         await tx.fragment.deleteMany({ where: { id: { in: oldFragIds } } })
       }
-      if (bundle.fragments.length > 0) {
-        await tx.fragment.createMany({
-          data: bundle.fragments.map((f) => ({
-            projectId: bundle.projectId,
-            title: f.title,
-            content: f.content,
-            contentType: f.contentType,
-            confidence: f.confidence,
-            sourceType: f.sourceType,
-            status: 'active',
-          })),
-        })
-      }
+      await writeFragments(tx, bundle.projectId, bundle.fragments)
 
       await tx.dimensionalSynthesis.deleteMany({ where: { projectId: bundle.projectId } })
       if (bundle.syntheses.length > 0) {

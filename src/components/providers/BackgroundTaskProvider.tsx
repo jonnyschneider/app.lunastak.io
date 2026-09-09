@@ -5,7 +5,17 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 // --- Types ---
 
-export type BackgroundTaskType = 'extraction' | 'generation'
+/**
+ * ⚠ 'document' JOINED THIS UNION 2026-09-09, and `DocumentProcessingProvider` was deleted.
+ *
+ * That provider was 178 lines of this one: same context shape, same active-items array, same
+ * `pollingRefs` Map, same 2s interval, same fetch-status-then-toast, same timeout cap. One concept
+ * had been written twice, which is why document upload spoke a different language from every other
+ * background task — the divergence was structural, not editorial.
+ *
+ * Adding a source is now a row in POLL_CONFIG below, not a branch in the poll loop.
+ */
+export type BackgroundTaskType = 'extraction' | 'generation' | 'document'
 
 export type PollResponseData = {
   traceId?: string
@@ -48,12 +58,84 @@ interface BackgroundTaskContextValue {
   isRunning: (projectId: string, type: BackgroundTaskType) => boolean
   /** Get progress label for the active generation/refresh task */
   getProgressLabel: (projectId: string) => string | undefined
+  /** How many ingests of a type are in flight — replaces DocumentProcessingProvider.processingCount */
+  runningCount: (projectId: string, type: BackgroundTaskType) => number
 }
 
 const BackgroundTaskContext = createContext<BackgroundTaskContextValue | null>(null)
 
 const POLL_INTERVAL = 2000 // 2 seconds
-const MAX_POLL_DURATION = 5 * 60 * 1000 // 5 minutes
+
+/**
+ * Everything that differs per task type, in one table.
+ *
+ * The poll loop below is now identical for every type; what changes is which endpoint to hit, how
+ * long to wait, how to read "done" out of the response, and what to shout when it is. A new
+ * background source is a row here.
+ */
+type PollVerdict = 'complete' | 'failed' | 'running'
+
+interface PollConfig {
+  url: (task: { id: string; projectId: string }) => string
+  /** Documents can legitimately take far longer than a generation. */
+  maxDuration: number
+  classify: (data: Record<string, unknown>) => PollVerdict
+  /** Dispatched on completion so the project page refetches. */
+  completionEvent?: (task: { id: string; projectId: string }) => CustomEvent
+  /** Pulled out of the response and handed to the caller's `onComplete`. */
+  extract?: (data: Record<string, unknown>) => PollResponseData
+  /** Overrides `messaging.running` in the StatusBanner while polling. */
+  progressLabel?: (data: Record<string, unknown>) => string | undefined
+}
+
+const POLL_CONFIG: Record<BackgroundTaskType, PollConfig> = {
+  extraction: {
+    url: (t) => `/api/extraction-status/${t.id}`,
+    maxDuration: 5 * 60 * 1000,
+    classify: (d) =>
+      d.status === 'extracted' ? 'complete' : d.status === 'extraction_failed' ? 'failed' : 'running',
+    completionEvent: (t) =>
+      new CustomEvent('extractionComplete', {
+        detail: { projectId: t.projectId, conversationId: t.id },
+      }),
+    extract: (d) => ({ fragmentCount: (d.fragmentCount as number) || 0 }),
+  },
+
+  document: {
+    url: (t) => `/api/documents/${t.id}/status`,
+    // Documents are the slow path — a long transcript can take minutes.
+    maxDuration: 10 * 60 * 1000,
+    classify: (d) =>
+      d.status === 'complete' ? 'complete' : d.status === 'failed' ? 'failed' : 'running',
+    // Same event as extraction: from the page's point of view a document IS an extraction, and
+    // both end with new fragments to refetch.
+    completionEvent: (t) =>
+      new CustomEvent('extractionComplete', {
+        detail: { projectId: t.projectId, documentId: t.id },
+      }),
+    extract: (d) => ({ fragmentCount: (d.fragmentCount as number) || 0 }),
+  },
+
+  generation: {
+    url: (t) => `/api/project/${t.projectId}/generation-status`,
+    maxDuration: 5 * 60 * 1000,
+    classify: (d) =>
+      d.status === 'idle' || d.status === 'complete'
+        ? 'complete'
+        : d.status === 'failed'
+          ? 'failed'
+          : 'running',
+    completionEvent: (t) =>
+      new CustomEvent('generationComplete', { detail: { projectId: t.projectId } }),
+    extract: (d) => ({ traceId: d.traceId as string | undefined, error: d.error as string | undefined }),
+    progressLabel: (d) =>
+      d.status === 'generating_opportunities'
+        ? 'Generating opportunities'
+        : d.status === 'generating'
+          ? 'Crafting strategy'
+          : (d.progressLabel as string | undefined),
+  },
+}
 
 
 export function BackgroundTaskProvider({ children }: { children: React.ReactNode }) {
@@ -95,10 +177,10 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
   const pollTaskRef = useRef<(task: BackgroundTask) => void>()
 
   pollTaskRef.current = (task: BackgroundTask) => {
+    const config = POLL_CONFIG[task.type]
+
     const poll = async () => {
-      // Check timeout
-      const elapsed = Date.now() - task.startedAt.getTime()
-      if (elapsed > MAX_POLL_DURATION) {
+      if (Date.now() - task.startedAt.getTime() > config.maxDuration) {
         updateTaskStatus(task.id, 'failed')
         toast.error(task.messaging.failed, {
           description: 'The operation timed out. Please try again.',
@@ -108,117 +190,59 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
         return
       }
 
-      try {
-        // Poll the appropriate endpoint based on task type
-        const url =
-          task.type === 'extraction'
-            ? `/api/extraction-status/${task.id}`
-            : `/api/project/${task.projectId}/generation-status`
+      const again = () => pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
 
-        const response = await fetch(url, { cache: 'no-store' })
-        if (!response.ok) {
-          // Transient error — keep polling
-          pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
+      try {
+        const response = await fetch(config.url(task), { cache: 'no-store' })
+        if (!response.ok) return again() // transient — keep polling
+
+        const data = (await response.json()) as Record<string, unknown>
+        const verdict = config.classify(data)
+
+        if (verdict === 'running') {
+          const label = config.progressLabel?.(data)
+          if (label) {
+            setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, progressLabel: label } : t)))
+          }
+          return again()
+        }
+
+        if (verdict === 'failed') {
+          updateTaskStatus(task.id, 'failed')
+          toast.error(task.messaging.failed, {
+            description: (data.error as string) || task.messaging.failedDescription,
+            duration: 8000,
+          })
+          setTimeout(() => removeTask(task.id), 2000)
           return
         }
 
-        const data = await response.json()
+        // --- complete ---
+        updateTaskStatus(task.id, 'complete')
+        const responseData: PollResponseData = config.extract?.(data) ?? {}
 
-        if (task.type === 'extraction') {
-          // --- Extraction poll handling ---
-          if (data.status === 'extracted') {
-            updateTaskStatus(task.id, 'complete')
+        // One interpolation, as documented — `{{fragmentCount}}` and nothing else.
+        const description = task.messaging.completeDescription?.replace(
+          '{{fragmentCount}}',
+          String(responseData.fragmentCount ?? 0),
+        )
 
-            const fragmentCount = data.fragmentCount || 0
-            const responseData: PollResponseData = { fragmentCount }
-            const description = task.messaging.completeDescription
-              ?.replace('{{fragmentCount}}', String(fragmentCount))
-              ?? `${fragmentCount} insight${fragmentCount !== 1 ? 's' : ''} added to your knowledge base.`
-            toast.success(task.messaging.complete, {
-              description,
-              duration: 5000,
-            })
+        const action = task.messaging.completeAction?.(responseData)
+        toast.success(task.messaging.complete, {
+          description,
+          action: action
+            ? { label: action.label, onClick: () => routerRef.current.push(action.href) }
+            : undefined,
+          duration: action ? 10000 : 5000,
+        })
 
-            // Dispatch event so project page refetches
-            window.dispatchEvent(
-              new CustomEvent('extractionComplete', {
-                detail: { projectId: task.projectId, conversationId: task.id },
-              })
-            )
+        const event = config.completionEvent?.(task)
+        if (event) window.dispatchEvent(event)
 
-            // Caller-specific side effects
-            task.messaging.onComplete?.(responseData)
-
-            setTimeout(() => removeTask(task.id), 2000)
-          } else if (data.status === 'extraction_failed') {
-            updateTaskStatus(task.id, 'failed')
-            toast.error(task.messaging.failed, {
-              description: task.messaging.failedDescription,
-              duration: 8000,
-            })
-            setTimeout(() => removeTask(task.id), 2000)
-          } else {
-            // Still extracting — keep polling
-            pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
-          }
-        } else {
-          // --- Generation/Refresh poll handling ---
-          // New project-level endpoint: status is 'idle' when done, 'generating'/'generating_opportunities' when active
-          if (data.status === 'idle' || data.status === 'complete') {
-            updateTaskStatus(task.id, 'complete')
-
-            const responseData: PollResponseData = {
-              traceId: data.traceId,
-              error: data.error,
-            }
-            const action = task.messaging.completeAction?.(responseData)
-            toast.success(task.messaging.complete, {
-              description: task.messaging.completeDescription,
-              action: action
-                ? {
-                    label: action.label,
-                    onClick: () => routerRef.current.push(action.href),
-                  }
-                : undefined,
-              duration: 10000,
-            })
-
-            // Dispatch event for sidebar/project page refresh
-            window.dispatchEvent(
-              new CustomEvent('generationComplete', {
-                detail: { projectId: task.projectId },
-              })
-            )
-
-            // Caller-specific side effects
-            task.messaging.onComplete?.(responseData)
-
-            setTimeout(() => removeTask(task.id), 2000)
-          } else if (data.status === 'failed') {
-            updateTaskStatus(task.id, 'failed')
-            toast.error(task.messaging.failed, {
-              description: data.error || task.messaging.failedDescription,
-              duration: 8000,
-            })
-            setTimeout(() => removeTask(task.id), 2000)
-          } else {
-            // Still generating — update progress label and keep polling
-            const progressLabel = data.status === 'generating_opportunities'
-              ? 'Generating opportunities'
-              : data.status === 'generating'
-                ? 'Crafting strategy'
-                : data.progressLabel
-            if (progressLabel) {
-              setTasks((prev) =>
-                prev.map((t) => (t.id === task.id ? { ...t, progressLabel } : t))
-              )
-            }
-            pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
-          }
-        }
+        task.messaging.onComplete?.(responseData)
+        setTimeout(() => removeTask(task.id), 2000)
       } catch {
-        // Network error — keep polling
-        pollingRef.current.set(task.id, setTimeout(poll, POLL_INTERVAL))
+        again() // network error — keep polling
       }
     }
 
@@ -272,6 +296,12 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
     [tasks]
   )
 
+  const runningCount = useCallback(
+    (projectId: string, type: BackgroundTaskType) =>
+      tasks.filter((t) => t.projectId === projectId && t.type === type && t.status === 'running').length,
+    [tasks]
+  )
+
   const getProgressLabel = useCallback(
     (projectId: string) => {
       const task = tasks.find(
@@ -291,6 +321,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
         hasActiveTasks,
         isRunning,
         getProgressLabel,
+        runningCount,
       }}
     >
       {children}

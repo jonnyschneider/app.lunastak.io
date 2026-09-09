@@ -49,6 +49,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useHeaderTabNav } from '@/components/HeaderContext'
 import { cn } from '@/lib/utils'
+import type { SupportLevel } from '@/lib/support/dimension-support'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   useProUpgradeFlow,
@@ -59,10 +60,7 @@ import {
 import { SynthesisDialog } from '@/components/SynthesisDialog'
 import { GenerationConfirmDialog, type GenerationAction } from '@/components/GenerationConfirmDialog'
 import { KnowledgeSummaryPanel } from '@/components/KnowledgeSummaryPanel'
-import { EvidencePanel } from '@/components/EvidencePanel'
-import { EvidenceSheet } from '@/components/EvidenceSheet'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
-import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
@@ -100,10 +98,21 @@ interface ProjectStats {
   fragmentCount: number
   conversationCount: number
   documentCount: number
-  dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }>
+  /** Context bundles imported — derived from distinct capture timestamps, see the API route. */
+  importCount: number
+  dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }>
   strategyIsStale: boolean
   fragmentsSinceStrategy: number
   fragmentsSinceSummary: number
+  strategySync?: {
+    version: number | null
+    added: number
+    removed: number
+    comparable: boolean
+    builtAt: string | null
+    addedIds: string[]
+    removedIds: string[]
+  }
 }
 
 interface ConversationSummary {
@@ -193,8 +202,7 @@ export default function ProjectPage() {
   const router = useRouter()
   const params = useParams()
   const projectId = params.id as string
-  const { hasActiveTasks, isRunning, getProgressLabel, startTask } = useGenerationStatusContext()
-  const { isProcessing: isProcessingDocuments, processingCount } = useDocumentProcessingContext()
+  const { hasActiveTasks, isRunning, getProgressLabel, startTask, runningCount } = useGenerationStatusContext()
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -212,32 +220,16 @@ export default function ProjectPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [shareSignInGateOpen, setShareSignInGateOpen] = useState(false)
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set())
-  const [isKnowledgeSummaryExpanded, setIsKnowledgeSummaryExpanded] = useState(false)
-  const vsoGuidanceKey = `vso-guidance-dismissed:${projectId}`
-  const [vsoGuidanceDismissed, setVsoGuidanceDismissed] = useState(true)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    setVsoGuidanceDismissed(localStorage.getItem(vsoGuidanceKey) === '1')
-  }, [vsoGuidanceKey])
-  const dismissVsoGuidance = () => {
-    setVsoGuidanceDismissed(true)
-    try { localStorage.setItem(vsoGuidanceKey, '1') } catch {}
-  }
-
   const searchParams = useSearchParams()
-  const evidenceOpen = searchParams.get('evidence') === '1'
-  const evidenceDimension = searchParams.get('dimension') || undefined
-
-  const setEvidenceOpen = useCallback((open: boolean) => {
-    const url = new URL(window.location.href)
-    if (open) {
-      url.searchParams.set('evidence', '1')
-    } else {
-      url.searchParams.delete('evidence')
-      url.searchParams.delete('dimension')
-    }
-    router.replace(url.pathname + url.search, { scroll: false })
-  }, [router])
+  /**
+   * `?evidence=1` outlived the sheet it used to open.
+   *
+   * The ground truths live in the Knowledge Summary now, so there is nothing to open — but the
+   * param is load-bearing for links we do not control: `/project/[id]/fragments` redirects into
+   * it for the book, the marketing site and old bookmarks. So it keeps its MEANING — "take me to
+   * what was extracted" — and lands on the Knowledgebase, then clears itself.
+   */
+  const evidenceParam = searchParams.get('evidence') === '1'
 
   // Expand/collapse state for sections
   const [showAllInputs, setShowAllInputs] = useState(false)
@@ -263,6 +255,24 @@ export default function ProjectPage() {
   useEffect(() => {
     localStorage.setItem(`project-${projectId}-tab`, activeTab)
   }, [activeTab, projectId])
+
+  useEffect(() => {
+    if (!evidenceParam) return
+    setActiveTab('knowledgebase')
+    /**
+     * ⚠ WRITTEN HERE TOO, not left to the effect above.
+     *
+     * `router.replace` can remount this page, and the tab's initial state reads localStorage — so
+     * the persist effect had not flushed 'knowledgebase' yet and the remount read back the stale
+     * value. The param was consumed and the user landed on the tab they came from, which is the
+     * one thing this effect exists to prevent (caught on preview, 2026-09-08).
+     */
+    localStorage.setItem(`project-${projectId}-tab`, 'knowledgebase')
+    const url = new URL(window.location.href)
+    url.searchParams.delete('evidence')
+    url.searchParams.delete('dimension')
+    router.replace(url.pathname + url.search, { scroll: false })
+  }, [evidenceParam, router, projectId])
 
   // Derived state needed by header injection
   const hasStrategy = projectData?.hasStrategy === true || (projectData?.strategyOutputs?.length ?? 0) > 0
@@ -329,14 +339,6 @@ export default function ProjectPage() {
               }}>
                 <Package className="h-4 w-4 mr-2" />Import Context Bundle
               </DropdownMenuItem>
-              {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
-                <DropdownMenuItem onClick={() => {
-                  logAndFlush('cta_open_evidence', 'overflow-menu', { projectId })
-                  setEvidenceOpen(true)
-                }}>
-                  <FileText className="h-4 w-4 mr-2" />View all {projectData?.stats?.fragmentCount} fragments
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
               <DropdownMenuItem
@@ -380,6 +382,10 @@ export default function ProjectPage() {
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Examples</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => {
+                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmnxrkvuv0094ow1betk3sjzr', demo: 'Ferrari' })
+                router.push('/project/cmnxrkvuv0094ow1betk3sjzr')
+              }}>Ferrari</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
                 logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
                 router.push('/project/cmn8anetr5kwlmbmq')
               }}>Nike</DropdownMenuItem>
@@ -391,16 +397,16 @@ export default function ProjectPage() {
                 logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
                 router.push('/project/cmn8anbaapaww1709')
               }}>TSMC</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmnxrkvuv0094ow1betk3sjzr', demo: 'Ferrari' })
-                router.push('/project/cmnxrkvuv0094ow1betk3sjzr')
-              }}>Ferrari</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
       </div>
-      {!isDemo && hasStrategy && (
-        <button
+      {/* Decision Stack only: the link publishes the strategy, so it has nothing to act on from
+          the Knowledgebase. */}
+      {!isDemo && hasStrategy && activeTab === 'decision-stack' && (
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => {
             logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
             if (isSignedUp) {
@@ -409,11 +415,11 @@ export default function ProjectPage() {
               setShareSignInGateOpen(true)
             }
           }}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
         >
-          <Share2 className="h-3.5 w-3.5" />
+          <Share2 />
           Share
-        </button>
+        </Button>
       )}
       </div>
     )
@@ -443,7 +449,6 @@ export default function ProjectPage() {
     comingSoonOpen,
     setComingSoonOpen,
     currentFeature,
-    triggerUpgrade,
     handleUpgrade,
     handleContinue,
   } = useProUpgradeFlow()
@@ -737,6 +742,7 @@ export default function ProjectPage() {
     fragmentCount: 0,
     conversationCount: 0,
     documentCount: 0,
+    importCount: 0,
     dimensionalCoverage: {},
     strategyIsStale: false,
     fragmentsSinceStrategy: 0,
@@ -904,9 +910,12 @@ export default function ProjectPage() {
                     <img src={DEMO_META[projectId].logo} alt={DEMO_META[projectId].name} className="h-20" />
                   </div>
                 )}
-                {/* Version stamp + Decision Stack branding */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
+                {/* Branding leads, version stamp trails — the mark says what this is, the stamp
+                    says which one of it you are looking at. */}
+                {/* The mark centres and the version stamp sits right, so the row reads as a
+                    masthead rather than two things pushed to opposite ends. */}
+                <div className="relative flex items-center justify-center gap-3 text-xs text-muted-foreground">
+                <div className="absolute right-0 flex items-center gap-2">
                   {isDemo ? (
                     (() => {
                       const episodeUrls: Record<string, string> = {
@@ -930,14 +939,16 @@ export default function ProjectPage() {
                     })()
                   ) : (
                     <>
-                      <span>
+                      {/* Badged like the input counts in the knowledgebase panel — one visual
+                          language for "a number that identifies something". */}
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                         v{(projectData as any)?.latestSnapshotVersion || projectData?.strategyOutputs?.[0]?.version || 1}
                       </span>
                       <button
                         onClick={() => setVersionHistoryOpen(true)}
-                        className="font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        className="underline underline-offset-4 transition-colors hover:text-foreground"
                       >
-                        view past revisions &rarr;
+                        view past revisions
                       </button>
                     </>
                   )}
@@ -945,7 +956,7 @@ export default function ProjectPage() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <button>
-                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-7" />
+                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-10" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="bottom" align="end" className="w-64 text-xs space-y-2">
@@ -955,23 +966,6 @@ export default function ProjectPage() {
                   </PopoverContent>
                 </Popover>
                 </div>
-                {!isDemo && !vsoGuidanceDismissed && (
-                  <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold mb-1">Your Vision, Strategy, and Objectives are ready.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Review, edit, and add Opportunities and Principles as you go, or have Luna generate those too. Head to Knowledgebase to add more context before generating new strategy.
-                      </p>
-                    </div>
-                    <button
-                      onClick={dismissVsoGuidance}
-                      aria-label="Dismiss"
-                      className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
                 <StrategyDisplay
                   strategy={strategyData.strategy}
                   conversationId={strategyData.conversationId}
@@ -998,6 +992,10 @@ export default function ProjectPage() {
                   setChatSheetOpen(true)
                 }}
                 onImportBundle={() => { logAndFlush('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
+                onAddContext={() => {
+                  logAndFlush('tab_switch', 'ground-truth-add-context', { projectId })
+                  setActiveTab('knowledgebase')
+                }}
                 onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
               />
             )}
@@ -1011,6 +1009,7 @@ export default function ProjectPage() {
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={0}
+              importCount={0}
               documentCount={0}
               strategyIsStale={false}
               fragmentsSinceStrategy={0}
@@ -1018,11 +1017,8 @@ export default function ProjectPage() {
               knowledgeUpdatedAt={null}
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
-              syntheses={projectData?.syntheses || []}
               latestStrategyTraceId={null}
               onRefreshClick={() => {}}
-              onChatClick={() => {}}
-              onEditClick={() => {}}
               onDimensionClick={() => {}}
               knowledgeBusyMessage={null}
               strategyBusyMessage={null}
@@ -1053,13 +1049,15 @@ export default function ProjectPage() {
               </div>
             ) : (
             <>
-            {/* Summary panels: Knowledge Summary + Evidence — full-viewport-width band */}
+            {/* The summary and the ground truths it is drawn from — full-viewport-width band */}
             <div className="bg-primary py-8">
             <div className="mx-auto max-w-7xl px-4 md:px-6">
-            <div className="grid gap-6 md:grid-cols-2">
+            {/* One child since the evidence card went — a two-column grid would strand it in half the width. */}
+            <div>
             <KnowledgeSummaryPanel
               fragmentCount={stats.fragmentCount}
               chatCount={stats.conversationCount}
+              importCount={stats.importCount}
               documentCount={stats.documentCount}
               strategyIsStale={stats.strategyIsStale}
               fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
@@ -1067,8 +1065,12 @@ export default function ProjectPage() {
               knowledgeUpdatedAt={projectData?.knowledgeUpdatedAt || null}
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
-              syntheses={projectData?.syntheses || []}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
+              strategySync={stats.strategySync}
+              onOpenStrategy={() => {
+                logAndFlush('tab_switch', 'sync-version', { projectId })
+                setActiveTab('decision-stack')
+              }}
               onRefreshClick={() => {
                 if (hasStrategy) {
                   { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) }
@@ -1076,31 +1078,27 @@ export default function ProjectPage() {
                   handleGenerateStrategy()
                 }
               }}
-              onChatClick={() => triggerUpgrade('knowledge-chat')}
-              onEditClick={() => triggerUpgrade('knowledge-edit')}
-              onDimensionClick={(dimension?: string) => {
-                const url = new URL(window.location.href)
-                url.searchParams.set('evidence', '1')
-                if (dimension) url.searchParams.set('dimension', dimension)
-                router.replace(url.pathname + url.search, { scroll: false })
-              }}
+              // Unreachable while `projectId` is set — the panel filters in place and only falls
+              // back to this when it cannot. Kept honest rather than thrown away.
+              onDimensionClick={() => setActiveTab('knowledgebase')}
               knowledgeBusyMessage={
                 isRunning(projectId, 'extraction') ? 'processing insights...'
                 : recentlyGenerated && !hasActiveTasks(projectId) ? 'updating...'
-                : isProcessingDocuments(projectId) ? `processing ${processingCount(projectId) > 1 ? `${processingCount(projectId)} documents` : 'document'}...`
+                : isRunning(projectId, 'document') ? `reading ${runningCount(projectId, 'document') > 1 ? `${runningCount(projectId, 'document')} documents` : 'document'}...`
                 : null
               }
               strategyBusyMessage={
                 isRunning(projectId, 'generation') ? (getProgressLabel(projectId) || 'drafting strategy...')
                 : null
               }
-              className={isKnowledgeSummaryExpanded ? 'md:col-span-2' : ''}
-              onExpandedChange={setIsKnowledgeSummaryExpanded}
-            />
-            <EvidencePanel
+              // With these set the panel shows the ground truths in place, and `onDimensionClick`
+              // above becomes the fallback it now only takes in demo mode.
               projectId={projectId}
-              fragmentCount={stats.fragmentCount}
-              onOpen={() => setEvidenceOpen(true)}
+              onResumeConversation={(convId: string) => {
+                setChatResumeConversationId(convId)
+                setChatViewOnly(false)
+                setChatSheetOpen(true)
+              }}
             />
             </div>
             </div>
@@ -1164,7 +1162,7 @@ export default function ProjectPage() {
                       Chats
                     </CardTitle>
                     {!isDemo && (
-                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
                         setChatInitialQuestion(undefined)
                         setChatDeepDiveId(undefined)
                         setChatGapExploration(undefined)
@@ -1172,7 +1170,7 @@ export default function ProjectPage() {
                         setChatViewOnly(false)
                         setChatSheetOpen(true)
                       }}>
-                        <Plus className="h-3 w-3 mr-1" />
+                        <Plus className="h-3 w-3" />
                         New
                       </Button>
                     )}
@@ -1256,11 +1254,11 @@ export default function ProjectPage() {
                       Documents
                     </CardTitle>
                     {!isDemo && (
-                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => {
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
                         setUploadDeepDiveId(undefined)
                         setUploadDialogOpen(true)
                       }}>
-                        <Plus className="h-3 w-3 mr-1" />
+                        <Plus className="h-3 w-3" />
                         Upload
                       </Button>
                     )}
@@ -1284,7 +1282,7 @@ export default function ProjectPage() {
                                   <ItemTitle className="text-sm truncate">{doc.fileName}</ItemTitle>
                                   <ItemDescription className="text-sm">
                                     {doc.status === 'complete'
-                                      ? `${doc.fragmentCount} fragments`
+                                      ? `${doc.fragmentCount} ground truth${doc.fragmentCount === 1 ? '' : 's'}`
                                       : doc.status === 'processing'
                                         ? 'Processing...'
                                         : doc.status}
@@ -1329,25 +1327,42 @@ export default function ProjectPage() {
                         <Package className="h-4 w-4" />
                         Integrations
                       </CardTitle>
-                      <Button variant="ghost" className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50" onClick={() => setImportDialogOpen(true)}>
-                        <Plus className="h-3 w-3 mr-1" />
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setImportDialogOpen(true)}>
+                        <Plus className="h-3 w-3" />
                         Import context
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-0 space-y-4">
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Prepare context in your favourite AI tool, then import it into Luna. Skills and connectors available for all major platforms.
-                    </p>
-                    <div className="flex items-center justify-center gap-8">
+                  {/*
+                    ⚠ NO EXPLAINER. This card read as an advert in the shape of chrome: a
+                    paragraph selling the capability, above three logos greyed out as though
+                    disabled, above a link. The card already has its action — Import context, in
+                    the header, where every other card on this tab keeps its action.
+
+                    So the logos do the explaining. At full colour they say "these work" without a
+                    sentence claiming it, and they carry the link out for anyone who wants the
+                    detail. Greyscale was saying the opposite of what the card meant.
+                  */}
+                  <CardContent className="space-y-4 pt-0">
+                    <a
+                      href="https://lunastak.io/docs/install"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-10 rounded-md py-6 transition-opacity hover:opacity-80"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-claude.svg" alt="Claude" className="h-10 grayscale opacity-60" />
+                      <img src="/logo-claude.svg" alt="Claude" className="h-16" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-gemini.svg" alt="Gemini" className="h-10 grayscale opacity-60" />
+                      <img src="/logo-gemini.svg" alt="Gemini" className="h-16" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/logo-openai.svg" alt="OpenAI" className="h-10 grayscale opacity-60" />
-                    </div>
-                    <a href="https://lunastak.io/docs/install" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
+                      <img src="/logo-openai.svg" alt="OpenAI" className="h-16" />
+                    </a>
+                    <a
+                      href="https://lunastak.io/docs/install"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-muted-foreground hover:text-foreground"
+                    >
                       Installation guide &rarr;
                     </a>
                   </CardContent>
@@ -1374,19 +1389,6 @@ export default function ProjectPage() {
       />
 
       {/* Chat Sheet */}
-      <EvidenceSheet
-        projectId={projectId}
-        open={evidenceOpen}
-        onOpenChange={setEvidenceOpen}
-        initialDimensionFilter={evidenceDimension}
-        onResumeConversation={(convId) => {
-          setEvidenceOpen(false)
-          setChatResumeConversationId(convId)
-          setChatViewOnly(false)
-          setChatSheetOpen(true)
-        }}
-      />
-
       <ChatSheet
         projectId={projectId}
         open={chatSheetOpen}
@@ -1485,7 +1487,6 @@ export default function ProjectPage() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImported={() => fetchProjectData()}
-        onGenerateStrategy={handleGenerateStrategy}
       />
 
       {/* Generation Confirm Dialog (refresh + opportunities) */}

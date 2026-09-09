@@ -85,7 +85,7 @@ export async function POST(
         userId,
       }
       const plan = planPipeline(trigger)
-      await executePipeline(plan, trigger)
+      await executePipeline(plan, trigger, { ownsGenerationStatus: true })
     } catch (error) {
       console.error('[RefreshStrategy] Background generation failed:', error)
       await setGenerationStatus(projectId, null)

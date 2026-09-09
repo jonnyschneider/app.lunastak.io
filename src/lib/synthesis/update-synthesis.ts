@@ -78,7 +78,13 @@ export async function updateDimensionalSynthesis(
       content: true,
       contentType: true,
       confidence: true,
-      capturedAt: true
+      capturedAt: true,
+      // Verbatim spans, ordinal order — rendered into the synthesis payload as the
+      // user's own words (§18 of the ground-truth preflight design).
+      evidence: {
+        select: { text: true, verification: true },
+        orderBy: { ordinal: 'asc' },
+      },
     },
     orderBy: { capturedAt: 'asc' }
   })

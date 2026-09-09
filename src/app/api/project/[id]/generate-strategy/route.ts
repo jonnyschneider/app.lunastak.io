@@ -45,7 +45,7 @@ export async function POST(
 
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId, status: 'active' },
-    select: { id: true },
+    select: { id: true, decisionStack: { select: { generationStatus: true } } },
   })
 
   if (!project) {
@@ -64,12 +64,30 @@ export async function POST(
     )
   }
 
-  // Check guest API limit
+  // Check guest API limit. Every generation is charged, including the first.
   const { blocked } = await checkAndIncrementGuestApiCalls(userId)
   if (blocked) {
     return NextResponse.json(
       { error: 'limit_reached', message: 'Demo limit reached. Sign up to continue.' },
       { status: 429 }
+    )
+  }
+
+  /**
+   * ⚠ ONE GENERATION AT A TIME. This route had no guard, so a second click started a second
+   * generation and the two landed on top of each other as consecutive versions.
+   *
+   * Observed 2026-09-08: Build my strategy gave no visible feedback (in the dev server this route
+   * AWAITS the whole run before responding, so the client sees nothing for ~37s), the user then
+   * pressed Skip the review, and both generations ran — v2 followed by v3.
+   *
+   * The client also guards with a pending state, but that is a courtesy. This is the guard: any
+   * caller, any tab, any double-submit.
+   */
+  if (project.decisionStack?.generationStatus === 'generating') {
+    return NextResponse.json(
+      { error: 'already_generating', message: 'A strategy is already being generated.' },
+      { status: 409 }
     )
   }
 
@@ -89,7 +107,7 @@ export async function POST(
   const generationWork = (async () => {
     try {
       const plan = planPipeline(trigger)
-      await executePipeline(plan, trigger)
+      await executePipeline(plan, trigger, { ownsGenerationStatus: true })
     } catch (error) {
       console.error('[GenerateStrategy] Background generation failed:', error)
       await setGenerationStatus(projectId, null)

@@ -12,6 +12,7 @@ import { Strategy } from 'unstructured-client/sdk/models/shared'
 import { extractXML } from '@/lib/utils'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { EmergentThemeContract } from '@/lib/contracts/extraction'
+import { parseThemeEvidence } from '@/lib/evidence/parse'
 import { extractText } from '@/lib/extract-text';
 
 const unstructured = new UnstructuredClient({
@@ -20,7 +21,16 @@ const unstructured = new UnstructuredClient({
   },
 })
 
-const DOCUMENT_EXTRACTION_PROMPT = `You are analyzing a business document. Extract the key strategic themes from this document, and tag each theme with the strategic dimensions it relates to.
+/**
+ * How much of a document reaches extraction. Override with `DOCUMENT_EXTRACTION_CHAR_LIMIT` to
+ * change it per environment without a deploy — see the note at the call site for why the default
+ * is what it is and what raising it would and would not buy.
+ */
+export const DOCUMENT_EXTRACTION_CHAR_LIMIT = Number(
+  process.env.DOCUMENT_EXTRACTION_CHAR_LIMIT ?? 15000
+)
+
+export const DOCUMENT_EXTRACTION_PROMPT = `You are analyzing a business document. Extract the key strategic themes from this document, and tag each theme with the strategic dimensions it relates to.
 
 Document content:
 {documentContent}
@@ -53,6 +63,17 @@ Format your extraction:
       <dimension name="dimension_key" confidence="high|medium|low"/>
       <!-- Include 1-3 most relevant dimensions per theme -->
     </dimensions>
+    <type>verbatim OR interpretation — "verbatim" if the theme restates or lightly compresses
+    something the document says outright; "interpretation" if you have applied reasoning across
+    the document to make new meaning. Be honest: most themes that combine several points are
+    interpretation.</type>
+    <evidence>
+      <span>A span copied VERBATIM from the document — character for character, including any
+      typos or odd punctuation. It must appear in the document exactly as you write it. This is
+      what will be kept after the document itself is discarded, so it has to stand on its own as
+      the reason this theme exists. Keep it to the shortest span that genuinely carries the claim.</span>
+      <!-- One span is usually enough. Add more only when the theme genuinely rests on several. -->
+    </evidence>
   </theme>
   <!-- Repeat for each theme (3-10 themes) -->
 </extraction>`
@@ -60,8 +81,10 @@ Format your extraction:
 /**
  * Parse document themes from XML extraction output
  * Returns themes matching EmergentThemeContract from extraction contracts
+ *
+ * Exported for test. Must keep parsing responses that carry neither <type> nor <evidence>.
  */
-function parseDocumentThemes(xml: string): EmergentThemeContract[] {
+export function parseDocumentThemes(xml: string): EmergentThemeContract[] {
   const themes: EmergentThemeContract[] = []
   const themeRegex = /<theme>([\s\S]*?)<\/theme>/g
   let match
@@ -70,6 +93,11 @@ function parseDocumentThemes(xml: string): EmergentThemeContract[] {
     const themeXML = match[1]
     const theme_name = extractXML(themeXML, 'theme_name')
     const content = extractXML(themeXML, 'content')
+
+    // Ground-truth check (2026-09-04): the verbatim span the theme rests on, plus the extractor's
+    // own verbatim|interpretation call. Both absent in today's format — that must still parse.
+    // Shared with the conversation extractor; see src/lib/evidence/parse.ts.
+    const { evidence, type } = parseThemeEvidence(themeXML)
 
     // Parse inline dimensions
     const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = []
@@ -85,7 +113,7 @@ function parseDocumentThemes(xml: string): EmergentThemeContract[] {
     }
 
     if (theme_name && content) {
-      themes.push({ theme_name, content, dimensions })
+      themes.push({ theme_name, content, dimensions, evidence, type })
     }
   }
 
@@ -179,8 +207,33 @@ export async function processDocument(
     // Step 2: Extract strategic themes using Claude
     console.log('[DocumentProcessing] Extracting strategic themes')
 
-    // Truncate to avoid context limits (keep first 15000 chars)
-    const truncatedContent = extractedText.slice(0, 15000)
+    /**
+     * ⚠ THIS CAP IS A RELIC, AND IT HAS BEEN SILENTLY EATING REAL DOCUMENTS.
+     *
+     * Introduced as a bare `slice(0, 15000)` in `e17d589` (v1.5.0, 2026-01-07) with the comment
+     * "avoid context limits". Whatever that meant then, it does not mean it now: the default model
+     * is `claude-sonnet-5` with a 200k-token window, and 15,000 characters is roughly 3,750
+     * tokens — under 2% of it.
+     *
+     * Measured on prod 2026-09-09: 11 of 43 documents exceed 15,000 bytes, and the largest are a
+     * 792KB business plan, a 204KB report and a 164KB strategy document. The documents a user
+     * cared most about are precisely the ones losing their second half, with nothing said.
+     *
+     * ⚠ RAISING IT IS A PRODUCT CALL, NOT A FREE WIN. §17 measured this family of stage as nearly
+     * insensitive to input volume — cutting the synthesis payload 60% moved gap count 3.6% — and
+     * §21 found extraction output is capped by the count instruction, not by how much it is fed.
+     * So more input probably will not yield more themes. It would stop us ignoring half a business
+     * plan without telling anyone, which is a correctness argument rather than a quality one.
+     */
+    const truncatedContent = extractedText.slice(0, DOCUMENT_EXTRACTION_CHAR_LIMIT)
+
+    if (extractedText.length > DOCUMENT_EXTRACTION_CHAR_LIMIT) {
+      // Was silent for eight months. At minimum it should be greppable.
+      console.warn(
+        `[DocumentProcessing] truncated ${documentId}: ${extractedText.length} chars -> ` +
+        `${DOCUMENT_EXTRACTION_CHAR_LIMIT} (${Math.round((1 - DOCUMENT_EXTRACTION_CHAR_LIMIT / extractedText.length) * 100)}% dropped)`
+      )
+    }
 
     const prompt = DOCUMENT_EXTRACTION_PROMPT
       .replace('{documentContent}', truncatedContent)

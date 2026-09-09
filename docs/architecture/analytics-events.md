@@ -48,21 +48,21 @@ The unlimited-projects gate is the only real paywall in the product.
 | `paywall_prompt_view` | client | `unlimited-projects` | `state: "interstitial"`, userType | Real paywall interstitial shown — signed-up free user tried to create a 2nd project. |
 | `paywall_upgrade_click` | client | `unlimited-projects` | userType | User clicked Upgrade on the real paywall. Strongest "convert me" signal. |
 
-## Fake doors (Pro features that don't exist yet)
+## Fake doors — retired 2026-09-08
 
-| Event | Side | Value | Metadata | What it means |
-|---|---|---|---|---|
-| `fake_door_view` | client | `<feature-key>` | `state: "interstitial"` (free user) \| `"pro_coming_soon"` (Pro user), userType | User clicked a Pro feature surface; coming-soon dialog shown. Demand signal. |
-| `fake_door_click` | client | `<feature-key>` | userType | User clicked Upgrade inside the fake-door interstitial. Strongest demand signal per feature. |
+`fake_door_view` and `fake_door_click` are **gone**, along with every fake door that emitted
+them. There are no active feature keys. See [Deprecated events](#deprecated-events) below for the
+evidence, and `retired-fake-doors.md` for the retro.
 
-Active feature keys: `monthly-review`, `quarterly-review`, `strategic-narrative`, `connect-data`, `audio-memo`, `model-selection`, `knowledge-chat`, `knowledge-edit`. (`outcomes/` and `template/` pages also reference fake-door features but are currently orphaned — no inbound paths.)
+`unlimited-projects` is not affected — it was never a fake door but the real free-tier cap, and it
+reports through `paywall_*` above.
 
 ## Strategy generation flow
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
 | `cta_start_initial_conversation` | client | `inline-chat` | `projectId`, userType | First message sent in a fresh project. |
-| `cta_generate_strategy` | client | `inline-chat` \| `early-exit` \| `extraction-confirm` | `projectId`, userType | User triggered strategy generation. Surface in `value`. |
+| `cta_generate_strategy` | client | `inline-chat` \| `early-exit` | `projectId`, userType | User triggered strategy generation. Surface in `value`. (`extraction-confirm` retired 2026-09-08 with `ExtractionConfirm` — see `retired-extraction-run.md`.) |
 | `cta_update_direction` | client | `overflow-menu` | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
 | `cta_draft_opportunities` | client | `overflow-menu` \| `opportunity-section` | `projectId`, userType | User triggered opportunity drafting. |
@@ -180,3 +180,17 @@ complete cost picture until this is closed.
 
 - `cta_view_fragments` — folded into `cta_open_evidence` in v2.4.2.
 - `pro_interstitial_view`, `pro_upgrade_click`, `pro_coming_soon_view` — replaced by `paywall_*` and `fake_door_*` taxonomy in the v2.4.5 cutover. Hard removed.
+- `fake_door_view` / `fake_door_click` — **the whole taxonomy is retired, 2026-09-08.** Every fake
+  door was removed: `model-selection`, `knowledge-chat`, `knowledge-edit`, `ai-improve`,
+  `monthly-review`, `quarterly-review`, `strategic-narrative`, `connect-data` and the unreachable
+  `audio-memo`.
+
+  **Why: they measured nothing.** Checked via the Statsig Console API on 2026-09-08 —
+  `fake_door_view::event_count` exists, and `fake_door_click::event_count` **does not exist at
+  all**. Statsig creates a metric on an event's first log, so no user has ever clicked Upgrade from
+  any fake door. Eight surfaces, indefinite maintenance, zero signal. (`paywall_upgrade_click` is
+  likewise absent, so the real paywall has never converted either — that is a product finding, not
+  a reason to remove the paywall.)
+
+  `paywall_prompt_view` and `paywall_upgrade_click` continue, and now carry the only remaining
+  Pro surface, `unlimited-projects` — which is a real cap, not a fake door.

@@ -1,6 +1,6 @@
 {
   "name": "lunastak",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "private": true,
   "description": "AI-powered strategic planning with systematic quality improvement",
   "scripts": {
@@ -27,8 +27,6 @@
     "bundle:restore": "tsx tools/project-bundle/restore.ts",
     "bundle:validate": "tsx tools/project-bundle/validate.ts",
     "prepare": "husky",
-    "e2e": "playwright test",
-    "e2e:report": "playwright show-report",
     "email": "email dev --dir src/emails --port 3001",
     "send-newsletter": "tsx tools/email/send-newsletter-broadcast.ts",
     "check-subscribers": "tsx tools/email/check-subscribers.ts",
@@ -89,7 +87,6 @@
   },
   "devDependencies": {
     "@linear/sdk": "^68.1.0",
-    "@playwright/test": "^1.58.2",
     "@react-email/preview-server": "^5.2.11",
     "@react-email/ui": "^6.3.2",
     "@testing-library/jest-dom": "^6.1.5",

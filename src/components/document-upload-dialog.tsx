@@ -1,8 +1,10 @@
 'use client'
 
+import { useBackgroundTaskContext } from '@/components/providers/BackgroundTaskProvider'
+import { ingestComplete, ingestRunning, ingestFailed } from '@/lib/ingest-messaging'
+
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 import {
   Dialog,
   DialogContent,
@@ -45,7 +47,7 @@ export function DocumentUploadDialog({
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { startProcessing } = useDocumentProcessingContext()
+  const { startTask } = useBackgroundTaskContext()
 
   // Listen for document processed events to trigger onUploadComplete
   useEffect(() => {
@@ -127,8 +129,15 @@ export function DocumentUploadDialog({
 
       const data = await response.json()
 
-      // Start background processing tracking
-      startProcessing(data.documentId, projectId, selectedFile.name)
+      // Same track as every other ingest — see src/lib/ingest-messaging.ts for why the wording
+      // is shared rather than written here.
+      startTask('document', data.documentId, projectId, {
+        running: ingestRunning('document'),
+        complete: ingestComplete({ source: 'document' }).title,
+        failed: ingestFailed('document').title,
+        completeDescription: `{{fragmentCount}} ground truths added. ${ingestComplete({ source: 'document' }).description}`,
+        failedDescription: ingestFailed('document').description,
+      })
 
       // Close dialog - processing continues in background with indicator
       onOpenChange(false)
@@ -213,16 +222,17 @@ export function DocumentUploadDialog({
               {/* Context Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Tell Luna about this document
+                  What is this document?
                 </label>
                 <Textarea
-                  placeholder="e.g., This is our competitor analysis from Q3, focusing on market positioning..."
+                  placeholder="e.g. our competitor analysis from Q3, focused on market positioning"
                   value={uploadContext}
                   onChange={(e) => setUploadContext(e.target.value)}
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This context helps Luna extract more relevant insights.
+                  Optional. It goes to the extraction alongside the document, so a line about why
+                  it matters helps.
                 </p>
               </div>
             </div>

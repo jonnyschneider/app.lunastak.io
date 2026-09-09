@@ -2,30 +2,28 @@
 
 import { Loader2 } from 'lucide-react'
 import { useGenerationStatusContext } from '@/components/providers/BackgroundTaskProvider'
-import { useDocumentProcessingContext } from '@/components/providers/DocumentProcessingProvider'
 
 interface StatusBannerProps {
   projectId: string
 }
 
 export function StatusBanner({ projectId }: StatusBannerProps) {
-  const { activeTasks, getProgressLabel } = useGenerationStatusContext()
-  const { isProcessing, processingCount } = useDocumentProcessingContext()
+  const { activeTasks, getProgressLabel, runningCount } = useGenerationStatusContext()
 
-  // Find active tasks for this project
+  // Documents used to be a second source here, read from a second provider. They are ordinary
+  // background tasks now, so one branch covers every kind — except the plural case, which is the
+  // one thing a single task's `running` copy cannot say for itself.
   const projectTasks = activeTasks.filter(t => t.projectId === projectId && t.status === 'running')
-  const isProcessingDocs = isProcessing(projectId)
 
-  // Build message
   let message: string | null = null
 
   if (projectTasks.length > 0) {
-    const task = projectTasks[0] // Show the first/most recent
-    const label = getProgressLabel(projectId)
-    message = label || task.messaging.running
-  } else if (isProcessingDocs) {
-    const count = processingCount(projectId)
-    message = count > 1 ? `Processing ${count} documents...` : 'Processing document...'
+    const docs = runningCount(projectId, 'document')
+    if (docs > 1) {
+      message = `Reading ${docs} documents...`
+    } else {
+      message = getProgressLabel(projectId) || projectTasks[0].messaging.running
+    }
   }
 
   if (!message) return null

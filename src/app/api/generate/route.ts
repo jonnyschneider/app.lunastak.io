@@ -81,8 +81,10 @@ export async function POST(req: Request) {
 
   console.log('[Generate API] Starting generation', generationId);
 
-  // Start background generation via pipeline orchestrator
-  waitUntil((async () => {
+  // Start background work via the pipeline orchestrator. Since the ground-truth review split this
+  // runs extraction and fragments only — generation happens after the review, through
+  // POST /api/project/[id]/generate-strategy.
+  const pipelineWork = (async () => {
     try {
       const trigger = {
         type: 'conversation_ended' as const,
@@ -93,12 +95,20 @@ export async function POST(req: Request) {
         experimentVariant: conversation.experimentVariant,
       };
       const plan = planPipeline(trigger);
-      await executePipeline(plan, trigger);
+      await executePipeline(plan, trigger, { ownsGenerationStatus: true });
     } catch (error) {
-      console.error('[Generate API] Background generation failed:', error);
+      console.error('[Generate API] Background pipeline failed:', error);
       await setGenerationStatus(conversation.projectId!, null);
     }
-  })());
+  })();
+
+  // `waitUntil` is a NO-OP in the Next dev server, so awaiting locally is what makes this flow
+  // walkable in `npm run dev` at all. Same shape as generate-strategy/route.ts.
+  if (process.env.VERCEL) {
+    waitUntil(pipelineWork);
+  } else {
+    await pipelineWork;
+  }
 
   const setupTime = Date.now() - requestStartTime;
   console.log(`[Generate API] Returning immediately after ${setupTime}ms`);

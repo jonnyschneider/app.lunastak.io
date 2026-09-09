@@ -2,7 +2,6 @@ import { prisma } from '@/lib/db'
 import { createMessage } from '@/lib/claude'
 import { extractXML, parseOKRObjectives, extractObjectivesXML } from '@/lib/utils'
 import { convertLegacyObjectives } from '@/lib/placeholders'
-import { createExtractionRun, updateExtractionRunWithSyntheses } from '@/lib/extraction-runs'
 import { logStatsigEvent } from '@/lib/statsig'
 import { notifySlackStrategyGenerated } from '@/lib/notifications'
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
@@ -11,6 +10,7 @@ import type { RefreshStrategyDeltaContract } from '@/lib/contracts/refresh-strat
 import type { OpportunityGenerationOutputContract } from '@/lib/contracts/opportunity-generation'
 import type { PipelineResult } from './types'
 import { extractText } from '@/lib/extract-text';
+import { renderEvidence } from '@/lib/prompts/shared/evidence'
 
 /**
  * Initial strategy generation. Inlined 2026-08-27 from the retired prompt
@@ -318,7 +318,19 @@ export async function runInitialGeneration(
   // Load fragments from DB (created earlier in the pipeline)
   const fragments = await prisma.fragment.findMany({
     where: { projectId, status: 'active' },
-    select: { id: true, content: true, contentType: true },
+    select: {
+      id: true,
+      content: true,
+      contentType: true,
+      // Verbatim spans, ordinal order — rendered into the payload as the user's own
+      // words (§18/§19 of the ground-truth preflight design). Initial generation reads
+      // fragments, never syntheses, so this is the only route by which evidence reaches
+      // the first strategy a user sees.
+      evidence: {
+        select: { text: true, verification: true },
+        orderBy: { ordinal: 'asc' },
+      },
+    },
     orderBy: { capturedAt: 'desc' },
   })
 
@@ -327,8 +339,13 @@ export async function runInitialGeneration(
   }
 
   // Build prompt from fragments — same data as extractedContext.themes, read from DB
+  // `renderEvidence` returns '' when a fragment has no usable evidence — which is nearly
+  // every production fragment, and must stay byte-identical to the pre-evidence payload.
+  // No `### Fragment N` headers or `---` rules here, unlike the synthesis path: the
+  // evidence block is self-delimiting, and adding delimiters would be a second
+  // simultaneous change confounding the measurement this is built for.
   const themesText = fragments
-    .map(f => f.content)
+    .map(f => `${f.content}${renderEvidence(f)}`)
     .join('\n\n')
   // Payload only — framing, tone and output format are the stage's system block.
   const prompt = `EMERGENT THEMES:\n${themesText}`
@@ -429,24 +446,6 @@ export async function runInitialGeneration(
   // Clear generation status
   await setGenerationStatus(projectId, null)
 
-  // Create ExtractionRun (reuses fragments loaded at top of function)
-  const extractionRun = await createExtractionRun({
-    projectId,
-    conversationId: traceConversationId,
-    experimentVariant: experimentVariant || undefined,
-    fragmentIds: fragments.map(f => f.id),
-    modelUsed: response.model,
-    promptTokens: response.usage.input_tokens,
-    completionTokens: response.usage.output_tokens,
-    latencyMs: latency,
-  })
-
-  try {
-    await updateExtractionRunWithSyntheses(extractionRun.id, projectId)
-  } catch (err) {
-    console.error('[Pipeline] Failed to update extraction run with syntheses:', err)
-  }
-
   // Update conversation status (skip if no real conversation)
   if (conversationId) {
     await prisma.conversation.update({
@@ -505,7 +504,20 @@ export async function runOpportunityGeneration(
   // Load active fragments
   const fragments = await prisma.fragment.findMany({
     where: { projectId, status: 'active' },
-    select: { content: true, contentType: true },
+    select: {
+      content: true,
+      contentType: true,
+      // Verbatim spans, ordinal order — rendered into the payload as the user's own
+      // words (§18/§20 of the ground-truth preflight design). §2 traced the fabricated
+      // NUMBERS (`8–15 hours`, `30–50%`, `Baseline: 0%`) to this stage alone: a metric
+      // can only be grounded in the sentence the user actually said it in. The
+      // dimensional summaries below already carry evidence in prose (452afd5); these are
+      // the spans themselves, which is a different thing to hand a metric-writing step.
+      evidence: {
+        select: { text: true, verification: true },
+        orderBy: { ordinal: 'asc' },
+      },
+    },
     orderBy: { capturedAt: 'desc' },
     take: 100,
   })
@@ -523,8 +535,25 @@ export async function runOpportunityGeneration(
     })
     .join('\n\n')
 
+  // `renderEvidence` returns '' when a fragment has no usable evidence — which is nearly
+  // every production fragment, and must stay byte-identical to the pre-evidence payload.
+  // The block is multi-line and sits inside a bullet list; it is self-delimiting (labelled
+  // header plus `>` markers), and adding list-aware indentation would reword measured
+  // output, so it is left as the other two call sites render it.
+  // Bullets join with a single newline, so a multi-line evidence block would run straight into the
+  // next `- [type]` bullet with nothing between them — the weakest boundary of the three call
+  // sites. Fragments carrying evidence therefore get a blank line after them. This changes the
+  // JOIN, not the measured block itself (§18), and only for fragments that actually have evidence,
+  // so the no-evidence payload stays byte-identical.
   const fragmentsContent = fragments.length > 0
-    ? fragments.map(f => `- [${f.contentType}] ${f.content}`).join('\n')
+    ? fragments
+        .map(f => {
+          const block = renderEvidence(f)
+          return `- [${f.contentType}] ${f.content}${block}${block ? '\n' : ''}`
+        })
+        .join('\n')
+        // the separator is only needed BETWEEN bullets; the last one must not trail
+        .trimEnd()
     : 'No fragments yet.'
 
   // Payload only — instructions and output format are the stage's system block.

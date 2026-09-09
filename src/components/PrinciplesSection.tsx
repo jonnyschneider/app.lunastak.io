@@ -330,6 +330,26 @@ export function PrinciplesSection({
 
   return (
     <div className="space-y-6">
+      {/*
+        ⚠ THE SHAPE IS THE THING A USER CANNOT GUESS.
+        An empty Principles section was a heading, an Add button and nothing else. The question
+        teaches what belongs here; the second line teaches the FORM — one GOOD thing even over
+        another GOOD thing, which is the whole difficulty. A principle that trades good against bad
+        is not a principle, it is a preference, and that is the part nobody arrives knowing.
+        Kept short deliberately: the first draft explained the concept and read as a lecture.
+        Deliberately not a worked example: a filled-in principle reads as content, not guidance.
+      */}
+      {principles.length === 0 && !editingPrincipleId && (
+        <div className="rounded-lg border border-dashed border-border px-4 py-6">
+          <p className="text-sm font-medium text-foreground">
+            How will you choose when the decisions get hard?
+          </p>
+          <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">
+            Trade-offs — one good thing, <em>even over</em> another good thing.
+          </p>
+        </div>
+      )}
+
       {/* Selected principles - grid layout */}
       {principles.length > 0 && (
         <div>

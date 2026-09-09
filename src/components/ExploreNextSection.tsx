@@ -198,7 +198,9 @@ export function ExploreNextSection({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
+        {/* text-base, like Chats / Documents / Integrations / Ground Truth. It was text-lg — the
+            only card heading that never got aligned, which made it read as the important one. */}
+        <CardTitle className="flex items-center gap-2 text-base">
           <Compass className="h-4 w-4" />
           Explore Next
         </CardTitle>
@@ -209,14 +211,14 @@ export function ExploreNextSection({
           <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deep Dive Topics</h4>
           <Button
             size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs text-primary hover:text-primary/80 hover:bg-muted/50"
+            variant="outline"
+            className="h-7 gap-1 px-2 text-xs"
             onClick={() => {
               logAndFlush('cta_add_deep_dive', 'explore-next')
               onAddDeepDive()
             }}
           >
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus className="h-3 w-3" />
             Add
           </Button>
         </div>

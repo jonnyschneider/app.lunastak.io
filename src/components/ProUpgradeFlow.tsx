@@ -11,60 +11,28 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Check, Calendar, FileText, Plug, Mic } from 'lucide-react';
+import { Sparkles, Check } from 'lucide-react';
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider';
 
 // Feature definitions for the interstitial
+/**
+ * ⚠ ONE ENTRY, AND IT IS NOT A FAKE DOOR.
+ *
+ * This registry held nine features, eight of which were fake doors — surfaces that existed only to
+ * measure demand. Statsig says they measured none: across the whole project `fake_door_view` had
+ * fired and `fake_door_click` had **never been logged at all**, so no user has ever clicked
+ * Upgrade from one (checked 2026-09-08 via the Console API; the metric does not exist, and Statsig
+ * creates one on first log). Eight surfaces, zero signal, ongoing maintenance — including a model
+ * version number that dated on every bump.
+ *
+ * `unlimited-projects` stays because it is NOT a fake door: it is the real free-tier cap, hit by
+ * actually trying to create a second project, and it reports through `paywall_*` events.
+ */
 export const PRO_FEATURES = {
   'unlimited-projects': {
     icon: Sparkles,
     title: 'Unlimited Projects',
     description: 'Free accounts are limited to one project. Upgrade to Pro for unlimited projects to manage all your strategic initiatives.',
-  },
-  'monthly-review': {
-    icon: Calendar,
-    title: 'Monthly Review Drafts',
-    description: 'Luna drafts your MBR based on your endorsed strategy. Easy prep, distribute ahead, effective meetings.',
-  },
-  'quarterly-review': {
-    icon: Calendar,
-    title: 'Quarterly Review Drafts',
-    description: 'Comprehensive QBR narrative with strategic context. Stop scrambling before board meetings.',
-  },
-  'strategic-narrative': {
-    icon: FileText,
-    title: 'Strategic Narrative',
-    description: 'The story of how you\'re tracking against objectives. Share context without the jargon.',
-  },
-  'connect-data': {
-    icon: Plug,
-    title: 'Connect Your Data',
-    description: 'Pull operational metrics back into Luna. Let reality inform your strategic updates.',
-  },
-  'audio-memo': {
-    icon: Mic,
-    title: 'Audio Memos',
-    description: 'Record voice memos, Luna transcribes and extracts strategic insights automatically.',
-  },
-  'model-selection': {
-    icon: Sparkles,
-    title: 'Premium AI Model',
-    description: 'Access to Opus, our most capable model for deeper strategic analysis.',
-  },
-  'ai-improve': {
-    icon: Sparkles,
-    title: 'Improve with AI',
-    description: 'Luna analyses your input and suggests improvements — sharper language, stronger positioning, and gaps you might have missed.',
-  },
-  'knowledge-chat': {
-    icon: Sparkles,
-    title: 'Discuss Your Knowledge Base',
-    description: 'Chat with Luna about what she\'s learned. Clarify misunderstandings, add nuance, and refine insights before generating your strategy.',
-  },
-  'knowledge-edit': {
-    icon: Sparkles,
-    title: 'Edit Your Knowledge Base',
-    description: 'Review, correct, and refine the insights Luna has extracted. Remove what\'s wrong, add what\'s missing, and shape your strategic context directly.',
   },
 } as const;
 
@@ -87,8 +55,7 @@ export function ProFeatureInterstitial({
   const Icon = featureConfig.icon;
 
   const handleUpgradeClick = () => {
-    const eventName = feature === 'unlimited-projects' ? 'paywall_upgrade_click' : 'fake_door_click';
-    logAndFlush(eventName, feature);
+    logAndFlush('paywall_upgrade_click', feature);
     onUpgrade();
   };
 
@@ -345,7 +312,7 @@ export function useProUpgradeFlow() {
   const [interstitialOpen, setInterstitialOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
-  const [currentFeature, setCurrentFeature] = useState<ProFeatureKey>('monthly-review');
+  const [currentFeature, setCurrentFeature] = useState<ProFeatureKey>('unlimited-projects');
 
   // Fetch Pro status on mount
   useEffect(() => {
@@ -362,11 +329,10 @@ export function useProUpgradeFlow() {
     setCurrentFeature(feature);
     if (isPro) {
       setComingSoonOpen(true);
-      logAndFlush('fake_door_view', feature, { state: 'pro_coming_soon' });
+      logAndFlush('paywall_prompt_view', feature, { state: 'pro_coming_soon' });
     } else {
       setInterstitialOpen(true);
-      const eventName = feature === 'unlimited-projects' ? 'paywall_prompt_view' : 'fake_door_view';
-      logAndFlush(eventName, feature, { state: 'interstitial' });
+      logAndFlush('paywall_prompt_view', feature, { state: 'interstitial' });
     }
   };
 

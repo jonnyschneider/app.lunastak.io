@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createMessage } from '@/lib/claude';
 import { extractXML } from '@/lib/utils';
+import { parseEmergentThemes } from '@/lib/evidence/parse';
 import { isEmergentContext } from '@/lib/types';
 import { computeDimensionalCoverageFromInline } from '@/lib/dimensional-analysis';
 import { logStatsigEvent } from '@/lib/statsig';
@@ -86,6 +87,17 @@ Format your extraction:
       <dimension name="dimension_key" confidence="high|medium|low"/>
       <!-- Include 1-3 most relevant dimensions per theme -->
     </dimensions>
+    <type>verbatim OR interpretation — "verbatim" if the theme restates or lightly compresses
+    something the conversation says outright; "interpretation" if you have applied reasoning across
+    the conversation to make new meaning. Be honest: most themes that combine several points are
+    interpretation.</type>
+    <evidence>
+      <span>A span copied VERBATIM from the conversation — character for character, including any
+      typos or odd punctuation. It must appear in the conversation exactly as you write it. This is
+      what will be kept after the conversation itself is discarded, so it has to stand on its own as
+      the reason this theme exists. Keep it to the shortest span that genuinely carries the claim.</span>
+      <!-- One span is usually enough. Add more only when the theme genuinely rests on several. -->
+    </evidence>
   </theme>
   <!-- Repeat for each emergent theme (3-7 themes) -->
 </extraction>`;
@@ -129,43 +141,6 @@ function extractAllXML(xml: string, tag: string): string[] {
     }
   }
   return matches;
-}
-
-interface ParsedTheme {
-  theme_name: string;
-  content: string;
-  dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[];
-}
-
-function parseEmergentThemes(xml: string): ParsedTheme[] {
-  const themes: ParsedTheme[] = [];
-  const themeRegex = /<theme>([\s\S]*?)<\/theme>/g;
-  let match;
-
-  while ((match = themeRegex.exec(xml)) !== null) {
-    const themeXML = match[1];
-    const theme_name = extractXML(themeXML, 'theme_name');
-    const content = extractXML(themeXML, 'content');
-
-    // Parse inline dimensions
-    const dimensions: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
-    const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g;
-    let dimMatch;
-
-    while ((dimMatch = dimensionRegex.exec(themeXML)) !== null) {
-      const name = dimMatch[1];
-      const confidence = dimMatch[2].toUpperCase() as 'HIGH' | 'MEDIUM' | 'LOW';
-      if (['HIGH', 'MEDIUM', 'LOW'].includes(confidence)) {
-        dimensions.push({ name, confidence });
-      }
-    }
-
-    if (theme_name && content) {
-      themes.push({ theme_name, content, dimensions });
-    }
-  }
-
-  return themes;
 }
 
 export async function POST(req: Request) {
@@ -386,7 +361,7 @@ export async function POST(req: Request) {
           };
           const plan = planPipeline(trigger);
           console.log(`[Extract] Running initial pipeline for ${conversationId}...`);
-          await executePipeline(plan, trigger);
+          await executePipeline(plan, trigger, { ownsGenerationStatus: true });
           console.log(`[Extract] Initial pipeline complete for ${conversationId}`);
         }
 

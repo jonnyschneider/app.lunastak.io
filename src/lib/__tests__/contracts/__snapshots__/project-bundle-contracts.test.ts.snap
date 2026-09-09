@@ -9,7 +9,7 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
       "additionalProperties": false,
       "properties": {
         "bundleVersion": {
-          "const": 2,
+          "const": 3,
           "type": "number",
         },
         "decisionStack": {
@@ -138,6 +138,58 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
               },
               "contentType": {
                 "type": "string",
+              },
+              "evidence": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "ordinal": {
+                      "minimum": 0,
+                      "type": "integer",
+                    },
+                    "sourceRole": {
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "text": {
+                      "type": "string",
+                    },
+                    "verification": {
+                      "enum": [
+                        "verified",
+                        "unverifiable",
+                        "failed",
+                      ],
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "text",
+                    "verification",
+                    "ordinal",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "interpretationType": {
+                "type": [
+                  "string",
+                  "null",
+                ],
+              },
+              "reviewedAt": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
               },
               "sourceType": {
                 "type": "string",

@@ -36,13 +36,14 @@ export function transformContextBundleDirect(bundle: ContextBundle): EmergentThe
     const dimensionKey = AREA_TO_DIMENSION[theme.area]
     if (!dimensionKey) continue
 
-    const content = theme.evidence?.length
-      ? `${theme.theme}\n\nEvidence:\n${theme.evidence.map(e => `- ${e}`).join('\n')}`
-      : theme.theme
-
     themes.push({
       theme_name: theme.theme || theme.area,
-      content,
+      content: theme.theme,
+      // Evidence rides the contract so createFragmentsFromImport can write real
+      // Evidence rows (unverifiable / bundle). It is no longer flattened into
+      // content. NOT A BACKFILL — fragments imported before this change keep
+      // their prose `Evidence:` blocks and have no Evidence rows.
+      ...(theme.evidence?.length ? { evidence: theme.evidence } : {}),
       dimensions: [{
         name: dimensionKey,
         confidence: (theme.confidence || 'MEDIUM').toLowerCase() as 'HIGH' | 'MEDIUM' | 'LOW',
@@ -66,6 +67,11 @@ export function transformContextBundleDirect(bundle: ContextBundle): EmergentThe
       themes.push({
         theme_name: (t.tensionTitle as string) || 'Strategic tension',
         content,
+        // NOT ground truth: a tension is the skill's reading across themes, drawn in a
+        // conversation this app never saw. It carries no verbatim span because it is not a quote.
+        // Naming the type is what lets the ground-truth review leave it out while it still feeds
+        // synthesis and generation like any other context.
+        contentType: 'tension',
         dimensions: dims,
       })
     }
@@ -165,7 +171,14 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
 
     return {
       theme_name: chunk.topic,
+      // `Source: file.txt` stays in content deliberately: a filename has no
+      // structured home in the schema, so removing it would drop provenance.
       content: chunk.content + sourceAttr,
+      // Evidence rides the contract instead of being flattened into content, so
+      // createFragmentsFromImport can write real Evidence rows.
+      // NOT A BACKFILL — fragments imported before this change keep their prose
+      // `Evidence:` blocks and have no Evidence rows.
+      ...(chunk.evidence?.length ? { evidence: chunk.evidence } : {}),
       dimensions: tagsByIndex.get(i) || [{ name: 'strategic_intent', confidence: 'LOW' as const }],
     }
   })
@@ -179,6 +192,7 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
     themes.push({
       theme_name: (t.tensionTitle as string) || 'Strategic tension',
       content,
+      contentType: 'tension',   // see the direct-mode transform above
       dimensions: [{ name: 'risks_constraints', confidence: 'MEDIUM' as const }],
     })
   }

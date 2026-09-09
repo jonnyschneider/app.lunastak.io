@@ -225,6 +225,9 @@ model Fragment {
   archivedAt     DateTime?
   archivedReason String?
   softDeletedAt  DateTime?
+  // Ground truth check (2026-09-04): distinguishes "active because reviewed and kept"
+  // from "active because never looked at". Needed for resume + partial completion.
+  reviewedAt     DateTime?
 
   // Metadata
   capturedAt  DateTime @default(now())
@@ -232,6 +235,10 @@ model Fragment {
 
   sourceType    String @default("extraction") // extraction | import | manual
   importBatchId String?
+  // How the fragment was made, self-reported by the extractor. Decides which question the
+  // ground truth check asks: a verbatim claim asks "does this still matter?", an
+  // interpretation asks "we read this from these things".
+  interpretationType String? // verbatim | interpretation
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -242,6 +249,7 @@ model Fragment {
   message       Message?               @relation(fields: [messageId], references: [id], onDelete: SetNull)
   document      Document?              @relation(fields: [documentId], references: [id], onDelete: SetNull)
   dimensionTags FragmentDimensionTag[]
+  evidence      Evidence[]
 
   @@index([projectId])
   @@index([conversationId])
@@ -249,6 +257,35 @@ model Fragment {
   @@index([status])
   @@index([capturedAt])
   @@index([importBatchId])
+}
+
+/// The verbatim span a fragment rests on.
+///
+/// Source material is deliberately NOT persisted — documents and imported bundles are
+/// ephemeral by design — so verification happens at ingest while the text is briefly in
+/// hand, and only the result is stored. See docs/_plans/2026-08-27-ground-truth-preflight-design.md §16.1.
+///
+/// Phase 2 (synthesis gaps) adds a SECOND NULLABLE FK here, never a polymorphic
+/// subjectType/subjectId — that loses referential integrity.
+model Evidence {
+  id         String @id @default(cuid())
+  fragmentId String
+
+  text       String  @db.Text // the span, copied verbatim from the source
+  sourceRole String? // user | assistant | document | bundle
+  /// verified     — matched the source at ingest (conversation, document)
+  /// unverifiable — no source retained, so it COULD NOT be checked (every bundle import).
+  ///                Never counts against a fragment: it is a property of the path, not the evidence.
+  /// failed       — the source was there and the span did not match
+  verification String @default("unverifiable")
+  ordinal    Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  fragment Fragment @relation(fields: [fragmentId], references: [id], onDelete: Cascade)
+
+  @@index([fragmentId])
+  @@index([verification])
 }
 
 model FragmentDimensionTag {
@@ -366,6 +403,11 @@ model DimensionalSynthesis {
 }
 
 
+/// ☠ DEAD — no code reads or writes this as of 2026-09-08. Drops at deploy.
+/// Retired because it was write-only: created on every generation but read by nothing except
+/// two unreachable viewer pages. See docs/retired-extraction-run.md and SCHEMA_CHANGELOG.
+/// Kept in the schema only until the code deletion has shipped — code before destructive
+/// migration, per CLAUDE.md. Do NOT write to it.
 model ExtractionRun {
   id        String @id @default(cuid())
   projectId String
@@ -546,6 +588,20 @@ model DecisionStackSnapshot {
   completionTokens Int?
   latencyMs        Int?
   changeSummary    String? @db.Text
+
+  // The ground truths this stack was generated FROM — active fragment ids at capture time.
+  //
+  // Staleness used to be "are there fragments newer than the last snapshot", which can only ever
+  // see ADDITIONS. Pruning a fragment created before the snapshot changed nothing, so the app
+  // claimed a strategy was in sync with context the user had since discarded. Latent until
+  // 2026-09-08, when pruning became reachable after the first strategy.
+  //
+  // A set comparison sees both directions, and says something more useful than a boolean: which
+  // ground truths have been added and which removed since v3 was built.
+  //
+  // Null on every snapshot written before this column existed — unknown, not empty. Readers fall
+  // back to the timestamp heuristic rather than reporting a wholesale change.
+  fragmentIds Json?
 
   createdAt DateTime @default(now())
 

@@ -4,7 +4,9 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
+import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
 import { isGuestUser, createGuestUser } from '@/lib/projects'
+import { computeDimensionSupport, type SupportLevel } from '@/lib/support/dimension-support'
 
 const GUEST_COOKIE_NAME = 'guestUserId'
 
@@ -90,7 +92,7 @@ export async function GET(
               select: { id: true, content: true, role: true },
               orderBy: { stepNumber: 'asc' as const },
             },
-            fragments: { where: { status: 'active' }, select: { id: true } },
+            fragments: { where: { status: 'active' }, select: GROUND_TRUTH_SELECT },
             traces: {
               where: { starred: true },
               select: { starred: true, starredAt: true },
@@ -102,12 +104,16 @@ export async function GET(
           where: { status: 'active' },
           include: {
             dimensionTags: true,
+            // Read by the support calculator — evidence state and substance can pull a
+            // dimension's ball down one band, never lift it (design §16.4) — and by isGroundTruth,
+            // which needs sourceRole to tell the assistant's own words from the user's.
+            evidence: { select: { text: true, verification: true, sourceRole: true } },
           },
         },
         documents: {
           orderBy: { createdAt: 'desc' },
           include: {
-            fragments: { where: { status: 'active' }, select: { id: true } },
+            fragments: { where: { status: 'active' }, select: GROUND_TRUTH_SELECT },
           },
         },
         deepDives: {
@@ -157,30 +163,31 @@ export async function GET(
       },
     })
 
-    // Calculate dimensional coverage
-    const dimensionalCoverage: Record<string, { fragmentCount: number; averageConfidence: number }> = {}
+    /**
+     * What the user is told they have.
+     *
+     * ⚠ NOT `project.fragments` — that includes system context (bundle tensions, Luna's own
+     * turns), which the review deliberately never shows. Counting it at the user produced a
+     * knowledgebase total the review could not account for. See `lib/ground-truth/count.ts`.
+     *
+     * The support model below still reads the FULL set, deliberately: §16.4 is measured, and a
+     * dimension's evidence quality does not stop mattering because a row is not user-reviewable.
+     */
+    const groundTruths = onlyGroundTruths(project.fragments)
+
+    // Dimensional coverage: fragment volume plus the computed support the Harvey ball reads.
+    // Support is computed on every read and never stored — a stored field is one refactor away
+    // from being fed back to the producer whose work it scores (design §16.4).
+    const dimensionalCoverage: Record<string, { fragmentCount: number; support: SupportLevel }> = {}
 
     for (const dimension of TIER_1_DIMENSIONS) {
       const dimensionFragments = project.fragments.filter(f =>
         f.dimensionTags.some(t => t.dimension === dimension)
       )
 
-      // Calculate average confidence
-      let totalConfidence = 0
-      let confidenceCount = 0
-
-      for (const fragment of dimensionFragments) {
-        const tag = fragment.dimensionTags.find(t => t.dimension === dimension)
-        if (tag?.confidence) {
-          const confValue = tag.confidence === 'HIGH' ? 3 : tag.confidence === 'MEDIUM' ? 2 : 1
-          totalConfidence += confValue
-          confidenceCount++
-        }
-      }
-
       dimensionalCoverage[dimension] = {
         fragmentCount: dimensionFragments.length,
-        averageConfidence: confidenceCount > 0 ? totalConfidence / confidenceCount : 0,
+        support: computeDimensionSupport(dimensionFragments),
       }
     }
 
@@ -196,7 +203,7 @@ export async function GET(
         createdAt: conv.createdAt.toISOString(),
         status: conv.status,
         messageCount: conv.messages.length,
-        fragmentCount: conv.fragments.length,
+        fragmentCount: onlyGroundTruths(conv.fragments).length,
         starred: hasStarredTrace,
         starredAt: hasStarredTrace ? conv.traces[0].starredAt?.toISOString() || null : null,
         deepDiveId: conv.deepDiveId || null,
@@ -214,7 +221,7 @@ export async function GET(
       fileType: doc.fileType,
       status: doc.status as 'pending' | 'processing' | 'complete' | 'failed',
       createdAt: doc.createdAt.toISOString(),
-      fragmentCount: doc.fragments.length,
+      fragmentCount: onlyGroundTruths(doc.fragments).length,
     }))
 
     // Format strategy outputs from traces
@@ -263,23 +270,61 @@ export async function GET(
     const latestSnapshot = await prisma.decisionStackSnapshot.findFirst({
       where: { projectId, trigger: { startsWith: 'post_' } },
       orderBy: { createdAt: 'desc' },
-      select: { createdAt: true, version: true },
+      select: { createdAt: true, version: true, fragmentIds: true },
     })
     // Display version = count of post-snapshots (not raw snapshot version)
     const postSnapshotCount = await prisma.decisionStackSnapshot.count({
       where: { projectId, trigger: { startsWith: 'post_' } },
     })
 
-    const fragmentsSinceStrategy = latestSnapshot
-      ? project.fragments.filter(f => f.createdAt > latestSnapshot.createdAt).length
-      : project.fragments.length
+    /**
+     * IS THE STACK STILL BUILT FROM THIS CONTEXT?
+     *
+     * The old answer compared timestamps — "are there fragments newer than the last snapshot" —
+     * which can only see ADDITIONS. Discarding a fragment created before the snapshot moved
+     * nothing, so the app reported "in sync" about a strategy built on context the user had since
+     * removed. Latent until pruning became reachable after the first strategy (2026-09-08).
+     *
+     * `DecisionStackSnapshot.fragmentIds` records the set the stack was generated from, so the
+     * comparison is a set difference and sees both directions — and can say WHICH, not just
+     * whether.
+     *
+     * Snapshots written before that column exists carry null. That is UNKNOWN, not empty: falling
+     * through to the timestamp heuristic is wrong in one direction, where treating null as an
+     * empty set would report every ground truth as newly added.
+     */
+    const snapshotIds = Array.isArray(latestSnapshot?.fragmentIds)
+      ? new Set(latestSnapshot!.fragmentIds as string[])
+      : null
 
-    const strategyIsStale = fragmentsSinceStrategy > 0
+    const activeIds = new Set(groundTruths.map(f => f.id))
+
+    // The ids, not just the tally: "3 added, 2 discarded" is only useful if the user can then ask
+    // WHICH, and the answer is a filter over lists the panel already renders.
+    //
+    // Ground truths only, for the same reason as every other user-facing count: the diff is a
+    // clickable filter over the review, so an id the review will never render would be counted and
+    // then vanish when clicked.
+    const addedIds = snapshotIds
+      ? groundTruths.filter(f => !snapshotIds.has(f.id)).map(f => f.id)
+      : latestSnapshot
+        ? groundTruths.filter(f => f.createdAt > latestSnapshot.createdAt).map(f => f.id)
+        : groundTruths.map(f => f.id)
+
+    const removedIds = snapshotIds
+      ? Array.from(snapshotIds).filter(id => !activeIds.has(id))
+      : []
+
+    const addedSinceStrategy = addedIds.length
+    const removedSinceStrategy = removedIds.length
+
+    const fragmentsSinceStrategy = addedSinceStrategy
+    const strategyIsStale = addedSinceStrategy > 0 || removedSinceStrategy > 0
 
     // Count fragments since last knowledge summary
     const fragmentsSinceSummary = project.knowledgeUpdatedAt
-      ? project.fragments.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
-      : project.fragments.length
+      ? groundTruths.filter(f => f.createdAt > project.knowledgeUpdatedAt!).length
+      : groundTruths.length
 
     // Return project data
     return NextResponse.json({
@@ -287,12 +332,41 @@ export async function GET(
       name: project.name,
       isDemo: project.isDemo,
       stats: {
-        fragmentCount: project.fragments.length,
+        fragmentCount: groundTruths.length,
         conversationCount: project.conversations.length,
         documentCount: project.documents.length,
+        /**
+         * How many context bundles were imported — NOT how many fragments came from them.
+         *
+         * There is no import record to count: a bundle writes fragments with
+         * `sourceType: 'import'` and no `conversationId` or `documentId`, so the artefact leaves
+         * no row of its own. What it does leave is one `capturedAt` shared by every fragment in
+         * the transaction, so distinct timestamps ARE the distinct imports. Two bundles landing in
+         * the same millisecond would undercount; nothing else does.
+         *
+         * If an Import table ever exists, count that instead and delete this.
+         */
+        importCount: new Set(
+          project.fragments
+            .filter(f => f.sourceType === 'import')
+            .map(f => f.capturedAt.getTime())
+        ).size,
         dimensionalCoverage,
         strategyIsStale,
         fragmentsSinceStrategy,
+        /** What changed since the stack was built. `comparable: false` means the snapshot predates
+         *  `fragmentIds`, so only additions can be seen and the UI should say less. */
+        strategySync: {
+          version: postSnapshotCount || null,
+          added: addedSinceStrategy,
+          removed: removedSinceStrategy,
+          comparable: snapshotIds !== null,
+          // The one fact a pre-`fragmentIds` snapshot can still offer. Without it the degraded
+          // label is a bare "v1", which says nothing a user could act on.
+          builtAt: latestSnapshot?.createdAt.toISOString() ?? null,
+          addedIds,
+          removedIds,
+        },
         fragmentsSinceSummary,
       },
       conversations,

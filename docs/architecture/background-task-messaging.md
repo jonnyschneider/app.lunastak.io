@@ -4,6 +4,23 @@
 
 The `BackgroundTaskProvider` is the single orchestrator for all background task feedback. It owns polling, status tracking, and toast lifecycle. **Callers own messaging** — every caller passes a `TaskMessaging` config that determines what the user sees. There are no default messages. This prevents fragility when adding new actions (no hardcoded message table to update, no shoehorning into existing types).
 
+> **⚠ One narrow exception, added 2026-09-09: the INGEST family.**
+> Bundle import, document upload and conversation extraction are three mechanisms but one
+> user-facing event — *context was added to your project*. Left to own their copy they drifted into
+> three vocabularies ("20 ground truths added… Check what was extracted", `"file.md" processed`,
+> "Ready for you to check / then build your strategy"), which read as three different products.
+>
+> They now build their `TaskMessaging` from **`src/lib/ingest-messaging.ts`**. The rule above is
+> intact: callers still pass messaging, and this is a preset for ONE family, not a registry keyed by
+> action. Generation, opportunities and refresh keep owning their copy, because they are not this
+> event. A new ingest path gets the wording free; a new non-ingest action is not forced into it.
+
+> **⚠ `DocumentProcessingProvider` was deleted in the same change.**
+> It was 178 lines of this provider rewritten: same context shape, same active-items array, same
+> `pollingRefs` map, same 2s interval, same fetch-then-toast, same timeout cap. One concept written
+> twice is why documents spoke a different language — the divergence was structural, not editorial.
+> Documents are now a `BackgroundTaskType` like any other.
+
 ---
 
 ## 1. Flow
@@ -21,8 +38,8 @@ sequenceDiagram
     P->>S: Task appears in activeTasks
     S->>S: Display messaging.running
 
-    loop Every 2s (max 5 min)
-        P->>A: GET /api/{extraction,generation}-status/{id}
+    loop Every 2s, until the type's cap (see POLL_CONFIG, §2)
+        P->>A: GET the type's status endpoint (see POLL_CONFIG, §2)
         A-->>P: { status, progressLabel?, fragmentCount?, traceId? }
         alt progressLabel present
             P->>S: Override banner text with progressLabel
@@ -46,16 +63,30 @@ sequenceDiagram
 
 ```ts
 startTask(
-  type: 'extraction' | 'generation',
+  type: BackgroundTaskType,   // the keys of POLL_CONFIG, below
   id: string,
   projectId: string,
   messaging: TaskMessaging,
 )
 ```
 
-- **`type`** — Polling strategy only. Determines which status endpoint to poll:
-  - `'extraction'` → `/api/extraction-status/{id}` (checks for `extracted` / `extraction_failed`)
-  - `'generation'` → `/api/generation-status/{id}` (checks for `complete` / `failed`)
+> The diagram above and this signature deliberately point at `POLL_CONFIG` rather than restate
+> it. Both previously listed the types and endpoints themselves, and both were still saying
+> "extraction or generation, max 5 min" long after documents joined — restating the table is
+> what let them drift.
+
+- **`type`** — Polling strategy only. Every difference between types lives in one table,
+  `POLL_CONFIG` in `BackgroundTaskProvider.tsx` — endpoint, timeout cap, how to read "done" out of
+  the response, which window event to fire, what to extract, and any progress label. The poll loop
+  itself is identical for all of them.
+
+  | type | endpoint | cap | complete when |
+  |---|---|---|---|
+  | `'extraction'` | `/api/extraction-status/{id}` | 5 min | `status: 'extracted'` |
+  | `'document'` | `/api/documents/{id}/status` | **10 min** — documents are the slow path | `status: 'complete'` |
+  | `'generation'` | `/api/project/{projectId}/generation-status` | 5 min | `status: 'idle' \| 'complete'` |
+
+  **Adding a background source is a row in that table, not a branch in the loop.**
 - **`id`** — `conversationId` for extraction, `generationId` for generation.
 - **`projectId`** — Scopes the task to a project for StatusBanner filtering.
 - **`messaging`** — Required. All user-facing text.
@@ -99,7 +130,8 @@ Every component that starts a background task. **New callers: check this table, 
 |--------|------|--------|------|--------------------|--------------------|
 | Project page | `project/[id]/page.tsx` | Generate Strategy | `generation` | Generating your strategy... | Your strategy is ready |
 | Project page | `project/[id]/page.tsx` | Draft Opportunities | `generation` | Drafting opportunities... | Opportunities ready |
-| Chat sheet | `chat-sheet.tsx` | Extract (follow-up) | `extraction` | Processing insights... | New insights added |
+| Chat sheet | `chat-sheet.tsx` | Extract (follow-up) | `extraction` | *(ingest preset)* | *(ingest preset)* |
+| Upload dialog | `document-upload-dialog.tsx` | Upload document | `document` | *(ingest preset)* | *(ingest preset)* |
 | Chat sheet | `chat-sheet.tsx` | Initial strategy | `generation` | Building your strategy... | Your strategy is ready |
 | Chat sheet | `chat-sheet.tsx` | Generate after review | `generation` | Generating your strategy... | Your strategy is ready |
 | InlineChat | `InlineChat.tsx` | Draft First Strategy | `generation` | Building your strategy... | Your strategy is ready |
@@ -166,7 +198,7 @@ const message = progressLabel || task.messaging.running
 
 No switch statements, no type-based logic. The banner is a pure display component.
 
-Document processing (via `DocumentProcessingProvider`) is handled separately — it has its own polling and status model. StatusBanner falls back to document processing state when no `BackgroundTaskProvider` tasks are active.
+Documents are not a second source. Since `DocumentProcessingProvider` was deleted they are an ordinary `BackgroundTaskType`, so one branch covers every kind — the only type-aware line left is `runningCount(projectId, 'document')`, used to say "Reading 3 documents..." because the plural case is the one thing a single task's `running` copy cannot say for itself.
 
 ---
 
@@ -186,8 +218,7 @@ Document processing (via `DocumentProcessingProvider`) is handled separately —
 
 - **Provider**: `src/components/providers/BackgroundTaskProvider.tsx`
 - **Banner**: `src/components/StatusBanner.tsx`
-- **Status endpoints**: `/api/extraction-status/[id]`, `/api/generation-status/[id]`
-- **Document processing**: Separate system — `src/components/providers/DocumentProcessingProvider.tsx`
+- **Status endpoints**: `/api/extraction-status/[id]`, `/api/generation-status/[id]`, `/api/documents/[id]/status`
 
 ---
 

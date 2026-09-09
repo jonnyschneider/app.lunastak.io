@@ -5,6 +5,119 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ---
 
+## 2026-09-08 — `DecisionStackSnapshot.fragmentIds` (additive, dev only)
+
+**Why.** Staleness was a timestamp comparison — "are there active fragments created after the
+last `post_*` snapshot" (`api/project/[id]/route.ts`). That can only ever see **additions**.
+Discarding a fragment created *before* the snapshot moved nothing, so the app reported
+"Strategy in sync" about a strategy built on context the user had since removed.
+
+The bug was latent for as long as it existed, because pruning was not reachable after the first
+strategy — the review lived only in the Launchpad, which stops rendering once a stack exists. It
+became live on 2026-09-08 when the ground truths moved into the Knowledge Summary and could be
+pruned at any time.
+
+Storing the set the stack was generated from makes the comparison a set difference, which sees
+both directions and can say **which** rather than just whether: "v3 · 3 added, 2 discarded since".
+That is the thing that teaches a user that context and Decision Stack are connected at all —
+which is why it is worth a column rather than a heuristic.
+
+**Shape.** `fragmentIds Json?` on `DecisionStackSnapshot` — the active fragment ids at capture
+time. Written by `captureSnapshot()` for every snapshot; only `post_*` ones are read (a pre/post
+pair brackets one generation and nothing changes the set between them, so recording both costs one
+query and saves callers knowing which triggers matter).
+
+**Ordering.** Additive and nullable, so it can be applied before or after the code. Applied to
+**dev only** so far — it joins the `Evidence` layer's pending set for preview and prod. Update
+`prisma/drift-baseline/prod.why.md` when the deploy is scoped.
+
+**Null is UNKNOWN, not empty.** Every snapshot written before this column carries null. Readers
+fall back to the timestamp heuristic and the UI says less (`comparable: false`) rather than
+treating null as an empty set — which would report every existing ground truth as newly added on
+every pre-change project.
+
+**Recovery.** Drop the column; the fallback path is the pre-change behaviour, unchanged and still
+exercised by every old snapshot.
+
+---
+
+## 2026-09-08 — `ExtractionRun` retired (drop DEFERRED to deploy)
+
+**Destructive, deliberately not yet applied anywhere.** All code that read or wrote
+`ExtractionRun` was deleted on `feat/ground-truth-check-backend`; the model stays in
+`schema.prisma` marked `☠ DEAD` until that code has shipped. Code before destructive
+migration — dropping the table while old code is deployed causes 500s on every generation.
+
+**Why it went.** It was **write-only**. `createExtractionRun` ran on every generation
+(`pipeline/generation.ts`), and the only readers were two viewer pages that were unlinked,
+one middleware-shadowed and pinned to a single hardcoded conversation. No experiment or
+evaluation tooling ever consumed it — `src/lib/experiment/`, `src/lib/evaluation/`, `scripts/`
+and `tools/` contain no reference, and `scripts/one-offs/gate-fixture.ts:13` already classified
+it as telemetry and excluded it from capture. Legacy evals infrastructure that was never wired
+to anything.
+
+**Not `Trace`.** `Trace` is live — read by `/api/trace/[traceId]`, `/api/quality-rating`,
+`/api/strategies` and `/api/demo/strategy`. The deleted `/api/extraction/[id]` fell back to
+`Trace.id`, which made the two look related. They are not.
+
+**On deploy:** drop the `ExtractionRun` table, then
+`npm run db:approve-drift -- --env <env> --reason "in sync"` per environment.
+
+**Recovery:** tag `extraction-run-final` (`2812f38`) — `git checkout extraction-run-final -- <path>`.
+
+---
+
+## 2026-09-08 — `Fragment.contentType` gains `tension` (no migration)
+
+**No schema change.** `contentType` is a free-form `String`, so a new domain value needs no
+migration — which is exactly why this nearly went unrecorded. Logged here because the *domain*
+changed even though the *column* did not.
+
+- **`tension`** — written by the bundle-import transform (`src/lib/import/transforms/context-bundle.ts:74,195`,
+  since `6a05fa8`) and read at `src/lib/ground-truth/derive.ts:137`, which keeps tensions out of
+  the ground-truth review: a tension is the skill's reading across themes, not the user's own
+  words, so it is not something to ask a user to verify.
+
+**Values actually written today:** `theme`, `insight`, `tension`. Nothing writes `quote`,
+`stat` or `principle`.
+
+⚠ **Four declarations of this domain disagree** — `docs/architecture/intelligence-pipeline-v2.md`
+§3 ERD, `src/lib/contracts/extraction.ts:38` (`theme|insight|tension`),
+`src/lib/contracts/persistence.ts:71` (`'theme'` only, and `validateFragment` rejects the rest —
+though it is never called), and `src/lib/fragments.ts:46`
+(`theme|insight|quote|stat|principle`). Only `extraction.ts` matches reality. Not reconciled
+here: narrowing `fragments.ts` is a code change with callers, not a doc fix.
+
+---
+
+## 2026-09-04 — `Evidence` table + two `Fragment` columns (ground truth check, slice 2)
+
+**Additive only. Nothing dropped.** Applied to **dev and preview** (preview 2026-09-08); prod
+deliberately not migrated yet and lands at deploy.
+
+Prod's drift is recorded as a **scoped** approval — `prisma/drift-baseline/prod.sql` plus a
+reason in `prod.why.md`, which `db:check-drift` prints on every push. That keeps the signal
+loud instead of silencing it. Do **not** run blanket `npm run db:approve-drift` while this is
+outstanding: it would rewrite every env's baseline and bless any accidental drift alongside
+this one. Clear it after the prod migration with
+`npm run db:approve-drift -- --env prod --reason "in sync"`.
+
+- **`Evidence`** (new) — `fragmentId` FK (cascade), `text`, `sourceRole`, `verification`, `ordinal`.
+  The verbatim span a fragment rests on. Source material is deliberately not persisted, so
+  verification happens at ingest and only the result is stored.
+  `verification` is three states, not a boolean: **`verified`** (matched the source),
+  **`unverifiable`** (no source retained — every bundle import; never counts against a fragment,
+  it is a property of the path), **`failed`** (source was there, span did not match).
+- **`Fragment.interpretationType`** — `verbatim | interpretation`, self-reported by the extractor.
+  Decides which question the ground truth check asks.
+- **`Fragment.reviewedAt`** — distinguishes "active because reviewed and kept" from "active because
+  never looked at". `status` alone cannot express it.
+
+Phase 2 (synthesis gaps) adds a **second nullable FK** to `Evidence`, never a polymorphic
+`subjectType`/`subjectId`.
+
+Design: `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §16.1.
+
 ## [Unreleased]
 
 ### 2026-07-05: Public Share Links (v2.5.1)

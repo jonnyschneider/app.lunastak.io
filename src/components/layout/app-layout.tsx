@@ -7,7 +7,6 @@ import Link from 'next/link'
 import {
   Check,
   ChevronsUpDown,
-  Sparkles,
   User,
   LogOut,
   FolderKanban,
@@ -96,7 +95,6 @@ export function AppLayout({
 
   const { isOpen: paywallOpen, modal: paywallModal, closePaywall } = usePaywall()
   const {
-    isPro,
     interstitialOpen,
     setInterstitialOpen,
     successOpen,
@@ -335,15 +333,6 @@ export function AppLayout({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                {!isPro && (
-                  <>
-                    <DropdownMenuItem onSelect={() => triggerUpgrade('model-selection')}>
-                      <Sparkles className="h-4 w-4" />
-                      Use Claude Opus 4.7
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
                 <DropdownMenuItem asChild>
                   <Link href="/account">
                     <User className="h-4 w-4" />

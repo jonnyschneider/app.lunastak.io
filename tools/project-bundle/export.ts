@@ -11,6 +11,7 @@ import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadDbEnv, EnvName } from '../../prisma/env'
 import { BUNDLE_VERSION, parseBundle } from './schema'
+import { toBundleFragment } from './fragments'
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -38,7 +39,11 @@ async function main() {
       where: slug ? { demoSlug: slug, isDemo: true } : { id: id! },
       include: {
         decisionStack: { include: { components: { where: { status: 'active' }, orderBy: { sortOrder: 'asc' } } } },
-        fragments: { where: { status: 'active' }, orderBy: { capturedAt: 'asc' } },
+        fragments: {
+          where: { status: 'active' },
+          orderBy: { capturedAt: 'asc' },
+          include: { evidence: { orderBy: { ordinal: 'asc' } } },
+        },
         dimensionalSyntheses: { orderBy: { dimension: 'asc' } },
       },
     })
@@ -67,13 +72,7 @@ async function main() {
         opportunities,
         principles,
       },
-      fragments: project.fragments.map((f) => ({
-        title: f.title,
-        content: f.content,
-        contentType: f.contentType,
-        confidence: f.confidence,
-        sourceType: f.sourceType,
-      })),
+      fragments: project.fragments.map(toBundleFragment),
       syntheses: project.dimensionalSyntheses.map((s) => ({
         dimension: s.dimension,
         summary: s.summary,
@@ -92,7 +91,8 @@ async function main() {
     console.log(`Exported project ${bundle.projectId} (${bundle.projectName}) from ${envName} → ${outPath}`)
     console.log(`  bundleVersion=${bundle.bundleVersion}`)
     console.log(`  ${objectives.length} objectives, ${opportunities.length} opportunities, ${principles.length} principles`)
-    console.log(`  ${bundle.fragments.length} fragments, ${bundle.syntheses.length} syntheses`)
+    const evidenceCount = bundle.fragments.reduce((n, f) => n + (f.evidence?.length ?? 0), 0)
+    console.log(`  ${bundle.fragments.length} fragments (${evidenceCount} evidence spans), ${bundle.syntheses.length} syntheses`)
   } finally {
     await prisma.$disconnect()
   }

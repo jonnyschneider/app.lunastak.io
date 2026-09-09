@@ -51,9 +51,6 @@ vi.mock('@/lib/db', () => ({
     generatedOutput: {
       create: vi.fn(),
     },
-    extractionRun: {
-      create: vi.fn(),
-    },
     dimensionalSynthesis: {
       createMany: vi.fn(),
       findMany: vi.fn(),
