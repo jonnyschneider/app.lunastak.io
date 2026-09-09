@@ -77,6 +77,15 @@ Pair the *specific section* where one exists: touched ≠ accurate.
 | C14 | `docs/analytics/events.md` — **does not exist** | `docs/architecture/analytics-events.md`. Upstream `CLAUDE.md:85`, `:90` and `:100` were fixed in the same commit. |
 | C15 | grep matched `.md` prose | scoped to code paths |
 
+## Lessons — rules broken, recorded rather than rewritten
+
+_History is not amended to make the record clean. A row here means the convention was broken, the
+break is known, and the reason is on file._
+
+| row | where | what happened |
+|---|---|---|
+| G8 (one commit per retirement) | `0b0cde7`, 2026-09-08 | The `ExtractionRun` retirement was folded into a `fix:` commit that also carries three unrelated bug fixes, where G8 wants one dedicated `refactor:`/`chore:` commit. Cause: the dead table was found *during* a conformance review and got swept up with the bugs the same pass found. Left as-is — the commit is pushed history, and rewriting it to satisfy a hygiene rule costs more than the rule is worth. Tombstone and recovery tag are correct, so the retirement is still one command to recover. |
+
 ## Candidates (watching)
 
 _Emergent patterns accepted as `watch`. No `id` — by Law 1 they cannot produce findings._
