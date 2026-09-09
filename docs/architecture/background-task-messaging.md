@@ -38,8 +38,8 @@ sequenceDiagram
     P->>S: Task appears in activeTasks
     S->>S: Display messaging.running
 
-    loop Every 2s (max 5 min)
-        P->>A: GET /api/{extraction,generation}-status/{id}
+    loop Every 2s, until the type's cap (see POLL_CONFIG, §2)
+        P->>A: GET the type's status endpoint (see POLL_CONFIG, §2)
         A-->>P: { status, progressLabel?, fragmentCount?, traceId? }
         alt progressLabel present
             P->>S: Override banner text with progressLabel
@@ -63,12 +63,17 @@ sequenceDiagram
 
 ```ts
 startTask(
-  type: 'extraction' | 'generation',
+  type: BackgroundTaskType,   // the keys of POLL_CONFIG, below
   id: string,
   projectId: string,
   messaging: TaskMessaging,
 )
 ```
+
+> The diagram above and this signature deliberately point at `POLL_CONFIG` rather than restate
+> it. Both previously listed the types and endpoints themselves, and both were still saying
+> "extraction or generation, max 5 min" long after documents joined — restating the table is
+> what let them drift.
 
 - **`type`** — Polling strategy only. Every difference between types lives in one table,
   `POLL_CONFIG` in `BackgroundTaskProvider.tsx` — endpoint, timeout cap, how to read "done" out of
@@ -193,7 +198,7 @@ const message = progressLabel || task.messaging.running
 
 No switch statements, no type-based logic. The banner is a pure display component.
 
-Document processing (via `DocumentProcessingProvider`) is handled separately — it has its own polling and status model. StatusBanner falls back to document processing state when no `BackgroundTaskProvider` tasks are active.
+Documents are not a second source. Since `DocumentProcessingProvider` was deleted they are an ordinary `BackgroundTaskType`, so one branch covers every kind — the only type-aware line left is `runningCount(projectId, 'document')`, used to say "Reading 3 documents..." because the plural case is the one thing a single task's `running` copy cannot say for itself.
 
 ---
 
@@ -213,8 +218,7 @@ Document processing (via `DocumentProcessingProvider`) is handled separately —
 
 - **Provider**: `src/components/providers/BackgroundTaskProvider.tsx`
 - **Banner**: `src/components/StatusBanner.tsx`
-- **Status endpoints**: `/api/extraction-status/[id]`, `/api/generation-status/[id]`
-- **Document processing**: Separate system — `src/components/providers/DocumentProcessingProvider.tsx`
+- **Status endpoints**: `/api/extraction-status/[id]`, `/api/generation-status/[id]`, `/api/documents/[id]/status`
 
 ---
 

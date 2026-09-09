@@ -43,7 +43,7 @@ links to docs and data-security, footer credits, sign out.
 
 ## 2. Every route
 
-13 user-facing paths, of which **one is the product**. Derived from `src/app/**/page.tsx`.
+11 user-facing paths, of which **one is the product**. Derived from `src/app/**/page.tsx`.
 
 | route | kind | what it is | governed by |
 |---|---|---|---|
@@ -51,12 +51,12 @@ links to docs and data-security, footer credits, sign out.
 | `/project` | redirect | → last-used project (`localStorage.lastProjectId`) or the first one | `project/page.tsx` |
 | **`/project/[id]`** | **the app** | Two modes in one page — see §3 | `project/[id]/page.tsx` (**1,539 lines**) |
 | `/project/[id]/template` | page | 6-step manual Decision Stack builder | `template/page.tsx` (634 lines) |
-| `/project/[id]/outcomes` | **fake door** | Pro-feature interstitials: MBR / QBR / narrative drafts | `outcomes/page.tsx` |
+| ~~`/project/[id]/outcomes`~~ | — | **deleted 2026-09-08** — see `retired-fake-doors.md` | — |
 | `/project/[id]/fragments` | **legacy redirect** | → `/project/[id]?evidence=1`, preserving `?dimension=` | `fragments/page.tsx` |
 | `/project/[id]/strategy` | **legacy redirect** | → latest trace view | `strategy/page.tsx` |
 | `/share/[token]` | public | Read-only stack, server-rendered, `noindex`. No knowledgebase | `share/[token]/page.tsx` |
 | `/strategy/[traceId]` | read-only | A single generation's output | `strategy/[traceId]/page.tsx` |
-| `/extraction/[id]` | read-only | Extraction detail — fragments + syntheses for one run | `extraction/[id]/page.tsx` |
+| ~~`/extraction/[id]`~~ | — | **deleted 2026-09-08** — see `retired-extraction-run.md` | — |
 | `/account` | page | Account settings | `account/page.tsx` |
 | `/auth/signin` · `/auth/verify-request` | auth | Sign-in, magic-link confirmation | `auth/*` |
 | `/demo/strategy` | demo | Standalone demo page | `demo/*` |
@@ -139,8 +139,7 @@ stripped, all handlers no-ops.
 
 | band | element | content | states | actions |
 |---|---|---|---|---|
-| **mulberry band** (full-bleed, `bg-primary`) | `KnowledgeSummaryPanel` | narrative summary, fragment/chat/doc counts, "N more insights 'til next auto-update", 11 dimension chips each with a **Harvey ball** | collapsed · expanded (takes both columns) · busy (knowledge) · busy (strategy) · stale | expand · refresh/generate · dimension chip → evidence sheet filtered · chat/edit → **Pro upsell** |
-| | `EvidencePanel` | "Review Evidence" + fragment count | — | opens evidence sheet |
+| **mulberry band** (full-bleed, `bg-primary`) | `KnowledgeSummaryPanel` | narrative summary, fragment/chat/doc counts, "N more insights 'til next auto-update", 11 dimension chips each with a **Harvey ball** | collapsed · expanded (takes both columns) · busy (knowledge) · busy (strategy) · stale | expand · refresh/generate · dimension chip → filters the ground truth list in place |
 | **body** | `ExploreNextSection` | deep dives + provocations + gaps, as action cards | populated · empty | click → opens chat seeded by origin type · dismiss (persisted) · Add Deep Dive |
 | | Chats card | conversation list | sub-tabs **Analysed / In Progress**, each with its own empty state | New · open · resume · star |
 | | Documents card | filename + fragment count or status | populated · empty · >10 → "show N more" | Upload |
@@ -154,19 +153,21 @@ it read the model's self-report.
 
 ## 4. Overlays — the right-hand surface
 
-This is what Jonny means by "the sidebar is occupied". There is no sidebar; there are **four
+This is what Jonny means by "the sidebar is occupied". There is no sidebar; there are **three
 right-side sheets**, and they compete for the same space.
 
 | overlay | width | content | governed by |
 |---|---|---|---|
-| **Evidence sheet** | `sm:max-w-3xl` | `FragmentExplorer` — per-row checkbox, dimension/source/status filters, search, expand in place, **bulk archive/restore** | `EvidenceSheet.tsx` → `FragmentExplorer.tsx` |
+| ~~**Evidence sheet**~~ | — | **deleted 2026-09-08** — the ground truths are on the page, in the Knowledge Summary. `EvidenceSheet` and `EvidencePanel` both go; recovery tag `evidence-sheet-final` | — |
 | **Chat sheet** | `sm:max-w-2xl` | the conversation — seeded by question, deep dive, gap, or nothing | `chat-sheet.tsx` (655 lines) |
 | **Deep dive sheet** | `sm:w-[540px]` | one deep dive: its conversations and documents | `deep-dive-sheet.tsx` |
 | **Version history sheet** | `sm:w-[450px]` | snapshot list + Strategic Brief export per version | `VersionHistorySheet.tsx` |
 
-**Only the evidence sheet is addressable** — `?evidence=1&dimension=…`, which is why the legacy
-`/project/[id]/fragments` route can redirect into it. The other three are pure component state: not
-linkable, not restorable on reload, not in browser history.
+**`?evidence=1&dimension=…` outlived the sheet it opened.** The legacy `/project/[id]/fragments`
+route still redirects into it, and it keeps its meaning — "take me to what was extracted" — by
+landing on the Knowledgebase tab and then clearing itself (`project/[id]/page.tsx:225-232`). The
+three remaining sheets are pure component state: not linkable, not restorable on reload, not in
+browser history.
 
 **Eleven dialogs** sit on top of that (`page.tsx:1367-1536`): document upload · add deep dive ·
 synthesis progress · share · sign-in gate · import bundle · generation confirm · Pro interstitial ·
@@ -196,7 +197,7 @@ have exactly one surface, and two have none.
 | `DecisionStackSnapshot` | Version history sheet | — | user edits are **not** snapshotted (blueprint task 8) |
 | `DeepDive` | Explore Next; deep dive sheet | add via dialog | — |
 | `UserDismissal` | invisibly removes Explore Next cards | dismiss | — |
-| `Trace` | `/strategy/[traceId]`, `/extraction/[id]` | — | reachable only by direct link |
+| `Trace` | `/strategy/[traceId]` | — | reachable only by direct link |
 
 ---
 
@@ -261,4 +262,5 @@ component built for it (`ExtractionConfirm`, 207 lines, tested — **deleted 202
 `retired-extraction-run.md`) reached a real user only from the
 `catch` block of a failed generation — `setFlowStep('extraction')` at `chat-sheet.tsx:482`, verified
 still true. Its two other render sites were `/extraction/[id]` and `/demo/extraction`, neither on the
-live path. Blueprint task 2 has it tagged `open`: revive or delete.
+live path and both deleted with it. Blueprint task 2 tagged it `open` — revive or delete; it was
+resolved as delete.

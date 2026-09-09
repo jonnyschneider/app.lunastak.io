@@ -19,6 +19,13 @@ Deleted `ExtractionConfirm` (resolving a blueprint `open` disposition), `/extrac
 1,404 lines. `Trace` is unaffected and stays live. The table drops at deploy; recovery tag
 `extraction-run-final`, retro at `docs/architecture/retired-extraction-run.md`.
 
+### Removed — the e2e harness (2026-09-08)
+
+`npm run e2e` ran `playwright test` against `./e2e`, untracked since 2026-04-07 and no longer
+present locally either. Both scripts, `playwright.config.ts`, the `@playwright/test`
+devDependency and its two `.gitignore` entries are gone. A script implying coverage that is
+not there is worse than no script. Recovery tag `e2e-harness-final`.
+
 ### Fixed — from an architecture conformance review (2026-09-08)
 
 - **Guests were charged twice** for the conversation and document paths. The first-strategy
@@ -56,8 +63,8 @@ Schema: `Evidence` table; `Fragment.interpretationType`, `Fragment.reviewedAt`. 
 
 A review surface between extraction and generation: the user sees what was taken from their
 own words before a strategy is built on it. Rows group by dimension, carry source icons and
-dimension context, and offer two verdicts — keep or discard. Gold marks the user's own words
-and nothing else.
+dimension context, and carry one verdict — discard. Keeping is doing nothing. Gold marks the
+user's own words and nothing else.
 
 An initial conversation now **stops after fragments** — the review comes first, and generation
 happens on a later `generate_from_knowledge` call rather than immediately.
@@ -84,6 +91,9 @@ token is the security mechanism and persists across on/off toggles.
 
 - `type-check` regenerates the Prisma client before `tsc` — stale client types were passing
   local verification and failing on preview.
+- `NEXT_BUILD_DIR` isolates a verification build from a running dev server. They shared `.next`,
+  so checking a build left the dev server 404ing until restart. Unset on Vercel and in
+  `npm run build`, where it stays `.next`.
 - Analytics events catalog consolidated to `docs/architecture/analytics-events.md`; service
   blueprints promoted to `docs/architecture/`.
 
