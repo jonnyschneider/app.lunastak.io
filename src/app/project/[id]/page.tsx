@@ -23,6 +23,7 @@ import {
   Plus,
   X,
   Share2,
+  ArrowRight,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -64,7 +65,8 @@ import { useGenerationStatusContext } from '@/components/providers/BackgroundTas
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
-import { Launchpad, TalkToLunaCard, UploadDocumentCard, ImportBundleCard } from '@/components/Launchpad'
+import { Launchpad } from '@/components/Launchpad'
+import { useStrategyReady } from '@/components/providers/useStrategyReady'
 import { StatusBanner } from '@/components/StatusBanner'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
@@ -240,7 +242,30 @@ export default function ProjectPage() {
   const [generationDialogOpen, setGenerationDialogOpen] = useState(false)
   const [generationDialogAction, setGenerationDialogAction] = useState<GenerationAction>('refresh')
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
-  // Main tab state (persisted per project)
+  /**
+   * ═══ MAIN TAB STATE — FOUR WRITERS, ONE PRECEDENCE ═══
+   *
+   * `activeTab` is written from more than one place, and this is where that gets dangerous:
+   * `page.tsx`'s `evidence=1` handler already had to write localStorage directly because
+   * `router.replace` remounts the page and the persist effect had not flushed (caught on preview,
+   * 2026-09-08). Adding writers without stating their order is how that bug comes back. So:
+   *
+   *   1. EMPTY PROJECT WINS OVER EVERYTHING. With no context there is no toggle, and the only
+   *      thing to render is the cold start — which lives on `decision-stack`. Forced below, not
+   *      merely defaulted, so a legacy stored `'knowledgebase'` cannot strand a user on a branch
+   *      that no longer exists. This is what makes deleting the knowledgebase's empty state safe
+   *      by construction rather than by argument.
+   *   2. `evidence=1` deep link — an explicit instruction from outside the app.
+   *   3. FIRST CONTEXT ARRIVING moves the user to the knowledgebase, ONCE per project. Upload a
+   *      document and the ground truths should be where you land, beside the summary they feed.
+   *      One-shot, or it would re-land them there on every later visit and quietly overwrite the
+   *      tab they deliberately chose.
+   *   4. The user's own click, persisted per project.
+   *
+   * The key is project-scoped, so genuinely new projects have no stored value and start on
+   * `decision-stack` anyway. The forcing in rule 1 exists for projects that DO have a stored
+   * value — set before this change, when an empty project still had a reachable knowledgebase.
+   */
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(`project-${projectId}-tab`)
@@ -277,6 +302,76 @@ export default function ProjectPage() {
   // Derived state needed by header injection
   const hasStrategy = projectData?.hasStrategy === true || (projectData?.strategyOutputs?.length ?? 0) > 0
 
+  /**
+   * ═══ HAS THIS PROJECT BEEN GIVEN ANYTHING? ═══
+   *
+   * The single question the whole cold start turns on. Any of the three ingest paths counts, and
+   * a conversation or a document counts BEFORE extraction has produced a fragment — so a user who
+   * has just uploaded something is never left with the place that shows it hidden behind a
+   * control that has not appeared yet.
+   *
+   * ⚠ THIS IS A ONE-WAY DOOR, AND NOT BY OUR DOING. There is no DELETE handler for conversations
+   * or documents anywhere in `src/app/api` (the four that exist are deep-dive, project, dismissal
+   * and decision-stack content), and fragment discard is soft — `status: active | archived |
+   * soft_deleted`. So once any input lands, these counts never return to zero, and "has context"
+   * cannot flip back. That is what lets the cold start be a genuine first-run state with no
+   * sticky flag to persist. If a delete path is ever added, this comment is the thing that stops
+   * being true, and the cold start will start reappearing under people.
+   *
+   * `undefined` while loading is deliberately treated as "has context": the toggle rendering a
+   * beat late is invisible, whereas flashing the cold start at a user who has a full project is
+   * not (`projectData` is null on first paint).
+   */
+  const hasContext = projectData === null
+    ? true
+    : (projectData.stats?.fragmentCount ?? 0) > 0 ||
+      (projectData.stats?.conversationCount ?? 0) > 0 ||
+      (projectData.documents?.length ?? 0) > 0
+
+  /**
+   * The strategy-ready chip. Owned next to `BackgroundTaskProvider` — the single orchestrator for
+   * background-task feedback — and persisted through `UserDismissal`, so it survives a reload and
+   * a refresh raises a fresh one.
+   */
+  const { ready: strategyReady, markSeen: markStrategySeen } = useStrategyReady(
+    projectId,
+    projectData?.strategyOutputs?.[0]?.id ?? null
+  )
+
+  /**
+   * Dismissed on LOOKING, not on being near. The chip clears when the Decision Stack tab is the
+   * one on screen — which is also why a user who was already sitting on that tab when the
+   * strategy lands never sees a chip at all, and should not.
+   */
+  useEffect(() => {
+    if (!strategyReady || activeTab !== 'decision-stack') return
+    markStrategySeen()
+  }, [strategyReady, activeTab, markStrategySeen])
+
+  /** Rule 1 of the tab state machine above: an empty project has no toggle, so it has no choice. */
+  useEffect(() => {
+    if (hasContext) return
+    setActiveTab('decision-stack')
+    localStorage.setItem(`project-${projectId}-tab`, 'decision-stack')
+  }, [hasContext, projectId])
+
+  /**
+   * Rule 3: the first context to arrive lands the user on the knowledgebase, once per project.
+   *
+   * The latch is persisted, not component state — this fires on the transition from empty to
+   * non-empty, and a remount mid-upload would otherwise re-arm it and yank a user back who had
+   * since navigated away. Keyed per project, like the tab itself.
+   */
+  useEffect(() => {
+    if (!hasContext || projectData?.isDemo) return
+    const latchKey = `project-${projectId}-landed-kb`
+    if (localStorage.getItem(latchKey)) return
+    localStorage.setItem(latchKey, '1')
+    setActiveTab('knowledgebase')
+    localStorage.setItem(`project-${projectId}-tab`, 'knowledgebase')
+    logAndFlush('tab_switch', 'first-context-landed', { projectId })
+  }, [hasContext, projectData?.isDemo, projectId])
+
   // Inject tab nav + demo right slot into header
   const { setTabNav, setRightSlot } = useHeaderTabNav()
   const isDemo = projectData?.isDemo === true
@@ -284,17 +379,50 @@ export default function ProjectPage() {
   const isSignedUp = !!session?.user?.id
 
   useEffect(() => {
+    /**
+     * ⚠ NO TOGGLE ON AN EMPTY PROJECT, 2026-09-10.
+     *
+     * Both halves used to show the same three onboarding cards, so the control offered a choice
+     * between one screen and a subset of itself. Before any context exists there is no view to
+     * choose between — the cold start belongs to the PROJECT, not to either tab — so the control
+     * does not render at all. The overflow "Add Context" menu goes with it: the three cards on
+     * screen already are that menu, spelled out.
+     */
+    if (!hasContext) {
+      setTabNav(null)
+      return
+    }
     setTabNav(
       <div className="flex items-center gap-2">
       <div className="inline-flex rounded-lg border border-input">
         <button
-          onClick={() => { setActiveTab('decision-stack'); logAndFlush('tab_switch', 'decision-stack', { projectId }) }}
+          onClick={() => {
+            setActiveTab('decision-stack')
+            // `chip` says whether the strategy-ready dot was on the button they just pressed —
+            // the only way to tell a chip-driven visit from an ordinary one without a second event.
+            logAndFlush('tab_switch', 'decision-stack', { projectId, chip: String(strategyReady) })
+          }}
           className={cn(
-            'rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
+            'relative rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
             activeTab === 'decision-stack' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
           )}
         >
           Decision Stack
+          {/*
+            ⚠ ARRIVAL, NOT PROGRESS. Build is pressed from the knowledgebase and the user stays
+            there — so the finished strategy lands on the tab they are not looking at. A toast is
+            the wrong instrument: it announces something HAPPENING, and this is something READY
+            FOR REVIEW, which outlives five seconds and the session both. The press is already
+            never dead — the Build button becomes a disabled spinner.
+
+            No counter. There is exactly one strategy; a count would imply a queue.
+          */}
+          {strategyReady && activeTab !== 'decision-stack' && (
+            <span
+              aria-label="New strategy to review"
+              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[hsl(var(--luna))] ring-2 ring-background"
+            />
+          )}
         </button>
         <button
           onClick={() => { setActiveTab('knowledgebase'); logAndFlush('tab_switch', 'knowledgebase', { projectId }) }}
@@ -899,8 +1027,38 @@ export default function ProjectPage() {
       <div className="w-full">
         {/* Content — switched by activeTab (tabs + overflow are in header via HeaderContext) */}
         <div className="w-full">
+          {/*
+            ═══ THE COLD START ═══
+            Outside the tab branches, because it is not a tab. A project with no context has no
+            toggle in the header and nothing to switch between; this is the whole screen.
+          */}
+          {!hasContext && !isDemo && (
+            <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
+              <Launchpad
+                onStartChat={() => {
+                  logAndFlush('cta_new_chat', 'launchpad', { projectId })
+                  setChatInitialQuestion(undefined)
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }}
+                onUploadDocument={() => {
+                  logAndFlush('cta_upload_doc', 'launchpad', { projectId })
+                  setUploadDeepDiveId(undefined)
+                  setUploadDialogOpen(true)
+                }}
+                onImportBundle={() => {
+                  logAndFlush('cta_import_bundle', 'launchpad', { projectId })
+                  setImportDialogOpen(true)
+                }}
+              />
+            </div>
+          )}
+
           {/* Decision Stack */}
-          {activeTab === 'decision-stack' && <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
+          {hasContext && activeTab === 'decision-stack' && <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {strategyData ? (
               <>
                 {/* Demo company logo */}
@@ -980,34 +1138,58 @@ export default function ProjectPage() {
                 />
               </>
             ) : (
-              <Launchpad
-                projectId={projectId}
-                fragmentCount={stats.fragmentCount ?? 0}
-                onStartChat={() => {
-                  setChatInitialQuestion(undefined)
-                  setChatDeepDiveId(undefined)
-                  setChatGapExploration(undefined)
-                  setChatResumeConversationId(undefined)
-                  setChatViewOnly(false)
-                  setChatSheetOpen(true)
-                }}
-                onUploadDocument={() => {
-                  logAndFlush('cta_upload_doc', 'launchpad', { projectId })
-                  setUploadDeepDiveId(undefined)
-                  setUploadDialogOpen(true)
-                }}
-                onImportBundle={() => { logAndFlush('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
-                onAddContext={() => {
-                  logAndFlush('tab_switch', 'ground-truth-add-context', { projectId })
-                  setActiveTab('knowledgebase')
-                }}
-                onGenerateNow={stats.fragmentCount > 0 ? handleGenerateStrategy : undefined}
-              />
+              /*
+                ═══ CONTEXT, BUT NO STRATEGY YET ═══
+                NOT the launchpad. Every way of adding context now lives in the knowledgebase, so
+                re-offering the three doors here would be a third copy of the thing this design
+                removed — and the ground-truth review, which used to sit above them, has moved to
+                the knowledgebase where the ground truths already are.
+
+                ⚠ NO `Steps` CHROME HERE, deliberately. A phase locator on both halves of a toggle
+                has to claim which step each half is, and pre-strategy there is no honest answer:
+                this tab is the doorway to step 3, reached by someone who has not finished step 2.
+                An indicator that advances when you switch tabs, without you doing any work, lies.
+
+                What is left is a signpost: name the absent thing so the tab reads as EMPTY rather
+                than BROKEN, and give the two exits.
+              */
+              <div className="mx-auto max-w-xl py-12 text-center space-y-4">
+                <h2 className="text-xl font-semibold tracking-tight">Your Decision Stack goes here</h2>
+                <p className="text-muted-foreground">
+                  Vision, strategy and objectives, built from the {stats.fragmentCount > 0 ? `${stats.fragmentCount} ` : ''}
+                  ground truths in your knowledgebase. Nothing is built yet.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  {stats.fragmentCount > 0 && (
+                    <Button onClick={handleGenerateStrategy}>
+                      Build my strategy
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      logAndFlush('tab_switch', 'pre-strategy-add-context', { projectId })
+                      setActiveTab('knowledgebase')
+                    }}
+                  >
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    Add more context
+                  </Button>
+                </div>
+              </div>
             )}
           </div>}
 
           {/* Knowledgebase */}
-          {activeTab === 'knowledgebase' && <div>
+          {/*
+            ⚠ `hasContext` GATES THIS TOO, not just the toggle. Rule 1 forces the tab in an effect,
+            so the very first render of a project with a stale stored `'knowledgebase'` would
+            otherwise paint this branch once before the effect runs — and its empty state is gone.
+            Belt and braces on purpose: the invariant is "the knowledgebase is never rendered
+            empty", and an invariant that depends on effect ordering is not one.
+          */}
+          {hasContext && activeTab === 'knowledgebase' && <div>
             {isDemo ? (
             <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {/* Demo: simplified KB — coverage grid + inline fragments */}
@@ -1034,34 +1216,26 @@ export default function ProjectPage() {
             />
             </div>
             ) : (
-            <>
-            {/* Empty state when no content at all */}
-            {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
-              <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
-                <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
-                <p className="text-sm text-muted-foreground text-center mb-6">Talk it through with Luna, upload something you have already written, or bring across your thinking from another AI.</p>
-                <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto">
-                  <TalkToLunaCard onStartChat={() => {
-                    // Emitted so all THREE empty-state doors are comparable. Upload and import
-                    // logged their surface here and chat did not, so "which door do people take?"
-                    // was unanswerable — the same blind spot that hid upload's disappearance.
-                    logAndFlush('cta_new_chat', 'kb-empty-state', { projectId })
-                    setChatInitialQuestion(undefined)
-                    setChatDeepDiveId(undefined)
-                    setChatGapExploration(undefined)
-                    setChatResumeConversationId(undefined)
-                    setChatViewOnly(false)
-                    setChatSheetOpen(true)
-                  }} />
-                  <UploadDocumentCard onUploadDocument={() => {
-                    logAndFlush('cta_upload_doc', 'kb-empty-state', { projectId })
-                    setUploadDeepDiveId(undefined)
-                    setUploadDialogOpen(true)
-                  }} />
-                  <ImportBundleCard onImportBundle={() => { logAndFlush('cta_import_bundle', 'kb-empty-state', { projectId }); setImportDialogOpen(true) }} />
-                </div>
-              </div>
-            ) : (
+            /*
+              ⚠ THE "YOUR KNOWLEDGEBASE IS EMPTY" BRANCH WAS DELETED HERE, 2026-09-10.
+              It showed the same three onboarding cards as the launchpad, so the toggle above it
+              offered a choice between one screen and a subset of itself. It is also unreachable
+              now: with no context the toggle does not render and the tab is forced to
+              decision-stack, and "has context" cannot flip back (see `hasContext`).
+
+              It was redundant twice over regardless — the sections below already handle zero of
+              everything, each with its own empty state and its own add button: Conversations
+              ("No conversations yet" + New), Documents ("No documents yet" + Upload), and
+              Integrations (+ Import context).
+
+              ⚠ AND A MEASURED SURFACE GOES TO ZERO ON PURPOSE. `cta_new_chat`, `cta_upload_doc`
+              and `cta_import_bundle` will stop emitting `surface: 'kb-empty-state'` from today.
+              That instrumentation was added on 2026-09-09, one day before this. Recorded loudly
+              because 2.7.1 exists on account of exactly this shape: upload was dropped from the
+              launchpad by defocus in March 2026, its event kept firing from other surfaces and
+              simply flatlined, no commit said "removed", and nobody noticed for six months. The
+              cards are not gone — they consolidate onto the single `launchpad` surface.
+            */
             <>
             {/* The summary and the ground truths it is drawn from — full-viewport-width band */}
             <div className="bg-primary py-8">
@@ -1080,6 +1254,11 @@ export default function ProjectPage() {
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
+              /* Fragments exist, no strategy does — the review moment, in the one place the
+                 ground truths, the summary they feed and the documents they came from are
+                 already on screen together. */
+              reviewMode={!hasStrategy && (stats.fragmentCount ?? 0) > 0}
+              onBuildStrategy={handleGenerateStrategy}
               strategySync={stats.strategySync}
               onOpenStrategy={() => {
                 logAndFlush('tab_switch', 'sync-version', { projectId })
@@ -1384,8 +1563,6 @@ export default function ProjectPage() {
               )}
             </div>
             </div>
-            </>
-            )}
             </>
             )}
           </div>}

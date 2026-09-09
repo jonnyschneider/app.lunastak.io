@@ -35,8 +35,8 @@ Reference list of every custom Statsig event emitted by the app. Dashboards buil
 |---|---|---|---|---|
 | `cta_create_project` | client | `header` \| `empty-state` | userType | User clicked "New Project". For guests, this triggers the signup gate; for signed-up free users at the limit, it triggers the paywall. |
 | `cta_view_demo` | client | `<companyname>` (marketing) \| `launchpad` \| `overflow-menu` (app) | `source: marketing` \| `source: app`, `projectId`, `demo` | User viewed a demo project. Always segment by `source` — marketing intent ≠ in-app exploration. |
-| `cta_demo_peek` | client | `first-time` | userType | User chose "see a demo" path from first-time empty state. |
-| `cta_demo_confirm` | client | `first-time` | userType | User confirmed demo selection. |
+| ~~`cta_demo_peek`~~ | — | — | — | **Dead 2026-09-10.** Only emitter was `FirstTimeEmptyState`, which had been orphaned for months and is now deleted. The live demo path is `cta_view_demo` (surface `launchpad`). |
+| ~~`cta_demo_confirm`~~ | — | — | — | **Dead 2026-09-10.** Same emitter, same deletion. |
 | `demo_exit` | client | `banner` | `projectId`, userType | User exited a demo project via the banner. |
 
 ## Paywall (real Pro feature)
@@ -73,15 +73,36 @@ reports through `paywall_*` above.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_upload_doc` | client | `launchpad` \| `first-time` \| `overflow-menu` \| `kb-empty-state` | `projectId`, userType | User opened the document upload dialog. **Watch `launchpad`.** Upload was dropped from the empty state while narrowing it to two cards, and no document was uploaded on production between March and September 2026 as a result — the backend was live the whole time. Restored to the **launchpad** 2026-09-09 with its own surface value so the question "is anyone starting from a document?" is answerable without reading the code. A flatline here means the door has gone again. |
-| `cta_import_bundle` | client | `overflow-menu` \| `launchpad` \| `kb-empty-state` | `projectId`, userType | User imported a project bundle. |
-| `cta_new_chat` | client | `overflow-menu` \| `kb-empty-state` | `projectId`, userType | User started a subsequent (non-initial) chat. `kb-empty-state` added 2026-09-09 so all three empty-state doors — chat, upload, import — are comparable; chat was the only one not emitting. |
+| `cta_upload_doc` | client | `launchpad` \| `overflow-menu` | `projectId`, userType | User opened the document upload dialog. **Watch `launchpad`.** Upload was dropped from the empty state while narrowing it to two cards, and no document was uploaded on production between March and September 2026 as a result — the backend was live the whole time. Restored to the **launchpad** 2026-09-09. A flatline here means the door has gone again. `first-time` and `kb-empty-state` retired 2026-09-10 — see the note below this table. |
+| `cta_import_bundle` | client | `launchpad` \| `overflow-menu` | `projectId`, userType | User imported a project bundle. `kb-empty-state` retired 2026-09-10. |
+| `cta_new_chat` | client | `launchpad` \| `overflow-menu` | `projectId`, userType | User started a chat. `launchpad` replaces the one-day-old `kb-empty-state` surface (2026-09-10); the cold-start doors now have exactly one home each. |
 | `kb_summary_viewed` | client | `knowledge-panel` | `strategyIsStale`, `fragmentCount`, userType | Knowledge Summary panel expanded. |
 | `cta_open_evidence` | client | `evidence-panel` \| `dimension-chip` \| `overflow-menu` | varies, userType | Canonical event for "user reached the Evidence sheet". Group by `value` to see which surface drives it. |
 | `cta_open_deep_dive` | client | `explore-next` | `projectId`, userType | User started a deep-dive thread. |
 | `cta_add_deep_dive` | client | `explore-next` | userType | User added a new deep-dive topic. |
 | `bundle_imported` | server | — | `fragmentsCreated`, etc. | Server-side confirmation that a project bundle import succeeded. Pairs with client `cta_import_bundle`. |
 | `bundle_import_failed` | server | — | error context | Bundle import failed server-side. |
+
+### ⚠ `kb-empty-state` and `first-time` go to zero on purpose, from 2026-09-10
+
+The `kb-empty-state` surface was added on **2026-09-09** — one day before it was removed — so that
+all three cold-start doors (chat, upload, import) were comparable. The screen it measured is gone:
+the knowledgebase's empty state showed the same three cards as the launchpad, which meant the
+`Decision Stack | Knowledgebase` toggle above them offered a choice between one screen and a subset
+of itself. It is now unreachable by construction (with no context the toggle does not render, and
+"has context" cannot flip back). `first-time` went the same day with `FirstTimeEmptyState`, which
+had been orphaned for months.
+
+**The doors are not gone — they consolidated onto `launchpad`, which is now the only cold-start
+surface.** The question stays answerable with fewer moving parts: *which door does a new user take,
+and does a strategy get built after they take it?*
+
+This is written down loudly because release 2.7.1 exists on account of exactly this shape. Upload
+was dropped from the launchpad by defocus in March 2026; `cta_upload_doc` kept firing from other
+surfaces and simply flatlined; no commit said "removed"; nobody noticed for six months. A flatline
+with no note is indistinguishable from a feature quietly dying. This is the note.
+
+Design: `docs/_plans/2026-09-10-empty-state-consolidation-design.md`.
 
 ## Output & navigation
 
@@ -90,9 +111,9 @@ reports through `paywall_*` above.
 | `cta_export_brief` | client | `overflow-menu` | `projectId`, userType | User exported a strategic brief. |
 | `cta_version_history` | client | `overflow-menu` | `projectId`, userType | User opened version history. |
 | `version_history_downloaded` | client | `version-history` | `projectId`, `version`, userType | User downloaded a specific version snapshot. |
-| `tab_switch` | client | `decision-stack` \| `knowledgebase` | `projectId`, userType | User switched tabs in the project view. |
+| `tab_switch` | client | `decision-stack` \| `knowledgebase` \| `first-context-landed` \| `pre-strategy-add-context` | `projectId`, `chip` (on `decision-stack`), userType | User switched tabs in the project view. `chip: 'true'` means the strategy-ready dot was on the Decision Stack button when it was pressed — that is how a chip-driven visit is told from an ordinary one, without a second event. The two non-tab values are app-initiated moves, not clicks: `first-context-landed` is the one-shot move to the knowledgebase when a project's first context arrives, and `pre-strategy-add-context` is the "Add more context" exit from the empty Decision Stack tab. Segment them out before reading this as user behaviour. |
 | `card_thinking_viewed` | client | `vision` \| `strategy` \| `objective` \| `opportunity` \| `principle` | `projectId`, userType | User revealed the back of a Decision Stack card via the "The thinking" strip. Fires on the **reveal only** — flipping back is not a second read. Segment by `value` to see which layers people actually read. **No pre-2026-08-27 baseline exists** — the flip was completely uninstrumented before the disclosure strip shipped, so this measures the new affordance, not the improvement over the old one. |
-| `cta_build_strategy` | client | `first-time` | `projectId`, userType | User started the build-strategy path from first-time empty state. (Note: `FirstTimeEmptyState` is currently orphaned; this event may not fire in production.) |
+| `cta_build_strategy` | client | `ground-truth-review` | `projectId`, userType | User pressed Build on the ground-truth review, in the knowledgebase. Re-homed 2026-09-10: the old `first-time` surface came from `FirstTimeEmptyState`, which was orphaned and is now deleted, so this event never fired in production. This is its first live emitter. |
 | `cta_complete_template` | client | `review` \| `early-exit` | `projectId`, userType | User completed (or early-exited) the template flow. (Template page is orphaned.) |
 
 ## Sharing

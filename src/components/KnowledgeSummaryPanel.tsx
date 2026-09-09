@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, ArrowRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, ArrowRight, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { TIER_1_DIMENSIONS, Tier1Dimension } from '@/lib/constants/dimensions'
@@ -10,6 +10,7 @@ import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
 import { InlineMarkdown } from '@/components/InlineMarkdown'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
+import { Steps } from '@/components/ui/steps'
 import type { SupportLevel } from '@/lib/support/dimension-support'
 
 /**
@@ -168,6 +169,9 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+/** The user has given context; they are checking it; then it becomes a strategy. */
+const GROUND_TRUTH_PHASES = ['Your context', 'Ground truths', 'Your strategy'] as const
+
 interface KnowledgeSummaryPanelProps {
   fragmentCount: number
   chatCount: number
@@ -220,6 +224,20 @@ interface KnowledgeSummaryPanelProps {
   readOnly?: boolean
   /** Optional class name for outer container (e.g. col-span control) */
   className?: string
+  /**
+   * ⚠ REVIEW MODE — fragments exist, no strategy does. Moved here from the launchpad 2026-09-10.
+   *
+   * It is a MODE, not a second panel. This component already renders `GroundTruthReview` inline
+   * when expanded, so transplanting the launchpad's review card would have put the same fragment
+   * list on screen twice. What the launchpad card actually carried on top of what was already
+   * here was chrome and a verb: the phase locator, the "check these" instruction, and Build.
+   *
+   * What did NOT come across is its "Add more context" button. Inside the knowledgebase that is
+   * redundant — the section cards below carry New, Upload and Import context in their headers.
+   */
+  reviewMode?: boolean
+  /** Build the first strategy from these ground truths. Required for `reviewMode` to do anything. */
+  onBuildStrategy?: () => void
 }
 
 export function KnowledgeSummaryPanel({
@@ -244,12 +262,44 @@ export function KnowledgeSummaryPanel({
   strategyBusyMessage = null,
   readOnly = false,
   className,
+  reviewMode = false,
+  onBuildStrategy,
 }: KnowledgeSummaryPanelProps) {
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
   const isBusy = knowledgeBusy || strategyBusy
   const [isExpanded, setIsExpanded] = useState(false)
   const expandedAtRef = useRef<number | null>(null)
+  /**
+   * Review mode opens the panel — the user is being ASKED to check the ground truths, and a
+   * collapsed list is not a request. Fires when `reviewMode` becomes true rather than as initial
+   * state, because the counts that decide it arrive after the first render.
+   *
+   * ⚠ ONE-SHOT, via a ref. Without the latch, collapsing the panel would re-expand it on the next
+   * render while `reviewMode` is still true — the user's own collapse undone by the thing that
+   * opened it.
+   */
+  const autoExpandedRef = useRef(false)
+  useEffect(() => {
+    if (!reviewMode || autoExpandedRef.current) return
+    autoExpandedRef.current = true
+    setIsExpanded(true)
+  }, [reviewMode])
+
+  /**
+   * Pressing Build must LOOK like it did something, immediately. `handleGenerateStrategy` only
+   * reports through the background-task toast once the POST resolves — and in the dev server that
+   * route awaits the whole run, so the screen sat unchanged for ~37s. A user reasonably concludes
+   * nothing happened and presses something else; on 2026-09-08 that produced two generations
+   * landing as consecutive versions.
+   */
+  const [building, setBuilding] = useState(false)
+  const handleBuild = useCallback(() => {
+    if (building || !onBuildStrategy) return
+    setBuilding(true)
+    logAndFlush('cta_build_strategy', 'ground-truth-review', { projectId: projectId ?? '' })
+    onBuildStrategy()
+  }, [building, onBuildStrategy, projectId])
 
   const handleToggle = useCallback(() => {
     const willExpand = !isExpanded
@@ -404,6 +454,21 @@ export function KnowledgeSummaryPanel({
       style={{ ['--ks-head' as string]: `${headHeight}px` }}
     >
       {/*
+        ⚠ THE PHASE LOCATOR SITS OUTSIDE THE STICKY BLOCK, deliberately.
+        `headRef` below measures the head into `--ks-head`, and the balls stick because they are a
+        FILTER you reach for repeatedly. This is a locator you read once. Sticking it would eat
+        vertical space on every scroll to answer a question already answered, and putting it inside
+        `headRef` would inflate the measurement that positions everything else.
+
+        It renders ONLY here, never on the Decision Stack tab. A locator shown on both halves of a
+        toggle has to claim which step each half is, and there is no honest answer: pre-strategy,
+        the Decision Stack tab is the doorway to step 3 by someone who has not done step 2. An
+        indicator that advances when you switch tabs, without you doing any work, is lying.
+      */}
+      {reviewMode && (
+        <Steps steps={GROUND_TRUTH_PHASES} current={1} flush labelsClassName="px-4" />
+      )}
+      {/*
         ⚠ THE BALLS ARE THE INSTRUMENT, so they stay put.
         Expanded, this panel does three jobs at once: it explains, it lets the summary be refined,
         and it lets the ground truths be pruned. The coverage grid is what joins them — it is the
@@ -444,8 +509,18 @@ export function KnowledgeSummaryPanel({
               <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
             {/* Same weight as Explore Next / Chats — it is a card heading, not a label. */}
+            {/*
+              ⚠ ONE HEADING, NOT TWO. The launchpad card carried its own "Check your N ground
+              truths" above a panel that already said "Ground Truth" — stacked here that would be
+              the same noun twice in eight vertical pixels. In review mode the existing heading
+              BECOMES the request; otherwise it stays the label.
+            */}
             <span className={cn("text-base font-semibold", knowledgeBusy && "animate-pulse text-muted-foreground")}>
-              {knowledgeBusy ? knowledgeBusyMessage : 'Ground Truth'}
+              {knowledgeBusy
+                ? knowledgeBusyMessage
+                : reviewMode
+                  ? fragmentCount > 0 ? `Check your ${fragmentCount} ground truths` : 'Check your ground truths'
+                  : 'Ground Truth'}
             </span>
             {!knowledgeBusy && updatedLabel && (
               <span className="text-xs text-muted-foreground truncate">
@@ -455,6 +530,14 @@ export function KnowledgeSummaryPanel({
           </button>
 
         </div>
+
+        {/* The instruction, only while it is being asked for. */}
+        {reviewMode && !knowledgeBusy && (
+          <p className="text-sm text-foreground/60">
+            Everything your Decision Stack is built from. Discard any items that are wrong — you
+            can restore them at any time.
+          </p>
+        )}
 
         {/* Row 2: stats meta + strategy action */}
         {!isBusy && fragmentCount > 0 && (
@@ -782,6 +865,34 @@ export function KnowledgeSummaryPanel({
           )}
           </div>
           </div>
+        </div>
+      )}
+
+      {/*
+        ⚠ THE VERB, AND IT STAYS PUT WHETHER THE PANEL IS OPEN OR SHUT.
+        Gating Build on expansion would hide the only forward move behind a disclosure control —
+        a user who has read enough and collapsed the list still wants to build.
+
+        No "skip the review" beside it. That button called the same function as this one, logged
+        nothing, and recorded nothing (`Fragment.reviewedAt` is stamped when rows are PRESENTED,
+        not on the choice), so it was a second button claiming to do something different when it
+        did not. And no "add more context" either — the section cards below this panel carry New,
+        Upload and Import context in their own headers.
+      */}
+      {reviewMode && onBuildStrategy && (
+        <div className="flex flex-wrap items-center gap-4 border-t border-border px-4 py-4">
+          <Button onClick={handleBuild} disabled={building}>
+            {building ? (
+              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Building your strategy…</>
+            ) : (
+              <>Build my strategy<ArrowRight className="ml-1 h-4 w-4" /></>
+            )}
+          </Button>
+          {building && (
+            <span className="text-xs text-foreground/45">
+              This takes about half a minute. You can leave this page.
+            </span>
+          )}
         </div>
       )}
     </div>
