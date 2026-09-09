@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto'
 import type { ImportPlan, ImportTrigger, ImportResult } from './types'
 import { transformContextBundle, transformContextBundleDirect } from './transforms'
 import { createFragmentsFromImport } from '@/lib/fragments'
+import { normaliseGeneratedBy } from './provenance'
 
 /**
  * Execute an import plan.
@@ -14,10 +15,11 @@ export async function executeImport(
   trigger: ImportTrigger
 ): Promise<ImportResult> {
   const importBatchId = randomUUID()
+  const generatedBy = normaliseGeneratedBy(trigger.bundle.generatedBy)
   let fragmentsCreated = 0
   let questionsAdded = 0
 
-  console.log(`[Import] Executing import: ${plan.trigger} mode=${plan.mode} batch=${importBatchId}`)
+  console.log(`[Import] Executing import: ${plan.trigger} mode=${plan.mode} from=${generatedBy ?? 'unstated'} batch=${importBatchId}`)
 
   // Step 1: Transform bundle to EmergentThemeContract[]
   const themes = plan.mode === 'direct'
@@ -31,7 +33,12 @@ export async function executeImport(
     const fragments = await createFragmentsFromImport(
       trigger.projectId,
       importBatchId,
-      themes
+      themes,
+      // What the bundle CLAIMS (validated against a closed set), and what we DERIVED from its
+      // shape. Storing both is the point: `importMode` cannot be spoofed by instruction text, so
+      // a bundle claiming the plugin while arriving as `transform` means the plugin has drifted
+      // from its own spec.
+      { generatedBy, importMode: plan.mode }
     )
     /**
      * The number the user is told — ground truths, not rows written.
@@ -76,5 +83,5 @@ export async function executeImport(
 
   console.log(`[Import] Complete: ${fragmentsCreated} fragments, ${questionsAdded} questions (batch: ${importBatchId})`)
 
-  return { fragmentsCreated, questionsAdded, importBatchId }
+  return { fragmentsCreated, questionsAdded, importBatchId, generatedBy }
 }

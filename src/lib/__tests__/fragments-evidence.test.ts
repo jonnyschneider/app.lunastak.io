@@ -292,4 +292,26 @@ describe('createFragmentsFromImport — bundle path', () => {
     expect(mockPrisma.evidence.createMany).not.toHaveBeenCalled()
     expect(mockPrisma.fragment.createMany).toHaveBeenCalledTimes(1)
   })
+
+  it('stamps provenance on every fragment in the batch', async () => {
+    await createFragmentsFromImport('p1', 'batch-1', themes, {
+      generatedBy: 'gemini-gem-published',
+      importMode: 'transform',
+    })
+
+    const rows = mockPrisma.fragment.createMany.mock.calls[0][0].data
+    expect(rows).toHaveLength(2)
+    expect(rows.every((r: any) => r.generatedBy === 'gemini-gem-published')).toBe(true)
+    expect(rows.every((r: any) => r.importMode === 'transform')).toBe(true)
+  })
+
+  it('leaves provenance null when the caller passes none', async () => {
+    // Null is "the bundle said nothing" — an old plugin, a Gem not yet republished, or an import
+    // from before this shipped. It is not a category and must not be coerced into one.
+    await createFragmentsFromImport('p1', 'batch-1', themes)
+
+    const rows = mockPrisma.fragment.createMany.mock.calls[0][0].data
+    expect(rows.every((r: any) => r.generatedBy === null)).toBe(true)
+    expect(rows.every((r: any) => r.importMode === null)).toBe(true)
+  })
 })

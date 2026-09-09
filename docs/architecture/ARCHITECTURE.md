@@ -29,10 +29,15 @@ API Routes (thin) → planPipeline() → executePipeline()
 ```
 
 **Layers:**
-0. **Extraction** — Emergent themes from conversations/documents (LLM)
-1. **Structuring** — Persist as Fragments with dimensional tags
+0. **Extraction** — Emergent themes from conversations/documents (LLM). Each theme cites a
+   verbatim span from its source and self-reports `verbatim | interpretation`
+   (`src/lib/evidence/`); spans are verified at ingest, and the source is not persisted.
+1. **Structuring** — Persist as Fragments with dimensional tags and their `Evidence` rows
 2. **Meaning-Making** — Synthesise across 11 strategic dimensions (LLM, background)
-3. **Output** — Generate Decision Stack: vision, strategy, objectives (LLM)
+3. **Output** — Generate Decision Stack: vision, strategy, objectives (LLM). **Does not follow
+   Layer 1 automatically.** An initial conversation stops after fragments; the user reviews the
+   ground truths, and the first strategy is generated only on a later `generate_from_knowledge`
+   (`POST /api/project/[id]/generate-strategy`).
 
 **Full pipeline documentation:** `docs/architecture/intelligence-pipeline-v2.md`
 
@@ -116,11 +121,15 @@ Project
 ├── Conversations → Messages
 ├── Documents
 ├── Fragments (extracted themes, tagged with dimensions)
+│   └── Evidence (verbatim span per fragment + its verification result)
 ├── DimensionalSynthesis × 11 (LLM summary per dimension)
-├── GeneratedOutputs (versioned Decision Stacks)
-│   └── StrategyVersions (per-component edit history)
+├── DecisionStack → DecisionStackComponent (objectives, opportunities, principles)
+├── DecisionStackSnapshot (versioned, per generation/refresh)
 └── knowledgeSummary, suggestedQuestions
 ```
+
+`GeneratedOutput` and `StrategyVersion` were retired when the strategy side moved to
+`DecisionStack` (see `intelligence-pipeline-v2.md` §6, 2026-08-29).
 
 **Full ER diagram:** `docs/architecture/intelligence-pipeline-v2.md` §3
 

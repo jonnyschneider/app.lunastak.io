@@ -13,6 +13,12 @@ export type ImportTrigger =
 export interface ContextBundle {
   version: string
   framework?: string
+  /**
+   * Which tool produced this bundle. Optional and backwards compatible — every bundle emitted
+   * before 2026-09-09 lacks it. UNTRUSTED: self-reported by the producing LLM into a blob the
+   * user can edit, so it must go through `normaliseGeneratedBy` before it is stored or grouped.
+   */
+  generatedBy?: string
   // New format: generic chunks (no dimensions)
   chunks?: BundleChunk[]
   // Legacy format: dimensionally-tagged themes (direct insert)
@@ -62,4 +68,6 @@ export interface ImportResult {
   fragmentsCreated: number
   questionsAdded: number
   importBatchId: string
+  /** Validated producer, or null when the bundle said nothing. Never the raw claim. */
+  generatedBy: string | null
 }

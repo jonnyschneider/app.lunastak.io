@@ -5,6 +5,45 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ---
 
+## 2026-09-09 — `Fragment.generatedBy` + `Fragment.importMode` (additive)
+
+**Why.** No bundle was attributable. `Fragment` recorded `sourceType: 'import'` and a bare
+`importBatchId`; the only discriminating signal, `mode`, lived in Statsig and never reached the
+database. Worse, three of the four producing tools — the Claude Project, the Custom GPT and the
+Gemini Gem — emit byte-identical bundles, so they were not merely unrecorded but
+indistinguishable from each other.
+
+**Shape.** Two nullable `String` columns on `Fragment`, stamped on every row in an import batch.
+
+- `generatedBy` — what the bundle CLAIMS about its own origin, validated against a closed set
+  (`src/lib/import/provenance.ts`).
+- `importMode` — `direct` (themes) or `transform` (chunks), DERIVED by us from bundle shape.
+
+**Ordering.** Additive and nullable, so it can be applied before or after the code. But the app
+must accept and store the field BEFORE the tools start emitting it — reversed, the field is
+silently dropped and that data is unrecoverable.
+
+**⚠ `generatedBy` is untrusted input.** It is a string an LLM was instructed to write, inside a
+JSON blob the user can paste anything into. Anything outside the allow-list is stored as
+`unknown`. A free-text model-authored value must never reach a metrics dimension unfiltered: one
+hallucination becomes a permanent phantom row in every breakdown thereafter.
+
+**⚠ Storing both is the point.** `importMode` cannot be spoofed by instruction text. A bundle
+claiming `claude-code-plugin` that arrives as `transform` means the plugin has drifted from its own
+spec — a disagreement is a signal, not noise.
+
+**⚠ NULL IS NOT A CATEGORY.** It means the bundle said nothing, which covers three different
+situations that cannot be told apart: an import from before this shipped, an installed plugin
+still on old instructions, or a hosted assistant not yet republished by hand. Expect null to
+dominate for weeks. Do not chart it as a source.
+
+**Recovery.** Drop both columns. Nothing reads them for behaviour — they are observability only,
+and every code path treats absent as normal.
+
+Design: `docs/_plans/2026-09-09-bundle-provenance-design.md`.
+
+---
+
 ## 2026-09-08 — `DecisionStackSnapshot.fragmentIds` (additive, dev only)
 
 **Why.** Staleness was a timestamp comparison — "are there active fragments created after the
@@ -41,12 +80,14 @@ exercised by every old snapshot.
 
 ---
 
-## 2026-09-08 — `ExtractionRun` retired (drop DEFERRED to deploy)
+## 2026-09-08 — `ExtractionRun` retired (drop APPLIED 2026-09-09)
 
-**Destructive, deliberately not yet applied anywhere.** All code that read or wrote
-`ExtractionRun` was deleted on `feat/ground-truth-check-backend`; the model stays in
-`schema.prisma` marked `☠ DEAD` until that code has shipped. Code before destructive
-migration — dropping the table while old code is deployed causes 500s on every generation.
+**Destructive, and applied in the correct order.** All code that read or wrote `ExtractionRun`
+was deleted on `feat/ground-truth-check-backend` and shipped to production as v2.7.0
+(`cdbc476`). The table was dropped from dev, preview and prod **after** that deploy was
+confirmed live, and the model removed from `schema.prisma` in the same commit — code before
+destructive migration, because dropping it while the old code was still serving would have
+500'd every generation.
 
 **Why it went.** It was **write-only**. `createExtractionRun` ran on every generation
 (`pipeline/generation.ts`), and the only readers were two viewer pages that were unlinked,
@@ -60,8 +101,18 @@ to anything.
 `/api/strategies` and `/api/demo/strategy`. The deleted `/api/extraction/[id]` fell back to
 `Trace.id`, which made the two look related. They are not.
 
-**On deploy:** drop the `ExtractionRun` table, then
-`npm run db:approve-drift -- --env <env> --reason "in sync"` per environment.
+**Applied 2026-09-09**, in this order: v2.7.0 merged to `main` and confirmed live → `DROP TABLE
+"ExtractionRun"` on dev, preview and prod → model and its two back-relation fields
+(`Project.extractionRuns`, `Conversation.extractionRuns`) removed from `schema.prisma`.
+Nothing referenced the table, so its two FK constraints dropped with it and no other table was
+touched.
+
+**The 97 rows were exported before the drop**, to
+`~/Desktop/_ExtractionRun__202609091040.csv` — `createdAt`, `modelUsed`, `promptTokens`,
+`completionTokens`, `latencyMs`, `experimentVariant`, `qualityRating`. Spanning 2026-01-24 to
+2026-08-28. Kept because it is per-run token and latency data for the expensive stage, and
+`llm_token_usage` misses 10 of 26 LLM call sites (ARCHITECTURE.md → Analytics), so the cost
+dashboards cannot reconstruct it. Git archives the schema, never the rows.
 
 **Recovery:** tag `extraction-run-final` (`2812f38`) — `git checkout extraction-run-final -- <path>`.
 

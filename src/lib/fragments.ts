@@ -285,7 +285,14 @@ export async function createFragmentsFromDocument(
 export async function createFragmentsFromImport(
   projectId: string,
   importBatchId: string,
-  themes: ThemeWithDimensions[]
+  themes: ThemeWithDimensions[],
+  /**
+   * Where the bundle came from. Optional so existing callers and fixtures keep working, and
+   * because a bundle emitted before 2026-09-09 genuinely has nothing to say here.
+   * `generatedBy` must already be through `normaliseGeneratedBy` — this function stores it, it
+   * does not validate it. See lib/import/provenance.ts.
+   */
+  provenance?: { generatedBy?: string | null; importMode?: string | null }
 ) {
   // Pre-assign IDs so we can bulk-create fragments and tags in one pass
   const fragmentRows = themes.map(theme => {
@@ -303,6 +310,8 @@ export async function createFragmentsFromImport(
       sourceType: 'import',
       importBatchId,
       interpretationType: theme.type ?? null,
+      generatedBy: provenance?.generatedBy ?? null,
+      importMode: provenance?.importMode ?? null,
     }
   })
 

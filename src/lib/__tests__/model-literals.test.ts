@@ -38,7 +38,21 @@ const ALLOW = [
  * override precedence, sampling-param stripping, headroom, timeouts.
  */
 
-const MODEL_LITERAL = /['"]claude-[a-z0-9-]+['"]/
+/*
+ * Narrowed 2026-09-09: a model ID always carries a version number, so require a DIGIT.
+ *
+ * The original `claude-[a-z0-9-]+` matched any quoted string starting `claude-`, which caught
+ * `'claude-project'` and `'claude-code-plugin'` in lib/import/provenance.ts — bundle-producer
+ * names, not models. Neither can pin a stage to a model, which is the only thing this ratchet
+ * exists to prevent.
+ *
+ * The fix is NOT to allow-list provenance.ts: the allow set is for files where models ARE the
+ * subject, and adding one would let a genuine stale model ID hide there forever. Requiring a
+ * digit keeps every real ID in scope — claude-opus-5, claude-sonnet-4-5-20250929,
+ * claude-haiku-4-5-20251001, claude-3-5-sonnet-20241022 — while letting non-model `claude-*`
+ * strings through. Any future family still carries a version, so this does not rot.
+ */
+const MODEL_LITERAL = /['"]claude-[a-z0-9.-]*\d[a-z0-9.-]*['"]/
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -1,6 +1,6 @@
 # Lunastak Intelligence Pipeline v2.1 — With Orchestrator
 
-**Last updated:** 2026-08-29
+**Last updated:** 2026-09-09
 
 > Supersedes `intelligence-pipeline.md` (v1). See `docs/plans/2026-02-14-pipeline-orchestrator-design.md` for design rationale.
 >
@@ -8,6 +8,10 @@
 > the ERD named three models that no longer exist (`GeneratedOutput`, `StrategyVersion`,
 > `UserContent`), and §4 showed a "Key Themes" surface removed in an earlier refactor. §5's prompt
 > constants were renamed by the 2026-08-27 seam consolidation. Corrected below.
+>
+> **2026-09-09** — v2.7.0 shipped the evidence layer and the ground-truth review. §1, §2, §3, §4
+> and §5 now describe that: extraction emits a verbatim span and a self-reported type, fragments
+> carry `Evidence` rows, and an initial conversation stops after fragments rather than generating.
 
 Four diagrams describing how Lunastak transforms unstructured input into strategy artefacts.
 
@@ -65,14 +69,14 @@ graph TD
 
         subgraph L0 ["Layer 0 · Extraction"]
             direction LR
-            E1["◆ Emergent Extraction<br/>3–7 themes + dimension tags"]:::llm
-            E2["◆ Document Extraction<br/>3–10 themes + dimension tags"]:::llm
+            E1["◆ Emergent Extraction<br/>3–7 themes + dimension tags<br/>+ verbatim span + type"]:::llm
+            E2["◆ Document Extraction<br/>3–10 themes + dimension tags<br/>+ verbatim span + type"]:::llm
         end
 
         subgraph L1 ["Layer 1 · Structuring"]
             direction LR
-            F1["□ createFragmentsFromThemes()"]:::data
-            F2["□ createFragmentsFromDocument()"]:::data
+            F1["□ createFragmentsFromThemes()<br/>+ Evidence rows, same txn"]:::data
+            F2["□ createFragmentsFromDocument()<br/>+ Evidence rows, same txn"]:::data
         end
 
         subgraph L2 ["Layer 2 · Meaning-Making"]
@@ -111,6 +115,23 @@ graph TD
     E --> LAYERS
 ```
 
+**Layer 0 — extraction cites its source.** Both extraction prompts ask for a `<type>`
+(`verbatim | interpretation`, self-reported) and an `<evidence><span>` copied verbatim from the
+source. Parsing is shared: `src/lib/evidence/parse.ts`, called by `/api/extract` and
+`lib/document-processing.ts`. Both elements are optional in the parser — a response carrying
+neither still parses, and an absent `<type>` is read as *no claim* (`undefined`), not as a default.
+Spans are verified at ingest (`src/lib/evidence/verify.ts`) while the source is briefly in hand;
+the source itself is not persisted.
+
+**Layer 3 — an initial conversation stops at Layer 1.** `planPipeline()` returns
+`generation: null` for `conversation_ended{isInitial: true}`, so the extraction path ends at
+fragments. The user reviews the ground truths their strategy will be built from and discards
+anything wrong; the first strategy is then produced by `generate_from_knowledge`
+(`POST /api/project/[id]/generate-strategy`), which already meant "generate from fragments that
+exist, without extracting". The review has no trigger of its own. A plan that generates nothing
+has its busy flag cleared by the executor, and only when that run set it
+(`opts.ownsGenerationStatus`).
+
 ---
 
 ## 2. Orchestrator Decision Matrix
@@ -126,12 +147,12 @@ graph LR
 
     subgraph T1 ["conversation_ended (initial)"]
         direction TB
-        T1T["🟢 Extract + Generate"]:::trigger
+        T1T["🟡 Extract only ‡"]:::trigger
         T1E["Extract ✓"]:::yes
         T1F["Fragments ✓"]:::yes
         T1S["Synthesis ✗ †"]:::no
         T1K["Summary ✗ †"]:::no
-        T1G["Generate ✓<br/>mode: initial"]:::yes
+        T1G["Generate ✗ ‡"]:::no
         T1T --- T1E --- T1F --- T1S --- T1K --- T1G
     end
 
@@ -206,13 +227,18 @@ graph LR
 
 | Trigger | Extract | Fragments | Synthesis | Summary | Generate | Background |
 |---------|:-------:|:---------:|:---------:|:-------:|:--------:|:----------:|
-| `conversation_ended` (initial) | emergent | yes | no † | no † | initial | — |
+| `conversation_ended` (initial) | emergent | yes | no † | no † | no ‡ | — |
 | `conversation_ended` (follow-up) | emergent | yes | no † | no † | no | — |
 | `document_uploaded` | document | yes | no † | no † | no | — |
 | `template_submitted` | no | no | no | no | template | extractFromTemplate |
 | `refresh_requested` | no | no | **yes (fg)** | **yes (fg)** | refresh | — |
 | `generate_from_knowledge` | no | no | **yes (fg)** | **yes (fg)** | initial | — |
 | `generate_opportunities` | no | no | **yes (fg)** | no | opportunities | — |
+
+**‡ The two `conversation_ended` branches are identical** (`plan.ts`). An initial conversation
+generates nothing: it extracts, persists fragments and stops, and the first strategy comes from a
+later `generate_from_knowledge` after the ground-truth review. `isInitial` is kept because it still
+carries meaning to callers, not because the plan differs.
 
 **† Fragment-count threshold:** The executor auto-triggers synthesis + knowledge summary in the background when accumulated fragments since last summary ≥ 15. No caller requests these directly — they fire based on fragment count, regardless of trigger type. This decouples summary freshness from individual callers and provides natural debouncing.
 
@@ -243,11 +269,21 @@ erDiagram
     DOCUMENT ||--o{ FRAGMENT : "extracted into"
 
     FRAGMENT ||--|{ DIMENSION_TAG : "tagged with 1-3"
+    FRAGMENT ||--o{ EVIDENCE : "rests on"
     FRAGMENT {
         string content "theme name + summary text"
-        string contentType "theme | insight"
+        string contentType "theme | insight | tension"
         string confidence "HIGH | MEDIUM | LOW"
         string status "active | archived | soft_deleted"
+        string interpretationType "verbatim | interpretation — self-reported, null = no claim"
+        datetime reviewedAt "stamped when shown in the ground-truth review"
+    }
+
+    EVIDENCE {
+        string text "the span, copied verbatim from the source"
+        string sourceRole "user | assistant | document | bundle"
+        string verification "verified | unverifiable | failed"
+        int ordinal "order within the fragment"
     }
 
     DIMENSION_TAG {
@@ -297,6 +333,18 @@ erDiagram
     }
 ```
 
+**`Evidence.verification` is three states and they are not interchangeable.** `verified` matched
+the source at ingest; `unverifiable` means no source was retained so it *could not* be checked
+(every bundle import); `failed` means the source was there and the span did not match. Conflating
+the last two would penalise a whole ingest path for a reason unrelated to quality. Source material
+is not persisted — only the span and the result.
+
+**`contentType: 'tension'`** is written by the bundle-import transform
+(`lib/import/transforms/context-bundle.ts`) and read at `ground-truth/derive.ts:158` to keep
+tensions out of the review: a tension is the skill's reading *across* themes, not something to ask
+a user to verify. `quote`, `stat` and `principle` appear in the Prisma comment and in
+`lib/fragments.ts:46` but are written by no current code path.
+
 ---
 
 ## 4. Visible vs Hidden
@@ -314,6 +362,7 @@ graph TD
         V3["'N new insights' badge<br/>(Project Page)"]:::visible
         V4["Vision / Strategy / Objectives<br/>(Strategy Page)"]:::visible
         V5["Luna's Reasoning<br/>(admin trace view)"]:::visible
+        V6["Ground truths + the spans<br/>they rest on (review, before<br/>the first strategy)"]:::visible
     end
 
     subgraph HIDDEN ["Hidden — consumed by orchestrator + LLM"]
@@ -333,6 +382,7 @@ graph TD
     FN["Fragments since<br/>knowledgeUpdatedAt"]:::source --> V3
     GO[DecisionStack + components]:::source --> V4
     CT[Trace.claudeThoughts]:::source --> V5
+    EV["Fragment + Evidence<br/>(ground-truth/derive.ts)"]:::source --> V6
 
     DS[DimensionalSynthesis]:::source --> H1
     DT[FragmentDimensionTag]:::source --> H2
@@ -395,14 +445,20 @@ graph TD
 
 | Layer | Step | Prompt | Input | Output |
 |-------|------|--------|-------|--------|
-| 0 | Extract (conversation) | `EMERGENT_EXTRACTION_PROMPT` | Conversation text | 3-7 themes with dimension tags |
-| 0 | Extract (document) | `DOCUMENT_EXTRACTION_PROMPT` | Document text | 3-10 themes with dimension tags |
-| 2 | Synthesis (full) | `FULL_SYNTHESIS_SYSTEM` x 11 | Fragments per dimension | summary, gaps, confidence **(read)**; keyThemes, keyQuotes, contradictions, subdimensions **(written, unread)** |
-| 2 | Synthesis (incremental) | `INCREMENTAL_SYNTHESIS_SYSTEM` | Existing synthesis + new fragments | same shape |
+| 0 | Extract (conversation) | `EMERGENT_EXTRACTION_PROMPT` | Conversation text | 3-7 themes with dimension tags, each with a verbatim `<evidence><span>` and a self-reported `<type>` |
+| 0 | Extract (document) | `DOCUMENT_EXTRACTION_PROMPT` | Document text | 3-10 themes with dimension tags, same evidence + type shape |
+| 2 | Synthesis (full) | `FULL_SYNTHESIS_SYSTEM` x 11 | Fragments per dimension, **each with its evidence spans** | summary, gaps, confidence **(read)**; keyThemes, keyQuotes, contradictions, subdimensions **(written, unread)** |
+| 2 | Synthesis (incremental) | `INCREMENTAL_SYNTHESIS_SYSTEM` | Existing synthesis + new fragments **with evidence spans** | same shape |
 | 2 | Knowledge Summary | see `lib/knowledge-summary.ts` | Up to 50 fragments | Narrative + suggested questions |
-| 3 | Generate (initial) | Generation prompt (versioned) | Active fragments from DB | Vision, Strategy, Objectives |
+| 3 | Generate (initial) | Generation prompt (versioned) | Active fragments from DB **with evidence spans** | Vision, Strategy, Objectives |
 | 3 | Generate (refresh) | `prompts/stages/generation.ts` | Previous stack + synthesis summaries + delta | Updated Decision Stack |
-| 3 | Generate (opportunities) | `prompts/stages/generation.ts` | Fragments + synthesis summaries + stack | `DecisionStackComponent` rows |
+| 3 | Generate (opportunities) | `prompts/stages/generation.ts` | Fragments **with evidence spans** + synthesis summaries + stack | `DecisionStackComponent` rows |
+
+> Evidence reaches those four payloads through one renderer, `renderEvidence()` in
+> `prompts/shared/evidence.ts`. Its heading is a **measured** constant — marking spans as the
+> user's own words is what does the work, not the extra text. `failed` spans are excluded;
+> `verified` and `unverifiable` render identically. The renderer returns `''` for a fragment with
+> no usable evidence, so a pre-evidence fragment produces a byte-identical payload.
 
 ### Module Structure
 
@@ -413,6 +469,18 @@ src/lib/pipeline/
 ├── executor.ts     # executePipeline() — orchestrates library calls
 ├── generation.ts   # runInitialGeneration(), runRefreshGeneration()
 └── index.ts        # barrel export
+
+src/lib/evidence/
+├── parse.ts        # parseEmergentThemes(), parseThemeEvidence() — shared by both extractors
+└── verify.ts       # pure, markdown-tolerant span matching, run at ingest
+
+src/lib/support/
+└── dimension-support.ts  # dimensional support computed from evidence, not from a self-report
+                          # (feeds `dimensionalCoverage[dim].support` on /api/project/[id])
+
+src/lib/ground-truth/
+├── derive.ts       # the review's view model — a pure function over the fragments API response
+└── count.ts        # server-side ground-truth counts, filtered the same way the review filters
 ```
 
 ---
@@ -435,11 +503,9 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
 
-### 2026-09-08: The first strategy waits for the user — the ground truth review (slice 4, ON A BRANCH)
+### 2026-09-08: The first strategy waits for the user — the ground truth review (slice 4)
 
-> ⚠ **Not deployed.** Same branch as the 2026-09-04 entry (`feat/ground-truth-check-backend`,
-> schema on dev only). §1 Layer 3 and §2's decision matrix still describe production and are
-> correct until this deploys; the "on deploy" list at the end is what changes then.
+> Shipped in v2.7.0 (2026-09-09). §1 Layer 3 and §2's decision matrix now describe this.
 
 **Context.** The gate exists because of what the evidence layer *fixed*, not because fragments are
 doubtful. §20 measured evidence in initial generation taking not-clean output from 25.0% to 0.0%
@@ -526,25 +592,16 @@ unchanged, which is the check that the surface is data-shaped rather than screen
 - Extraction asks for a theme *name*, not a claim, which is why bundle-sourced rows read as claims
   and extraction-sourced rows as topic labels. Most visible in exactly this list.
 
-**On deploy, update:** §1 Layer 3 (initial generation no longer fires on `conversation_ended`) ·
-**Drop the `ExtractionRun` table** — dead since 2026-09-08, code already deleted, kept in
-`schema.prisma` marked `☠ DEAD` only until this ships. See `retired-extraction-run.md`. ·
-`ARCHITECTURE.md` §22-38 **Intelligence Pipeline** — the Layer 3 line still reads as though
-output follows structuring automatically; an initial conversation now stops after Layer 1 and
-generates only on a later `generate_from_knowledge`. ·
-§2's decision matrix (`conversation_ended` + `isInitial` → no generation) ·
-`service-blueprints.md` Task 2, which currently ends *"the user never sees what was extracted from
-their own words before it becomes strategy."*
+The `ExtractionRun` table, dead since 2026-09-08 and kept in `schema.prisma` marked `☠ DEAD` only
+until this shipped, was dropped in `caab4db`. See `retired-extraction-run.md`.
 
 **Architecture impact.** Layer 3 only, and by omission. Design record:
 `docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4-§7 and
 `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §21-§22.
 
-### 2026-09-08: The Harvey ball reads computed support (slice 3, ON A BRANCH)
+### 2026-09-08: The Harvey ball reads computed support (slice 3)
 
-> ⚠ **Not deployed.** Same branch as the 2026-09-04 and 2026-09-08 review entries
-> (`feat/ground-truth-check-backend`). §5's LLM table and the module lists still describe
-> production and are correct until this deploys.
+> Shipped in v2.7.0 (2026-09-09). §5's LLM table and the module lists now describe this.
 
 Recorded 2026-09-08, after an architecture conformance review found slice 3 had shipped with no
 entry — leaving the 2026-09-04 entry asserting it was unbuilt. §6 says an entry accompanies a
@@ -564,19 +621,12 @@ pipeline change; this one is the correction.
   column ("Fragments per dimension", "Active fragments from DB") is therefore now wrong for all
   four, with nothing tracking it.
 
-**On deploy, update:** §5 LLM table (Input column for the four stages) · the module-structure
-lists in §5 and `ARCHITECTURE.md` (add `src/lib/support/`) · any consumer documentation naming
-`averageConfidence`.
-
 ---
 
-### 2026-09-04: Extraction cites its source — the `Evidence` layer (slices 1-2, ON A BRANCH)
+### 2026-09-04: Extraction cites its source — the `Evidence` layer (slices 1-2)
 
-> ⚠ **Not deployed.** This lands on `feat/ground-truth-check-backend` (app) and
-> `feat/verbatim-bundle-evidence` (`lunastak/tools`), with schema applied to **dev only** —
-> `db:check-drift` therefore reports drift on preview and prod, deliberately. §1, §3, §4 and §5
-> above still describe production and are correct until this deploys. The "on deploy" list at the
-> end of this entry is what changes then.
+> Shipped in v2.7.0 (2026-09-09), with `lunastak/tools`' `feat/verbatim-bundle-evidence`.
+> §1, §3 and §5 above now describe this.
 
 **Context.** Groundedness was measured at 26% of factual claims clearly invented (2026-08-26), and
 two attempts at an LLM groundedness judge failed calibration (40-45% precision, 25-62% recall). A
@@ -647,14 +697,6 @@ actual material moves them 3.6%** — this stage responds more to a metadata cla
 to how much real content it has. And the blast radius is **themes-mode bundles only** (~15% of prod
 fragments): chunks-mode kept its `Source:` suffix, and documents/conversations never carried
 evidence in `content`. Detail: design doc §17.
-
-**On deploy, update:** §1 Layer 0 (extraction emits evidence + type) · §3 ERD (add `EVIDENCE`;
-`FRAGMENT` gains `interpretationType`, `reviewedAt`; add `contentType` value `tension` — written
-by the bundle-import transform since `6a05fa8`, and read at `ground-truth/derive.ts:137` to keep
-tensions out of the review) · §5 LLM table (extraction output shape) · `ARCHITECTURE.md` §112-124
-**Data Model** tree (add `Evidence` under `Fragments`) and §22-38 Layer 0 (extraction now emits
-verbatim spans + an `interpretationType`) · `service-blueprints.md` Tasks 2, 3 and 4 (fragment
-creation now writes evidence) · and apply the schema to preview and prod, code before columns.
 
 **Architecture impact.** New `src/lib/evidence/` layer. Design record:
 `docs/_plans/2026-08-27-ground-truth-preflight-design.md` §13-§16.
