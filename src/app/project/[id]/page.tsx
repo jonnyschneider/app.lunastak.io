@@ -403,7 +403,7 @@ export default function ProjectPage() {
             logAndFlush('tab_switch', 'decision-stack', { projectId, chip: String(strategyReady) })
           }}
           className={cn(
-            'relative rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
+            'rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
             activeTab === 'decision-stack' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
           )}
         >
@@ -416,11 +416,24 @@ export default function ProjectPage() {
             never dead — the Build button becomes a disabled spinner.
 
             No counter. There is exactly one strategy; a count would imply a queue.
+
+            ⚠ IN THE LABEL, NOT ON THE CORNER. This was an absolutely-positioned corner badge and
+            it landed in the MIDDLE OF THE GROUP: Decision Stack is the left button, so its
+            top-right corner is the seam against Knowledgebase. Corner badges only work on a
+            group's outer edges.
+
+            It sits in the same slot as the Knowledgebase button's fragment count instead — one
+            pattern for "state of this tab", mirrored. A styled span rather than a • glyph, which
+            would inherit font metrics and shift its size and baseline with the font stack.
+
+            Only ever renders on the INACTIVE button (see the guard), so it only has to read
+            against the unselected background — never against `bg-primary`.
           */}
           {strategyReady && activeTab !== 'decision-stack' && (
             <span
+              role="img"
               aria-label="New strategy to review"
-              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[hsl(var(--luna))] ring-2 ring-background"
+              className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[hsl(var(--luna))] align-middle"
             />
           )}
         </button>
