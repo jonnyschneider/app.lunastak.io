@@ -1039,7 +1039,7 @@ export default function ProjectPage() {
             {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
               <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
                 <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
-                <p className="text-sm text-muted-foreground text-center mb-6">Talk it through with Luna, upload something you have already written, or import a context bundle.</p>
+                <p className="text-sm text-muted-foreground text-center mb-6">Talk it through with Luna, upload something you have already written, or bring across your thinking from another AI.</p>
                 <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto">
                   <TalkToLunaCard onStartChat={() => {
                     // Emitted so all THREE empty-state doors are comparable. Upload and import

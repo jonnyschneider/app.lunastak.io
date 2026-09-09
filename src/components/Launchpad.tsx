@@ -182,13 +182,24 @@ export function UploadDocumentCard({ onUploadDocument }: { onUploadDocument: () 
 export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => void }) {
   return (
     <div className="rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all">
+      {/*
+        ⚠ "A CONTEXT BUNDLE" WAS THE HEADING UNTIL 2026-09-09.
+        It is a real concept with its own docs page — and unrecognisable at first contact, which is
+        the only place this card appears. A first-run user cannot know the term yet, so the heading
+        named the artefact they would have if they had already done the thing.
+
+        The heading now names the source. The body keeps the honesty the heading drops: this is not
+        "paste any chat", it needs the skill, GPT or Gem to produce the bundle first — which is why
+        the install route sits in the dropdown rather than being something to discover after
+        clicking. The precise term still lives in the import dialog, where it is finally useful.
+      */}
       <h3 className="text-sm font-bold uppercase tracking-wide">
         <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
-        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">from AI</span>
       </h3>
       <p className="text-[14px] text-foreground/70 leading-relaxed">
-        Already thinking in Claude, ChatGPT or Gemini? Plug in and start from depth instead of a
-        blank page.
+        Already thinking in Claude, ChatGPT or Gemini? Bring that work across with the Lunastak
+        skill instead of starting from a blank page.
       </p>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
