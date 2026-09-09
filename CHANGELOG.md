@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — bundle provenance (app half; 2026-09-09)
+
+Context bundles can now say which tool produced them, and the app records both the claim and a
+check on it. `Fragment` gains `generatedBy` (what the bundle claims, validated against a closed
+set) and `importMode` (`direct`/`transform`, derived by us from bundle shape and unspoofable). A
+disagreement between the two means a producer has drifted from its own spec.
+
+Until this, no bundle was attributable: `Fragment` held only `sourceType: 'import'` and a bare
+`importBatchId`, and the one discriminating signal lived in Statsig and never reached the
+database. The Claude Project, Custom GPT and Gemini Gem emit byte-identical bundles, so they were
+not merely unrecorded but indistinguishable from each other.
+
+Schema: `Fragment.generatedBy`, `Fragment.importMode`. See `prisma/SCHEMA_CHANGELOG.md`
+(2026-09-09).
+
+> **⚠ Incomplete — do not release alone.** Nothing emits `generatedBy` yet. The app must store the
+> field before any tool sends it, so this half ships first *in code* but is only worth releasing
+> alongside the `lunastak/tools` change that emits it (all four instruction sets, a plugin version
+> bump, and the published Gem and GPT republished by hand). Released on its own, the entry above
+> describes a capability nothing exercises.
+
 ## [2.7.0] - 2026-09-09
 
 ### Removed — `ExtractionRun` and the extraction-eval viewers (2026-09-08)
