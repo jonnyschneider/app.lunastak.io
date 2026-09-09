@@ -991,6 +991,11 @@ export default function ProjectPage() {
                   setChatViewOnly(false)
                   setChatSheetOpen(true)
                 }}
+                onUploadDocument={() => {
+                  logAndFlush('cta_upload_doc', 'launchpad', { projectId })
+                  setUploadDeepDiveId(undefined)
+                  setUploadDialogOpen(true)
+                }}
                 onImportBundle={() => { logAndFlush('cta_import_bundle', 'launchpad', { projectId }); setImportDialogOpen(true) }}
                 onAddContext={() => {
                   logAndFlush('tab_switch', 'ground-truth-add-context', { projectId })

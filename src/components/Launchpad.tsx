@@ -227,6 +227,7 @@ interface LaunchpadProps {
   /** Switches to the knowledgebase, where chat, upload and import all live. */
   onAddContext?: () => void
   onStartChat: () => void
+  onUploadDocument: () => void
   onImportBundle: () => void
   onGenerateNow?: () => void
 }
@@ -236,6 +237,7 @@ export function Launchpad({
   fragmentCount,
   onAddContext,
   onStartChat,
+  onUploadDocument,
   onImportBundle,
   onGenerateNow,
 }: LaunchpadProps) {
@@ -248,9 +250,15 @@ export function Launchpad({
           needs no new route and no new state column. */}
       {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} onAddContext={onAddContext} projectId={projectId} />}
 
-      {/* Two onboarding paths */}
-      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+      {/*
+        Three onboarding paths. Upload was dropped from here while narrowing the choice to two,
+        and no document was uploaded on production between March and September 2026 as a result —
+        the route, the extraction path and the context box were live the whole time. Restored in
+        the middle, 2026-09-09.
+      */}
+      <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto">
         <TalkToLunaCard onStartChat={onStartChat} />
+        <UploadDocumentCard onUploadDocument={onUploadDocument} />
         <ImportBundleCard onImportBundle={onImportBundle} />
       </div>
 
