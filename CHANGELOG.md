@@ -99,11 +99,6 @@ token is the security mechanism and persists across on/off toggles.
 - Analytics events catalog consolidated to `docs/architecture/analytics-events.md`; service
   blueprints promoted to `docs/architecture/`.
 
-> **On deploy:** `intelligence-pipeline-v2.md` §1 Layer 3, §2's decision matrix, and
-> `service-blueprints.md` Task 2 still describe pre-deploy production behaviour and must be
-> updated when this ships. Both Decision Log entries carry their own `⚠ Not deployed` banner
-> and checklist.
-
 ## [2.6.1] - 2026-09-02
 
 ### Removed — four `DimensionalSynthesis` columns nothing read (2026-08-29)

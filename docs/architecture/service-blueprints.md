@@ -1,7 +1,7 @@
 ---
 doc: service-blueprints
 version: 1
-updated: 2026-08-29
+updated: 2026-09-09
 phases: [ADMIT, GATHER, REASON, COMMIT, REVEAL]
 # Every path below is referenced by at least one blueprint row. A checker can assert
 # these still exist, and flag the blueprint stale when any of them changes.
@@ -9,7 +9,8 @@ governed_by:
   pipeline: [src/lib/pipeline/plan.ts, src/lib/pipeline/executor.ts, src/lib/pipeline/generation.ts]
   synthesis: [src/lib/synthesis/update-synthesis.ts, src/lib/synthesis/full-synthesis.ts, src/lib/synthesis/incremental-synthesis.ts, src/lib/knowledge-summary.ts]
   stack: [src/lib/decision-stack.ts]
-  ingest: [src/lib/import/executor.ts, src/lib/fragments.ts, src/lib/document-processing.ts]
+  ingest: [src/lib/import/executor.ts, src/lib/import/transforms/context-bundle.ts, src/lib/fragments.ts, src/lib/document-processing.ts]
+  evidence: [src/lib/evidence/parse.ts, src/lib/evidence/verify.ts, src/lib/ground-truth/derive.ts, src/lib/ground-truth/count.ts]
   routes:
     - src/app/api/extract/route.ts
     - src/app/api/generate/route.ts
@@ -21,6 +22,7 @@ governed_by:
     - src/app/api/project/[id]/template-entry/route.ts
     - src/app/api/project/[id]/strategy-version/route.ts
     - src/app/api/project/[id]/fragments/route.ts
+    - src/app/api/project/[id]/generate-strategy/route.ts
     - src/app/api/project/[id]/share/route.ts
   ui:
     - src/components/chat-sheet.tsx
@@ -28,7 +30,7 @@ governed_by:
     - src/components/KnowledgeSummaryPanel.tsx
     - src/components/ExploreNextSection.tsx
     - src/components/FragmentExplorer.tsx
-    - src/components/EvidencePanel.tsx
+    - src/components/ground-truth/GroundTruthReview.tsx
     - src/components/OpportunitySection.tsx
     - src/components/GenerationConfirmDialog.tsx
 # Disposition vocabulary for every called-out weakness:
@@ -40,7 +42,7 @@ governed_by:
 # gates = user-facing decision points; quality_gate = does any gate assess output quality
 tasks:
   - {id: 1,  name: Refresh strategy,               gates: 1, quality_gate: false, reveals_change: false}
-  - {id: 2,  name: Conversation to first strategy, gates: 1, quality_gate: false, reveals_change: false}
+  - {id: 2,  name: Conversation to first strategy, gates: 2, quality_gate: false, reveals_change: false}
   - {id: 3,  name: Upload a document,              gates: 0, quality_gate: false, reveals_change: false}
   - {id: 4,  name: Import a context bundle,        gates: 1, quality_gate: false, reveals_change: false}
   - {id: 5,  name: Generate opportunities,         gates: 1, quality_gate: true,  reveals_change: false}
@@ -139,24 +141,35 @@ quality?*
 | 1 | ▲ | — | Opens chat, converses. Messages persisted per turn | `chat-sheet.tsx` · `/api/conversation/*` |
 | 2 | ▲ | — | Clicks **Generate strategy** (mulberry CTA, inside the transcript) | `chat-sheet.tsx` |
 | 3 | ⛔ | — | **Confirmation gate** — cost/intent only | `GenerationConfirmDialog` |
-| 4 | ▼ | **ADMIT** | `POST /api/generate` — auth; `setGenerationStatus('generating')`; returns immediately | `generate/route.ts:77-106` |
-| 5 | ▼ | **ADMIT** | `planPipeline({conversation_ended, isInitial:true})` → extraction ✓, persist ✓, **synthesis ✗**, generation `initial` | `pipeline/plan.ts:14` |
-| 6 | ▲ | — | Sheet closes; toast "generating"; polling begins | `chat-sheet.tsx` |
-| 7 | ▼ | **REASON** | Emergent extraction → 3–7 themes + dimension tags | `extract/route.ts:55` |
-| 8 | ▼ | **COMMIT** | `createFragmentsFromThemes` → `Fragment(contentType:'theme')` + tags | `lib/fragments.ts:116` |
-| 9 | ▼ | **GATHER** | Load active fragments (**not** syntheses — none exist yet) | `pipeline/generation.ts` |
-| 10 | ▼ | **REASON** | Initial generation → vision, strategy, objectives | `prompts/stages/generation.ts` (`v4-pithy-statements`) |
-| 11 | ▼ | **COMMIT** | `captureSnapshot(pre_generation)` → `writeStrategyToStack` → `captureSnapshot(post_generation)` | `lib/decision-stack.ts` · `executor.ts:250` |
-| 12 | ▼ | **COMMIT** | Clear `generationStatus` | `executor.ts:186` |
-| 13 | ▲ | **REVEAL** | Strategy renders | `StrategyDisplay` |
-| 14 | ▼ | — | *Later:* synthesis runs only once **15** new fragments accumulate | `executor.ts:65,80` |
+| 4 | ▼ | **ADMIT** | `POST /api/generate` — auth; `setGenerationStatus('generating')`; returns immediately | `generate/route.ts` |
+| 5 | ▼ | **ADMIT** | `planPipeline({conversation_ended, isInitial:true})` → extraction ✓, persist ✓, **synthesis ✗**, **generation `null`** | `pipeline/plan.ts` |
+| 6 | ▲ | — | Sheet closes; toast; polling begins | `chat-sheet.tsx` |
+| 7 | ▼ | **REASON** | Emergent extraction → 3–7 themes + dimension tags, each with a verbatim span and a self-reported `verbatim \| interpretation` type | `extract/route.ts` · `lib/evidence/parse.ts` |
+| 8 | ▼ | **COMMIT** | `createFragmentsFromThemes` → `Fragment(contentType:'theme')` + tags + `Evidence` rows, one transaction; spans verified at ingest against the user's turns | `lib/fragments.ts` · `lib/evidence/verify.ts` |
+| 9 | ▼ | **COMMIT** | Plan generated nothing, so the executor clears `generationStatus` — but only if this run set it (`ownsGenerationStatus`) | `executor.ts` |
+| 10 | ⛔ | **REVEAL** | **Ground-truth review** — the fragments, and the spans they rest on, shown before any strategy exists. One list, discard only | `ground-truth/GroundTruthReview.tsx` · `ground-truth/derive.ts` |
+| 11 | ▲ | — | Discards a wrong row → `PATCH /fragments {ids, status:'archived', archivedReason:'ground_truth_review'}`, one at a time, immediately. Removal is the confirmation; an undo puts it back | `project/[id]/fragments/route.ts` |
+| 12 | ▲ | — | Being *shown* the list stamps `reviewedAt` (`PATCH {ids, reviewed:true}`) — reviewing is being shown something, not clicking it | `project/[id]/fragments/route.ts` |
+| 13 | ▲ | — | Clicks **Build my strategy** | `project/[id]/page.tsx` |
+| 14 | ▼ | **ADMIT** | `POST /generate-strategy` — auth, fragment count > 0, guest quota, **409 `already_generating`** guard; `planPipeline('generate_from_knowledge')` → synthesis ✓ fg, summary ✓ fg, generation `initial` | `generate-strategy/route.ts` |
+| 15 | ▼ | **GATHER** | Load active fragments with their evidence spans | `pipeline/generation.ts` |
+| 16 | ▼ | **REASON** | Initial generation → vision, strategy, objectives | `prompts/stages/generation.ts` (`v4-pithy-statements`) |
+| 17 | ▼ | **COMMIT** | `captureSnapshot(pre_generation)` → `writeStrategyToStack` → `captureSnapshot(post_generation)`; clear `generationStatus` | `lib/decision-stack.ts` · `executor.ts` |
+| 18 | ▲ | **REVEAL** | Strategy renders | `StrategyDisplay` |
+| 19 | ▼ | — | *Later:* synthesis runs only once **15** new fragments accumulate | `executor.ts` |
 
-**Exposes.** *(disposition: `by-design` — see 2026-02-16 debounce decision; `ExtractionConfirm` remains `open`.)* The first strategy a user ever sees is generated with **no synthesis at all** —
-`runSynthesis: false`. Everything this thread has been investigating (dimensional syntheses, gaps,
-amplification) is *absent* from the first-run experience and only appears later, at the 15-fragment
-threshold. `ExtractionConfirm` — "Here's what I understood" — is dead on this path; the only live
-caller is the `catch` block of a failed generation (`chat-sheet.tsx:482`). So the user never sees
-what was extracted from their own words before it becomes strategy.
+**Exposes.** *(disposition: `by-design` — see 2026-02-16 debounce decision.)* The first strategy a
+user ever sees is still generated with **no dimensional synthesis in its payload** —
+`generate_from_knowledge` runs synthesis, but `runInitialGeneration` does not read it. Gaps and
+dimensional summaries only reach a stack at refresh.
+
+**What changed 2026-09-08 (shipped v2.7.0).** This task used to be one call: extraction and
+generation in a single `conversation_ended` plan, so the user never saw what was taken from their
+own words before it became strategy. The wait is now **split, not added to** — ~29.5s to the review
+(measured on preview, a short document), then generation's ~19–37s after the user's decision. Step
+10 is the pruning surface the blueprint used to be missing: one list, discard only. Editing was
+deliberately not built — it only ever wrote `Fragment.title`, which no downstream stage reads.
+`ExtractionConfirm` was deleted.
 
 ---
 
@@ -171,8 +184,8 @@ what was extracted from their own words before it becomes strategy.
 | 3 | ▼ | **COMMIT** | `Document(status:'pending')` → `'processing'` | `upload/route.ts:79-89` |
 | 4 | ▼ | **ADMIT** | Returns immediately; work in `waitUntil` | `upload/route.ts:93` |
 | 5 | ▲ | — | Row appears with a processing spinner | `/documents/[id]/status` polling |
-| 6 | ▼ | **REASON** | Text extraction, then document extraction → 3–10 themes | `lib/extract-text.ts` · `lib/document-processing.ts` |
-| 7 | ▼ | **COMMIT** | `createFragmentsFromDocument` → `Fragment(contentType:'theme', documentId)` | `lib/fragments.ts:160` |
+| 6 | ▼ | **REASON** | Text extraction, then document extraction → 3–10 themes, each with a verbatim span and a self-reported `verbatim \| interpretation` type | `lib/extract-text.ts` · `lib/document-processing.ts` · `lib/evidence/parse.ts` |
+| 7 | ▼ | **COMMIT** | `createFragmentsFromDocument` → `Fragment(contentType:'theme', documentId)` + `Evidence` rows in the same transaction; spans verified at ingest against the document text | `lib/fragments.ts` · `lib/evidence/verify.ts` |
 | 8 | ▼ | **ADMIT** | `planPipeline('document_uploaded')` → **generation: null** | `pipeline/plan.ts:37` |
 | 9 | ▼ | **GATHER** | Count fragments since `knowledgeUpdatedAt`; if **≥15**, escalate | `executor.ts:65-86` |
 | 10 | ▼ | **REASON** | *(only if escalated)* background `updateAllSyntheses` + knowledge summary | `executor.ts:106-127` |
@@ -181,9 +194,12 @@ what was extracted from their own words before it becomes strategy.
 **Exposes.** *(disposition: `by-design` — accepted.)* **No gate anywhere** — the only task with
 zero. A document silently mutates the knowledge base. ~~whether it triggers meaning-making depends
 on an invisible counter~~ **Corrected 2026-08-29:** the threshold *is* surfaced —
-`KnowledgeSummaryPanel.tsx:307` shows *"N more insights 'til next auto-update"*. The residual is
-that `15` is hardcoded there, duplicating `SUMMARY_FRAGMENT_THRESHOLD`. What remains true: nothing
-tells the user what was taken from their document; it becomes N fragments and a changed number.
+`KnowledgeSummaryPanel.tsx` shows *"N more insights 'til next auto-update"*. The residual is
+that `15` is hardcoded there, duplicating `SUMMARY_FRAGMENT_THRESHOLD`. ~~Nothing tells the user
+what was taken from their document~~ **Corrected 2026-09-09:** the ground truths a document
+produced — and the spans they rest on — are now on the page, in the Knowledge Summary panel's
+`GroundTruthReview`, and can be discarded there. What remains true is that the upload itself passes
+no gate on the way in: the review is after the fact, not before it.
 
 ---
 
@@ -196,16 +212,21 @@ tells the user what was taken from their document; it becomes N fragments and a 
 | 1 | ▲ | — | Pastes/uploads bundle JSON | `ImportBundleDialog` / `ImportBundleCard` |
 | 2 | ⛔ | — | **Confirmation gate** — preview of what will import | `ImportBundleDialog` |
 | 3 | ▼ | **ADMIT** | `POST /import-bundle` — auth, project check, plan the import (`direct` vs transformed) | `import-bundle/route.ts` · `lib/import/plan.ts` |
-| 4 | ▼ | **GATHER** | Transform bundle → themes; mint `importBatchId` | `lib/import/executor.ts:15-26` |
-| 5 | ▼ | **COMMIT** | Create `Fragment(contentType:**'insight'**, sourceType:'import', **no conversationId/documentId**, confidence: MEDIUM if tagged else LOW)` | `lib/fragments.ts:191` |
-| 6 | ▼ | **COMMIT** | Add bundle open-questions to `suggestedQuestions` | `import/executor.ts:63` |
-| 7 | ▼ | **REASON** | Threshold escalation as Task 3 (a bundle usually clears 15 in one go) | `executor.ts:80` |
-| 8 | ▲ | **REVEAL** | Fragment count + questions appear | `KnowledgeSummaryPanel` |
+| 4 | ▼ | **GATHER** | Transform bundle → themes, carrying the bundle's verbatim spans structurally rather than flattening them into `content`; tensions become `contentType:'tension'`; mint `importBatchId` | `lib/import/executor.ts` · `lib/import/transforms/context-bundle.ts` |
+| 5 | ▼ | **COMMIT** | Create `Fragment(contentType:**'insight'** or `'tension'`, sourceType:'import', **no conversationId/documentId**, confidence: MEDIUM if tagged else LOW, `interpretationType` as reported) + `Evidence(sourceRole:'bundle')` | `lib/fragments.ts` |
+| 6 | ▼ | **COMMIT** | Add bundle open-questions to `suggestedQuestions` | `import/executor.ts` |
+| 7 | ▼ | **REASON** | Threshold escalation as Task 3 (a bundle usually clears 15 in one go) | `executor.ts` |
+| 8 | ▲ | **REVEAL** | Ground truths + questions appear; the count reported is ground truths, not rows written — tensions are excluded because the review never shows them | `KnowledgeSummaryPanel` · `ground-truth/count.ts` |
 
 **Exposes.** **No REASON phase of its own.** The bundle's contents are inserted verbatim as
 fragments — the interpretation was done upstream, in the skill, outside this system. These
-fragments carry **no source link at all** (no conversation, no document), which is why
-*"because you said…"* is unbuildable for them, and they are **roughly half of all fragments in production**. Audit fork #4: this is how the margin claim entered as Fragment 2, pre-formed.
+fragments carry **no source link at all** (no conversation, no document), and they are **roughly
+half of all fragments in production**. Audit fork #4: this is how the margin claim entered as
+Fragment 2, pre-formed. ~~*"because you said…"* is unbuildable for them~~ **Corrected 2026-09-09:**
+a bundle now carries the user's own spans, so the quote is there. What cannot be done is *check*
+it — the source conversation happened outside this app, so `verifySpan(text, null)` returns
+`unverifiable`, which is a property of the ingest path and is deliberately not counted against the
+fragment.
 
 ---
 
@@ -259,9 +280,9 @@ to explore, which then generates more fragments *about the invented premise*.
 
 | # | | phase | Step | Governed by |
 |---|---|---|---|---|
-| 1 | ▲ | — | Clicks **Review Evidence** (or a dimension chip) | `EvidencePanel` · `KnowledgeSummaryPanel` |
+| 1 | ▲ | — | Opens the knowledgebase on the project page. *(The **Review Evidence** entry point and its sheet were deleted 2026-09-08 — the ground truths are on the page now. See `screen-map.md`.)* | `project/[id]/page.tsx` · `KnowledgeSummaryPanel` |
 | 2 | ▼ | **GATHER** | Load fragments, filtered by dimension / status / source | `/project/[id]/fragments` |
-| 3 | ▲ | **REVEAL** | List of fragments — title, dimensions, expandable content | `FragmentExplorer` · `EvidenceSheet` |
+| 3 | ▲ | **REVEAL** | List of fragments — title, dimensions, expandable content | `FragmentExplorer` |
 | 4 | ▲ | — | Multi-selects, clicks **Archive** | `FragmentExplorer:202` |
 | 5 | ▼ | **COMMIT** | `PATCH /fragments` → `status:'archived'`, `archivedAt` | `fragments/route.ts:148-175` |
 | 6 | ▲ | **REVEAL** | Row moves to the Archived tab; count updates | `FragmentExplorer` |
@@ -528,8 +549,11 @@ implications unexamined.
 ### Zero-reader schema fields — `defer to a separate activity`
 **Applies to:** audit Finding 4.
 Probably delete — the 10-field abandoned review workflow (`reviewedAt`, `reviewedBy`,
-`errorCategories`, `openCodingNotes`, `feedbackAt` on **both** `Trace` and `ExtractionRun`),
-`Fragment.softDeletedAt`/`archivedReason`, `FragmentDimensionTag.subdimension`/`taggedAt`,
+`errorCategories`, `openCodingNotes`, `feedbackAt` on `Trace` — and, until it was dropped in
+`caab4db`, on `ExtractionRun`; see `retired-extraction-run.md`),
+`Fragment.softDeletedAt`/~~`archivedReason`~~ (**corrected 2026-09-09:** `archivedReason` is now
+written — `'ground_truth_review'` on a discard — though still read by nothing),
+`FragmentDimensionTag.subdimension`/`taggedAt`,
 `DimensionalSynthesis.synthesisVersion`. **But it is a schema change**, and the schema is a
 protected boundary requiring migrations applied per environment. Do it as its own careful activity,
 not as a side-effect of this work. Verify `User.emailVerified` against NextAuth before touching it.
@@ -562,8 +586,13 @@ revived or deleted, and that is a small product call rather than an investigatio
 | **No gate at all** | 3, 6, 7, 8, 9 |
 | **Gate exists but gates cost/intent, not quality** | 1, 2, 4, 10 |
 | **Gate shows a quality signal** | **5 only** (coverage warnings — and advisory) |
-| **REASON with no user-visible input review** | 1, 2, 3, 4, 5, 6 — i.e. every path that invents |
+| **REASON with no user-visible input review** | 1, ~~2~~, 3, 4, 5, 6 — i.e. every path that invents |
 | **No REASON on the critical path** | 9 (template), 10 (share) |
+
+**Corrected 2026-09-09 (v2.7.0).** Task 2 now has one: the ground-truth review sits between
+extraction and generation, and it is the only place in the product where a user sees a model's
+input before it is used. It reviews the *input* to generation, not generation's output — so
+conclusion 1 below still stands for every task, task 2 included.
 
 Three structural conclusions:
 

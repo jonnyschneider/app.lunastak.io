@@ -61,7 +61,7 @@ Pair the *specific section* where one exists: touched ≠ accurate.
 | C23 | Tests are colocated in a `__tests__/` folder beside the code under test | emergence 2026-09-08, 5 dirs | GREP | `src/**` |
 | ~~C24~~ | *demoted 2026-09-08 — see Candidates (watching); adopted on one-sided evidence* | — | — | — |
 | C25 | `type-check` regenerates the Prisma client before `tsc` — stale client types must not pass local verify | emergence 2026-09-08, `package.json` | GREP | `package.json` |
-| C26 | A Decision Log entry landing on a feature branch carries a `⚠ Not deployed` banner AND an explicit "On deploy, update:" checklist naming the sections that go stale | emergence 2026-09-08, 2 sites (`intelligence-pipeline-v2.md:440-442,503-506` and `:514-518,587-590`) | JUDGMENT | `docs/architecture/**` |
+| C26 | A Decision Log entry landing on a feature branch carries a `⚠ Not deployed` banner AND an explicit "On deploy, update:" checklist naming the sections that go stale | emergence 2026-09-08, 2 sites in `intelligence-pipeline-v2.md` §6 — both discharged and removed at the v2.7.0 deploy (2026-09-09), which is the other half of the rule: a banner comes off when its checklist is done | JUDGMENT | `docs/architecture/**` |
 
 ## Narrowings of the base rubric
 
