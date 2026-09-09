@@ -5,6 +5,45 @@ Changes should be documented here before being pushed to ensure proper review.
 
 ---
 
+## 2026-09-09 — `Fragment.generatedBy` + `Fragment.importMode` (additive)
+
+**Why.** No bundle was attributable. `Fragment` recorded `sourceType: 'import'` and a bare
+`importBatchId`; the only discriminating signal, `mode`, lived in Statsig and never reached the
+database. Worse, three of the four producing tools — the Claude Project, the Custom GPT and the
+Gemini Gem — emit byte-identical bundles, so they were not merely unrecorded but
+indistinguishable from each other.
+
+**Shape.** Two nullable `String` columns on `Fragment`, stamped on every row in an import batch.
+
+- `generatedBy` — what the bundle CLAIMS about its own origin, validated against a closed set
+  (`src/lib/import/provenance.ts`).
+- `importMode` — `direct` (themes) or `transform` (chunks), DERIVED by us from bundle shape.
+
+**Ordering.** Additive and nullable, so it can be applied before or after the code. But the app
+must accept and store the field BEFORE the tools start emitting it — reversed, the field is
+silently dropped and that data is unrecoverable.
+
+**⚠ `generatedBy` is untrusted input.** It is a string an LLM was instructed to write, inside a
+JSON blob the user can paste anything into. Anything outside the allow-list is stored as
+`unknown`. A free-text model-authored value must never reach a metrics dimension unfiltered: one
+hallucination becomes a permanent phantom row in every breakdown thereafter.
+
+**⚠ Storing both is the point.** `importMode` cannot be spoofed by instruction text. A bundle
+claiming `claude-code-plugin` that arrives as `transform` means the plugin has drifted from its own
+spec — a disagreement is a signal, not noise.
+
+**⚠ NULL IS NOT A CATEGORY.** It means the bundle said nothing, which covers three different
+situations that cannot be told apart: an import from before this shipped, an installed plugin
+still on old instructions, or a hosted assistant not yet republished by hand. Expect null to
+dominate for weeks. Do not chart it as a source.
+
+**Recovery.** Drop both columns. Nothing reads them for behaviour — they are observability only,
+and every code path treats absent as normal.
+
+Design: `docs/_plans/2026-09-09-bundle-provenance-design.md`.
+
+---
+
 ## 2026-09-08 — `DecisionStackSnapshot.fragmentIds` (additive, dev only)
 
 **Why.** Staleness was a timestamp comparison — "are there active fragments created after the

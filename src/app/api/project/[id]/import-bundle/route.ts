@@ -87,6 +87,10 @@ export async function POST(
         chunkCount: String(bundle.chunks?.length || bundle.themes?.length || 0),
         mode,
         importBatchId: result.importBatchId || '',
+        // Validated against the closed set, never the raw claim — an unrecognised value arrives
+        // as 'unknown' rather than becoming a phantom row in every breakdown. Empty string means
+        // the bundle said nothing, which is not a category. See lib/import/provenance.ts.
+        generatedBy: result.generatedBy || '',
       })
     }
 

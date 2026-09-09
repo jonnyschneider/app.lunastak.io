@@ -233,6 +233,13 @@ model Fragment {
 
   sourceType    String @default("extraction") // extraction | import | manual
   importBatchId String?
+  // Bundle provenance (2026-09-09). Which tool produced the bundle this fragment came from, and
+  // the shape it arrived in. `generatedBy` is SELF-REPORTED by the bundle and validated against a
+  // closed set (lib/import/provenance.ts) — null means the bundle said nothing, which is three
+  // different situations and never a category. `importMode` is derived by us from bundle shape and
+  // cannot be spoofed, so a disagreement between the two is a signal, not noise.
+  generatedBy   String? // claude-code-plugin@x.y.z | claude-project | custom-gpt(-published) | gemini-gem(-published) | unknown
+  importMode    String? // direct (themes) | transform (chunks)
   // How the fragment was made, self-reported by the extractor. Decides which question the
   // ground truth check asks: a verbatim claim asks "does this still matter?", an
   // interpretation asks "we read this from these things".
