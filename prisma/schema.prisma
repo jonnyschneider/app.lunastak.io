@@ -39,7 +39,6 @@ model Conversation {
   traces         Trace[]
   events         Event[]
   fragments      Fragment[]
-  extractionRuns ExtractionRun[]
   project        Project?        @relation(fields: [projectId], references: [id])
   projectId      String?
 
@@ -196,7 +195,6 @@ model Project {
   documents            Document[]
   deepDives            DeepDive[]
   dimensionalSyntheses DimensionalSynthesis[]
-  extractionRuns       ExtractionRun[]
   dismissals           UserDismissal[]
   decisionStack        DecisionStack?
   decisionStackSnapshots DecisionStackSnapshot[]
@@ -403,57 +401,6 @@ model DimensionalSynthesis {
 }
 
 
-/// ☠ DEAD — no code reads or writes this as of 2026-09-08. Drops at deploy.
-/// Retired because it was write-only: created on every generation but read by nothing except
-/// two unreachable viewer pages. See docs/retired-extraction-run.md and SCHEMA_CHANGELOG.
-/// Kept in the schema only until the code deletion has shipped — code before destructive
-/// migration, per CLAUDE.md. Do NOT write to it.
-model ExtractionRun {
-  id        String @id @default(cuid())
-  projectId String
-
-  // What triggered this run
-  conversationId String?
-
-  // Experiment tracking
-  experimentVariant String?
-  experimentId      String?
-
-  // What was extracted
-  fragmentIds String[] @default([])
-
-  // Synthesis state snapshots
-  synthesesBefore Json?
-  synthesesAfter  Json?
-
-  // Model/performance metadata
-  modelUsed        String
-  promptTokens     Int?
-  completionTokens Int?
-  latencyMs        Int?
-
-  // Evaluation fields (same as Trace)
-  userFeedback    String?
-  feedbackAt      DateTime?
-  qualityRating   String?
-  errorCategories String[]  @default([])
-  openCodingNotes String?   @db.Text
-  reviewedAt      DateTime?
-  reviewedBy      String?
-
-  createdAt DateTime @default(now())
-
-  // Relations
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  conversation    Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-
-  @@index([projectId])
-  @@index([conversationId])
-  @@index([experimentVariant])
-  @@index([experimentId])
-  @@index([qualityRating])
-  @@index([createdAt])
-}
 
 model Account {
   id                String  @id @default(cuid())

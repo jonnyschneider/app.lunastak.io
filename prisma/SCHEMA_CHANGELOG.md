@@ -41,12 +41,14 @@ exercised by every old snapshot.
 
 ---
 
-## 2026-09-08 — `ExtractionRun` retired (drop DEFERRED to deploy)
+## 2026-09-08 — `ExtractionRun` retired (drop APPLIED 2026-09-09)
 
-**Destructive, deliberately not yet applied anywhere.** All code that read or wrote
-`ExtractionRun` was deleted on `feat/ground-truth-check-backend`; the model stays in
-`schema.prisma` marked `☠ DEAD` until that code has shipped. Code before destructive
-migration — dropping the table while old code is deployed causes 500s on every generation.
+**Destructive, and applied in the correct order.** All code that read or wrote `ExtractionRun`
+was deleted on `feat/ground-truth-check-backend` and shipped to production as v2.7.0
+(`cdbc476`). The table was dropped from dev, preview and prod **after** that deploy was
+confirmed live, and the model removed from `schema.prisma` in the same commit — code before
+destructive migration, because dropping it while the old code was still serving would have
+500'd every generation.
 
 **Why it went.** It was **write-only**. `createExtractionRun` ran on every generation
 (`pipeline/generation.ts`), and the only readers were two viewer pages that were unlinked,
@@ -60,8 +62,18 @@ to anything.
 `/api/strategies` and `/api/demo/strategy`. The deleted `/api/extraction/[id]` fell back to
 `Trace.id`, which made the two look related. They are not.
 
-**On deploy:** drop the `ExtractionRun` table, then
-`npm run db:approve-drift -- --env <env> --reason "in sync"` per environment.
+**Applied 2026-09-09**, in this order: v2.7.0 merged to `main` and confirmed live → `DROP TABLE
+"ExtractionRun"` on dev, preview and prod → model and its two back-relation fields
+(`Project.extractionRuns`, `Conversation.extractionRuns`) removed from `schema.prisma`.
+Nothing referenced the table, so its two FK constraints dropped with it and no other table was
+touched.
+
+**The 97 rows were exported before the drop**, to
+`~/Desktop/_ExtractionRun__202609091040.csv` — `createdAt`, `modelUsed`, `promptTokens`,
+`completionTokens`, `latencyMs`, `experimentVariant`, `qualityRating`. Spanning 2026-01-24 to
+2026-08-28. Kept because it is per-run token and latency data for the expensive stage, and
+`llm_token_usage` misses 10 of 26 LLM call sites (ARCHITECTURE.md → Analytics), so the cost
+dashboards cannot reconstruct it. Git archives the schema, never the rows.
 
 **Recovery:** tag `extraction-run-final` (`2812f38`) — `git checkout extraction-run-final -- <path>`.
 
