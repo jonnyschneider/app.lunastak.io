@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — the empty project stops offering a choice between one screen and itself (2026-09-10)
+
+A guest arrived, or a project was created, and the header offered `Decision Stack | Knowledgebase`.
+Both halves showed the same three onboarding cards under different framing copy. The toggle was a
+control for choosing between one screen and a subset of it.
+
+The cold start is hoisted out of the tab system. Before context exists there is no view to choose
+between, so the launchpad belongs to the project rather than to either tab — no toggle, and no
+overflow "Add Context" menu, because the three cards on screen already are that menu spelled out.
+
+The knowledgebase's own empty state is deleted. It was redundant twice over: the sections beneath
+it already handle zero of everything, each with its own empty state and its own add button. It is
+also now unreachable — with no context the tab is forced, and "has context" cannot flip back, since
+no route deletes conversations or documents and fragment discard is soft. The invariant "the
+knowledgebase is never rendered empty" holds by construction rather than by argument.
+
+The ground-truth review moves to the knowledgebase as a **mode**, not a second panel — the summary
+panel already rendered the ground truths inline, so moving the launchpad's card would have put the
+same list on screen twice. Upload a document and you now land where the ground truths are, beside
+the summary they feed and the document they came from.
+
+Pre-strategy, the Decision Stack tab is a signpost rather than the launchpad: it names the absent
+thing so it reads as empty rather than broken, and offers the two exits. No phase chrome — an
+indicator that advances when you switch tabs, without you doing any work, is lying.
+
+Two empty-state components went with it, `FirstTimeEmptyState` and `EmptyProjectState`, neither of
+which had had an importer for months.
+
+### Added — a chip for "your strategy is ready", and it survives a reload (2026-09-10)
+
+Build is pressed from the knowledgebase and the user stays there with their ground truths, so the
+finished strategy lands on the tab they are not looking at. A toast is the wrong instrument: it
+announces something *happening*, and this is something *ready for review*, which should outlive
+both the five-second timer and the session. A dot on the Decision Stack button, no counter,
+dismissed on first view.
+
+Readiness is derived rather than stored — a chip is due when a strategy exists and its trace has
+not been dismissed — so there is no new schema and no second source of truth to get stuck on.
+Keyed on `traceId`, so a refresh raises a fresh chip while a dismissal stays scoped to the version
+it dismissed.
+
+### ⚠ Instrumentation — two surfaces go to zero on purpose
+
+`cta_new_chat`, `cta_upload_doc` and `cta_import_bundle` stop emitting `surface: 'kb-empty-state'`
+and `'first-time'` from 2026-09-10. `kb-empty-state` was added on 2026-09-09 — one day earlier —
+and the screen it measured is gone; the doors consolidate onto the single `launchpad` surface.
+
+Written down loudly, in `docs/architecture/analytics-events.md`, because 2.7.1 exists on account of
+exactly this shape: a door dropped by defocus, its event flatlining from a surface nobody removed,
+and six months before anyone noticed. A flatline with no note is indistinguishable from a feature
+quietly dying.
+
 ## [2.7.1] - 2026-09-09
 
 ### Fixed — document upload is back on the launchpad (2026-09-09)
