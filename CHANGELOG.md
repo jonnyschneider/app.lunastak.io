@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — bundle provenance (app half; 2026-09-09)
+## [2.7.1] - 2026-09-09
+
+### Fixed — document upload is back on the launchpad (2026-09-09)
+
+A new project offered two doors, chat and import. Upload was dropped from the launchpad while
+narrowing the choice, and **no document was uploaded on production between March and September
+2026** as a result. Nothing was broken: the route, the extraction path, the context box and the
+character limit were all live the entire time. It was a missing card.
+
+Restored as the middle of three, on the launchpad and on the knowledgebase empty state, each
+logging `cta_upload_doc` with its own surface (`launchpad`, `kb-empty-state`) so the two entry
+points stay distinguishable. The chat card, which emitted nothing at all, now logs `cta_new_chat`
+too — two of three doors were measured and one was silent, so neither "which door do people take?"
+nor "did restoring this work?" had an answer.
+
+That silence is the actual defect. A removal-by-defocus leaves no marker: nothing is retired, the
+code all stays live, the event keeps firing from other surfaces and simply flatlines. No commit
+says "removed", so no audit catches it.
+
+### Changed — "import from AI", not "import a context bundle" (2026-09-09)
+
+The launchpad heading named an artefact a first-time user cannot recognise — a real concept with
+its own docs page, and meaningless at the one place it appeared. The heading now names the source;
+the body carries what the heading drops, that this needs the Lunastak skill rather than any pasted
+chat. The precise term survives in the import dialog, where the user has committed and needs the
+exact word.
+
+### Added — bundle provenance (2026-09-09)
 
 Context bundles can now say which tool produced them, and the app records both the claim and a
 check on it. `Fragment` gains `generatedBy` (what the bundle claims, validated against a closed
@@ -22,11 +49,14 @@ not merely unrecorded but indistinguishable from each other.
 Schema: `Fragment.generatedBy`, `Fragment.importMode`. See `prisma/SCHEMA_CHANGELOG.md`
 (2026-09-09).
 
-> **⚠ Incomplete — do not release alone.** Nothing emits `generatedBy` yet. The app must store the
-> field before any tool sends it, so this half ships first *in code* but is only worth releasing
-> alongside the `lunastak/tools` change that emits it (all four instruction sets, a plugin version
-> bump, and the published Gem and GPT republished by hand). Released on its own, the entry above
-> describes a capability nothing exercises.
+Both halves are now live. `lunastak/tools` **1.2.0** emits `generatedBy` from all four instruction
+sets, and the published Gemini Gem and Custom GPT were republished by hand with
+`gemini-gem-published` / `custom-gpt-published` — values that exist only in those two hosted
+configurations, and the only way a hosted assistant can be told from a self-built one.
+
+Expect `null` to dominate for weeks: it means the bundle said nothing, which covers an import from
+before this shipped, an installed plugin on old instructions, or an assistant not yet republished.
+It is not a category.
 
 ## [2.7.0] - 2026-09-09
 

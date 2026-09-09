@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2, Plus } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2, Plus, FileText } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import { Steps } from '@/components/ui/steps'
@@ -147,16 +147,59 @@ export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
   )
 }
 
+/**
+ * ⚠ RESTORED 2026-09-09 AFTER SIX MONTHS OFF THE LAUNCHPAD.
+ *
+ * Upload was quietly dropped from this empty state while narrowing it to two doors, and no
+ * document has been uploaded on production since March 2026 as a result. The backend never went
+ * anywhere — the route, the extraction path, the context box and the char limit all stayed live —
+ * so the whole outage was a missing card.
+ *
+ * Nothing surfaced it, because a removal-by-defocus leaves no marker: `cta_upload_doc` kept firing
+ * from `overflow-menu` and `first-time` and simply flatlined, and nobody looks at a feature no one
+ * decided to remove. That is why this card logs its own surface — `kb-empty-state` — so the
+ * question "is anyone starting from a document?" has an answer next time without reading the code.
+ */
+export function UploadDocumentCard({ onUploadDocument }: { onUploadDocument: () => void }) {
+  return (
+    <div className="cursor-pointer rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all" onClick={onUploadDocument}>
+      <h3 className="text-sm font-bold uppercase tracking-wide">
+        <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Upload</span>{' '}
+        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a document</span>
+      </h3>
+      {/* The job, not the mechanism — same rule as the two cards either side. */}
+      <p className="text-[14px] text-foreground/70 leading-relaxed">
+        Already written it down? A strategy deck, board paper or research notes is a head start.
+      </p>
+      <Button size="sm" variant="outline" className="gap-1.5" onClick={onUploadDocument}>
+        <FileText className="h-3.5 w-3.5" />
+        Upload
+      </Button>
+    </div>
+  )
+}
+
 export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => void }) {
   return (
     <div className="rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all">
+      {/*
+        ⚠ "A CONTEXT BUNDLE" WAS THE HEADING UNTIL 2026-09-09.
+        It is a real concept with its own docs page — and unrecognisable at first contact, which is
+        the only place this card appears. A first-run user cannot know the term yet, so the heading
+        named the artefact they would have if they had already done the thing.
+
+        The heading now names the source. The body keeps the honesty the heading drops: this is not
+        "paste any chat", it needs the skill, GPT or Gem to produce the bundle first — which is why
+        the install route sits in the dropdown rather than being something to discover after
+        clicking. The precise term still lives in the import dialog, where it is finally useful.
+      */}
       <h3 className="text-sm font-bold uppercase tracking-wide">
         <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Import</span>{' '}
-        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a context bundle</span>
+        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">from AI</span>
       </h3>
       <p className="text-[14px] text-foreground/70 leading-relaxed">
-        Already thinking in Claude, ChatGPT or Gemini? Plug in and start from depth instead of a
-        blank page.
+        Already thinking in Claude, ChatGPT or Gemini? Bring that work across with the Lunastak
+        skill instead of starting from a blank page.
       </p>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -195,6 +238,7 @@ interface LaunchpadProps {
   /** Switches to the knowledgebase, where chat, upload and import all live. */
   onAddContext?: () => void
   onStartChat: () => void
+  onUploadDocument: () => void
   onImportBundle: () => void
   onGenerateNow?: () => void
 }
@@ -204,6 +248,7 @@ export function Launchpad({
   fragmentCount,
   onAddContext,
   onStartChat,
+  onUploadDocument,
   onImportBundle,
   onGenerateNow,
 }: LaunchpadProps) {
@@ -216,9 +261,15 @@ export function Launchpad({
           needs no new route and no new state column. */}
       {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} onAddContext={onAddContext} projectId={projectId} />}
 
-      {/* Two onboarding paths */}
-      <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+      {/*
+        Three onboarding paths. Upload was dropped from here while narrowing the choice to two,
+        and no document was uploaded on production between March and September 2026 as a result —
+        the route, the extraction path and the context box were live the whole time. Restored in
+        the middle, 2026-09-09.
+      */}
+      <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto">
         <TalkToLunaCard onStartChat={onStartChat} />
+        <UploadDocumentCard onUploadDocument={onUploadDocument} />
         <ImportBundleCard onImportBundle={onImportBundle} />
       </div>
 

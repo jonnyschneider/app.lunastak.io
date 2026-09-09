@@ -73,9 +73,9 @@ reports through `paywall_*` above.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_upload_doc` | client | `first-time` \| `overflow-menu` | `projectId`, userType | User uploaded a document. |
+| `cta_upload_doc` | client | `launchpad` \| `first-time` \| `overflow-menu` \| `kb-empty-state` | `projectId`, userType | User opened the document upload dialog. **Watch `launchpad`.** Upload was dropped from the empty state while narrowing it to two cards, and no document was uploaded on production between March and September 2026 as a result — the backend was live the whole time. Restored to the **launchpad** 2026-09-09 with its own surface value so the question "is anyone starting from a document?" is answerable without reading the code. A flatline here means the door has gone again. |
 | `cta_import_bundle` | client | `overflow-menu` \| `launchpad` \| `kb-empty-state` | `projectId`, userType | User imported a project bundle. |
-| `cta_new_chat` | client | `overflow-menu` | `projectId`, userType | User started a subsequent (non-initial) chat. |
+| `cta_new_chat` | client | `overflow-menu` \| `kb-empty-state` | `projectId`, userType | User started a subsequent (non-initial) chat. `kb-empty-state` added 2026-09-09 so all three empty-state doors — chat, upload, import — are comparable; chat was the only one not emitting. |
 | `kb_summary_viewed` | client | `knowledge-panel` | `strategyIsStale`, `fragmentCount`, userType | Knowledge Summary panel expanded. |
 | `cta_open_evidence` | client | `evidence-panel` \| `dimension-chip` \| `overflow-menu` | varies, userType | Canonical event for "user reached the Evidence sheet". Group by `value` to see which surface drives it. |
 | `cta_open_deep_dive` | client | `explore-next` | `projectId`, userType | User started a deep-dive thread. |
