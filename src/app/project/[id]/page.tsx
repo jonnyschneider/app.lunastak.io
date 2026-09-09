@@ -64,7 +64,7 @@ import { useGenerationStatusContext } from '@/components/providers/BackgroundTas
 import { ExploreNextSection, ExploreItem } from '@/components/ExploreNextSection'
 import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
-import { Launchpad, TalkToLunaCard, ImportBundleCard } from '@/components/Launchpad'
+import { Launchpad, TalkToLunaCard, UploadDocumentCard, ImportBundleCard } from '@/components/Launchpad'
 import { StatusBanner } from '@/components/StatusBanner'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
@@ -1034,15 +1034,24 @@ export default function ProjectPage() {
             {(stats.fragmentCount ?? 0) === 0 && (stats.conversationCount ?? 0) === 0 && (projectData?.documents?.length ?? 0) === 0 ? (
               <div className="mx-auto max-w-7xl px-4 md:px-6 py-8">
                 <p className="text-muted-foreground text-center mb-1">Your knowledgebase is empty.</p>
-                <p className="text-sm text-muted-foreground text-center mb-6">Start a conversation with Luna, or import a context bundle to get started.</p>
-                <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
+                <p className="text-sm text-muted-foreground text-center mb-6">Talk it through with Luna, upload something you have already written, or import a context bundle.</p>
+                <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto">
                   <TalkToLunaCard onStartChat={() => {
+                    // Emitted so all THREE empty-state doors are comparable. Upload and import
+                    // logged their surface here and chat did not, so "which door do people take?"
+                    // was unanswerable — the same blind spot that hid upload's disappearance.
+                    logAndFlush('cta_new_chat', 'kb-empty-state', { projectId })
                     setChatInitialQuestion(undefined)
                     setChatDeepDiveId(undefined)
                     setChatGapExploration(undefined)
                     setChatResumeConversationId(undefined)
                     setChatViewOnly(false)
                     setChatSheetOpen(true)
+                  }} />
+                  <UploadDocumentCard onUploadDocument={() => {
+                    logAndFlush('cta_upload_doc', 'kb-empty-state', { projectId })
+                    setUploadDeepDiveId(undefined)
+                    setUploadDialogOpen(true)
                   }} />
                   <ImportBundleCard onImportBundle={() => { logAndFlush('cta_import_bundle', 'kb-empty-state', { projectId }); setImportDialogOpen(true) }} />
                 </div>

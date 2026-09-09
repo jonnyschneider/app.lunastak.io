@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2, Plus } from 'lucide-react'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2, Plus, FileText } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
 import { Steps } from '@/components/ui/steps'
@@ -142,6 +142,38 @@ export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
       <Button size="sm" variant="outline" className="gap-1.5" onClick={onStartChat}>
         <MessageSquare className="h-3.5 w-3.5" />
         Start
+      </Button>
+    </div>
+  )
+}
+
+/**
+ * ⚠ RESTORED 2026-09-09 AFTER SIX MONTHS OFF THE LAUNCHPAD.
+ *
+ * Upload was quietly dropped from this empty state while narrowing it to two doors, and no
+ * document has been uploaded on production since March 2026 as a result. The backend never went
+ * anywhere — the route, the extraction path, the context box and the char limit all stayed live —
+ * so the whole outage was a missing card.
+ *
+ * Nothing surfaced it, because a removal-by-defocus leaves no marker: `cta_upload_doc` kept firing
+ * from `overflow-menu` and `first-time` and simply flatlined, and nobody looks at a feature no one
+ * decided to remove. That is why this card logs its own surface — `kb-empty-state` — so the
+ * question "is anyone starting from a document?" has an answer next time without reading the code.
+ */
+export function UploadDocumentCard({ onUploadDocument }: { onUploadDocument: () => void }) {
+  return (
+    <div className="cursor-pointer rounded-lg p-6 space-y-3 bg-white shadow-sm hover:shadow-md transition-all" onClick={onUploadDocument}>
+      <h3 className="text-sm font-bold uppercase tracking-wide">
+        <span className="bg-[hsl(var(--luna))] text-white px-2 py-0.5">Upload</span>{' '}
+        <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] normal-case">a document</span>
+      </h3>
+      {/* The job, not the mechanism — same rule as the two cards either side. */}
+      <p className="text-[14px] text-foreground/70 leading-relaxed">
+        Already written it down? A strategy deck, board paper or research notes is a head start.
+      </p>
+      <Button size="sm" variant="outline" className="gap-1.5" onClick={onUploadDocument}>
+        <FileText className="h-3.5 w-3.5" />
+        Upload
       </Button>
     </div>
   )

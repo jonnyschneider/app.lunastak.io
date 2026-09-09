@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — document upload is back on the empty state (2026-09-09)
+
+The empty project offered two doors, chat and import. Upload was dropped from it while narrowing
+the choice, and **no document was uploaded on production between March and September 2026** as a
+result. Nothing was broken: the route, the extraction path, the context box and the character
+limit were all live the entire time. It was a missing card.
+
+Restored as the middle of three. It logs `cta_upload_doc` with a new `kb-empty-state` surface —
+and the chat card, which emitted nothing at all, now logs `cta_new_chat` on the same surface, so
+all three doors are finally comparable.
+
+That silence is the actual defect. A removal-by-defocus leaves no marker: the event kept firing
+from other surfaces and simply flatlined, and nobody audits a feature no one decided to remove.
+
 ### Added — bundle provenance (app half; 2026-09-09)
 
 Context bundles can now say which tool produced them, and the app records both the claim and a
