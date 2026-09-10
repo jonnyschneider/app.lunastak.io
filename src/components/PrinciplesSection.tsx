@@ -425,6 +425,7 @@ export function PrinciplesSection({
                 <Input
                   value={priorityInput}
                   onChange={(e) => setPriorityInput(e.target.value)}
+                  maxLength={200} // suggest-opposite rejects longer; a priority is a few words
                   onKeyDown={(e) => e.key === 'Enter' && handlePrioritySubmit()}
                   placeholder="Type what matters most..."
                   className="bg-white"

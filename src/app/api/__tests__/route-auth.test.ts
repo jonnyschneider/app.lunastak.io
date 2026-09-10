@@ -15,6 +15,8 @@ import { execFileSync } from 'node:child_process'
 const GUARD_IMPORT = /from ['"]@\/lib\/auth\/guard['"]/
 
 const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
+  'src/app/api/admin/eval/route.ts': { reason: 'local eval viewer, dev-only', mustContain: 'VERCEL_ENV' },
+  'src/app/api/admin/eval/[evalId]/route.ts': { reason: 'local eval viewer, dev-only', mustContain: 'VERCEL_ENV' },
   'src/app/api/auth/[...nextauth]/route.ts': { reason: 'NextAuth itself' },
   'src/app/api/auth/verify-marketing/route.ts': { reason: 'dev-only', mustContain: 'NODE_ENV' },
   'src/app/api/guest/init/route.ts': { reason: 'mints the guest cookie — there is no requester yet' },
@@ -40,8 +42,6 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
  * its entries; the last one deletes this list and the test below that reads it.
  */
 const KNOWN_UNGUARDED: string[] = [
-  'src/app/api/admin/eval/[evalId]/route.ts',
-  'src/app/api/admin/eval/route.ts',
   'src/app/api/auth/prepare-transfer/route.ts',
   'src/app/api/conversation/[id]/detail/route.ts',
   'src/app/api/conversation/[id]/star/route.ts',
@@ -66,7 +66,6 @@ const KNOWN_UNGUARDED: string[] = [
   'src/app/api/projects/route.ts',
   'src/app/api/strategies/[id]/route.ts',
   'src/app/api/strategies/route.ts',
-  'src/app/api/suggest-opposite/route.ts',
   'src/app/api/transfer-session/route.ts',
   'src/app/api/user/account/route.ts',
   'src/app/api/user/upgrade/route.ts',

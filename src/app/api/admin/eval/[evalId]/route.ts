@@ -3,10 +3,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { EvalFile, ExportedTrace, TagsFile } from '@/lib/eval/types';
 
+// A local eval viewer that reads and writes files in evals/ — dev-only, same production guard as
+// the dev/* routes.
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ evalId: string }> }
 ) {
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
+  }
+
   try {
     const { evalId } = await params;
     const evalPath = path.join(process.cwd(), 'evals', `${evalId}.eval.json`);
@@ -43,6 +50,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ evalId: string }> }
 ) {
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
+  }
+
   try {
     const { evalId } = await params;
     const evalPath = path.join(process.cwd(), 'evals', `${evalId}.eval.json`);
