@@ -26,7 +26,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-const PAGE = path.join(__dirname, '../page.tsx')
+/** The client component. It moved out of `page.tsx` when the route became a server redirector. */
+const PAGE = path.join(__dirname, '../ProjectClient.tsx')
 
 describe('the empty project is given no nav', () => {
   const source = fs.readFileSync(PAGE, 'utf-8')
@@ -54,6 +55,19 @@ describe('the empty project is given no nav', () => {
     // Order-independent on purpose: the invariant is that the value is PRESENT, not where it sits.
     expect(headerEffectDeps(), 'the header effect must depend on hasContext — see the docblock above it')
       .toContain('hasContext')
+  })
+
+  it('renders the cold start for an empty project WHATEVER the URL asks for', () => {
+    /*
+     * The second half of the same invariant, and it is new with the `?mode=` work.
+     *
+     * The server only consults the landing table when `?mode` is ABSENT — deliberately, because that
+     * read would otherwise fire a database round-trip on every toggle. So `?mode=knowledge` on an
+     * empty project reaches the client unchallenged, and the client has to hold rule 1 itself or the
+     * knowledgebase renders empty: the exact state whose empty-state branch was DELETED on
+     * 2026-09-10 on the grounds that it was unreachable by construction.
+     */
+    expect(source).toMatch(/!hasContext \|\| mode === 'stack' \? 'decision-stack' : 'knowledgebase'/)
   })
 
   it('keeps the raw fragmentCount in that array, with no `?? 0`', () => {
