@@ -75,6 +75,7 @@ import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
 import { ProjectTabNav } from './ProjectTabNav'
 import type { ProjectMode } from '@/lib/navigation/resolve-mode'
 import { writeModeCookie } from '@/lib/navigation/mode-cookie'
+import { writeLastProjectCookie } from '@/lib/navigation/last-project-cookie'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -421,6 +422,19 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   const isDemo = projectData?.isDemo === true
 
   const isSignedUp = !!session?.user?.id
+
+  /**
+   * Remember this project so `/` comes back here rather than to the oldest one.
+   *
+   * ⚠ NOT FOR DEMOS, and not before `projectData` has loaded — `isDemo` is false while it is
+   * undefined, so writing eagerly would record every demo for the one render before the fetch
+   * lands, and the demo banner's X pushes `/`. That would send the user straight back into the
+   * demo they just closed.
+   */
+  useEffect(() => {
+    if (!projectData || isDemo) return
+    writeLastProjectCookie(projectId)
+  }, [projectData, isDemo, projectId])
 
   useEffect(() => {
     /**
