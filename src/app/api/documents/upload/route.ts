@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
 import { waitUntil } from '@vercel/functions'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireProjectAccess, deepDiveInProject, isDenied } from '@/lib/auth/guard'
 import { processDocument } from '@/lib/document-processing'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -16,15 +15,9 @@ const ALLOWED_TYPES = [
 
 /**
  * POST /api/documents/upload
- * Upload a document for processing
+ * Upload a document for processing. Signed-up users only — a guest cookie is a 401, as it always was.
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -54,17 +47,18 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify project belongs to user
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        userId: session.user.id,
-        status: 'active',
-      },
-    })
-
-    if (!project) {
+    // The guard runs after the form parse because projectId arrives in the form. "No session" is
+    // still a 401 before any DB access: requireUser runs first inside the guard.
+    const auth = await requireProjectAccess(projectId, { guests: false })
+    if (isDenied(auth)) return auth
+    if (auth.project.status !== 'active') {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // deepDiveId is form input. Owning the project doesn't make any deep-dive id yours: without this
+    // a known id from another project planted this document in someone else's deep dive.
+    if (deepDiveId && !(await deepDiveInProject(deepDiveId, projectId))) {
+      return NextResponse.json({ error: 'Deep dive not found in this project' }, { status: 400 })
     }
 
     // Create document record
