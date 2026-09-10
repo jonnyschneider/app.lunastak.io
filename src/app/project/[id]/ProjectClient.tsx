@@ -321,6 +321,42 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   }, [projectId, router])
 
   /**
+   * ═══ DOES THE FIRST LOOK TAKE THE WHOLE SURFACE? ═══
+   *
+   * Two ways in, and they are deliberately NOT the same rule.
+   *
+   * `?mode=review` is an ADDRESS. It renders the review whatever the dismissal says — otherwise the
+   * address is a lie the first time guidance links a user back to it after they deferred, and an
+   * address that silently shows something else is worse than no address at all.
+   *
+   * `?mode=knowledge` is the DASHBOARD, which yields to a first look that has not happened yet. That
+   * branch is gated on `reviewSeenLoaded` and must stay so: `reviewSeen` arrives from a client fetch,
+   * so without the gate the dashboard paints and is then yanked away a round-trip later for users who
+   * had already dismissed it.
+   *
+   * ⚠ AND THIS IS WHY THE GATE IS NOT A REDIRECT. A redirect cannot be gated on "the answer has
+   * arrived" — it either fires before the dismissals land or fires late and the user watches the
+   * jump. The entry decides; the route always renders.
+   *
+   * The demo fork keeps its exclusion: a demo's ground truths are not the user's to review.
+   */
+  /**
+   * `?filter=changed` — the address for guidance register row 4, "my stack is behind my knowledge".
+   *
+   * ⚠ A FILTER, NOT A SCREEN. Row 4 fires on projects that already HAVE a strategy, and
+   * `GroundTruthReviewScreen` is first-contact framed — "here are the N ground truths we found",
+   * steps ending "Ready for strategy", Build as the primary exit. Sending a v3 user there would be
+   * wrong in every one of those particulars. Only row 2, which carries `!hasStrategy` in its trigger,
+   * gets the screen. This was already the shipped judgement for the diff itself: "the diff is a
+   * filter you can see, not a place you land in" (2026-09-08).
+   */
+  const initialFilter = searchParams.get('filter') === 'changed' ? 'changed' : null
+
+  const canReview =
+    projectData?.isDemo !== true && !hasStrategy && (projectData?.stats?.fragmentCount ?? 0) > 0
+  const showReview = canReview && (mode === 'review' || (reviewSeenLoaded && !reviewSeen))
+
+  /**
    * `tab_switch` / `first-context-landed` — the one measure of whether the first-context landing
    * works. It used to fire from the client effect that did the landing; the landing is a server
    * redirect now, and that redirect must NOT log it.
@@ -1062,7 +1098,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               `reviewSeenLoaded` gates the whole branch so the dashboard never flashes up and get
               replaced a beat later by a screen the user had already dismissed.
             */}
-            {!isDemo && reviewSeenLoaded && !reviewSeen && !hasStrategy && (stats.fragmentCount ?? 0) > 0 ? (
+            {showReview ? (
               <GroundTruthReviewScreen
                 projectId={projectId}
                 fragmentCount={stats.fragmentCount ?? 0}
@@ -1094,6 +1130,14 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                     fragmentCount: String(stats.fragmentCount ?? 0),
                   })
                   markReviewSeen()
+                  /*
+                   * ⚠ AND LEAVE THE ADDRESS. `?mode=review` renders the review regardless of the
+                   * dismissal — that is what makes it a real address rather than a redirect that
+                   * sometimes works. Which means dismissing while standing ON it changes nothing
+                   * the user can see: the screen would sit there having just been told to go away.
+                   * The mode has to move too.
+                   */
+                  if (mode === 'review') setMode('knowledge')
                 }}
               />
             ) : isDemo ? (
@@ -1188,6 +1232,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               // With these set the panel shows the ground truths in place, and `onDimensionClick`
               // above becomes the fallback it now only takes in demo mode.
               projectId={projectId}
+              initialFilter={initialFilter}
               onResumeConversation={(convId: string) => {
                 setChatResumeConversationId(convId)
                 setChatViewOnly(false)

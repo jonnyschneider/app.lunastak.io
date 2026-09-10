@@ -29,6 +29,45 @@ import * as path from 'path'
 /** The client component. It moved out of `page.tsx` when the route became a server redirector. */
 const PAGE = path.join(__dirname, '../ProjectClient.tsx')
 
+describe('the ground-truth review has two entries, with different rules', () => {
+  const source = fs.readFileSync(PAGE, 'utf-8')
+
+  /*
+   * ⚠ THE ENTRY DECIDES; THE ROUTE ALWAYS RENDERS. These two rules look like one rule with an extra
+   * clause, which is exactly how a later refactor collapses them — so they are pinned separately.
+   *
+   *   `?mode=review` is an ADDRESS. It must render the review whatever the dismissal says, or the
+   *   address is a lie the first time guidance links a user back after they deferred.
+   *
+   *   `?mode=knowledge` is the DASHBOARD, which yields to a first look that has not happened. That
+   *   half MUST stay gated on `reviewSeenLoaded`: `reviewSeen` comes from a client fetch, so without
+   *   it the dashboard paints and is yanked away a round-trip later for users who already dismissed.
+   *
+   * And it is why the gate is a render branch and never a redirect — a redirect cannot be gated on
+   * "the answer has arrived". It fires early or it fires visibly.
+   */
+  it('renders the review on ?mode=review regardless of dismissal', () => {
+    expect(source).toMatch(/mode === 'review' \|\| \(reviewSeenLoaded && !reviewSeen\)/)
+  })
+
+  it('still gates the dashboard half on reviewSeenLoaded — the anti-flash guard', () => {
+    expect(source).toContain('reviewSeenLoaded && !reviewSeen')
+  })
+
+  it('never turns that gate into a redirect', () => {
+    // If this ever fails, read the design doc §8 before "fixing" it. It is the rejected design.
+    expect(source).not.toMatch(/if \(!reviewSeen\)[^\n]*router\.(replace|push)/)
+  })
+
+  it('leaves the review address when the user defers, or the screen cannot dismiss itself', () => {
+    expect(source).toMatch(/markReviewSeen\(\)[\s\S]{0,600}?if \(mode === 'review'\) setMode\('knowledge'\)/)
+  })
+
+  it('keeps the demo exclusion — a demo\'s ground truths are not the user\'s to review', () => {
+    expect(source).toMatch(/const canReview =\s*\n?\s*projectData\?\.isDemo !== true/)
+  })
+})
+
 describe('the empty project is given no nav', () => {
   const source = fs.readFileSync(PAGE, 'utf-8')
 
