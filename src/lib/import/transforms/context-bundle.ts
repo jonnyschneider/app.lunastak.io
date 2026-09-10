@@ -1,7 +1,6 @@
 import type { EmergentThemeContract } from '@/lib/contracts/extraction'
 import type { ContextBundle } from '../types'
 import { createMessage } from '@/lib/claude'
-import { extractXML } from '@/lib/utils'
 import { extractText } from '@/lib/extract-text';
 
 // Map bundle area keys (UPPER_CASE) to extraction dimension keys (lower_case)
@@ -138,14 +137,33 @@ export async function transformContextBundle(bundle: ContextBundle): Promise<Eme
     }, 'import_dimension_tagging')
 
     const responseText = extractText(response)
-    const taggingXML = extractXML(responseText, 'tagging')
 
-    // Parse tags per chunk
+    /**
+     * ⚠ PARSE THE CHUNKS OFF THE RAW RESPONSE — do not extract the <tagging> wrapper first.
+     *
+     * Real failure, 2026-09-10 (Costco demo-fixture rerun): all 67/67 chunks fell through to
+     * fallback tagging (strategic_intent/LOW) and the only signal was a console.warn. Cause:
+     * `extractXML` runs `dropStrayClosingTags`, whose tag regex `<(\/?)([a-zA-Z_][\w-]*)>` cannot
+     * match a tag carrying ATTRIBUTES. So `<chunk index="0">` is never seen as an opener while
+     * `</chunk>` is seen as a closer with no opener — "model noise" — and every closing tag is
+     * deleted from the region. `chunkTagRegex` then matches nothing.
+     *
+     * The wrapper extraction bought nothing: `chunkTagRegex` is specific enough to run on the raw
+     * response. This is what `knowledge-summary.ts` already does with its own attributed tag
+     * (`<gap dimension="...">`), which is exactly why that call site was never affected.
+     *
+     * Live since a7865ad (2026-08-27), so every chunk-format bundle import in between — the
+     * default path for the plugin and all three hosted assistants — landed untagged.
+     *
+     * The underlying attribute-blindness in `dropStrayClosingTags` is NOT fixed here; it stays
+     * armed for the next attributed tag anyone writes. See docs/_plans/2026-09-10-extractxml-
+     * attribute-blindness-followup.md.
+     */
     const chunkTagRegex = /<chunk index="(\d+)">([\s\S]*?)<\/chunk>/g
     const dimensionRegex = /<dimension\s+name="([^"]+)"\s+confidence="([^"]+)"\s*\/>/g
 
     let chunkMatch
-    while ((chunkMatch = chunkTagRegex.exec(taggingXML)) !== null) {
+    while ((chunkMatch = chunkTagRegex.exec(responseText)) !== null) {
       const index = parseInt(chunkMatch[1])
       const chunkContent = chunkMatch[2]
       const dims: { name: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = []

@@ -64,6 +64,21 @@ async function main() {
       }
     }
 
+    /*
+     * ⚠ EXPLICIT TIMEOUT. Prisma's interactive-transaction default is 5 SECONDS, and this
+     * transaction does ~10 round trips including a bulk delete and three bulk creates over
+     * 57-73 fragments with their evidence and dimension tags.
+     *
+     * That fits inside 5s against dev and preview, and it does NOT against prod — every one of
+     * the four restores failed there with P2028 ("transaction already closed... 5240 ms passed"),
+     * on 2026-09-10. The work is identical; the round-trip latency is not. So the tool looked
+     * correct for as long as it was only ever pointed at the two nearer databases, and broke on
+     * the one restore that mattered.
+     *
+     * Raised well past what the work needs rather than tuned close to it: the cost of a generous
+     * ceiling is a slow failure on a genuinely stuck transaction, and the cost of a tight one is
+     * this — a rollback on the environment you least want to be iterating against.
+     */
     await prisma.$transaction(async (tx) => {
       await tx.project.upsert({
         where: { id: bundle.projectId },
@@ -143,7 +158,7 @@ async function main() {
           })),
         })
       }
-    })
+    }, { timeout: 120_000, maxWait: 30_000 })
 
     console.log(`Done — ${bundle.projectName} restored into ${envName}.`)
   } finally {

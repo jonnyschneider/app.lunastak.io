@@ -80,8 +80,9 @@ interface PollConfig {
   /** Documents can legitimately take far longer than a generation. */
   maxDuration: number
   classify: (data: Record<string, unknown>) => PollVerdict
-  /** Dispatched on completion so the project page refetches. */
-  completionEvent?: (task: { id: string; projectId: string }) => CustomEvent
+  /** Dispatched on completion so the project page refetches. Receives whatever `extract` pulled
+   *  out of the final poll, so an event can carry payload the page would otherwise refetch for. */
+  completionEvent?: (task: { id: string; projectId: string }, data?: PollResponseData) => CustomEvent
   /** Pulled out of the response and handed to the caller's `onComplete`. */
   extract?: (data: Record<string, unknown>) => PollResponseData
   /** Overrides `messaging.running` in the StatusBanner while polling. */
@@ -125,8 +126,16 @@ const POLL_CONFIG: Record<BackgroundTaskType, PollConfig> = {
         : d.status === 'failed'
           ? 'failed'
           : 'running',
-    completionEvent: (t) =>
-      new CustomEvent('generationComplete', { detail: { projectId: t.projectId } }),
+    /**
+     * ⚠ `traceId` RIDES ALONG, 2026-09-10.
+     * The strategy-ready chip is keyed on the trace it announces (see `useStrategyReady`), so a
+     * refresh raises a fresh chip and a dismissal stays scoped to the version it dismissed.
+     * Without it the listener has to refetch the project just to learn which strategy just landed.
+     */
+    completionEvent: (t, d) =>
+      new CustomEvent('generationComplete', {
+        detail: { projectId: t.projectId, traceId: d?.traceId },
+      }),
     extract: (d) => ({ traceId: d.traceId as string | undefined, error: d.error as string | undefined }),
     progressLabel: (d) =>
       d.status === 'generating_opportunities'
@@ -236,7 +245,7 @@ export function BackgroundTaskProvider({ children }: { children: React.ReactNode
           duration: action ? 10000 : 5000,
         })
 
-        const event = config.completionEvent?.(task)
+        const event = config.completionEvent?.(task, responseData)
         if (event) window.dispatchEvent(event)
 
         task.messaging.onComplete?.(responseData)

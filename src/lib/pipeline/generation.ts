@@ -20,6 +20,29 @@ import { renderEvidence } from '@/lib/prompts/shared/evidence'
 // --- Shared helpers ---
 
 /**
+ * Extract a LEAF field — one whose value is prose and can never legitimately contain markup.
+ *
+ * ⚠ Real failure, 2026-09-10 (demo-fixture rerun, seen in 2 of 5 generations). The model
+ * mis-typed a closing tag: `<headline>Make chips for everyone…</headml>`. `dropStrayClosingTags`
+ * correctly removed the unmatched `</headml>`, which left `<headline>` open with no closer, so
+ * `extractXML`'s tolerant recovery path walked forward past the end of the headline and returned
+ * the elaboration with it — raw `<elaboration>` tags and all. That string was persisted straight
+ * into `DecisionStack.strategy` and rendered to the user.
+ *
+ * This is the exact failure class a7865ad was written to prevent ("stray closing tags leaked raw
+ * XML into generated prose"), arriving from the opposite direction: that fix handles an unmatched
+ * CLOSER, and a mis-typed closer also creates an unmatched OPENER.
+ *
+ * A leaf value ends at the first tag that follows it, so cut there. Recovery must never widen a
+ * leaf into its siblings. Well-formed input is unaffected — there is no `<` to cut at.
+ */
+function extractLeaf(region: string, tag: string): string {
+  const value = extractXML(region, tag)
+  const firstTag = value.search(/<\/?[a-zA-Z]/)
+  return (firstTag === -1 ? value : value.slice(0, firstTag)).trim()
+}
+
+/**
  * Parse vision/strategy from XML, detecting <headline>/<elaboration> format vs plain text.
  */
 function parseVisionStrategy(statementsXML: string): {
@@ -34,8 +57,8 @@ function parseVisionStrategy(statementsXML: string): {
   let vision: string
   let visionElaboration: string | undefined
   if (visionXML.includes('<headline>')) {
-    vision = extractXML(visionXML, 'headline')
-    visionElaboration = extractXML(visionXML, 'elaboration') || undefined
+    vision = extractLeaf(visionXML, 'headline')
+    visionElaboration = extractLeaf(visionXML, 'elaboration') || undefined
   } else {
     vision = visionXML
   }
@@ -43,8 +66,8 @@ function parseVisionStrategy(statementsXML: string): {
   let strategy: string
   let strategyElaboration: string | undefined
   if (strategyXML.includes('<headline>')) {
-    strategy = extractXML(strategyXML, 'headline')
-    strategyElaboration = extractXML(strategyXML, 'elaboration') || undefined
+    strategy = extractLeaf(strategyXML, 'headline')
+    strategyElaboration = extractLeaf(strategyXML, 'elaboration') || undefined
   } else {
     strategy = strategyXML
   }

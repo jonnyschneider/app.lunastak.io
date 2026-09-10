@@ -22,6 +22,20 @@ import { Button } from '@/components/ui/button'
 import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from '@/lib/ground-truth/derive'
 import { EvidenceQuote } from './EvidenceQuote'
 
+/**
+ * The dimension group heading.
+ *
+ * ⚠ COLOUR WAS NOT ENOUGH, and could not have been. At `text-xs` these headings are SMALLER than
+ * the `text-sm` claims they introduce, so once both sat at full `text-foreground` the heading was
+ * the least prominent thing in its own group — darkening it just moved the problem.
+ *
+ * A fill fixes what type size cannot: the panel already says "this is structure" with a filled bar
+ * (`SECTION_HEADING` in `KnowledgeSummaryPanel`), and this is the quiet member of that family —
+ * same shape, muted ground, so it reads as a subheading of that bar rather than a rival to it.
+ */
+const GROUP_HEADING =
+  'rounded-md bg-primary/10 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-primary'
+
 const SOURCE_ICON = {
   document: FileText,
   conversation: MessageSquare,
@@ -37,9 +51,15 @@ export function GroundTruthReview({
   archivedOpen: archivedOpenProp,
   onArchivedOpenChange,
   idFilter,
+  readOnly = false,
 }: {
   projectId: string
-  /** Remaining (not discarded), total, and how many sit archived — so a host can show volume. */
+  /**
+   * Remaining (not discarded), total, and how many sit archived — so a host can show volume.
+   *
+   * The first two are scoped to `dimension` when one is set, because that is what the list shows;
+   * `archived` is always the project-wide figure.
+   */
   onCountChange?: (remaining: number, total: number, archived: number) => void
   /**
    * Show only this dimension. Set when the user arrived by clicking one in the coverage grid —
@@ -67,6 +87,16 @@ export function GroundTruthReview({
    * knew about live rows could answer half the question.
    */
   idFilter?: string[] | null
+  /**
+   * Show the ground truths without offering to change them.
+   *
+   * For the demo projects: the list is the point — it is what "built from your own words" looks
+   * like — but the rows are not the visitor's to discard. The server already refuses
+   * (`PATCH /fragments` scopes to `userId` with no `isDemo` clause, so a discard on a demo 404s),
+   * which means without this the control was not merely inert, it was BROKEN: a button that
+   * optimistically removes the row, fails the write, and puts it back.
+   */
+  readOnly?: boolean
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -136,8 +166,21 @@ export function GroundTruthReview({
   }, [projectId, reloadKey])
 
   useEffect(() => {
-    if (items) onCountChange?.(items.length, items.length, archivedCount)
-  }, [items, archivedCount, onCountChange])
+    if (!items) return
+    /**
+     * REPORTED FROM THE FILTERED SET, not the whole list.
+     *
+     * The host prints this number beside a heading that names the selected dimension, so it has to
+     * answer the same question the heading asks. Reporting the project total there made the filter
+     * look broken — Jonny, 2026-09-10: *"the count never changes"*. Clearing the filter restores
+     * the full number for free, because `dimension` goes undefined.
+     *
+     * `archivedCount` stays whole: it comes from the server as a project-wide figure, and the
+     * discards are not dimension-grouped in the recovery list either.
+     */
+    const inScope = dimension ? items.filter(i => i.dimension === dimension) : items
+    onCountChange?.(inScope.length, inScope.length, archivedCount)
+  }, [items, dimension, archivedCount, onCountChange])
 
   /**
    * Persisted IMMEDIATELY, one fragment at a time — never staged awaiting a submit.
@@ -281,6 +324,7 @@ export function GroundTruthReview({
               onToggleDiscard={() => discard(item)}
               onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
               onResumeConversation={onResumeConversation}
+              readOnly={readOnly}
             />
           )}
         />
@@ -298,6 +342,7 @@ export function GroundTruthReview({
               onToggleDiscard={() => restore(item)}
               onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
               onResumeConversation={onResumeConversation}
+              readOnly={readOnly}
             />
           )}
         />
@@ -363,6 +408,7 @@ export function GroundTruthReview({
                     onToggleDiscard={() => restore(item)}
                     onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
                     onResumeConversation={onResumeConversation}
+                    readOnly={readOnly}
                   />
                 ))}
               </div>
@@ -379,10 +425,12 @@ export function GroundTruthReview({
       {groupByDimension(shown)
         .filter(g => !dimension || g.dimension === dimension)
         .map(g => (
-        <div key={g.dimension ?? 'none'}>
+        // Space ABOVE, not below: a heading that floats equidistant between two groups reads as
+        // belonging to the one it just ended. `first:mt-0` keeps it snug under the panel's intro.
+        <div key={g.dimension ?? 'none'} className="mt-5 first:mt-0">
           {/* Filtered to one dimension, the host has already named it — saying it twice is noise. */}
           {!dimension && (
-            <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+            <h3 className={GROUP_HEADING}>
               {g.label}
             </h3>
           )}
@@ -397,6 +445,7 @@ export function GroundTruthReview({
                 onToggleDiscard={() => discard(item)}
                 onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
                 onResumeConversation={onResumeConversation}
+                readOnly={readOnly}
               />
             ))}
           </div>
@@ -416,7 +465,7 @@ function DiffSection({ label, items, empty, renderRow }: {
 }) {
   return (
     <div>
-      <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+      <h3 className={GROUP_HEADING}>
         {label}{items && ` (${items.length})`}
       </h3>
       {items === null ? (
@@ -434,6 +483,7 @@ function DiffSection({ label, items, empty, renderRow }: {
 
 function Row({
   item, discarded, pending, open, onToggleDiscard, onToggleOpen, onResumeConversation,
+  readOnly = false,
 }: {
   item: GateItem
   discarded: boolean
@@ -442,6 +492,8 @@ function Row({
   onToggleDiscard: () => void
   onToggleOpen: () => void
   onResumeConversation?: (conversationId: string) => void
+  /** No discard, no restore — the row is here to be read. See the prop on GroundTruthReview. */
+  readOnly?: boolean
 }) {
   const SourceIcon = SOURCE_ICON[item.sourceKind]
   return (
@@ -464,7 +516,7 @@ function Row({
           removed. Disabling is what stops two in-flight writes for one row racing to a wrong final
           state; at a few hundred milliseconds it is not perceptible, which is the point.
         */}
-        {discarded ? (
+        {readOnly ? null : discarded ? (
           <Button
             variant="outline"
             size="sm"

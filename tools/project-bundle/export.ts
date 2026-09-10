@@ -42,7 +42,10 @@ async function main() {
         fragments: {
           where: { status: 'active' },
           orderBy: { capturedAt: 'asc' },
-          include: { evidence: { orderBy: { ordinal: 'asc' } } },
+          include: {
+            evidence: { orderBy: { ordinal: 'asc' } },
+            dimensionTags: { orderBy: { dimension: 'asc' } },
+          },
         },
         dimensionalSyntheses: { orderBy: { dimension: 'asc' } },
       },

@@ -297,7 +297,7 @@ export function InlineChat({ projectId, resumeConversationId, initialMessage, au
 
         // Notify listeners that strategy generation started
         // The project page's event listener will refetch data and re-render,
-        // replacing FirstTimeEmptyState with the dashboard
+        // replacing the cold-start launchpad with the dashboard
         window.dispatchEvent(new Event('strategySaved'))
       } else {
         throw new Error('Invalid response from extraction API')

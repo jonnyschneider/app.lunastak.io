@@ -43,6 +43,26 @@
  * state to find the closing brace — also escapes any control character it sees
  * inside a string. Newlines BETWEEN tokens are untouched; only those inside string
  * literals are illegal JSON.
+ *
+ * ## Stray structural closers
+ *
+ * A third class, observed 2026-09-10 during the Costco demo-fixture rerun: the model
+ * closed the `summary` string and appended a `]` that closes nothing —
+ * `"...the culture running it."], "gaps": [` — where `summary` is a plain string and
+ * no array is open. `JSON.parse` reports `Expected ',' or '}' after property value`,
+ * pointing at the bracket.
+ *
+ * 2 of 11 `full_synthesis` calls in one generation, and it hit the LONGEST, most
+ * multi-paragraph summaries — the good ones. Both affected dimensions
+ * (CAPABILITIES_ASSETS, VALUE_PROPOSITION) landed as empty syntheses carrying the
+ * "Synthesis failed" gap, which is the one synthesis field rendered to the user.
+ *
+ * The walk below previously counted `{`/`}` only and never tracked `[`/`]` at all, so
+ * a stray `]` sailed through untouched. It now keeps a container stack and DROPS any
+ * closer that does not match what is actually open — the same rule
+ * `dropStrayClosingTags` applies to XML, and the same underlying model behaviour:
+ * emitting a closing delimiter for a container it never opened. Never invent
+ * structure, never close on the model's behalf; only discard what cannot be valid.
  */
 export function extractJsonFromResponse(content: string): string {
   // Step 1: Remove markdown code blocks
@@ -78,7 +98,10 @@ export function extractJsonFromResponse(content: string): string {
   }
 
   const out: string[] = []
-  let depth = 0
+  // What is actually open, innermost last — '{' or '['. Counting braces alone cannot
+  // tell a legitimate closer from one the model invented; the stack can.
+  const open: string[] = []
+  const strays: string[] = []
   let inString = false
   let escaped = false
   let endIndex = -1
@@ -118,15 +141,63 @@ export function extractJsonFromResponse(content: string): string {
     const norm = STRUCTURAL_ASCII[char] ?? char
     if (norm !== char) out[out.length - 1] = norm
 
-    if (norm === '{') depth++
-    if (norm === '}') {
-      depth--
-      if (depth === 0) {
+    if (norm === '{' || norm === '[') {
+      open.push(norm)
+      continue
+    }
+
+    if (norm === '}' || norm === ']') {
+      const expected = norm === '}' ? '{' : '['
+      if (open[open.length - 1] !== expected) {
+        // Closes nothing that is open — model noise, not structure. Drop it, and do
+        // NOT touch the stack: the container it pretended to close is still open.
+        out.pop()
+        strays.push(norm)
+        continue
+      }
+      open.pop()
+      if (open.length === 0) {
         endIndex = i
         break
       }
     }
   }
 
-  return endIndex !== -1 ? out.join('') : cleaned
+  if (strays.length > 0) {
+    console.warn(
+      `[extractJson] dropped stray structural closer(s): ${strays.join(' ')} — model closed a container it never opened`
+    )
+  }
+
+  if (endIndex !== -1) return out.join('')
+
+  /**
+   * The walk never closed the root object.
+   *
+   * ⚠ RETURN THE REPAIRED TEXT REGARDLESS. This previously returned `cleaned` — the
+   * UNREPAIRED original — so every control character escaped along the way was thrown
+   * away the moment the closing brace was missing. Observed 2026-09-10 (Nike rerun):
+   * a complete, well-formed synthesis was reported as `Bad control character in string
+   * literal`, naming a newline the repair had already fixed, because the repair was
+   * discarded. The reported error pointed at the wrong defect entirely.
+   *
+   * When the ONLY thing outstanding is the root object's closer — nothing nested is
+   * open and we did not end mid-string — the completion is unambiguous, so close it.
+   * The Nike response ended `...told about the past?"}]`: the gaps array closed, every
+   * value was complete, and the model simply dropped one final `}`. Discarding a whole
+   * dimension of synthesis over one character is the worse failure.
+   *
+   * The guard is deliberately narrow. Ending INSIDE a string, or with nested containers
+   * still open, is the signature of a genuinely cut-off response — there we let the
+   * caller's catch fire rather than persist a plausible-looking fragment as if it were
+   * whole. That distinction is the whole point: complete the punctuation, never the
+   * content. (Real truncation has its own canary — `createMessage` warns on a
+   * `max_tokens` stop reason. None fired here.)
+   */
+  if (!inString && open.length === 1 && open[0] === '{') {
+    console.warn('[extractJson] closed an unterminated root object — model omitted the final "}"')
+    return out.join('') + '}'
+  }
+
+  return out.join('')
 }

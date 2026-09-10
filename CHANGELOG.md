@@ -5,7 +5,161 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.8.0] - 2026-09-10
+
+### Added — the project's mode is a URL, and the landing is decided on the server (2026-09-10)
+
+`/project/[id]` used to pick what to show from four `useEffect`s racing over `activeTab`, with their
+correct order written down in a comment because getting it wrong had already shipped a bug to
+preview. The precedence is now one total function — `resolveProjectMode` — running on the server
+before anything renders, and every input it reads is server-readable by construction. That last
+part is the constraint the whole table is built to satisfy: the redirect has to happen before
+render, or the back button traps the user on a redirector that keeps sending them forward.
+
+The chosen mode goes in the URL, so a mode is now a place you can link to, bookmark and go back
+from. The per-device mode preference moved from `localStorage` to a cookie the server can read —
+one cookie holding a bounded map, not one cookie per project, which would have grown the request
+header by ~48 bytes for every project a user ever opened and eventually returned 431 for
+everything.
+
+### Added — the examples live in the project switcher, and always open on the stack (2026-09-10)
+
+The four demos are ordinary projects and are now reachable from the project switcher, where
+projects live. A demo always lands on the Decision Stack: it is a shop window rather than a
+workspace, so it should look the same to the tenth visitor as to the first, instead of re-opening
+whichever mode that visitor last happened to leave it in.
+
+Their ids stopped being hardcoded in four places at once, which is how the switcher was about to
+become a fifth.
+
+### Added — `/` comes back to the project you were last in (2026-09-10)
+
+`/` is a redirector, and it always picked the *oldest* project. With one project that is invisible;
+with several it is a reset, and the place it bit was closing a demo — the demo banner's X pushes
+`/`, so leaving an example dropped you into a project you may not have opened in weeks.
+
+One cookie, written when a project you own is opened. Demos never write it, or the X would send you
+straight back into the demo you just closed. The stored id is a hint and never an authorisation:
+it is looked up scoped to the current user, so a stale, foreign or junk value degrades to exactly
+the oldest-project behaviour that was there before.
+
+### Fixed — every demo was rebuilt, and the bundle format stopped erasing what it carried (2026-09-10)
+
+All four demos were regenerated through the current pipeline from their source transcripts: 270
+fragments, 474 verbatim evidence spans, 554 dimension tags, full provenance. Ferrari was run
+straight through as a control and reproduced two hand-tuned objective titles word for word, which
+retires the manual normalisation pass that used to sit between generation and shipping.
+
+Three defects were found on the way, each of which had been quietly costing every project:
+
+- **Imported bundles were landing with no dimensional tagging at all.** The tagging response was
+  being read from the wrong variable, so the regex matched nothing and every chunk arrived unfiled.
+- **The bundle format never carried dimension tags**, so the tags survived generation and then died
+  at the first environment hop. `bundleVersion` is now 5; 4 added `generatedBy` and `importMode`,
+  which were being erased the same way.
+- **The demos were showing a different, older interface than everyone else** — a legacy evidence
+  viewer with its own search and filters, where every other project shows the ground truths.
+
+### Fixed — three parser defects that were silently emptying dimensions and leaking markup (2026-09-10)
+
+None of these failed loudly. Each produced a plausible-looking result with something missing from
+it, which is the expensive kind:
+
+- A mis-typed closing tag (`</headml>`) let a leaf value widen into its sibling, so a strategy
+  statement rendered to the user with raw `<elaboration>` markup inside it. Seen in 2 of 5
+  generation runs — recurring, not a one-off. A leaf is prose and now ends at the first tag after
+  it.
+- A stray bracket and an unterminated root object were each throwing away whole dimensions of
+  synthesis during JSON repair.
+
+### Fixed — the restore tool worked on every database except the one that mattered (2026-09-10)
+
+`bundle:restore` wrapped its ~10 round trips in an interactive transaction and never set a timeout,
+so it inherited Prisma's 5-second default. That fits against dev and preview; it does not against
+prod, where all four demo restores rolled back with `P2028` at 5,240 ms. The work is identical —
+the round-trip latency is not, so the tool looked correct for exactly as long as it was only ever
+pointed at the two nearer databases.
+
+### Changed — the stack's actions sit with the stack (2026-09-10)
+
+Share, Export and Past versions were in the global header, where they cluttered every screen on
+mobile while applying to exactly one. They now sit on the stack itself: the version stamp became a
+single `Version N | ⋯` object carrying Export and Past versions, with Share beside it. The masthead
+reads framework left, subject centre, version right — so a demo shows whose strategy it is without
+a sentence saying so.
+
+### Changed — the knowledgebase says what its parts are (2026-09-10)
+
+Clicking a coverage ball filtered the ground truths but left the count at the project total, so
+"Customer & Market (67)" sat above five rows and read as a broken filter. The count now answers the
+same question as the heading above it.
+
+The dimension group headings were lighter than the claims they introduced, and at `text-xs` they
+are also smaller — so no amount of darkening could make them read as structure. They take a fill
+instead, the quiet member of the family the section bars already established.
+
+The four cards below the ground truths had no heading at all, leaving the reader to infer that this
+is where the raw material lives. They are now named, and "Ground Truth" became "Ground Truths",
+which is what it is a list of.
+
+### Changed — the premise opens the cold start, instead of justifying the demos (2026-09-10)
+
+"Every company has a story. And every strategy is a Decision Stack." was a subheading over the demo
+cards, where it read as a rationale for the examples — the weakest thing on the screen to spend it
+on. It is the claim the product rests on, and it is true of the strategy the user is one click away
+from starting, so it opens the page.
+
+### Changed — the empty project stops offering a choice between one screen and itself (2026-09-10)
+
+A guest arrived, or a project was created, and the header offered `Decision Stack | Knowledgebase`.
+Both halves showed the same three onboarding cards under different framing copy. The toggle was a
+control for choosing between one screen and a subset of it.
+
+The cold start is hoisted out of the tab system. Before context exists there is no view to choose
+between, so the launchpad belongs to the project rather than to either tab — no toggle, and no
+overflow "Add Context" menu, because the three cards on screen already are that menu spelled out.
+
+The knowledgebase's own empty state is deleted. It was redundant twice over: the sections beneath
+it already handle zero of everything, each with its own empty state and its own add button. It is
+also now unreachable — with no context the tab is forced, and "has context" cannot flip back, since
+no route deletes conversations or documents and fragment discard is soft. The invariant "the
+knowledgebase is never rendered empty" holds by construction rather than by argument.
+
+The ground-truth review moves to the knowledgebase as a **mode**, not a second panel — the summary
+panel already rendered the ground truths inline, so moving the launchpad's card would have put the
+same list on screen twice. Upload a document and you now land where the ground truths are, beside
+the summary they feed and the document they came from.
+
+Pre-strategy, the Decision Stack tab is a signpost rather than the launchpad: it names the absent
+thing so it reads as empty rather than broken, and offers the two exits. No phase chrome — an
+indicator that advances when you switch tabs, without you doing any work, is lying.
+
+Two empty-state components went with it, `FirstTimeEmptyState` and `EmptyProjectState`, neither of
+which had had an importer for months.
+
+### Added — a chip for "your strategy is ready", and it survives a reload (2026-09-10)
+
+Build is pressed from the knowledgebase and the user stays there with their ground truths, so the
+finished strategy lands on the tab they are not looking at. A toast is the wrong instrument: it
+announces something *happening*, and this is something *ready for review*, which should outlive
+both the five-second timer and the session. A dot on the Decision Stack button, no counter,
+dismissed on first view.
+
+Readiness is derived rather than stored — a chip is due when a strategy exists and its trace has
+not been dismissed — so there is no new schema and no second source of truth to get stuck on.
+Keyed on `traceId`, so a refresh raises a fresh chip while a dismissal stays scoped to the version
+it dismissed.
+
+### ⚠ Instrumentation — two surfaces go to zero on purpose
+
+`cta_new_chat`, `cta_upload_doc` and `cta_import_bundle` stop emitting `surface: 'kb-empty-state'`
+and `'first-time'` from 2026-09-10. `kb-empty-state` was added on 2026-09-09 — one day earlier —
+and the screen it measured is gone; the doors consolidate onto the single `launchpad` surface.
+
+Written down loudly, in `docs/architecture/analytics-events.md`, because 2.7.1 exists on account of
+exactly this shape: a door dropped by defocus, its event flatlining from a surface nobody removed,
+and six months before anyone noticed. A flatline with no note is indistinguishable from a feature
+quietly dying.
 
 ## [2.7.1] - 2026-09-09
 

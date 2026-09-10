@@ -34,9 +34,9 @@ Reference list of every custom Statsig event emitted by the app. Dashboards buil
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
 | `cta_create_project` | client | `header` \| `empty-state` | userType | User clicked "New Project". For guests, this triggers the signup gate; for signed-up free users at the limit, it triggers the paywall. |
-| `cta_view_demo` | client | `<companyname>` (marketing) \| `launchpad` \| `overflow-menu` (app) | `source: marketing` \| `source: app`, `projectId`, `demo` | User viewed a demo project. Always segment by `source` — marketing intent ≠ in-app exploration. |
-| `cta_demo_peek` | client | `first-time` | userType | User chose "see a demo" path from first-time empty state. |
-| `cta_demo_confirm` | client | `first-time` | userType | User confirmed demo selection. |
+| `cta_view_demo` | client | `<companyname>` (marketing) \| `launchpad` \| `project-switcher` (app) | `source: marketing` \| `source: app`, `projectId`, `demo` | User viewed a demo project. Always segment by `source` — marketing intent ≠ in-app exploration. |
+| ~~`cta_demo_peek`~~ | — | — | — | **Dead 2026-09-10.** Only emitter was `FirstTimeEmptyState`, which had been orphaned for months and is now deleted. The live demo path is `cta_view_demo` (surface `launchpad`). |
+| ~~`cta_demo_confirm`~~ | — | — | — | **Dead 2026-09-10.** Same emitter, same deletion. |
 | `demo_exit` | client | `banner` | `projectId`, userType | User exited a demo project via the banner. |
 
 ## Paywall (real Pro feature)
@@ -63,9 +63,9 @@ reports through `paywall_*` above.
 |---|---|---|---|---|
 | `cta_start_initial_conversation` | client | `inline-chat` | `projectId`, userType | First message sent in a fresh project. |
 | `cta_generate_strategy` | client | `inline-chat` \| `early-exit` | `projectId`, userType | User triggered strategy generation. Surface in `value`. (`extraction-confirm` retired 2026-09-08 with `ExtractionConfirm` — see `retired-extraction-run.md`.) |
-| `cta_update_direction` | client | `overflow-menu` | `projectId`, userType | User opened the strategy refresh flow. |
+| `cta_update_direction` | client | **retired 2026-09-10** | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
-| `cta_draft_opportunities` | client | `overflow-menu` \| `opportunity-section` | `projectId`, userType | User triggered opportunity drafting. |
+| `cta_draft_opportunities` | client | `opportunity-section` | `projectId`, userType | User triggered opportunity drafting. |
 | `confirm_refresh` | client | `generation-dialog` | `projectId`, `fragmentsSinceStrategy`, userType | User confirmed strategy refresh in the generation dialog. `fragmentsSinceStrategy` reveals whether they refreshed with new context (good) or re-rolled without changes. |
 | `confirm_opportunities` | client | `generation-dialog` | `projectId`, userType | User confirmed opportunity generation. |
 
@@ -73,33 +73,154 @@ reports through `paywall_*` above.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_upload_doc` | client | `launchpad` \| `first-time` \| `overflow-menu` \| `kb-empty-state` | `projectId`, userType | User opened the document upload dialog. **Watch `launchpad`.** Upload was dropped from the empty state while narrowing it to two cards, and no document was uploaded on production between March and September 2026 as a result — the backend was live the whole time. Restored to the **launchpad** 2026-09-09 with its own surface value so the question "is anyone starting from a document?" is answerable without reading the code. A flatline here means the door has gone again. |
-| `cta_import_bundle` | client | `overflow-menu` \| `launchpad` \| `kb-empty-state` | `projectId`, userType | User imported a project bundle. |
-| `cta_new_chat` | client | `overflow-menu` \| `kb-empty-state` | `projectId`, userType | User started a subsequent (non-initial) chat. `kb-empty-state` added 2026-09-09 so all three empty-state doors — chat, upload, import — are comparable; chat was the only one not emitting. |
+| `cta_upload_doc` | client | `launchpad` \| `documents-card` \| `ground-truth-review` | `projectId`, userType | User opened the document upload dialog. **Watch `launchpad`.** Upload was dropped from the empty state while narrowing it to two cards, and no document was uploaded on production between March and September 2026 as a result — the backend was live the whole time. Restored to the **launchpad** 2026-09-09. A flatline here means the door has gone again. `first-time` and `kb-empty-state` retired 2026-09-10 — see the note below this table. |
+| `cta_import_bundle` | client | `launchpad` \| `integrations-card` \| `ground-truth-review` | `projectId`, userType | User imported a project bundle. `kb-empty-state` retired 2026-09-10. |
+| `cta_new_chat` | client | `launchpad` \| `chats-card` \| `ground-truth-review` | `projectId`, userType | User started a chat. `launchpad` replaces the one-day-old `kb-empty-state` surface (2026-09-10); the cold-start doors now have exactly one home each. |
 | `kb_summary_viewed` | client | `knowledge-panel` | `strategyIsStale`, `fragmentCount`, userType | Knowledge Summary panel expanded. |
-| `cta_open_evidence` | client | `evidence-panel` \| `dimension-chip` \| `overflow-menu` | varies, userType | Canonical event for "user reached the Evidence sheet". Group by `value` to see which surface drives it. |
+| `cta_open_evidence` | client | `evidence-panel` \| `dimension-chip` | varies, userType | Canonical event for "user reached the Evidence sheet". Group by `value` to see which surface drives it. |
 | `cta_open_deep_dive` | client | `explore-next` | `projectId`, userType | User started a deep-dive thread. |
 | `cta_add_deep_dive` | client | `explore-next` | userType | User added a new deep-dive topic. |
 | `bundle_imported` | server | — | `fragmentsCreated`, etc. | Server-side confirmation that a project bundle import succeeded. Pairs with client `cta_import_bundle`. |
 | `bundle_import_failed` | server | — | error context | Bundle import failed server-side. |
 
+### ⚠ `tab_switch` after mode became a URL, 2026-09-10
+
+The project's mode moved from component state to a `?mode=` search param, so a mode change is now a
+navigation rather than a click on a toggle backed by `useState`.
+
+**`tab_switch` is deliberately KEPT and re-emitted from the toggle**, with its `decision-stack` /
+`knowledgebase` values unchanged. The event has always meant *the user chose a mode*, and that is
+exactly as true of a navigation as it was of a state flip. Replacing it with a page-view would
+silently redefine it and break continuity with a year of data — a page view also counts arrivals the
+user did not choose, which is the one thing this event exists to exclude.
+
+The two app-initiated values still need segmenting out before reading this as user behaviour:
+
+| value | after the change |
+|---|---|
+| `decision-stack` / `knowledgebase` | unchanged — emitted by the toggle, which now navigates |
+| `pre-strategy-add-context` | unchanged |
+| `first-context-landed` | **re-implemented.** The one-shot landing is a server redirect now, and the redirect must not log it: `<Link>` prefetches RSC payloads, which executes the server component, so a server-side event would count users who merely hovered and the number would look excellent. Instead the redirect appends `?landed=1`, and the client logs it once and strips the param — the same mechanism `evidence=1` used, inherited rather than outlived |
+
+`cta_view_demo` / `project-switcher` and `launchpad` both now link to `?mode=stack` directly rather
+than through the redirect. Real projects in the switcher deliberately keep the bare URL, because the
+redirect is what consults the landing table — hardcoding a mode there would skip a user's pending
+ground-truth review.
+
+### ⚠ Every `overflow-menu` surface goes to zero on purpose, from 2026-09-10
+
+The `⋯` menu in the project header is **deleted**. Ten items in four groups (Add Context, Update
+Strategy, Export, Examples), and nine of them were already reachable from a control sitting on the
+object they act on. It was doing navigation's job, and it was welded into the same `<div>` as the
+`Decision Stack | Knowledgebase` toggle — so a set of global actions inherited a page-state control's
+lifecycle and vanished with it on a project with no context.
+
+**Where each surface's traffic went:**
+
+| event | `overflow-menu` → | note |
+|---|---|---|
+| `cta_new_chat` | `chats-card` | the Chats card header's **New**, unconditional on the knowledgebase — **surface added 2026-09-10, see below** |
+| `cta_upload_doc` | `documents-card` | the Documents card header's **Upload** |
+| `cta_import_bundle` | `integrations-card` | the Integrations card header's **Import context** |
+| `cta_update_direction` | **nothing — retired** | `overflow-menu` was its ONLY surface. The panel's own action emits `cta_refresh_strategy` / `knowledge-panel`, a different event. Use that; `cta_update_direction` goes to zero and stays there |
+| `cta_draft_opportunities` | `opportunity-section` | already the primary door; the menu copy was second |
+| `cta_export_brief` | `stack-header` → `version-menu` | **moved three times on the same day** — overflow menu → header → stack masthead → the version control's own menu. See below |
+| `cta_version_history` | `stack-header` → `version-menu` | same journey; "view past revisions →" was removed rather than kept as a second door |
+| `cta_open_evidence` | — | the menu's *View all N fragments* item went with the Evidence sheet on 2026-09-08 |
+| `cta_view_demo` | `project-switcher` | **a genuinely new surface** — see below |
+
+### ⚠ `stack-header` goes to zero on 2026-09-10, the same day it appeared
+
+`cta_export_brief` and `cta_version_history` moved three times on 2026-09-10: out of the overflow
+menu into the project header, out of the header onto the Decision Stack masthead, and finally into
+the ⋯ menu of the version control itself. They now emit `version-menu`.
+
+`cta_share` made the second hop with them and stopped there — Share is a sibling button on the
+masthead, not a menu item, because it acts on the stack rather than on one version of it. It has no
+`surface` param; `value` carries `signed_up` / `guest`.
+
+**`stack-masthead` never shipped.** It existed only between two commits on the same afternoon, so
+no production event ever carried it. Named here so a reader finding it in a diff knows it was never
+a real surface rather than one that went quiet.
+
+**`stack-header` will flatline from today and that is expected.** Recorded loudly because 2.7.1
+exists on account of precisely this shape: a control was dropped from the launchpad by defocus,
+its event kept firing from other surfaces, nothing said "removed", and nobody noticed for six
+months. A surface that appears and disappears inside one day is exactly the kind nobody thinks
+to write down.
+
+Why the second move: the header persists across both modes and every project, while the trio acts
+on one built stack — it was already gating itself on `!isDemo && hasStrategy && activeTab ===
+'decision-stack'`, three conditions undoing the fact that it was in the wrong place. On a phone the
+three buttons crowded the surface with the least room.
+
+The version stamp's "view past revisions →" link is **gone**, not kept. It was defensible as a
+second door while History sat far away in the header; beside each other they were the same door
+drawn twice. `cta_version_history` therefore now counts every route to that sheet, where before it
+counted one of two — a step UP in coverage, not a like-for-like move.
+
+**⚠ Three of those replacement surfaces did not exist until this commit.** The Chats, Documents and
+Integrations card headers — the *permanent* doors — emitted **nothing**. Every event for those three
+actions came from `launchpad`, `ground-truth-review` or `overflow-menu`, and the first two are
+first-run only. So deleting the menu would have taken post-cold-start measurement of chat, upload and
+import to zero, and the graph would have read as *users stopped adding context* rather than *we
+stopped counting*. `chats-card`, `documents-card` and `integrations-card` were added in the same
+commit as the deletion, for exactly that reason. This is the 2.7.1 failure mode caught before the
+fact rather than six months after it.
+
+**`cta_view_demo` is the one that needed somewhere new.** The demos were the only items in the menu
+with no permanent home: `launchpad` is cold-start-only, so once a project had context there was no
+way back to a worked example. They are ordinary `/project/<id>` routes, so they now sit as an
+`Examples` group in the project switcher — the control that already answers "which project am I
+looking at". `launchpad` continues unchanged as the cold-start door; `project-switcher` is the
+permanent one. **A flatline on `launchpad` here would mean the cold-start cards have gone again.**
+
+The three cold-start doors keep their `launchpad` surface, so the question *which door does a new
+user take, and does a strategy get built after they take it?* is unaffected by any of this.
+
+This is written down loudly for the third time in a week because release 2.7.1 exists on account of
+exactly this shape: a door was removed, its event kept firing from other surfaces, the number
+flatlined rather than dropping to zero, no commit said "removed", and nobody noticed for six months.
+
+### ⚠ `kb-empty-state` and `first-time` go to zero on purpose, from 2026-09-10
+
+The `kb-empty-state` surface was added on **2026-09-09** — one day before it was removed — so that
+all three cold-start doors (chat, upload, import) were comparable. The screen it measured is gone:
+the knowledgebase's empty state showed the same three cards as the launchpad, which meant the
+`Decision Stack | Knowledgebase` toggle above them offered a choice between one screen and a subset
+of itself. It is now unreachable by construction (with no context the toggle does not render, and
+"has context" cannot flip back). `first-time` went the same day with `FirstTimeEmptyState`, which
+had been orphaned for months.
+
+**The doors are not gone — they consolidated onto `launchpad`, which is now the only cold-start
+surface.** The question stays answerable with fewer moving parts: *which door does a new user take,
+and does a strategy get built after they take it?*
+
+This is written down loudly because release 2.7.1 exists on account of exactly this shape. Upload
+was dropped from the launchpad by defocus in March 2026; `cta_upload_doc` kept firing from other
+surfaces and simply flatlined; no commit said "removed"; nobody noticed for six months. A flatline
+with no note is indistinguishable from a feature quietly dying. This is the note.
+
+Design: `docs/_plans/2026-09-10-empty-state-consolidation-design.md`.
+
 ## Output & navigation
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_export_brief` | client | `overflow-menu` | `projectId`, userType | User exported a strategic brief. |
-| `cta_version_history` | client | `overflow-menu` | `projectId`, userType | User opened version history. |
+| `cta_export_brief` | client | `version-menu` | `projectId`, userType | User exported a strategic brief, from the version control's ⋯ menu. |
+| `cta_version_history` | client | `version-menu` | `projectId`, userType | User opened past versions, from the version control's ⋯ menu. |
 | `version_history_downloaded` | client | `version-history` | `projectId`, `version`, userType | User downloaded a specific version snapshot. |
-| `tab_switch` | client | `decision-stack` \| `knowledgebase` | `projectId`, userType | User switched tabs in the project view. |
+| `tab_switch` | client | `decision-stack` \| `knowledgebase` \| `first-context-landed` \| `pre-strategy-add-context` | `projectId`, `chip` (on `decision-stack`), userType | User switched tabs in the project view. `chip: 'true'` means the strategy-ready dot was on the Decision Stack button when it was pressed — that is how a chip-driven visit is told from an ordinary one, without a second event. The two non-tab values are app-initiated moves, not clicks: `first-context-landed` is the one-shot move to the knowledgebase when a project's first context arrives, and `pre-strategy-add-context` is the "Add more context" exit from the empty Decision Stack tab. Segment them out before reading this as user behaviour. |
 | `card_thinking_viewed` | client | `vision` \| `strategy` \| `objective` \| `opportunity` \| `principle` | `projectId`, userType | User revealed the back of a Decision Stack card via the "The thinking" strip. Fires on the **reveal only** — flipping back is not a second read. Segment by `value` to see which layers people actually read. **No pre-2026-08-27 baseline exists** — the flip was completely uninstrumented before the disclosure strip shipped, so this measures the new affordance, not the improvement over the old one. |
-| `cta_build_strategy` | client | `first-time` | `projectId`, userType | User started the build-strategy path from first-time empty state. (Note: `FirstTimeEmptyState` is currently orphaned; this event may not fire in production.) |
+| `review_deferred` | client | `ground-truth-review` | `projectId`, `fragmentCount`, userType | User chose "Review these later" on the first-look ground-truth screen — moving on without building and without adding. **Deferring is data, not an absence of it**: paired with `cta_build_strategy` on the same surface it answers "does anyone read the extraction at the moment of highest context, or do they all move past it?" The predecessor of this button (deleted 2026-09-09) logged nothing at all, which is why that question had no answer. |
+| `cta_build_strategy` | client | `ground-truth-review` | `projectId`, userType | User pressed Build on the ground-truth review, in the knowledgebase. Re-homed 2026-09-10: the old `first-time` surface came from `FirstTimeEmptyState`, which was orphaned and is now deleted, so this event never fired in production. This is its first live emitter. |
 | `cta_complete_template` | client | `review` \| `early-exit` | `projectId`, userType | User completed (or early-exited) the template flow. (Template page is orphaned.) |
 
 ## Sharing
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_share` | client | `signed_up` \| `guest` | `projectId`, userType | User clicked the Share button in the project header. Guests get the sign-in gate instead of the dialog — `value` splits the two. |
+| `cta_share` | client | `signed_up` \| `guest` | `projectId`, userType | User clicked the Share button on the Decision Stack masthead (in the project header until 2026-09-10). Guests get the sign-in gate instead of the dialog — `value` splits the two. |
 | `share_link_enabled` | client | `<projectId>` | `projectId`, userType | Owner turned sharing on ("anyone with the link can view"). |
 | `share_link_disabled` | client | `<projectId>` | `projectId`, userType | Owner turned sharing off — link goes dead immediately. |
 | `share_link_copied` | client | `<projectId>` | `projectId`, userType | Owner copied the share URL. Best proxy for "actually sent to someone". |

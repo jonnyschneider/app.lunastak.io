@@ -191,3 +191,100 @@ describe('unicode punctuation in structural positions', () => {
     expect(parsed.gaps[0].title).not.toBe('Synthesis failed')
   })
 })
+
+/**
+ * Third class, observed 2026-09-10 (Costco demo-fixture rerun).
+ *
+ * The model closed the `summary` string and appended a `]` that closes nothing:
+ * `"...the culture running it."], "gaps": [`. `summary` is a plain string and no
+ * array is open, so `JSON.parse` reports `Expected ',' or '}' after property value`.
+ *
+ * 2 of 11 `full_synthesis` calls in a single generation, and it struck the LONGEST,
+ * most multi-paragraph summaries — the good ones. Both dimensions
+ * (CAPABILITIES_ASSETS, VALUE_PROPOSITION) landed empty with the "Synthesis failed"
+ * gap shown to the user.
+ *
+ * Cause: the walk counted `{`/`}` and never tracked `[`/`]`, so a stray `]` passed
+ * through untouched. It now keeps a container stack and drops closers that match
+ * nothing open — the same rule `dropStrayClosingTags` applies to XML.
+ */
+describe('stray structural closers', () => {
+  it('drops a stray ] after a string value', () => {
+    const input = '{"summary": "text."], "confidence": "HIGH"}'
+    expect(JSON.parse(extractJsonFromResponse(input))).toEqual({
+      summary: 'text.', confidence: 'HIGH',
+    })
+  })
+
+  it('drops a stray } that closes nothing', () => {
+    const input = '{"a": "x"}}, "b": 1}'
+    expect(JSON.parse(extractJsonFromResponse(input))).toEqual({ a: 'x' })
+  })
+
+  it('leaves legitimately nested arrays and objects intact', () => {
+    const input = '{"gaps": [{"title": "T", "tags": ["a", "b"]}], "confidence": "LOW"}'
+    expect(JSON.parse(extractJsonFromResponse(input))).toEqual({
+      gaps: [{ title: 'T', tags: ['a', 'b'] }], confidence: 'LOW',
+    })
+  })
+
+  it('leaves brackets alone INSIDE a string', () => {
+    const input = '{"summary": "an array looks like ] or } to a reader"}'
+    expect(JSON.parse(extractJsonFromResponse(input)).summary)
+      .toBe('an array looks like ] or } to a reader')
+  })
+
+  /**
+   * REFINED 2026-09-10 (Nike rerun), from "never close anything" to "close only the
+   * root's final brace, and only when nothing else is outstanding".
+   *
+   * The absolute rule cost a complete synthesis. A Nike response ended
+   * `...told about the past?"}]` — the gaps array closed, every value complete, the
+   * model having dropped exactly one `}`. Refusing to complete punctuation discarded
+   * the entire dimension, and because the unrepaired text was returned, the reported
+   * error was `Bad control character` pointing at a newline the repair had already
+   * fixed. Two failures compounding.
+   *
+   * Complete the punctuation, never the content. The guard below is what enforces it.
+   */
+  it('closes an unterminated root object when nothing else is outstanding', () => {
+    expect(JSON.parse(extractJsonFromResponse('{"summary": "text"'))).toEqual({ summary: 'text' })
+  })
+
+  it('does NOT complete a response that was cut off mid-string', () => {
+    expect(() => JSON.parse(extractJsonFromResponse('{"summary": "text that stops'))).toThrow()
+  })
+
+  it('does NOT complete a response with nested containers still open', () => {
+    // Genuine truncation mid-structure. Persisting a plausible-looking fragment as
+    // though it were whole is worse than failing loudly.
+    expect(() => JSON.parse(extractJsonFromResponse('{"gaps": [{"title": "T"'))).toThrow()
+  })
+
+  it('keeps control-character repairs even when the object never closes', () => {
+    // The repair used to be discarded wholesale on an unterminated object, which is
+    // what made the Nike failure report the wrong cause.
+    const out = extractJsonFromResponse('{"gaps": [{"title": "a\nb"')
+    expect(out).toContain('a\\nb')
+    expect(out).not.toContain('a\nb')
+  })
+
+  it('parses the real captured response that failed on the Nike rerun', () => {
+    const raw = readFileSync(
+      join(__dirname, '../synthesis/__fixtures__/unterminated-root-object.json.txt'), 'utf8')
+    const parsed = JSON.parse(extractJsonFromResponse(raw))
+    expect(parsed.summary.length).toBeGreaterThan(1500)
+    expect(parsed.gaps).toHaveLength(5)
+    expect(parsed.gaps[0].title).not.toBe('Synthesis failed')
+  })
+
+  it('parses the real captured response that failed on the Costco rerun', () => {
+    const raw = readFileSync(
+      join(__dirname, '../synthesis/__fixtures__/stray-structural-closer.json.txt'), 'utf8')
+    const parsed = JSON.parse(extractJsonFromResponse(raw))
+    expect(parsed.summary.length).toBeGreaterThan(2000)
+    expect(parsed.confidence).toBe('HIGH')
+    expect(parsed.gaps).toHaveLength(5)
+    expect(parsed.gaps[0].title).not.toBe('Synthesis failed')
+  })
+})

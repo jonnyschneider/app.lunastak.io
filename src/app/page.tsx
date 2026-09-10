@@ -4,12 +4,19 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { isGuestUser } from '@/lib/projects';
+import { LAST_PROJECT_COOKIE_NAME, readLastProjectCookie } from '@/lib/navigation/last-project-cookie';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
 
 /**
  * Root page - always redirects to a project page
  * Nobody sees a "homepage" - all users land on their project
+ *
+ * WHICH project is the `lunastak_last_project` cookie's job. Before it, this always picked the
+ * OLDEST (`createdAt: 'asc'`), so anything that navigated here — closing a demo, most visibly —
+ * reset you to a project you may not have opened in weeks. The cookie is a hint only: it is looked
+ * up scoped to the current user, and a stale, foreign or missing value falls straight through to
+ * the oldest-project behaviour that was here before.
  */
 export default async function Page({
   searchParams,
@@ -30,13 +37,27 @@ export default async function Page({
     redirect('/api/auth/signin');
   }
 
-  // Authenticated user - redirect to their first project
-  if (session?.user?.id) {
-    let project = await prisma.project.findFirst({
-      where: { userId: session.user.id, status: 'active' },
+  const lastProjectId = readLastProjectCookie(cookieStore.get(LAST_PROJECT_COOKIE_NAME)?.value);
+
+  /** The remembered project if it is still this user's and still active; otherwise their oldest. */
+  async function pickProject(userId: string) {
+    if (lastProjectId) {
+      const remembered = await prisma.project.findFirst({
+        where: { id: lastProjectId, userId, status: 'active' },
+        select: { id: true },
+      });
+      if (remembered) return remembered;
+    }
+    return prisma.project.findFirst({
+      where: { userId, status: 'active' },
       orderBy: { createdAt: 'asc' },
       select: { id: true },
     });
+  }
+
+  // Authenticated user - redirect to the project they were last in, else their first
+  if (session?.user?.id) {
+    let project = await pickProject(session.user.id);
 
     if (!project) {
       // Check if there's a guest cookie - if so, transfer will handle project creation
@@ -72,11 +93,7 @@ export default async function Page({
     });
 
     if (guestUser && isGuestUser(guestUser.email)) {
-      const project = await prisma.project.findFirst({
-        where: { userId: guestUserIdCookie.value, status: 'active' },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true },
-      });
+      const project = await pickProject(guestUserIdCookie.value);
 
       if (project) {
         redirect(`/project/${project.id}`);

@@ -3,9 +3,14 @@
  *
  * Tests for GET /api/project/[id]/fragments.
  *
- * This endpoint already serves FragmentExplorer in production, so the existing shape is
- * load-bearing: the ground-truth fields (evidence, interpretationType, reviewedAt) are
- * additive and everything else must pass through untouched.
+ * The shape here is load-bearing: the ground-truth fields (evidence, interpretationType,
+ * reviewedAt) are additive and everything else must pass through untouched.
+ *
+ * It was written when `FragmentExplorer` was the consumer. That component was deleted on
+ * 2026-09-10 — it was a second, older interface onto the same list, shown only to demo
+ * visitors — and `GroundTruthReview` is now the only client. The assertions below stay as
+ * they are: they pin the response contract, not any one component's use of it, and the
+ * fields are still the ones being returned.
  *
  * The payload is deliberately data-shaped, not screen-shaped: no tranches, bands, scores
  * or grouping, no filtering of fragments without evidence or with failed verification, and
@@ -215,7 +220,7 @@ describe('GET /api/project/[id]/fragments — evidence', () => {
 })
 
 describe('GET /api/project/[id]/fragments — existing shape is unchanged', () => {
-  it('returns the shipped FragmentExplorer fields alongside the new ones', async () => {
+  it('returns the long-shipped fields alongside the newer ground-truth ones', async () => {
     mockFragmentFindMany.mockResolvedValue([fragmentRow()])
     mockFragmentCount.mockResolvedValueOnce(7).mockResolvedValueOnce(3)
 

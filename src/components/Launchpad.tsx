@@ -1,12 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageSquare, Upload, ExternalLink, ChevronDown, ArrowRight, Loader2, Plus, FileText } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
-import { Steps } from '@/components/ui/steps'
+import { MessageSquare, Upload, ExternalLink, ChevronDown, FileText } from 'lucide-react'
 import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
@@ -14,114 +10,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-/** The user has given context; they are checking it; then it becomes a strategy. */
-const GROUND_TRUTH_PHASES = ['Your context', 'Ground truths', 'Your strategy'] as const
+import { DEMO_PROJECTS } from '@/lib/demos'
 
 /**
- * Fragments exist and no strategy does: the user sees what their strategy will be built from
- * before it is built. Skipping stays available (§4's affirmative skip) — it just is not silent.
+ * --- The three cold-start doors ---
+ *
+ * ⚠ ONE HOME, 2026-09-10. These used to render in two places: here, and again on the
+ * knowledgebase's own empty state, which showed the same three cards under different framing
+ * copy. The toggle above them therefore offered a choice between one screen and a subset of
+ * itself. The knowledgebase copy is gone and this is the only place they appear.
  */
-function GroundTruthReviewPanel({ projectId, onGenerate, onAddContext }: {
-  projectId: string
-  onGenerate: () => void
-  /** Take the user where every ingest path lives, so "not finished adding" is a real option. */
-  onAddContext?: () => void
-}) {
-  const [remaining, setRemaining] = useState<number | null>(null)
-  const [total, setTotal] = useState<number | null>(null)
-  /**
-   * Pressing Build must LOOK like it did something, immediately.
-   *
-   * `handleGenerateStrategy` only reports through the background-task toast once the POST
-   * resolves — and in the dev server that route awaits the whole run, so the screen sat unchanged
-   * for ~37s. A user reasonably concludes nothing happened and presses something else; on
-   * 2026-09-08 that produced two generations landing as consecutive versions.
-   */
-  const [building, setBuilding] = useState(false)
-  const build = useCallback(() => {
-    if (building) return
-    setBuilding(true)
-    onGenerate()
-  }, [building, onGenerate])
-  // Stable identity: the review reports counts from an effect, and an inline arrow here would
-  // change on every render and re-fire it. It settles today only because React bails on identical
-  // state — which is luck, not design.
-  const handleCount = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
-
-  // The whole panel takes the reading measure, not just its contents — a narrow column inside a
-  // full-width card read as a mistake rather than a choice.
-  return (
-    <Card className="mx-auto max-w-3xl overflow-hidden">
-      {/* Chrome, not content: the bar sits on the card's top edge and the block is ruled off, so
-          the frame says where you are and the content below is only the ground truths. */}
-      <Steps steps={GROUND_TRUTH_PHASES} current={1} flush labelsClassName="px-6 md:px-8" />
-      <CardContent className="space-y-4 p-6 md:p-8">
-        <div>
-          {/*
-            WHERE AM I, WHAT HAPPENS NEXT, AND WHY BOTHER. Without this the review is a list of
-            sentences with no frame: the user has just asked for a strategy and been handed
-            something else, with no signal that it is a step rather than the destination, or that
-            it is waiting on them.
-          */}
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">
-              {total === null ? 'Check your ground truths' : `Check your ${total} ground truths`}
-            </h2>
-            <p className="mt-1 text-sm text-foreground/60">
-              Everything your Decision Stack is built from. Discard any items that are wrong, you
-              can restore anytime.
-            </p>
-          </div>
-        </div>
-
-        <GroundTruthReview
-          projectId={projectId}
-          onCountChange={handleCount}
-        />
-
-        <div className="flex flex-wrap items-center gap-4 border-t pt-4">
-          <Button onClick={build} disabled={building}>
-            {building ? (
-              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Building your strategy…</>
-            ) : (
-              <>
-                Build my strategy{remaining !== null && total !== null && remaining < total ? ` from ${remaining}` : ''}
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </>
-            )}
-          </Button>
-          {/*
-            ⚠ "SKIP THE REVIEW" IS GONE, 2026-09-09, and it lost nothing.
-            It called `build()` — the same function as the primary button — logged no event, and
-            recorded nothing. `Fragment.reviewedAt` is stamped when rows are PRESENTED, not on the
-            choice, so skipping never changed a measurement either. What it actually was: a
-            confirm dialog nagging the user out of the thing they had just chosen, whose confirm
-            did what the button beside it did. A user engages or they don't; a second button
-            claiming to do something different when it doesn't is a lie about the interface.
-
-            Replaced by the move a user genuinely wants here — the review is a standing state, not
-            a gate, so "I'm not done adding things yet" is the real third option.
-          */}
-          {!building && onAddContext && (
-            <Button variant="outline" onClick={onAddContext} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              Add more context
-            </Button>
-          )}
-          {building && (
-            <span className="text-xs text-foreground/45">
-              This takes about half a minute. You can leave this page.
-            </span>
-          )}
-        </div>
-      </CardContent>
-
-    </Card>
-  )
-}
-
-// --- Shared onboarding cards (used in Launchpad + KB empty state) ---
 
 export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
   return (
@@ -157,8 +55,12 @@ export function TalkToLunaCard({ onStartChat }: { onStartChat: () => void }) {
  *
  * Nothing surfaced it, because a removal-by-defocus leaves no marker: `cta_upload_doc` kept firing
  * from `overflow-menu` and `first-time` and simply flatlined, and nobody looks at a feature no one
- * decided to remove. That is why this card logs its own surface — `kb-empty-state` — so the
- * question "is anyone starting from a document?" has an answer next time without reading the code.
+ * decided to remove.
+ *
+ * The card still logs its surface so "is anyone starting from a document?" has an answer without
+ * reading the code — but there is now only ONE cold-start surface to log (`launchpad`), because
+ * the duplicate knowledgebase copy of these cards is gone. See the design doc's note on
+ * `kb-empty-state` going to zero deliberately on 2026-09-10.
  */
 export function UploadDocumentCard({ onUploadDocument }: { onUploadDocument: () => void }) {
   return (
@@ -224,42 +126,59 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
   )
 }
 
-// Demo project IDs — persistent read-only instances
-const DEMO_PROJECTS = [
-  { id: 'cmnxrkvuv0094ow1betk3sjzr', name: 'Ferrari', logo: '/logo-ferrari.svg', logoHeight: 'h-14', description: 'Cornered resource and brand power', episodeUrl: 'https://www.acquired.fm/episodes/ferrari' },
-  { id: 'cmn8anetr5kwlmbmq', name: 'Nike', logo: '/logo-nike.svg', logoHeight: 'h-14', description: 'Scale economies and brand power', episodeUrl: 'https://www.acquired.fm/episodes/nike' },
-  { id: 'cmn8an6ivpa0xoehj', name: 'Costco', logo: '/logo-costco.svg', logoHeight: 'h-14', description: 'Scale economies shared', episodeUrl: 'https://www.acquired.fm/episodes/costco' },
-  { id: 'cmn8anbaapaww1709', name: 'TSMC', logo: '/logo-tsmc.svg', logoHeight: 'h-14', description: 'Process power and counter-positioning', episodeUrl: 'https://www.acquired.fm/episodes/tsmc' },
-]
 
+/**
+ * THE COLD START. The one screen a project with no context shows.
+ *
+ * ⚠ IT IS NOT A TAB, 2026-09-10. This used to render inside the Decision Stack half of the
+ * `Decision Stack | Knowledgebase` toggle, whenever no strategy existed — which meant it also
+ * carried the ground-truth review. Both of those are gone:
+ *
+ *  - The review moved to the knowledgebase, where the ground truths already live (the summary
+ *    panel renders them inline), so it now sits beside the summary they feed and the documents
+ *    they came from instead of on the other side of a toggle.
+ *  - The toggle itself does not render while a project is empty. Before context exists there is
+ *    no view to choose between, so this screen belongs to the PROJECT, not to either tab.
+ *
+ * What is left is exactly the cold start: three doors, then four worked examples.
+ */
 interface LaunchpadProps {
-  projectId: string
-  fragmentCount: number
-  /** Switches to the knowledgebase, where chat, upload and import all live. */
-  onAddContext?: () => void
   onStartChat: () => void
   onUploadDocument: () => void
   onImportBundle: () => void
-  onGenerateNow?: () => void
 }
 
 export function Launchpad({
-  projectId,
-  fragmentCount,
-  onAddContext,
   onStartChat,
   onUploadDocument,
   onImportBundle,
-  onGenerateNow,
 }: LaunchpadProps) {
   const router = useRouter()
 
   return (
     <div className="space-y-8">
-      {/* The ground truth review. This slot is the one moment it belongs in — fragments exist, no
-          strategy yet — and it is reached identically from all three ingest paths, which is why it
-          needs no new route and no new state column. */}
-      {fragmentCount > 0 && onGenerateNow && <GroundTruthReviewPanel onGenerate={onGenerateNow} onAddContext={onAddContext} projectId={projectId} />}
+      {/*
+        ⚠ THE PREMISE OPENS THE PAGE, 2026-09-10. This line used to sit under "See it on four real
+        companies" as a subheading, where it read as a justification for the DEMOS — the weakest
+        thing on the screen to spend it on. It is not about the demos: it is the claim the whole
+        product rests on, and it is true of the strategy the user is one click away from starting.
+        Above the doors it frames all four things below it; below the heading it framed four.
+
+        The copy changed with the position and had to. "Because… / And…" was grammatically
+        dependent on the heading above it, so lifted verbatim it would have opened the page
+        mid-sentence, answering a question nobody had asked yet.
+      */}
+      <p className="mx-auto max-w-3xl space-y-1 text-center text-xl font-semibold leading-snug tracking-tight sm:text-2xl">
+        {/* Two deliberate lines, not one sentence left to wrap: set as one paragraph it broke
+            wherever the viewport happened to fall and orphaned the full stop after the last chip.
+            The break is also the cadence — claim, then claim. */}
+        <span className="block">
+          Every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-2 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
+        </span>
+        <span className="block">
+          And every <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-2 py-0.5 rounded-sm inline-block rotate-1">strategy</span> is a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-2 py-0.5 rounded-sm inline-block -rotate-[0.5deg]">Decision Stack</span>.
+        </span>
+      </p>
 
       {/*
         Three onboarding paths. Upload was dropped from here while narrowing the choice to two,
@@ -283,14 +202,6 @@ export function Launchpad({
       <div className="text-center">
         <h2 className="text-xl font-semibold tracking-tight">See it on four real companies</h2>
 
-        <div className="mb-3 mt-3 space-y-1">
-          <p className="text-base text-muted-foreground">
-            Because every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
-          </p>
-          <p className="text-base text-muted-foreground">
-            And every <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block rotate-1">strategy</span> is a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-[0.5deg]">Decision Stack</span>.
-          </p>
-        </div>
 
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mt-8 mb-6">
           {DEMO_PROJECTS.map((demo) => (
@@ -299,7 +210,7 @@ export function Launchpad({
               className="group cursor-pointer rounded-lg px-5 py-4 space-y-2 bg-white shadow-sm hover:shadow-md transition-all"
               onClick={() => {
                 logAndFlush('cta_view_demo', 'launchpad', { source: 'app', projectId: demo.id, demo: demo.name })
-                router.push(`/project/${demo.id}`)
+                router.push(`/project/${demo.id}?mode=stack`)
               }}
             >
               <div className="flex justify-center py-1">
