@@ -60,7 +60,7 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
   })
 
   it('presents the review when a DOCUMENT finishes in session — the half 2.8.0 was missing', () => {
-    expect(source).toMatch(/presentIngestReview\('document', documentId\)/)
+    expect(source).toMatch(/presentIngestReview\('document', documentId/)
   })
 
   it('presents the review when a BUNDLE import closes — "Show me" used to only close the dialog', () => {
@@ -71,25 +71,30 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
     // A chat's 6 ground truths reached preview with a toast and no review. The first chat on a
     // project is a `generation` task whose completion event names no conversation, so the event
     // route cannot cover it; the sheet reports its own completion instead.
-    expect(source).toMatch(/presentIngestReview\('conversation', conversationId\)/)
+    expect(source).toMatch(/presentIngestReview\('conversation', conversationId/)
     const chat = fs.readFileSync(path.join(__dirname, '../../../../components/chat-sheet.tsx'), 'utf-8')
     expect(chat.match(/onComplete: \(\) => reportIngest\(/g)?.length, 'both branches must report').toBe(2)
     expect(chat).not.toContain("'New insights added'")
   })
 
-  it('returns a DEEP-DIVE upload to its deep dive, decided before the review is considered', () => {
+  it('reviews a DEEP-DIVE ingest first, then hands the user back to the deep dive', () => {
     /*
-     * Deep-dive uploads reopened their sheet on a `documentProcessed` event nothing had dispatched
-     * since 2026-09-09. Completion is `extractionComplete` now, and it has two possible outcomes for
-     * a document — so ORDER matters: check the deep dive first, or the review is navigated to and the
-     * sheet opens on top of it.
+     * For about an hour a deep-dive ingest skipped the review and reopened the deep dive — which hid
+     * what it produced almost completely, since the deep-dive sheet shows no ground truths. Jonny:
+     * "if they're not reviewed on upload, when would they be shown to the user?"
+     *
+     * Now: the review first, carrying the deep dive; "Review these later" hands back to it.
      */
-    const lookup = source.indexOf('deepDiveUploadsRef.current.get(documentId)')
-    const review = source.indexOf("presentIngestReview('document', documentId)")
-    expect(lookup).toBeGreaterThan(-1)
-    expect(review).toBeGreaterThan(-1)
-    expect(lookup).toBeLessThan(review)
-    expect(source).toMatch(/if \(deepDiveId\) \{[\s\S]{0,200}setDeepDiveSheetOpen\(true\)\s*\n\s*return/)
+    expect(source).toMatch(/presentIngestReview\('document', documentId, deepDiveId\)/)
+    expect(source).toMatch(/presentIngestReview\('conversation', conversationId, deepDiveId\)/)
+    expect(source).toMatch(/setMode\('review', \{ batch: reviewBatchKey\(source, id\), deepDive: deepDiveId \}\)/)
+    // …and the defer path reopens it.
+    expect(source).toMatch(/setMode\('knowledge'\)\s*\n[\s\S]{0,160}if \(reviewDeepDive\) \{\s*\n\s*setSelectedDeepDiveId\(reviewDeepDive\)/)
+  })
+
+  it('after a strategy exists, a deep-dive ingest still goes straight back to its deep dive', () => {
+    // There is no review post-strategy (it is first-contact framed) — so the deep dive is the answer.
+    expect(source).toMatch(/if \(hasStrategyRef\.current \|\| projectData\?\.isDemo === true\) \{\s*\n\s*if \(deepDiveId\) \{\s*\n\s*setSelectedDeepDiveId\(deepDiveId\)/)
   })
 
   it('records a deferral against the ingest, not the project, then leaves the review address', () => {

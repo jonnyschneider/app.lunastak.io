@@ -301,6 +301,9 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    */
   const { dismiss: deferReview } = useDismissed(projectId, GROUND_TRUTH_REVIEW_ITEM_TYPE, reviewBatch)
 
+  /** The deep dive this review hands back to when the user leaves it — only meaningful on the review. */
+  const reviewDeepDive = mode === 'review' ? searchParams.get('deepDive') : null
+
   /**
    * ═══ THE MODE COMES FROM THE URL ═══
    *
@@ -330,7 +333,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * later visit arrives with no `?mode` at all (`resolveProjectMode` row 4) — it is a hint, never
    * the authority. `review` is never written: it is a moment, not a place to return to.
    */
-  const setMode = useCallback((next: ProjectMode, opts?: { batch?: string }) => {
+  const setMode = useCallback((next: ProjectMode, opts?: { batch?: string; deepDive?: string }) => {
     if (next !== 'review') writeModeCookie(projectId, next)
     const url = new URL(window.location.href)
     url.searchParams.set('mode', next)
@@ -338,6 +341,9 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     // address carry a scope it ignores — and a later jump to review would silently inherit it.
     if (next === 'review' && opts?.batch) url.searchParams.set('batch', opts.batch)
     else url.searchParams.delete('batch')
+    // Same rule for the deep dive the review should hand back to — meaningless anywhere else.
+    if (next === 'review' && opts?.deepDive) url.searchParams.set('deepDive', opts.deepDive)
+    else url.searchParams.delete('deepDive')
     /*
      * ⚠ `push`, NOT `replace`, and that is a decision rather than a default.
      *
@@ -369,10 +375,30 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    */
   const hasStrategyRef = useRef(hasStrategy)
   hasStrategyRef.current = hasStrategy
-  const presentIngestReview = useCallback((source: ReviewBatchSource, id: string) => {
-    if (hasStrategyRef.current || projectData?.isDemo === true) return
-    logAndFlush('tab_switch', 'ingest-landed', { projectId, source })
-    setMode('review', { batch: reviewBatchKey(source, id) })
+  /*
+   * ⚠ REVIEW FIRST, EVEN INSIDE A DEEP DIVE — and the deep dive rides along (2026-09-10).
+   *
+   * For about an hour a deep-dive ingest skipped the review and reopened the deep dive instead. That
+   * hid what it produced almost completely: the deep-dive sheet lists its documents and chats but
+   * shows none of their ground truths, and a deep dive can hold several of each. Jonny: "if they're
+   * not reviewed on upload, when would they be shown to the user?" — the honest answer was "barely".
+   *
+   * So the review comes first, carrying `deepDive` in its URL, and leaving it ("Review these later")
+   * hands the user back to that deep dive — both the high-context look AND the thread they were in.
+   *
+   * After a strategy exists there is no review (it is framed for first contact), so a deep-dive
+   * ingest goes straight back to its deep dive, as it always did.
+   */
+  const presentIngestReview = useCallback((source: ReviewBatchSource, id: string, deepDiveId?: string) => {
+    if (hasStrategyRef.current || projectData?.isDemo === true) {
+      if (deepDiveId) {
+        setSelectedDeepDiveId(deepDiveId)
+        setDeepDiveSheetOpen(true)
+      }
+      return
+    }
+    logAndFlush('tab_switch', 'ingest-landed', { projectId, source, inDeepDive: String(!!deepDiveId) })
+    setMode('review', { batch: reviewBatchKey(source, id), deepDive: deepDiveId })
   }, [projectId, projectData?.isDemo, setMode])
 
   /**
@@ -696,25 +722,16 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
       if (!documentId) return
 
       /*
-       * ⚠ A DOCUMENT UPLOADED INTO A DEEP DIVE GOES BACK TO THE DEEP DIVE — not to the review.
-       * The user started inside that thread, and the sheet shows what the document added to it; the
-       * review would pull them out of the context they chose. The document's review stays pending,
-       * so the landing table offers it the next time they arrive.
+       * Every document opens its review — including one uploaded into a deep dive, which carries the
+       * deep dive along so leaving the review hands the user back to it (see `presentIngestReview`).
        *
        * Keyed by DOCUMENT, recorded when the upload started. It used to read `uploadDeepDiveId` page
        * state at completion, which any later upload overwrote — start a deep-dive upload, then an
        * ordinary one before the first finished, and the first came back to nothing.
        */
       const deepDiveId = deepDiveUploadsRef.current.get(documentId)
-      if (deepDiveId) {
-        deepDiveUploadsRef.current.delete(documentId)
-        setSelectedDeepDiveId(deepDiveId)
-        setDeepDiveSheetOpen(true)
-        return
-      }
-
-      // Otherwise it is an ingest the user handed over and is waiting on: show them what it produced.
-      presentIngestReview('document', documentId)
+      deepDiveUploadsRef.current.delete(documentId)
+      presentIngestReview('document', documentId, deepDiveId)
     }
     window.addEventListener('extractionComplete', handleExtractionComplete as EventListener)
     return () => window.removeEventListener('extractionComplete', handleExtractionComplete as EventListener)
@@ -1244,7 +1261,8 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                 onStartChat={() => {
                   logAndFlush('cta_new_chat', 'ground-truth-review', { projectId })
                   setChatInitialQuestion(undefined)
-                  setChatDeepDiveId(undefined)
+                  // Adding from a deep dive's review adds INTO that deep dive, so the thread stays whole.
+                  setChatDeepDiveId(reviewDeepDive ?? undefined)
                   setChatGapExploration(undefined)
                   setChatResumeConversationId(undefined)
                   setChatViewOnly(false)
@@ -1252,7 +1270,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                 }}
                 onUploadDocument={() => {
                   logAndFlush('cta_upload_doc', 'ground-truth-review', { projectId })
-                  setUploadDeepDiveId(undefined)
+                  setUploadDeepDiveId(reviewDeepDive ?? undefined)
                   setUploadDialogOpen(true)
                 }}
                 onImportBundle={() => {
@@ -1276,6 +1294,11 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                   // enough, and the landing table will offer whatever is still pending next time.
                   if (reviewBatch) deferReview(reviewBatch)
                   setMode('knowledge')
+                  // Reviewed something from inside a deep dive: hand them back to it.
+                  if (reviewDeepDive) {
+                    setSelectedDeepDiveId(reviewDeepDive)
+                    setDeepDiveSheetOpen(true)
+                  }
                 }}
               />
             ) : isDemo ? (
@@ -1751,18 +1774,8 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         viewOnly={chatViewOnly}
         origin={chatOrigin}
         onIngestComplete={({ conversationId, deepDiveId }) => {
-          /*
-           * The same rule as a document: an ingest started inside a deep dive returns the user to
-           * that deep dive, and its review stays pending for their next arrival. Anything else opens
-           * the review of what the chat produced — which is the case that reached preview with a
-           * toast and no review (2026-09-10).
-           */
-          if (deepDiveId) {
-            setSelectedDeepDiveId(deepDiveId)
-            setDeepDiveSheetOpen(true)
-            return
-          }
-          presentIngestReview('conversation', conversationId)
+          // The same as a document: review first, and a deep dive rides along to be handed back to.
+          presentIngestReview('conversation', conversationId, deepDiveId)
         }}
       />
 

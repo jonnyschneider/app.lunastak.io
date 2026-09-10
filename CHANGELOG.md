@@ -45,7 +45,8 @@ the other two, and now opens its own review scoped to what it produced.
 
 It needed its own completion signal: the first chat on a project is tracked as a generation task,
 whose completion event names no conversation, so the chat now reports its own completion from both
-of the ways it can end. A chat inside a deep dive returns to that deep dive, as a document does.
+of the ways it can end. A chat inside a deep dive is reviewed first and then hands back to that deep
+dive, as a document does.
 
 The toast said "New insights added" because that branch still hand-rolled its copy and was missed
 when every ingest was given one voice; it now reads "ground truths added", like the others.
@@ -58,10 +59,13 @@ design, with the same detail — but three listeners on the old name were never 
 nobody dispatches fails silently, so the deep-dive sheet simply stopped coming back after an upload
 into it, and nothing reported it.
 
-Completion now goes through `extractionComplete`, and a document uploaded into a deep dive returns
-the user to that deep dive rather than to the ground-truth review: they started inside that thread,
-and its review stays pending for their next visit. It is now tracked per document, so a second
-upload started before the first finishes no longer makes the first come back to nothing.
+Completion now goes through `extractionComplete`. A document uploaded into a deep dive opens its
+ground-truth review first, then hands the user back to the deep dive when they leave it — the
+deep-dive sheet lists its documents and chats but none of their ground truths, so skipping the
+review would have hidden what every deep-dive ingest produced. "Add more" from that review adds
+into the same deep dive. After a strategy exists there is no review, and a deep-dive upload goes
+straight back to its deep dive. Uploads are now tracked per document, so a second upload started
+before the first finishes no longer makes the first come back to nothing.
 
 The dead first-upload chat branch that hung off the same event — gated on a flag nothing ever set —
 is removed. A new test fails if any app event is listened for but dispatched nowhere, which is how
