@@ -64,6 +64,7 @@ import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { usePaywall } from '@/hooks/use-paywall'
 import { useHeaderSlot } from '@/components/HeaderContext'
 import { DEMO_PROJECTS } from '@/lib/demos'
+import { readLastProjectCookieFromDocument } from '@/lib/navigation/last-project-cookie'
 import { cn } from '@/lib/utils'
 
 interface Project {
@@ -132,15 +133,11 @@ export function AppLayout({
 
   // Derive selected project from pathname
   const pathnameProjectId = pathname?.match(/\/project\/([^\/]+)/)?.[1] || null
-  const storedProjectId = typeof window !== 'undefined' ? localStorage.getItem('lastProjectId') : null
+  // Off a project page, fall back to the project the user was last in — the same cookie `/` reads,
+  // written by the project page (never for a demo). See `last-project-cookie.ts`.
+  const storedProjectId = readLastProjectCookieFromDocument()
   const selectedProjectId = pathnameProjectId || (storedProjectId && projects.some(p => p.id === storedProjectId) ? storedProjectId : null) || projects[0]?.id || null
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0] || null
-
-  useEffect(() => {
-    if (selectedProjectId) {
-      localStorage.setItem('lastProjectId', selectedProjectId)
-    }
-  }, [selectedProjectId])
 
   useEffect(() => {
     fetchProjects()
