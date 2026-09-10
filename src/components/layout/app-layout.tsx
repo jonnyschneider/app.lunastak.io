@@ -278,6 +278,14 @@ export function AppLayout({
                           key={project.id}
                           value={project.name}
                           onSelect={() => {
+                            /*
+                             * ⚠ BARE URL ON PURPOSE — do not "optimise" this to ?mode=stack.
+                             * The redirect hop is what consults the landing table: this user's mode
+                             * preference for THIS project, and whether a first look is still
+                             * pending. Hardcoding a mode would skip a database read and, with it,
+                             * rob a user of the ground-truth review they have not seen yet.
+                             * The demos below can hardcode it because their state is known.
+                             */
                             router.push(`/project/${project.id}`)
                             setProjectSwitcherOpen(false)
                           }}
@@ -331,7 +339,9 @@ export function AppLayout({
                           value={demo.name}
                           onSelect={() => {
                             logAndFlush('cta_view_demo', 'project-switcher', { source: 'app', projectId: demo.id, demo: demo.name })
-                            router.push(`/project/${demo.id}`)
+                            // ?mode=stack skips the redirect hop: a demo always has a strategy and
+                            // never a pending first look, so the landing table has nothing to decide.
+                            router.push(`/project/${demo.id}?mode=stack`)
                             setProjectSwitcherOpen(false)
                           }}
                         >

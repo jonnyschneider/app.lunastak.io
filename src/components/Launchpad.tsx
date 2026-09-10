@@ -195,7 +195,7 @@ export function Launchpad({
               className="group cursor-pointer rounded-lg px-5 py-4 space-y-2 bg-white shadow-sm hover:shadow-md transition-all"
               onClick={() => {
                 logAndFlush('cta_view_demo', 'launchpad', { source: 'app', projectId: demo.id, demo: demo.name })
-                router.push(`/project/${demo.id}`)
+                router.push(`/project/${demo.id}?mode=stack`)
               }}
             >
               <div className="flex justify-center py-1">

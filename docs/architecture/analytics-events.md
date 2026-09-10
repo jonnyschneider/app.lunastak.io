@@ -83,6 +83,30 @@ reports through `paywall_*` above.
 | `bundle_imported` | server | — | `fragmentsCreated`, etc. | Server-side confirmation that a project bundle import succeeded. Pairs with client `cta_import_bundle`. |
 | `bundle_import_failed` | server | — | error context | Bundle import failed server-side. |
 
+### ⚠ `tab_switch` after mode became a URL, 2026-09-10
+
+The project's mode moved from component state to a `?mode=` search param, so a mode change is now a
+navigation rather than a click on a toggle backed by `useState`.
+
+**`tab_switch` is deliberately KEPT and re-emitted from the toggle**, with its `decision-stack` /
+`knowledgebase` values unchanged. The event has always meant *the user chose a mode*, and that is
+exactly as true of a navigation as it was of a state flip. Replacing it with a page-view would
+silently redefine it and break continuity with a year of data — a page view also counts arrivals the
+user did not choose, which is the one thing this event exists to exclude.
+
+The two app-initiated values still need segmenting out before reading this as user behaviour:
+
+| value | after the change |
+|---|---|
+| `decision-stack` / `knowledgebase` | unchanged — emitted by the toggle, which now navigates |
+| `pre-strategy-add-context` | unchanged |
+| `first-context-landed` | **re-implemented.** The one-shot landing is a server redirect now, and the redirect must not log it: `<Link>` prefetches RSC payloads, which executes the server component, so a server-side event would count users who merely hovered and the number would look excellent. Instead the redirect appends `?landed=1`, and the client logs it once and strips the param — the same mechanism `evidence=1` used, inherited rather than outlived |
+
+`cta_view_demo` / `project-switcher` and `launchpad` both now link to `?mode=stack` directly rather
+than through the redirect. Real projects in the switcher deliberately keep the bare URL, because the
+redirect is what consults the landing table — hardcoding a mode there would skip a user's pending
+ground-truth review.
+
 ### ⚠ Every `overflow-menu` surface goes to zero on purpose, from 2026-09-10
 
 The `⋯` menu in the project header is **deleted**. Ten items in four groups (Add Context, Update
