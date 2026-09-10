@@ -1382,6 +1382,24 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
             </div>
 
             <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
+            {/*
+              ⚠ THE FOUR CARDS HAD NO HEADING, so nothing said what they were. Above them sits the
+              Ground Truths band — the extracted claims — and then four cards arrived unannounced,
+              leaving the user to infer that this is where the raw material lives and that adding
+              to it is how the band above gets better.
+
+              The heading has to cover all four, and they are not all sources: Explore Next is what
+              to add NEXT, while Chats, Documents and Integrations are what has been added already.
+              Hence a heading naming the whole (the context) and a line naming the two halves — a
+              "Sources" heading would be wrong about the card sitting first in the grid.
+            */}
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Your context</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Everything the ground truths above are drawn from — and what to add next.
+              </p>
+            </div>
+
             {/* Explore Next + Conversations side by side */}
             <div className="grid gap-6 md:grid-cols-2">
               <ExploreNextSection

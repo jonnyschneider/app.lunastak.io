@@ -480,7 +480,7 @@ export function KnowledgeSummaryPanel({
             )}
             {/* Same weight as Explore Next / Chats — it is a card heading, not a label. */}
             <span className={cn("text-base font-semibold", knowledgeBusy && "animate-pulse text-muted-foreground")}>
-              {knowledgeBusy ? knowledgeBusyMessage : 'Ground Truth'}
+              {knowledgeBusy ? knowledgeBusyMessage : 'Ground Truths'}
             </span>
             {!knowledgeBusy && updatedLabel && (
               <span className="text-xs text-muted-foreground truncate">
