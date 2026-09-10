@@ -1,12 +1,6 @@
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { updateAllSyntheses } from '@/lib/synthesis/update-synthesis'
 import { generateKnowledgeSummary } from '@/lib/knowledge-summary'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
 
 export const maxDuration = 300 // 5 minutes for Pro plan
 
@@ -31,46 +25,13 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
   const { id: projectId } = await params
 
-  // Determine user ID from session or guest cookie
-  let userId: string | null = session?.user?.id || null
+  const auth = await requireProjectAccess(projectId)
+  if (isDenied(auth)) return auth
 
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  if (!userId) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  // Verify project exists and belongs to user
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      userId: userId,
-      status: 'active',
-    },
-    select: { id: true },
-  })
-
-  if (!project) {
+  // An archived project is as good as gone to this route.
+  if (auth.project.status !== 'active') {
     return new Response(JSON.stringify({ error: 'Project not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },

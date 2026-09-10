@@ -2,11 +2,9 @@
 // Generate strategy from existing fragments — no conversation required.
 // Thin route: auth + validation, then delegates to pipeline orchestrator.
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
+import { checkAndIncrementGuestApiCalls } from '@/lib/projects'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { waitUntil } from '@vercel/functions'
 import { setGenerationStatus } from '@/lib/decision-stack'
@@ -14,37 +12,18 @@ import type { GenerationStartedContract } from '@/lib/contracts/generation-statu
 
 export const maxDuration = 300
 
-const GUEST_COOKIE_NAME = 'guestUserId'
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: projectId } = await params
-  const session = await getServerSession(authOptions)
 
-  // Auth: session or guest cookie
-  let userId: string | null = session?.user?.id || null
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireProjectAccess(projectId)
+  if (isDenied(auth)) return auth
+  const { userId } = auth.requester
 
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId, status: 'active' },
+    where: { id: projectId, status: 'active' },
     select: { id: true, decisionStack: { select: { generationStatus: true } } },
   })
 

@@ -1,10 +1,8 @@
 // src/app/api/project/[id]/generate-opportunities/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser, checkAndIncrementGuestApiCalls } from '@/lib/projects'
+import { checkAndIncrementGuestApiCalls } from '@/lib/projects'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { planPipeline, executePipeline } from '@/lib/pipeline'
 import { waitUntil } from '@vercel/functions'
 import { setGenerationStatus, hasDecisionStack } from '@/lib/decision-stack'
@@ -12,42 +10,19 @@ import type { CoverageWarning } from '@/lib/contracts/opportunity-generation'
 
 export const maxDuration = 300
 
-const GUEST_COOKIE_NAME = 'guestUserId'
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: projectId } = await params
-  const session = await getServerSession(authOptions)
 
-  // Auth: session or guest cookie
-  let userId: string | null = session?.user?.id || null
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
+  const auth = await requireProjectAccess(projectId)
+  if (isDenied(auth)) return auth
+  const { project } = auth
+  const { userId } = auth.requester
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Verify project access
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, userId, status: 'active' },
-    select: { id: true, isDemo: true },
-  })
-
-  if (!project) {
+  // An archived project is as good as gone to this route.
+  if (project.status !== 'active') {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 

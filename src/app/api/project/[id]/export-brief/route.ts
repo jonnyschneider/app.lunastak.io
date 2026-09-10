@@ -1,48 +1,22 @@
 // src/app/api/project/[id]/export-brief/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { generateStrategicBrief } from '@/lib/strategic-brief'
 import type { StrategyStatements } from '@/lib/types'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: projectId } = await params
-  const session = await getServerSession(authOptions)
 
-  let userId: string | null = session?.user?.id || null
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
+  // A demo project's brief is exportable by anyone signed in, like the rest of the demo.
+  const auth = await requireProjectAccess(projectId, { access: 'read' })
+  if (isDenied(auth)) return auth
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Verify project access (including demo)
   const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      status: 'active',
-      OR: [{ userId }, { isDemo: true }],
-    },
+    where: { id: projectId, status: 'active' },
     select: { id: true, name: true, suggestedQuestions: true },
   })
 
