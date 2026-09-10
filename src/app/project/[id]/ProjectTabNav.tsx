@@ -28,7 +28,9 @@ interface ProjectTabNavProps {
  * ⚠ THIS COMPONENT DOES NOT DECIDE WHETHER IT APPEARS. An empty project has NO nav at all, and that
  * is enforced by the caller not injecting it (`setTabNav(null)` on `!hasContext`). Returning `null`
  * from here would not be the same thing: `setTabNav` would still hold a non-null node, and the
- * header's mobile row would keep its border and the desktop row its gap. See the test file.
+ * header's mobile row would keep its border and the desktop row its gap.
+ * Pinned by `__tests__/empty-project-has-no-nav.test.ts`, which asserts it against page.tsx's source —
+ * the invariant lives in the CALLER, so a render test of this component could never cover it.
  *
  * ⚠ EXTRACTED FROM A `useEffect`, 2026-09-10. It was ~180 lines of JSX inline in the effect that
  * pushes it through `HeaderContext`, which made it untestable and made every piece of state it reads
