@@ -70,7 +70,6 @@ const KNOWN_UNGUARDED: string[] = [
   'src/app/api/strategies/[id]/route.ts',
   'src/app/api/strategies/route.ts',
   'src/app/api/suggest-opposite/route.ts',
-  'src/app/api/trace/[traceId]/route.ts',
   'src/app/api/transfer-session/route.ts',
   'src/app/api/user/account/route.ts',
   'src/app/api/user/upgrade/route.ts',
