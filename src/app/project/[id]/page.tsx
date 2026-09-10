@@ -174,8 +174,14 @@ export default async function ProjectRoute({
   /*
    * `evidence` is CONSUMED here. It only ever meant "take me to what was extracted", and the mode it
    * was asking for is now in the URL properly — which retires the localStorage double-write it
-   * needed to survive a `router.replace` remount. `dimension` survives: the panel still filters on
-   * it, and it is a different question.
+   * needed to survive a `router.replace` remount.
+   *
+   * ⚠ `dimension` IS CARRIED THROUGH, BUT NOTHING READS IT. The legacy `/fragments` route and old links
+   * still send it, and it is preserved so they do not lose it — but since `FragmentExplorer` was
+   * deleted, `KnowledgeSummaryPanel`'s `selectedDimension` starts at `null` and has no URL input.
+   * Guidance register row 5 ("some of this is thin" → `?mode=knowledge&dimension=<d>`) needs it
+   * wired: an `initialDimension` prop beside `initialFilter`. (This comment claimed the panel still
+   * filtered on it until 2026-09-11.)
    */
   const query = new URLSearchParams({ mode: resolved })
   if (typeof sp.dimension === 'string') query.set('dimension', sp.dimension)
