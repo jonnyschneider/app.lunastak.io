@@ -1,39 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
-
-/**
- * Get user ID from session or guest cookie
- */
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-
-  if (session?.user?.id) {
-    return session.user.id
-  }
-
-  // Check for guest cookie
-  const cookieStore = await cookies()
-  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-  if (guestCookie?.value) {
-    const guestUser = await prisma.user.findUnique({
-      where: { id: guestCookie.value },
-      select: { email: true },
-    })
-
-    if (guestUser && isGuestUser(guestUser.email)) {
-      return guestCookie.value
-    }
-  }
-
-  return null
-}
+import { getUserId } from '@/lib/auth/current-user'
 
 /**
  * POST /api/dismissal
