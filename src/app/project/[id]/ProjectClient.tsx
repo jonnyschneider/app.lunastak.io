@@ -1176,8 +1176,26 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
             <KnowledgeSummaryPanel
               projectId={projectId}
               fragmentCount={stats.fragmentCount}
+              /*
+               * ⚠ THE IMPORT IS REAL; THE OTHER TWO ARE PINNED, AND THE ASYMMETRY IS DELIBERATE.
+               *
+               * Every ground truth in a demo came from one context bundle, and `importCount`
+               * renders only when non-zero — so the single true fact about where this material came
+               * from was the one the header suppressed while dutifully reporting two zeros.
+               *
+               * Chats and documents stay at 0 rather than reading `stats`, because the counts there
+               * are RESIDUE and they DISAGREE ACROSS ENVIRONMENTS: conversations predate these
+               * fixtures, the bundle format does not carry conversations, so a restore never
+               * touches them. Ferrari currently has 3 in dev and 0 in preview and prod. Wiring the
+               * real value would make a demo's header say something different depending on which
+               * environment you opened it in, for rows this page does not render a section for and
+               * offers no way to reach.
+               *
+               * If conversations ever become part of what a demo demonstrates, they belong in the
+               * bundle first — and then this can read `stats` like everywhere else.
+               */
               chatCount={0}
-              importCount={0}
+              importCount={stats.importCount}
               documentCount={0}
               strategyIsStale={false}
               fragmentsSinceStrategy={0}
