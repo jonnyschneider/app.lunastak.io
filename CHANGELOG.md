@@ -72,6 +72,14 @@ it, which is the expensive kind:
 - A stray bracket and an unterminated root object were each throwing away whole dimensions of
   synthesis during JSON repair.
 
+### Fixed — the restore tool worked on every database except the one that mattered (2026-09-10)
+
+`bundle:restore` wrapped its ~10 round trips in an interactive transaction and never set a timeout,
+so it inherited Prisma's 5-second default. That fits against dev and preview; it does not against
+prod, where all four demo restores rolled back with `P2028` at 5,240 ms. The work is identical —
+the round-trip latency is not, so the tool looked correct for exactly as long as it was only ever
+pointed at the two nearer databases.
+
 ### Changed — the stack's actions sit with the stack (2026-09-10)
 
 Share, Export and Past versions were in the global header, where they cluttered every screen on
