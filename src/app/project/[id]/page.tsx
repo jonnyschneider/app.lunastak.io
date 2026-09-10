@@ -580,7 +580,31 @@ export default function ProjectPage() {
       </div>
     )
     return () => setTabNav(null)
-  }, [activeTab, projectId, projectData?.stats?.fragmentCount, isDemo, hasStrategy, isSignedUp, setTabNav])
+    /**
+     * ⚠ EVERY VALUE THIS EFFECT READS BELONGS HERE, INCLUDING THE TWO THAT ONLY GATE IT.
+     *
+     * `strategyReady` and `hasContext` were both missing, and both are read above — the first by
+     * the ready chip, the second by the early return that gives an empty project no nav at all.
+     * A value read inside an effect but absent from its array does not fail loudly; it works
+     * whenever some OTHER dependency happens to change at the same moment, which is why both
+     * survived review.
+     *
+     * `strategyReady` was actively broken: a FIRST generation flips `hasStrategy` alongside it, so
+     * the chip appeared; a REFRESH changes nothing else in this array, so it never did — the exact
+     * case `useStrategyReady` is keyed on `traceId` to support.
+     *
+     * `hasContext` was latent, masked by two coincidences: `fragmentCount` going `undefined → 0`
+     * when the fetch lands, and the first-context effect calling `setActiveTab`. Both are luck.
+     *
+     * ⚠ AND `projectData?.stats?.fragmentCount` HAS NO `?? 0` ON PURPOSE. The prop below it does.
+     * Here, `undefined → 0` is the change that re-runs this effect when the project loads and
+     * removes the nav from an empty project. "Tidying" the two to match would leave an empty
+     * project holding a toggle forever.
+     *
+     * Superseded on `feat/navigation-guidance-map`, where this JSX becomes `<ProjectTabNav />` and
+     * props remove the whole failure mode. Fixed here because `development` is the release base.
+     */
+  }, [activeTab, projectId, projectData?.stats?.fragmentCount, isDemo, hasStrategy, isSignedUp, strategyReady, hasContext, setTabNav])
 
 
   // Strategy data for Direction tab
