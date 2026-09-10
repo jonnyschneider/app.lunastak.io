@@ -30,7 +30,7 @@ and the app shell is a single sticky top header, 56px, defined in
 
 Below the header, `StatusBanner` renders a single line of running-task text when any background task
 is active, and nothing otherwise (`StatusBanner.tsx`). Demo projects get a mulberry **Demo** strip
-there instead, with an ✕ that exits to `/` (`ProjectClient.tsx:985`).
+there instead, with an ✕ that exits to `/` (`ProjectClient.tsx:1040`).
 
 **The header owns no navigation of its own.** `tabNav` is a React node pushed up from the page through
 `HeaderContext` — on a project it is `ProjectTabNav`. Below `md` it moves to a second header row
@@ -57,9 +57,9 @@ redirector in front of a client, and its mode is in the URL (§3).
 | route | kind | what it is | governed by |
 |---|---|---|---|
 | `/` | redirect | Nobody sees a homepage. Mints a guest cookie if needed; lands on the **last project you were in** (`lunastak_last_project` cookie), else your oldest | `app/page.tsx` · `lib/navigation/last-project-cookie.ts` |
-| `/project` | redirect | → last-used project from `localStorage.lastProjectId`, else the first — **a different memory from `/`'s cookie**, see §7 | `project/page.tsx` |
+| `/project` | redirect | → the same last-project cookie as `/`, else the first. Client-side, because it is also where a guest-to-account transfer waits | `project/page.tsx` |
 | **`/project/[id]`** (no `?mode`) | **server redirect** | Resolves where you land from one table, then redirects to `?mode=…`. No render | `project/[id]/page.tsx` (198 lines) · `lib/navigation/resolve-mode.ts` |
-| **`/project/[id]?mode=…`** | **the app** | `stack` · `knowledge` · `review` — see §3 | `project/[id]/ProjectClient.tsx` (**1,911 lines**) |
+| **`/project/[id]?mode=…`** | **the app** | `stack` · `knowledge` · `review` — see §3 | `project/[id]/ProjectClient.tsx` (**1,974 lines**) |
 | `/project/[id]/template` | page | 6-step manual Decision Stack builder | `template/page.tsx` (613 lines) |
 | `/project/[id]/fragments` | **legacy redirect** | → `/project/[id]?evidence=1`, preserving `?dimension=` | `fragments/page.tsx` |
 | `/project/[id]/strategy` | **legacy redirect** | → latest trace view | `strategy/page.tsx` |
@@ -120,26 +120,26 @@ produced ground truths, until its own `UserDismissal(itemType:'ground_truth_revi
 'doc:<id>' | 'bundle:<id>' | 'chat:<id>')` exists. Only *Review these later* writes that row
 (`lib/navigation/review-batch.ts`).
 
-**Changing mode is a `router.push`** (`setMode`, `ProjectClient.tsx:336`): every toggle is a history
+**Changing mode is a `router.push`** (`setMode`, `ProjectClient.tsx:354`): every toggle is a history
 entry, so back undoes it. The mode cookie is written for `stack`/`knowledge` only — `review` is a
 moment, not a place to return to.
 
 **One rule is re-applied on the client:** an empty project renders the cold start whatever `?mode`
-says (`activeTab`, `ProjectClient.tsx:328`), because the server does not check when a mode is given.
+says (`activeTab`, `ProjectClient.tsx:346`), because the server does not check when a mode is given.
 
 | param | meaning | read by |
 |---|---|---|
 | `mode` | `stack` · `knowledge` · `review` | `page.tsx` → `ProjectClient` |
-| `batch` | the ingest a review is scoped to | review only, `ProjectClient.tsx:292` |
-| `deepDive` | the deep dive a review hands back to on leaving | review only, `ProjectClient.tsx:305` |
-| `landed` | fires the arrival event once, then is stripped | `ProjectClient.tsx:455` |
-| `filter=changed` | opens the knowledge panel on the *changed since vN* diff | `ProjectClient.tsx:431` → `KnowledgeSummaryPanel` |
+| `batch` | the ingest a review is scoped to | review only, `ProjectClient.tsx:301` |
+| `deepDive` | the deep dive a review hands back to on leaving | review only, `ProjectClient.tsx:319` |
+| `landed` | fires the arrival event once, then is stripped | `ProjectClient.tsx:511` |
+| `filter=changed` | opens the knowledge panel on the *changed since vN* diff | `ProjectClient.tsx:485` → `KnowledgeSummaryPanel` |
 | `evidence=1` | consumed by the redirect (rule 2); never reaches the client | `page.tsx` |
-| `dimension` | ⚠ **carried through the redirect, read by nothing** — see §7 | — |
+| `dimension` | opens the knowledge panel filtered to one dimension (`filter=changed` wins if both) | `parseKnowledgeFilter` → `KnowledgeSummaryPanel` |
 
 ### 3.1 The cold start — no context
 
-`!hasContext && !isDemo` (`ProjectClient.tsx:1013`). Not a tab: the header has **no nav at all**
+`!hasContext && !isDemo` (`ProjectClient.tsx:1069`). Not a tab: the header has **no nav at all**
 (`setTabNav(null)`, pinned by `__tests__/empty-project-has-no-nav.test.ts`), and this is the whole
 screen. `Launchpad.tsx`:
 
@@ -153,9 +153,9 @@ screen. `Launchpad.tsx`:
 
 ### 3.2 Mode: `stack`
 
-Governed by `ProjectClient.tsx:1039-1234`. Two states, forked on whether a strategy exists.
+Governed by `ProjectClient.tsx:1095-1290`. Two states, forked on whether a strategy exists.
 
-**No strategy yet — the signpost** (`:1208`). *"Your Decision Stack goes here"*, the ground truth
+**No strategy yet — the signpost** (`:1265`). *"Your Decision Stack goes here"*, the ground truth
 count, **Build my strategy** (when fragments > 0) and **Add more context** → `knowledge`. Deliberately
 not the Launchpad and not a stepper.
 
@@ -163,9 +163,9 @@ not the Launchpad and not a stepper.
 
 | element | states | actions | governed by |
 |---|---|---|---|
-| Masthead: Decision Stack mark (left) · company logo (centre, demo only) · version (right) | — | mark → attribution popover | `ProjectClient.tsx:1063` |
-| **`Version N \| ⋯`** split pill | real projects; demo shows *"Generated from Acquired podcast transcript"* instead | ⋯ → **Export** · **Past versions** (opens the sheet) | `:1120` |
-| **Share** | real projects with a strategy | share dialog, or sign-in gate for guests | `:1161` |
+| Masthead: Decision Stack mark (left) · company logo (centre, demo only) · version (right) | — | mark → attribution popover | `ProjectClient.tsx:1119` |
+| **`Version N \| ⋯`** split pill | real projects; demo shows *"Generated from Acquired podcast transcript"* instead | ⋯ → **Export** · **Past versions** (opens the sheet) | `:1176` |
+| **Share** | real projects with a strategy | share dialog, or sign-in gate for guests | `:1222` |
 | **Vision** card | read · flipped-to-edit | edit inline | `FlipCard` · `StrategyDisplay` |
 | **Strategy** card | read · flipped-to-edit | edit inline | `StrategyDisplay` |
 | **Objectives** grid | read · flipped-to-edit · empty | edit inline, add | `StrategyDisplay` |
@@ -177,13 +177,13 @@ The version label is deliberately **not** a button — it names what the ⋯ act
 
 ### 3.3 Mode: `knowledge`
 
-Governed by `ProjectClient.tsx:1244-1736`. **Two states** now — the empty-knowledgebase branch was
+Governed by `ProjectClient.tsx:1300-1799`. **Two states** now — the empty-knowledgebase branch was
 deleted 2026-09-10, unreachable once rule 1 forces empty projects to the cold start.
 
-**Demo** (`:1304`): `KnowledgeSummaryPanel` alone, `readOnly` and expanded by default. It shows the
+**Demo** (`:1365`): `KnowledgeSummaryPanel` alone, `readOnly` and expanded by default. It shows the
 same ground truths as any other project — `readOnly` means *no controls that change it*, not *no
 list*. `FragmentExplorer`, the older browser that used to render here, is **deleted**. Header counts
-are pinned to the import (chats and documents at 0, deliberately — see the comment at `:1323`).
+are pinned to the import (chats and documents at 0, deliberately — see the comment at `:1384`).
 
 **Populated:**
 
@@ -204,7 +204,7 @@ built.
 ### 3.4 Mode: `review`
 
 `?mode=review` renders `GroundTruthReviewScreen` **in place of the whole knowledgebase**
-(`ProjectClient.tsx:1255`), only when `!isDemo && !hasStrategy` (`showReview`, `:441`). On a project
+(`ProjectClient.tsx:1313`), only when `!isDemo && !hasStrategy` (`showReview`, `:497`). On a project
 with a strategy, `?mode=review` falls through to the ordinary knowledgebase.
 
 | element | action |
@@ -215,7 +215,7 @@ with a strategy, `?mode=review` falls through to the ordinary knowledgebase.
 | **Review these later** | writes the ingest's `ground_truth_review` dismissal → `knowledge`; hands back to the deep dive if there was one |
 
 It is reached **only by address** — two ways: the landing table on arrival (rule 4), and
-`presentIngestReview` in session (`ProjectClient.tsx:392`), which fires when a document finishes, a
+`presentIngestReview` in session (`ProjectClient.tsx:428`), which fires when a document finishes, a
 bundle import closes, or a chat's extraction completes. Both are pre-strategy only; after a strategy
 exists an ingest produces no review (a deep-dive ingest just reopens its deep dive).
 
@@ -241,7 +241,7 @@ The Evidence sheet is gone (2026-09-08, tag `evidence-sheet-final`). All three r
 **pure component state**: not linkable, not restorable on reload, not in browser history. The mode
 became addressable; the overlays did not.
 
-**Eleven dialogs** sit on top of that (`ProjectClient.tsx:1742-1908`): document upload · add deep
+**Eleven dialogs** sit on top of that (`ProjectClient.tsx:1805-1967`): document upload · add deep
 dive · synthesis progress · share · sign-in gate · import bundle · generation confirm · Pro
 interstitial · upgrade success · Pro coming soon — plus Add Principle, owned by `PrinciplesSection`.
 
@@ -302,11 +302,10 @@ Stated as observations, consistent with the blueprints' descriptive stance.
 `batch` are real addresses, and they are what the guidance register (design §6) needed to link to.
 The three sheets, the dimension filter and the Archived list are still component state.
 
-**`?dimension=` is a dead param.** The redirect in `page.tsx` preserves it and the legacy
-`/fragments` route still emits it, but since `FragmentExplorer` was deleted nothing reads it —
-`KnowledgeSummaryPanel`'s `selectedDimension` starts at `null` and has no URL input. Guidance register
-row 5 (*"some of this is thin"* → `/knowledge?dimension=<d>`) assumes this filter is addressable. It
-is not; wiring it is small (an `initialDimension` prop beside `initialFilter`), but it has to be done.
+**`?dimension=` was a dead param for a day** — emitted by the legacy `/fragments` route, carried by
+the redirect, read by nothing after `FragmentExplorer` went. Fixed 2026-09-11 (`f376a3d`): both
+knowledge filters are now parsed by `parseKnowledgeFilter` and built by `knowledgeHref`
+(`lib/navigation/knowledge-filter.ts`), so a link and its reader cannot drift apart again.
 
 **`reviewedAt` means "was shown", not "was reviewed".** Every `GroundTruthReview` mount stamps
 every row it shows, including the knowledge panel's list whenever it is expanded. So `reviewedAt IS
@@ -314,18 +313,20 @@ NULL` means *never displayed in any list* — narrower than register row 6's *"I
 at these"*. Worth knowing before building row 6 on it. (Only true since `1076ea8`, 2026-09-11: before
 that a filtered list stamped the whole project, so older timestamps over-report.)
 
-**One route still carries the whole product.** `ProjectClient.tsx` is 1,911 lines — larger than the
+**One route still carries the whole product.** `ProjectClient.tsx` is 1,974 lines — larger than the
 `page.tsx` it replaced ever was (1,799 at slice 2), because slice 2 moved the mode decision out
-without splitting the client, and it has grown by ~85 lines since.
+without splitting the client, and it has grown by ~175 lines since (much of it the comments that
+carry its invariants).
 Three modes, two knowledgebase states, three sheets and eleven dialogs.
 
-**Two memories of "last project".** `/` reads the `lunastak_last_project` cookie (written by
-`ProjectClient.tsx:491`); `/project` reads `localStorage.lastProjectId` (written by
-`app-layout.tsx:141`). They usually agree, and nothing guarantees it.
+**One memory of "last project"** since 2026-09-11 (`1e26c42`). `/`, `/project` and the header's
+off-project fallback all read the `lunastak_last_project` cookie, written by the project page and
+never for a demo. Until then `/project` and the header used `localStorage.lastProjectId`, which the
+header also wrote for demos.
 
 **The global overflow is gone; one contextual one came back.** The header `⋯` (ten items, nine
 duplicates) was deleted. `Version N | ⋯` holds Export and Past versions, which have no other door —
-same principle, different answer (`ProjectClient.tsx:1100` says so).
+same principle, different answer (`ProjectClient.tsx:1157` says so).
 
 **Two paths to the same place — fewer than before.** Chat: Launchpad card, Chats card *New*, review
 screen, every Explore Next card. Generation: the knowledge summary's refresh, the signpost's *Build*,

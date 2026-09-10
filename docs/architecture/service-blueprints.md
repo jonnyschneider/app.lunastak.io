@@ -100,14 +100,14 @@ quality?*
 | # | | phase | Step | Governed by |
 |---|---|---|---|---|
 | 1 | ▲ | — | Stack shows as **changed** — the knowledge panel's sync line, *"Stack v3 · 4 added, 1 discarded since"*, from the latest snapshot's `fragmentIds` vs the active ground truths; **All / Changed since v3** chips filter the list to exactly those rows (`?filter=changed` opens it there) | `KnowledgeSummaryPanel` · `api/project/[id]/route.ts:308-322` |
-| 2 | ▲ | — | Clicks **Refresh** on the knowledge summary | `ProjectClient.tsx:1403` |
+| 2 | ▲ | — | Clicks **Refresh** on the knowledge summary | `ProjectClient.tsx:1465` |
 | 3 | ⛔ | — | **Confirmation gate** — explains what will happen, asks to proceed | `GenerationConfirmDialog` (`action: 'refresh'`) |
 | 4 | ▼ | **ADMIT** | `POST /refresh-strategy` — auth, project lookup, already-generating guard (409) | `refresh-strategy/route.ts` |
 | 5 | ▼ | **ADMIT** | Returns immediately; work continues in `waitUntil` | `refresh-strategy/route.ts:80` |
 | 6 | ▼ | **ADMIT** | `planPipeline('refresh_requested')` → synthesis ✓, summary ✓, generation `refresh`. Pure function | `pipeline/plan.ts:61` |
 | 7 | ▲ | — | UI enters busy state, begins polling | `GET /generation-status` |
 | 8 | ▼ | **GATHER** | Load fragments, existing syntheses, previous stack | `pipeline/generation.ts:87-100` |
-| 9 | ▼ | **GATHER** | **Per dimension (×11)** decide full vs incremental: no summary · >30d stale · >50% new · <5 fragments | `synthesis/update-synthesis.ts:15` |
+| 9 | ▼ | **GATHER** | **Per dimension** (every dimension with active fragments *or* a prior summary) decide skip / full / incremental. **Full** if the set changed since the last run (a discard or restore) · no summary · >30d stale · >50% new · <5 fragments. **Skip** only if nothing changed | `synthesis/update-synthesis.ts` (`decideSynthesis`) |
 | 10 | ▼ | **REASON** | `full_synthesis` (asks 7 outputs) **or** `incremental_synthesis` (given summary + keyThemes + gaps + confidence only) | `synthesis/*.ts` · `prompts/stages/*` |
 | 11 | ▼ | **REASON** | `generateKnowledgeSummary` — narrative + suggested questions | `lib/knowledge-summary.ts` |
 | 12 | ▼ | **GATHER** | Compute **delta**: fragments after last snapshot = new; archived since = removed | `pipeline/generation.ts:127` |
@@ -154,11 +154,11 @@ quality?*
 | 6 | ▼ | **REASON** | Emergent extraction → 3–7 themes + dimension tags, each with a verbatim span and a self-reported `verbatim \| interpretation` type | `extract/route.ts` · `lib/evidence/parse.ts` |
 | 7 | ▼ | **COMMIT** | `createFragmentsFromThemes` → `Fragment(contentType:'theme')` + tags + `Evidence` rows, one transaction; spans verified at ingest against the user's turns | `lib/fragments.ts` · `lib/evidence/verify.ts` |
 | 8 | ▼ | **COMMIT** | Plan generated nothing, so the executor clears `generationStatus` — but only if this run set it (`ownsGenerationStatus`) | `executor.ts` |
-| 9 | ▲ | **REVEAL** | Task completes → `ChatSheet`'s `onIngestComplete` → `presentIngestReview('conversation')` → `?mode=review&batch=chat:<id>`. Pre-strategy only. A user who left and comes back is sent to the same place by the landing table (rule 4) | `ProjectClient.tsx:392` · `project/[id]/page.tsx` · `navigation/resolve-mode.ts` |
+| 9 | ▲ | **REVEAL** | Task completes → `ChatSheet`'s `onIngestComplete` → `presentIngestReview('conversation')` → `?mode=review&batch=chat:<id>`. Pre-strategy only. A user who left and comes back is sent to the same place by the landing table (rule 4) | `ProjectClient.tsx:428` · `project/[id]/page.tsx` · `navigation/resolve-mode.ts` |
 | 10 | ⛔ | **REVEAL** | **Ground-truth review** — this chat's fragments, and the spans they rest on, shown before any strategy exists. One list, discard only | `GroundTruthReviewScreen.tsx` · `GroundTruthReview.tsx` · `ground-truth/derive.ts` |
 | 11 | ▲ | — | Discards a wrong row → `PATCH /fragments {ids, status:'archived', archivedReason:'ground_truth_review'}`, one at a time, optimistically. Removal is the confirmation; an undo puts it back | `GroundTruthReview.tsx` · `project/[id]/fragments/route.ts` |
 | 12 | ▲ | — | Being *shown* the list stamps `reviewedAt` on the rows shown (`PATCH {ids, reviewed:true}`) — reviewing is being shown something, not clicking it. Filtered, only the filtered rows (since `1076ea8`; before that, the whole project) | `GroundTruthReview.tsx:313` |
-| 13 | ▲ | — | Clicks **Build my strategy** — or **Review these later**, which writes `UserDismissal(ground_truth_review, chat:<id>)` and lands on `?mode=knowledge` | `GroundTruthReviewScreen.tsx` · `ProjectClient.tsx:1280` |
+| 13 | ▲ | — | Clicks **Build my strategy** — or **Review these later**, which writes `UserDismissal(ground_truth_review, chat:<id>)` and lands on `?mode=knowledge` | `GroundTruthReviewScreen.tsx` · `ProjectClient.tsx:1341` |
 | 14 | ▼ | **ADMIT** | `POST /generate-strategy` — auth, fragment count > 0, guest quota, **409 `already_generating`** guard; `planPipeline('generate_from_knowledge')` → synthesis ✓ fg, summary ✓ fg, generation `initial` | `generate-strategy/route.ts` |
 | 15 | ▼ | **GATHER** | Load active fragments with their evidence spans | `pipeline/generation.ts` |
 | 16 | ▼ | **REASON** | Initial generation → vision, strategy, objectives | `prompts/stages/generation.ts` (`v4-pithy-statements`) |
@@ -209,7 +209,7 @@ called by nothing but the dev pipeline harness. Two further changes since:
 | 9 | ▼ | **GATHER** | Count fragments since `knowledgeUpdatedAt`; if **≥15**, escalate | `executor.ts:65-86` |
 | 10 | ▼ | **REASON** | *(only if escalated)* background `updateAllSyntheses` + knowledge summary | `executor.ts:106-127` |
 | 11 | ▲ | **REVEAL** | Document marked complete, *"N ground truths"*; counts rise; with a strategy, the sync line reads *"N added since"* | `ProjectClient.tsx` Documents card · `KnowledgeSummaryPanel` |
-| 12 | ⛔ | **REVEAL** | *Pre-strategy only:* `presentIngestReview('document')` → `?mode=review&batch=doc:<id>` — the review of this document's ground truths, as task 2 steps 10–13. Uploaded from inside a deep dive, leaving the review hands back to that deep dive | `ProjectClient.tsx:392` · `GroundTruthReviewScreen.tsx` |
+| 12 | ⛔ | **REVEAL** | *Pre-strategy only:* `presentIngestReview('document')` → `?mode=review&batch=doc:<id>` — the review of this document's ground truths, as task 2 steps 10–13. Uploaded from inside a deep dive, leaving the review hands back to that deep dive | `ProjectClient.tsx:428` · `GroundTruthReviewScreen.tsx` |
 
 **Exposes.** *(disposition: `by-design` — accepted.)* ~~**No gate anywhere** — the only task with
 zero.~~ **Corrected 2026-09-11:** pre-strategy, every upload now gets its own review (step 12, 2.8.1)
@@ -241,7 +241,7 @@ no gate on the way in: the review is after the fact, not before it.
 | 6 | ▼ | **COMMIT** | Add bundle open-questions to `suggestedQuestions` | `import/executor.ts` |
 | 7 | ▼ | **REASON** | Threshold escalation as Task 3 (a bundle usually clears 15 in one go) | `executor.ts` |
 | 8 | ▲ | **REVEAL** | Ground truths + questions appear; the count reported is ground truths, not rows written — tensions are excluded because the review never shows them | `KnowledgeSummaryPanel` · `ground-truth/count.ts` |
-| 9 | ⛔ | **REVEAL** | *Pre-strategy only:* closing the import dialog → `presentIngestReview('bundle')` → `?mode=review&batch=bundle:<importBatchId>`, as task 2 steps 10–13. (Before 2.8.1 *"Show me"* only closed the dialog) | `ProjectClient.tsx:1858` · `GroundTruthReviewScreen.tsx` |
+| 9 | ⛔ | **REVEAL** | *Pre-strategy only:* closing the import dialog → `presentIngestReview('bundle')` → `?mode=review&batch=bundle:<importBatchId>`, as task 2 steps 10–13. (Before 2.8.1 *"Show me"* only closed the dialog) | `ProjectClient.tsx:1921` · `GroundTruthReviewScreen.tsx` |
 
 **Exposes.** **No REASON phase of its own.** The bundle's contents are inserted verbatim as
 fragments — the interpretation was done upstream, in the skill, outside this system. These
@@ -294,7 +294,7 @@ there is no gate after it. This is the altitude the review-pass primitive was ac
 | 4 | ▼ | — | **No `DeepDive` is created.** A gap card opens the chat directly, seeded with `gapExploration` and no deep dive (`setChatDeepDiveId(undefined)`); a provocation card, likewise, with its question. `DeepDive` rows come only from *Add Deep Dive* (`deep-dive/route.ts:67`), and only a `deep-dive` card opens one | `ProjectClient.tsx` · `deep-dive/route.ts:67` |
 | 5 | ▲ | — | Chat sheet opens seeded with the gap — not via `DeepDiveSheet` | `chat-sheet.tsx` |
 | 6 | ▼ | — | From here it is task 2's extraction path (`isInitial:false`, no generation) — or task 3's, for a document uploaded into the deep dive | `extract/route.ts` |
-| 7 | ▲ | **REVEAL** | *Pre-strategy:* the chat's own review — a plain one, since a gap chat belongs to no deep dive. For an ingest inside a real deep dive (a *deep-dive* card, or Add Deep Dive), the review carries `&deepDive=<id>` and leaving it reopens that deep dive. *With a strategy:* no review; a deep-dive ingest goes straight back to its deep dive, which lists the chat or document but **none of its ground truths** | `ProjectClient.tsx:392` · `deep-dive-sheet.tsx` |
+| 7 | ▲ | **REVEAL** | *Pre-strategy:* the chat's own review — a plain one, since a gap chat belongs to no deep dive. For an ingest inside a real deep dive (a *deep-dive* card, or Add Deep Dive), the review carries `&deepDive=<id>` and leaving it reopens that deep dive. *With a strategy:* no review; a deep-dive ingest goes straight back to its deep dive, which lists the chat or document but **none of its ground truths** | `ProjectClient.tsx:428` · `deep-dive-sheet.tsx` |
 
 **Exposes.** **No gate between the model's gap and the user's click — still the shortest path from
 an LLM output to a user action in the whole product.** (Step 7's review gates what the chat
@@ -323,7 +323,7 @@ one list the knowledge panel renders, and the ground truths are on the page (`sc
 | 6 | ▲ | **REVEAL** | Row moves to the Archived list; counts update | `GroundTruthReview` |
 | 7 | ▼ | **GATHER** | On the next project read, the discarded id is in the latest snapshot's `fragmentIds` but no longer active → `removedIds` → `strategyIsStale` | `api/project/[id]/route.ts:308-322` |
 | 8 | ▲ | **REVEAL** | Sync line reads *"1 discarded since"*; the *Changed since vN* chip includes it | `KnowledgeSummaryPanel` |
-| 9 | ▼ | — | No re-synthesis, no `knowledgeUpdatedAt` bump, no regeneration — **by ruling**, see Dispositions | — |
+| 9 | ▼ | — | No re-synthesis, no `knowledgeUpdatedAt` bump, no regeneration **at discard time** — by ruling, see Dispositions. On the next refresh the dimension is **rebuilt without it** (task 1 step 9); until 2026-09-11 a discard-only change skipped the dimension, so the discarded truth survived into refresh's context | `synthesis/update-synthesis.ts` |
 
 **Exposes.** *(disposition: `accepted-debt`, **partly paid** — see Dispositions.)* The 2026-08-29
 finding was that the one curation affordance in the product **had no downstream effect
