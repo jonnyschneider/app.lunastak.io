@@ -1,10 +1,14 @@
 // @vitest-environment node
 /**
  * The access rule of each `project/[id]/*` sub-route, pinned as it stood before the routes moved
- * onto the guard (auth-gap plan Task 11, Group A — "behaviour unchanged"). These routes had no
- * tests, so this is the net: anonymous → 401, someone else's project → 404 (never 403), demo
- * projects readable only where they were before, and archived projects 404 where the route
- * filtered on `status: 'active'`.
+ * onto the guard (auth-gap plan Task 11, Groups A and B — "behaviour unchanged"). Most of these
+ * routes had no tests, so this is the net: anonymous → 401, someone else's project → 404 (never
+ * 403), demo projects readable only where they were before, and archived projects 404 where the
+ * route filtered on `status: 'active'`.
+ *
+ * One deliberate change: content's POST/PUT/DELETE used to honour `isDemo`, so any guest could
+ * edit a showcase project's opportunities and principles. They are owner-only now, as
+ * ARCHITECTURE.md's route table always said they were.
  */
 import { vi } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -27,7 +31,7 @@ vi.mock('@/lib/pipeline', () => ({ planPipeline: vi.fn(), executePipeline: vi.fn
 vi.mock('@/lib/import', () => ({ planImport: vi.fn(), executeImport: vi.fn() }))
 vi.mock('@/lib/decision-stack', () => ({
   setGenerationStatus: vi.fn(), hasDecisionStack: vi.fn(), updateSingleton: vi.fn(),
-  updateComponent: vi.fn(), getSnapshots: vi.fn(),
+  createComponent: vi.fn(), updateComponent: vi.fn(), deleteComponent: vi.fn(), getSnapshots: vi.fn(),
 }))
 vi.mock('@/lib/synthesis/update-synthesis', () => ({ updateAllSyntheses: vi.fn() }))
 vi.mock('@/lib/knowledge-summary', () => ({ generateKnowledgeSummary: vi.fn() }))
@@ -43,6 +47,8 @@ import * as generateStrategy from '../generate-strategy/route'
 import * as importBundle from '../import-bundle/route'
 import * as refreshStrategy from '../refresh-strategy/route'
 import * as synthesize from '../synthesize/route'
+import * as content from '../content/route'
+import * as fragments from '../fragments/route'
 
 type Handler = (req: never, ctx: { params: Promise<{ id: string }> }) => Promise<Response>
 
@@ -58,6 +64,12 @@ const ROUTES: [string, Handler, boolean, boolean][] = [
   ['import-bundle POST', importBundle.POST as Handler, false, true],
   ['refresh-strategy POST', refreshStrategy.POST as Handler, false, true],
   ['synthesize POST', synthesize.POST as Handler, false, true],
+  ['content GET', content.GET as Handler, true, true],
+  ['content POST', content.POST as Handler, false, true],
+  ['content PUT', content.PUT as Handler, false, true],
+  ['content DELETE', content.DELETE as Handler, false, true],
+  ['fragments GET', fragments.GET as Handler, true, true],
+  ['fragments PATCH', fragments.PATCH as Handler, false, true],
 ]
 
 const call = (handler: Handler) =>
@@ -102,6 +114,14 @@ describe.each(ROUTES)('%s', (_name, handler, demoReadable, activeOnly) => {
     const { where } = mocks.projectFindFirst.mock.calls[0][0]
     expect(JSON.stringify(where).includes('isDemo')).toBe(demoReadable)
   })
+
+  if (!demoReadable) {
+    it('a guest on someone’s demo project → 404', async () => {
+      mocks.getRequester.mockResolvedValue({ userId: 'someone-else', isGuest: true })
+      mocks.projectFindFirst.mockImplementation(projectTable({ isDemo: true, status: 'active' }))
+      expect((await call(handler)).status).toBe(404)
+    })
+  }
 
   if (activeOnly) {
     it('an archived project → 404, even for its owner', async () => {

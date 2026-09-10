@@ -49,8 +49,6 @@ const KNOWN_UNGUARDED: string[] = [
   'src/app/api/deep-dive/route.ts',
   'src/app/api/dismissal/route.ts',
   'src/app/api/paywall/prompt/route.ts',
-  'src/app/api/project/[id]/content/route.ts',
-  'src/app/api/project/[id]/fragments/route.ts',
   'src/app/api/project/[id]/route.ts',
   'src/app/api/project/[id]/share/route.ts',
   'src/app/api/projects/[id]/route.ts',
