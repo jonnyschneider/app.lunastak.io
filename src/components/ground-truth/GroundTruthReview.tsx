@@ -22,6 +22,20 @@ import { Button } from '@/components/ui/button'
 import { buildGateModel, groupByDimension, type ApiResponse, type GateItem } from '@/lib/ground-truth/derive'
 import { EvidenceQuote } from './EvidenceQuote'
 
+/**
+ * The dimension group heading.
+ *
+ * ⚠ COLOUR WAS NOT ENOUGH, and could not have been. At `text-xs` these headings are SMALLER than
+ * the `text-sm` claims they introduce, so once both sat at full `text-foreground` the heading was
+ * the least prominent thing in its own group — darkening it just moved the problem.
+ *
+ * A fill fixes what type size cannot: the panel already says "this is structure" with a filled bar
+ * (`SECTION_HEADING` in `KnowledgeSummaryPanel`), and this is the quiet member of that family —
+ * same shape, muted ground, so it reads as a subheading of that bar rather than a rival to it.
+ */
+const GROUP_HEADING =
+  'rounded-md bg-primary/10 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-primary'
+
 const SOURCE_ICON = {
   document: FileText,
   conversation: MessageSquare,
@@ -411,10 +425,12 @@ export function GroundTruthReview({
       {groupByDimension(shown)
         .filter(g => !dimension || g.dimension === dimension)
         .map(g => (
-        <div key={g.dimension ?? 'none'}>
+        // Space ABOVE, not below: a heading that floats equidistant between two groups reads as
+        // belonging to the one it just ended. `first:mt-0` keeps it snug under the panel's intro.
+        <div key={g.dimension ?? 'none'} className="mt-5 first:mt-0">
           {/* Filtered to one dimension, the host has already named it — saying it twice is noise. */}
           {!dimension && (
-            <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground">
+            <h3 className={GROUP_HEADING}>
               {g.label}
             </h3>
           )}
@@ -449,7 +465,7 @@ function DiffSection({ label, items, empty, renderRow }: {
 }) {
   return (
     <div>
-      <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground">
+      <h3 className={GROUP_HEADING}>
         {label}{items && ` (${items.length})`}
       </h3>
       {items === null ? (
