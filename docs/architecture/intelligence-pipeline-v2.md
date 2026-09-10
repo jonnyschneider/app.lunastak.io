@@ -468,6 +468,7 @@ src/lib/pipeline/
 ├── plan.ts         # planPipeline() — pure decision function
 ├── executor.ts     # executePipeline() — orchestrates library calls
 ├── generation.ts   # runInitialGeneration(), runRefreshGeneration()
+├── extract-from-template.ts  # extractFromTemplate() — the template plan's background step
 └── index.ts        # barrel export
 
 src/lib/evidence/
@@ -502,6 +503,21 @@ Append-only log of pipeline architecture and prompt changes. When modifying the 
 
 **Architecture impact:** Which pipeline layers / diagram sections affected
 -->
+
+### 2026-09-11: Template extraction runs in the pipeline, not through a self-fetch
+
+**Context.** The `extractFromTemplate` background step `fetch`ed `/api/project/[id]/extract-from-template`
+server-to-server. That hop carried no cookies, so the route could not be put behind the auth guard
+without silently breaking its only caller, and while it was unguarded anyone could POST a strategy
+at any project and have fragments written into it (API auth gap, plan D10).
+
+**Change.** The route body moved verbatim into `pipeline/extract-from-template.ts`, which the
+executor calls directly inside `runBackgroundTasks`. The route is deleted, and with it the
+dependency on `NEXT_PUBLIC_BASE_URL`. The `template_extraction` call still passes no `userId`, so
+guest quota is untouched. A failure now throws into `runBackgroundTasks` and is logged as a
+failed task; before, the route's 500 resolved the fetch and the task logged as completed.
+
+**Architecture impact.** Layer 3 (template) background step only. The decision matrix is unchanged.
 
 ### 2026-09-08: The first strategy waits for the user — the ground truth review (slice 4)
 

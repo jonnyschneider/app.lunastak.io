@@ -370,7 +370,7 @@ design's own argument — are the only changes with no history. Also: the route 
 | 3 | ▼ | **ADMIT** | `planPipeline('template_submitted')` → **extraction: null, generation: `template`** — no LLM | `pipeline/plan.ts:49` |
 | 4 | ▼ | **COMMIT** | `runTemplateGeneration` → writes stack directly; `claudeThoughts: 'User-provided template entry'` | `executor.ts:137,240` |
 | 5 | ▲ | **REVEAL** | Strategy renders immediately | `StrategyDisplay` |
-| 6 | ▼ | **REASON** | *Background:* `extractFromTemplate` — reverse-extracts fragments **from** the user's own strategy | `executor.ts:140-152` |
+| 6 | ▼ | **REASON** | *Background:* `extractFromTemplate` — reverse-extracts fragments **from** the user's own strategy | `pipeline/extract-from-template.ts` |
 
 **Exposes.** The control case: a full task with **no REASON phase on the critical path**. Also the
 only place the arrow runs backwards — strategy → fragments instead of fragments → strategy (step

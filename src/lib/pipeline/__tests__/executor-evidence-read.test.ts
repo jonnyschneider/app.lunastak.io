@@ -33,6 +33,8 @@ vi.mock('@/lib/pipeline/generation', () => ({
   runRefreshGeneration: vi.fn(),
   runOpportunityGeneration: vi.fn(),
 }))
+// It imports `@/lib/claude`, which throws at import without an API key.
+vi.mock('@/lib/pipeline/extract-from-template', () => ({ extractFromTemplate: vi.fn() }))
 // The executor clears the busy flag itself on a plan that does not generate, which this plan is.
 vi.mock('@/lib/decision-stack', () => ({ setGenerationStatus: vi.fn() }))
 

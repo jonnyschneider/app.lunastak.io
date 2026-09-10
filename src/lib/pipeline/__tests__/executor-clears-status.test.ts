@@ -48,6 +48,8 @@ vi.mock('@/lib/pipeline/generation', () => ({
   runRefreshGeneration: vi.fn(),
   runOpportunityGeneration: vi.fn(),
 }))
+// It imports `@/lib/claude`, which throws at import without an API key.
+vi.mock('@/lib/pipeline/extract-from-template', () => ({ extractFromTemplate: vi.fn() }))
 
 import { executePipeline } from '@/lib/pipeline/executor'
 import type { PipelinePlan, PipelineTrigger } from '@/lib/pipeline/types'
