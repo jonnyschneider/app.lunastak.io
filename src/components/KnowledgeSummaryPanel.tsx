@@ -213,6 +213,21 @@ interface KnowledgeSummaryPanelProps {
    */
   initialFilter?: 'changed' | null
   /**
+   * Start expanded rather than collapsed.
+   *
+   * The panel is collapsed by default because it normally sits above conversations, documents and
+   * integrations — closed, it is one row among several, and opening it is a choice.
+   *
+   * On a demo it is the ONLY thing on the knowledgebase, so collapsed means a blank page. That was
+   * masked until 2026-09-10 by `FragmentExplorer` rendering underneath it, which always had
+   * content; removing that legacy list is what made the empty state visible.
+   *
+   * Deliberately NOT inferred from `readOnly`. Overloading one flag with a second meaning is the
+   * bug this same change fixed a few lines up — `readOnly` used to mean "no controls" AND "no
+   * list", which is how the demos ended up on a different interface from everyone else.
+   */
+  defaultExpanded?: boolean
+  /**
    * Set to bring the ground truths INTO this panel. Design: `docs/_plans/2026-09-08-post-uat-batch.md`
    * §4. The coverage grid asks "how well covered is this dimension?" and the fragments behind it
    * answer "here is what that judgement is made of" — one thought, which was spanning two surfaces
@@ -247,6 +262,7 @@ export function KnowledgeSummaryPanel({
   onRefreshClick,
   onDimensionClick,
   initialFilter = null,
+  defaultExpanded = false,
   projectId,
   onResumeConversation,
   knowledgeBusyMessage = null,
@@ -257,7 +273,7 @@ export function KnowledgeSummaryPanel({
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
   const isBusy = knowledgeBusy || strategyBusy
-  const [isExpanded, setIsExpanded] = useState(initialFilter !== null)
+  const [isExpanded, setIsExpanded] = useState(initialFilter !== null || defaultExpanded)
   const expandedAtRef = useRef<number | null>(null)
 
   const handleToggle = useCallback(() => {
@@ -284,8 +300,18 @@ export function KnowledgeSummaryPanel({
    *
    * Clicking the selected one clears it — the grid has no "all" affordance of its own and does not
    * need one, because the unfiltered list is the resting state.
+   *
+   * ⚠ `readOnly` USED TO BE PART OF THIS TEST, AND THAT WAS THE BUG (fixed 2026-09-10). It meant a
+   * read-only host got NO ground truths at all, so the demo projects rendered `FragmentExplorer`
+   * beside this panel to put something there — a second, older browser with its own search box and
+   * dimension dropdown, showing the same rows in a different shape. Two interfaces onto one list,
+   * and the one the demos showed was the legacy one.
+   *
+   * `readOnly` now means what it says: the list is here, the controls that CHANGE it are not. Only
+   * `projectId` decides whether the list can be in place, because only that decides whether it can
+   * be fetched.
    */
-  const inPlace = !!projectId && !readOnly
+  const inPlace = !!projectId
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
   const [truthCounts, setTruthCounts] = useState<{ total: number; archived: number } | null>(null)
   const [archivedOpen, setArchivedOpen] = useState(false)
@@ -786,6 +812,7 @@ export function KnowledgeSummaryPanel({
                 onCountChange={onTruthCount}
                 archivedOpen={archivedOpen}
                 onArchivedOpenChange={setArchivedOpen}
+                readOnly={readOnly}
               />
             </div>
           )}

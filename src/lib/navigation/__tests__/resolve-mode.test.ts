@@ -21,7 +21,11 @@ const base: ModeInputs = {
   reviewSeen: true,
   evidenceParam: false,
   modeCookie: null,
+  isDemo: false,
 }
+
+/** A demo as it actually arrives: hydrated stack, so `hasStrategy` is true. */
+const demo: ModeInputs = { ...base, isDemo: true, hasStrategy: true }
 
 describe('resolveProjectMode', () => {
   it('row 1: an empty project goes to the stack, which is where the launchpad lives', () => {
@@ -80,9 +84,47 @@ describe('resolveProjectMode', () => {
       for (const hasStrategy of bools)
         for (const reviewSeen of bools)
           for (const evidenceParam of bools)
-            for (const modeCookie of cookies)
-              expect(['stack', 'knowledge', 'review']).toContain(
-                resolveProjectMode({ hasContext, hasStrategy, reviewSeen, evidenceParam, modeCookie })
-              )
+            for (const isDemo of bools)
+              for (const modeCookie of cookies)
+                expect(['stack', 'knowledge', 'review']).toContain(
+                  resolveProjectMode({ hasContext, hasStrategy, reviewSeen, evidenceParam, modeCookie, isDemo })
+                )
+  })
+
+  /**
+   * ═══ ROW 3: A DEMO IS A SHOP WINDOW ═══
+   *
+   * Added 2026-09-10. A demo used to fall through to row 5 and re-open on whichever mode you last
+   * looked at ON THAT DEMO — the mode cookie is a per-project map. Right for your own project,
+   * wrong for an example: the tenth visitor should see what the first one saw, and what a demo
+   * exists to show is the hydrated stack.
+   */
+  it('row 3: a demo lands on the stack', () => {
+    expect(resolveProjectMode(demo)).toBe('stack')
+  })
+
+  it('row 3 beats a remembered preference for the knowledgebase', () => {
+    expect(resolveProjectMode({ ...demo, modeCookie: 'knowledge' })).toBe('stack')
+  })
+
+  it('row 3 beats the first-look offer, even if a demo somehow had no strategy', () => {
+    /*
+     * Unreachable today — a demo carries a hydrated stack. Pinned so the demo case does not
+     * silently depend on that staying true: a half-restored demo must still never open the walker
+     * at a visitor who has nothing to review and no way to act on it.
+     */
+    expect(resolveProjectMode({ ...demo, hasStrategy: false, reviewSeen: false })).toBe('stack')
+  })
+
+  it('row 2 still outranks it: ?evidence=1 asks for the ground truths by name', () => {
+    expect(resolveProjectMode({ ...demo, evidenceParam: true })).toBe('knowledge')
+  })
+
+  it('row 1 still outranks it: an empty demo has nothing to show', () => {
+    expect(resolveProjectMode({ ...demo, hasContext: false })).toBe('stack')
+  })
+
+  it('a non-demo with the same inputs still honours the preference — the rule is about demos', () => {
+    expect(resolveProjectMode({ ...demo, isDemo: false, modeCookie: 'knowledge' })).toBe('knowledge')
   })
 })

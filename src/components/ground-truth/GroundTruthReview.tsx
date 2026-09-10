@@ -37,6 +37,7 @@ export function GroundTruthReview({
   archivedOpen: archivedOpenProp,
   onArchivedOpenChange,
   idFilter,
+  readOnly = false,
 }: {
   projectId: string
   /** Remaining (not discarded), total, and how many sit archived — so a host can show volume. */
@@ -67,6 +68,16 @@ export function GroundTruthReview({
    * knew about live rows could answer half the question.
    */
   idFilter?: string[] | null
+  /**
+   * Show the ground truths without offering to change them.
+   *
+   * For the demo projects: the list is the point — it is what "built from your own words" looks
+   * like — but the rows are not the visitor's to discard. The server already refuses
+   * (`PATCH /fragments` scopes to `userId` with no `isDemo` clause, so a discard on a demo 404s),
+   * which means without this the control was not merely inert, it was BROKEN: a button that
+   * optimistically removes the row, fails the write, and puts it back.
+   */
+  readOnly?: boolean
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -281,6 +292,7 @@ export function GroundTruthReview({
               onToggleDiscard={() => discard(item)}
               onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
               onResumeConversation={onResumeConversation}
+              readOnly={readOnly}
             />
           )}
         />
@@ -298,6 +310,7 @@ export function GroundTruthReview({
               onToggleDiscard={() => restore(item)}
               onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
               onResumeConversation={onResumeConversation}
+              readOnly={readOnly}
             />
           )}
         />
@@ -363,6 +376,7 @@ export function GroundTruthReview({
                     onToggleDiscard={() => restore(item)}
                     onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
                     onResumeConversation={onResumeConversation}
+                    readOnly={readOnly}
                   />
                 ))}
               </div>
@@ -397,6 +411,7 @@ export function GroundTruthReview({
                 onToggleDiscard={() => discard(item)}
                 onToggleOpen={() => setExpanded(expanded === item.id ? null : item.id)}
                 onResumeConversation={onResumeConversation}
+                readOnly={readOnly}
               />
             ))}
           </div>
@@ -434,6 +449,7 @@ function DiffSection({ label, items, empty, renderRow }: {
 
 function Row({
   item, discarded, pending, open, onToggleDiscard, onToggleOpen, onResumeConversation,
+  readOnly = false,
 }: {
   item: GateItem
   discarded: boolean
@@ -442,6 +458,8 @@ function Row({
   onToggleDiscard: () => void
   onToggleOpen: () => void
   onResumeConversation?: (conversationId: string) => void
+  /** No discard, no restore — the row is here to be read. See the prop on GroundTruthReview. */
+  readOnly?: boolean
 }) {
   const SourceIcon = SOURCE_ICON[item.sourceKind]
   return (
@@ -464,7 +482,7 @@ function Row({
           removed. Disabling is what stops two in-flight writes for one row racing to a wrong final
           state; at a few hundred milliseconds it is not perceptible, which is the point.
         */}
-        {discarded ? (
+        {readOnly ? null : discarded ? (
           <Button
             variant="outline"
             size="sm"

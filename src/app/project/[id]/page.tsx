@@ -78,6 +78,7 @@ export default async function ProjectRoute({
         OR: [{ userId: userId ?? '' }, { isDemo: true }],
       },
       select: {
+        isDemo: true,
         _count: { select: { fragments: true, conversations: true, documents: true } },
         decisionStack: { select: { vision: true } },
       },
@@ -116,6 +117,8 @@ export default async function ProjectRoute({
     reviewSeen: !!reviewDismissal,
     evidenceParam: sp.evidence === '1',
     modeCookie: readModeCookieValue(cookieStore.get(MODE_COOKIE_NAME)?.value, id),
+    /* A missing project reads as `false`, which is right: it lands on the stack via row 1 anyway. */
+    isDemo: counts?.isDemo === true,
   })
 
   /*

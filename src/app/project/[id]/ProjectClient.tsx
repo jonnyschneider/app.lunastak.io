@@ -60,7 +60,6 @@ import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
 import { ShareDialog } from '@/components/ShareDialog'
 import { SignInGateDialog } from '@/components/SignInGateDialog'
-import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
 import { ProjectTabNav } from './ProjectTabNav'
@@ -1161,8 +1160,21 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               />
             ) : isDemo ? (
             <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
-            {/* Demo: simplified KB — coverage grid + inline fragments */}
+            {/*
+              ⚠ `FragmentExplorer` WAS HERE, AND IT WAS A SECOND INTERFACE ONTO THE SAME LIST
+              (removed 2026-09-10). The panel below suppressed its own ground truths whenever
+              `readOnly` was set, so the demos had nothing to show and an older browser — search
+              box, dimension dropdown, its own archive controls — was rendered beside it to fill
+              the gap. Visitors met the legacy surface; everyone else met this one.
+
+              `readOnly` now means "no controls that change it" rather than "no list", so the panel
+              shows the same ground truths here as anywhere else. Passing `projectId` is what turns
+              the coverage balls into filters over that list instead of dead links.
+
+              This is the shop window. It should show the real thing.
+            */}
             <KnowledgeSummaryPanel
+              projectId={projectId}
               fragmentCount={stats.fragmentCount}
               chatCount={0}
               importCount={0}
@@ -1179,9 +1191,8 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               knowledgeBusyMessage={null}
               strategyBusyMessage={null}
               readOnly
-            />
-            <FragmentExplorer
-              projectId={projectId}
+              /* The only thing on a demo's knowledgebase — collapsed, it is a blank page. */
+              defaultExpanded
             />
             </div>
             ) : (
