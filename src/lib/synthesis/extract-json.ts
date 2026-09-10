@@ -169,5 +169,35 @@ export function extractJsonFromResponse(content: string): string {
     )
   }
 
-  return endIndex !== -1 ? out.join('') : cleaned
+  if (endIndex !== -1) return out.join('')
+
+  /**
+   * The walk never closed the root object.
+   *
+   * ⚠ RETURN THE REPAIRED TEXT REGARDLESS. This previously returned `cleaned` — the
+   * UNREPAIRED original — so every control character escaped along the way was thrown
+   * away the moment the closing brace was missing. Observed 2026-09-10 (Nike rerun):
+   * a complete, well-formed synthesis was reported as `Bad control character in string
+   * literal`, naming a newline the repair had already fixed, because the repair was
+   * discarded. The reported error pointed at the wrong defect entirely.
+   *
+   * When the ONLY thing outstanding is the root object's closer — nothing nested is
+   * open and we did not end mid-string — the completion is unambiguous, so close it.
+   * The Nike response ended `...told about the past?"}]`: the gaps array closed, every
+   * value was complete, and the model simply dropped one final `}`. Discarding a whole
+   * dimension of synthesis over one character is the worse failure.
+   *
+   * The guard is deliberately narrow. Ending INSIDE a string, or with nested containers
+   * still open, is the signature of a genuinely cut-off response — there we let the
+   * caller's catch fire rather than persist a plausible-looking fragment as if it were
+   * whole. That distinction is the whole point: complete the punctuation, never the
+   * content. (Real truncation has its own canary — `createMessage` warns on a
+   * `max_tokens` stop reason. None fired here.)
+   */
+  if (!inString && open.length === 1 && open[0] === '{') {
+    console.warn('[extractJson] closed an unterminated root object — model omitted the final "}"')
+    return out.join('') + '}'
+  }
+
+  return out.join('')
 }

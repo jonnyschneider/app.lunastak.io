@@ -234,11 +234,48 @@ describe('stray structural closers', () => {
       .toBe('an array looks like ] or } to a reader')
   })
 
-  it('does not close a container on the model\'s behalf', () => {
-    // A genuinely unterminated object must NOT be silently completed — returning the
-    // raw string lets the caller's catch fire rather than inventing structure.
-    const input = '{"summary": "text"'
-    expect(() => JSON.parse(extractJsonFromResponse(input))).toThrow()
+  /**
+   * REFINED 2026-09-10 (Nike rerun), from "never close anything" to "close only the
+   * root's final brace, and only when nothing else is outstanding".
+   *
+   * The absolute rule cost a complete synthesis. A Nike response ended
+   * `...told about the past?"}]` — the gaps array closed, every value complete, the
+   * model having dropped exactly one `}`. Refusing to complete punctuation discarded
+   * the entire dimension, and because the unrepaired text was returned, the reported
+   * error was `Bad control character` pointing at a newline the repair had already
+   * fixed. Two failures compounding.
+   *
+   * Complete the punctuation, never the content. The guard below is what enforces it.
+   */
+  it('closes an unterminated root object when nothing else is outstanding', () => {
+    expect(JSON.parse(extractJsonFromResponse('{"summary": "text"'))).toEqual({ summary: 'text' })
+  })
+
+  it('does NOT complete a response that was cut off mid-string', () => {
+    expect(() => JSON.parse(extractJsonFromResponse('{"summary": "text that stops'))).toThrow()
+  })
+
+  it('does NOT complete a response with nested containers still open', () => {
+    // Genuine truncation mid-structure. Persisting a plausible-looking fragment as
+    // though it were whole is worse than failing loudly.
+    expect(() => JSON.parse(extractJsonFromResponse('{"gaps": [{"title": "T"'))).toThrow()
+  })
+
+  it('keeps control-character repairs even when the object never closes', () => {
+    // The repair used to be discarded wholesale on an unterminated object, which is
+    // what made the Nike failure report the wrong cause.
+    const out = extractJsonFromResponse('{"gaps": [{"title": "a\nb"')
+    expect(out).toContain('a\\nb')
+    expect(out).not.toContain('a\nb')
+  })
+
+  it('parses the real captured response that failed on the Nike rerun', () => {
+    const raw = readFileSync(
+      join(__dirname, '../synthesis/__fixtures__/unterminated-root-object.json.txt'), 'utf8')
+    const parsed = JSON.parse(extractJsonFromResponse(raw))
+    expect(parsed.summary.length).toBeGreaterThan(1500)
+    expect(parsed.gaps).toHaveLength(5)
+    expect(parsed.gaps[0].title).not.toBe('Synthesis failed')
   })
 
   it('parses the real captured response that failed on the Costco rerun', () => {
