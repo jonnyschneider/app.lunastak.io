@@ -40,7 +40,12 @@ export function GroundTruthReview({
   readOnly = false,
 }: {
   projectId: string
-  /** Remaining (not discarded), total, and how many sit archived — so a host can show volume. */
+  /**
+   * Remaining (not discarded), total, and how many sit archived — so a host can show volume.
+   *
+   * The first two are scoped to `dimension` when one is set, because that is what the list shows;
+   * `archived` is always the project-wide figure.
+   */
   onCountChange?: (remaining: number, total: number, archived: number) => void
   /**
    * Show only this dimension. Set when the user arrived by clicking one in the coverage grid —
@@ -147,8 +152,21 @@ export function GroundTruthReview({
   }, [projectId, reloadKey])
 
   useEffect(() => {
-    if (items) onCountChange?.(items.length, items.length, archivedCount)
-  }, [items, archivedCount, onCountChange])
+    if (!items) return
+    /**
+     * REPORTED FROM THE FILTERED SET, not the whole list.
+     *
+     * The host prints this number beside a heading that names the selected dimension, so it has to
+     * answer the same question the heading asks. Reporting the project total there made the filter
+     * look broken — Jonny, 2026-09-10: *"the count never changes"*. Clearing the filter restores
+     * the full number for free, because `dimension` goes undefined.
+     *
+     * `archivedCount` stays whole: it comes from the server as a project-wide figure, and the
+     * discards are not dimension-grouped in the recovery list either.
+     */
+    const inScope = dimension ? items.filter(i => i.dimension === dimension) : items
+    onCountChange?.(inScope.length, inScope.length, archivedCount)
+  }, [items, dimension, archivedCount, onCountChange])
 
   /**
    * Persisted IMMEDIATELY, one fragment at a time — never staged awaiting a submit.
