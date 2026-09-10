@@ -158,6 +158,29 @@ export function Launchpad({
   return (
     <div className="space-y-8">
       {/*
+        ⚠ THE PREMISE OPENS THE PAGE, 2026-09-10. This line used to sit under "See it on four real
+        companies" as a subheading, where it read as a justification for the DEMOS — the weakest
+        thing on the screen to spend it on. It is not about the demos: it is the claim the whole
+        product rests on, and it is true of the strategy the user is one click away from starting.
+        Above the doors it frames all four things below it; below the heading it framed four.
+
+        The copy changed with the position and had to. "Because… / And…" was grammatically
+        dependent on the heading above it, so lifted verbatim it would have opened the page
+        mid-sentence, answering a question nobody had asked yet.
+      */}
+      <p className="mx-auto max-w-3xl space-y-1 text-center text-xl font-semibold leading-snug tracking-tight sm:text-2xl">
+        {/* Two deliberate lines, not one sentence left to wrap: set as one paragraph it broke
+            wherever the viewport happened to fall and orphaned the full stop after the last chip.
+            The break is also the cadence — claim, then claim. */}
+        <span className="block">
+          Every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-2 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
+        </span>
+        <span className="block">
+          And every <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-2 py-0.5 rounded-sm inline-block rotate-1">strategy</span> is a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-2 py-0.5 rounded-sm inline-block -rotate-[0.5deg]">Decision Stack</span>.
+        </span>
+      </p>
+
+      {/*
         Three onboarding paths. Upload was dropped from here while narrowing the choice to two,
         and no document was uploaded on production between March and September 2026 as a result —
         the route, the extraction path and the context box were live the whole time. Restored in
@@ -179,14 +202,6 @@ export function Launchpad({
       <div className="text-center">
         <h2 className="text-xl font-semibold tracking-tight">See it on four real companies</h2>
 
-        <div className="mb-3 mt-3 space-y-1">
-          <p className="text-base text-muted-foreground">
-            Because every company has a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-2">story</span>.
-          </p>
-          <p className="text-base text-muted-foreground">
-            And every <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block rotate-1">strategy</span> is a <span className="italic font-medium font-[family-name:var(--font-ibm-plex-mono)] bg-[#c74188] text-white/90 px-1.5 py-0.5 rounded-sm inline-block -rotate-[0.5deg]">Decision Stack</span>.
-          </p>
-        </div>
 
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 max-w-2xl mx-auto mt-8 mb-6">
           {DEMO_PROJECTS.map((demo) => (
