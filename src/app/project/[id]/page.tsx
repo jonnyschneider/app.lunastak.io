@@ -76,14 +76,7 @@ import { ShareDialog } from '@/components/ShareDialog'
 import { SignInGateDialog } from '@/components/SignInGateDialog'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
-
-// Demo project metadata
-const DEMO_META: Record<string, { name: string; logo: string }> = {
-  'cmn8anetr5kwlmbmq': { name: 'Nike', logo: '/logo-nike.svg' },
-  'cmn8an6ivpa0xoehj': { name: 'Costco', logo: '/logo-costco.svg' },
-  'cmn8anbaapaww1709': { name: 'TSMC', logo: '/logo-tsmc.svg' },
-  'cmnxrkvuv0094ow1betk3sjzr': { name: 'Ferrari', logo: '/logo-ferrari.svg' },
-}
+import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -1128,13 +1121,7 @@ export default function ProjectPage() {
                 <div className="absolute right-0 flex items-center gap-2">
                   {isDemo ? (
                     (() => {
-                      const episodeUrls: Record<string, string> = {
-                        'cmn8anetr5kwlmbmq': 'https://www.acquired.fm/episodes/nike',
-                        'cmn8an6ivpa0xoehj': 'https://www.acquired.fm/episodes/costco',
-                        'cmn8anbaapaww1709': 'https://www.acquired.fm/episodes/tsmc',
-                        'cmnxrkvuv0094ow1betk3sjzr': 'https://www.acquired.fm/episodes/ferrari',
-                      }
-                      const episodeUrl = episodeUrls[projectId]
+                      const episodeUrl = DEMO_EPISODE_URLS[projectId]
                       return (
                         <span>
                           Generated from{' '}

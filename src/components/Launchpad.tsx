@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { DEMO_PROJECTS } from '@/lib/demos'
 
 /**
  * --- The three cold-start doors ---
@@ -125,13 +126,6 @@ export function ImportBundleCard({ onImportBundle }: { onImportBundle: () => voi
   )
 }
 
-// Demo project IDs — persistent read-only instances
-const DEMO_PROJECTS = [
-  { id: 'cmnxrkvuv0094ow1betk3sjzr', name: 'Ferrari', logo: '/logo-ferrari.svg', logoHeight: 'h-14', description: 'Cornered resource and brand power', episodeUrl: 'https://www.acquired.fm/episodes/ferrari' },
-  { id: 'cmn8anetr5kwlmbmq', name: 'Nike', logo: '/logo-nike.svg', logoHeight: 'h-14', description: 'Scale economies and brand power', episodeUrl: 'https://www.acquired.fm/episodes/nike' },
-  { id: 'cmn8an6ivpa0xoehj', name: 'Costco', logo: '/logo-costco.svg', logoHeight: 'h-14', description: 'Scale economies shared', episodeUrl: 'https://www.acquired.fm/episodes/costco' },
-  { id: 'cmn8anbaapaww1709', name: 'TSMC', logo: '/logo-tsmc.svg', logoHeight: 'h-14', description: 'Process power and counter-positioning', episodeUrl: 'https://www.acquired.fm/episodes/tsmc' },
-]
 
 /**
  * THE COLD START. The one screen a project with no context shows.
