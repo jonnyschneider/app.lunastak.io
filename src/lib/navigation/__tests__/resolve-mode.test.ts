@@ -50,20 +50,20 @@ describe('resolveProjectMode', () => {
     expect(resolveProjectMode({ ...base, hasPendingReview: true })).toBe('review')
   })
 
-  it('row 3 beats a stored preference — the first look is the one thing worth overriding it for', () => {
+  it('row 4 beats a stored preference — the first look is the one thing worth overriding it for', () => {
     expect(resolveProjectMode({ ...base, hasPendingReview: true, modeCookie: 'stack' })).toBe('review')
   })
 
-  it('row 3 requires !hasStrategy, or a user who built without reviewing is redirected forever', () => {
+  it('row 4 requires !hasStrategy, or a user who built without reviewing is redirected forever', () => {
     expect(resolveProjectMode({ ...base, hasPendingReview: true, hasStrategy: true })).toBe('stack')
   })
 
-  it('row 4: the user\'s own preference, in both directions', () => {
+  it('row 5: the user\'s own preference, in both directions', () => {
     expect(resolveProjectMode({ ...base, modeCookie: 'knowledge' })).toBe('knowledge')
     expect(resolveProjectMode({ ...base, modeCookie: 'stack' })).toBe('stack')
   })
 
-  it('row 4 ignores a junk cookie rather than trusting it', () => {
+  it('row 5 ignores a junk cookie rather than trusting it', () => {
     // 'direction' is a real legacy value — the pre-2026-04 three-tab vocabulary.
     expect(resolveProjectMode({ ...base, modeCookie: 'direction' })).toBe('stack')
     expect(resolveProjectMode({ ...base, modeCookie: '' })).toBe('stack')
@@ -73,7 +73,7 @@ describe('resolveProjectMode', () => {
     expect(resolveProjectMode({ ...base, modeCookie: 'review' })).toBe('stack')
   })
 
-  it('row 5: otherwise, the stack', () => {
+  it('row 6: otherwise, the stack', () => {
     expect(resolveProjectMode(base)).toBe('stack')
   })
 
