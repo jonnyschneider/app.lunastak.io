@@ -25,9 +25,20 @@ import { isGuestUser } from '@/lib/projects'
 
 export const GUEST_COOKIE_NAME = 'guestUserId'
 
-export async function getUserId(): Promise<string | null> {
+export interface Requester {
+  userId: string
+  /** True when identity came from the guest cookie rather than a NextAuth session. */
+  isGuest: boolean
+}
+
+/**
+ * The requester AND where the identity came from. The API guard (`./guard.ts`) needs the provenance
+ * — some routes are for signed-up users only, and a bare id can't say whether it was a session or
+ * a guest cookie.
+ */
+export async function getRequester(): Promise<Requester | null> {
   const session = await getServerSession(authOptions)
-  if (session?.user?.id) return session.user.id
+  if (session?.user?.id) return { userId: session.user.id, isGuest: false }
 
   const cookieStore = await cookies()
   const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
@@ -39,7 +50,12 @@ export async function getUserId(): Promise<string | null> {
     where: { id: guestCookie.value },
     select: { email: true },
   })
-  if (guestUser && isGuestUser(guestUser.email)) return guestCookie.value
+  if (guestUser && isGuestUser(guestUser.email)) return { userId: guestCookie.value, isGuest: true }
 
   return null
+}
+
+/** Just the id, for callers that don't care whether it's a guest. */
+export async function getUserId(): Promise<string | null> {
+  return (await getRequester())?.userId ?? null
 }

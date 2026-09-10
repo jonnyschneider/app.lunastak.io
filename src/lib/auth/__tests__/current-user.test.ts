@@ -23,7 +23,7 @@ vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 vi.mock('@/lib/db', () => ({ prisma: { user: { findUnique: mocks.findUnique } } }))
 vi.mock('@/lib/projects', () => ({ isGuestUser: (email: string | null) => !!email?.startsWith('guest-') }))
 
-import { getUserId, GUEST_COOKIE_NAME } from '../current-user'
+import { getRequester, getUserId, GUEST_COOKIE_NAME } from '../current-user'
 
 beforeEach(() => {
   getServerSession.mockReset()
@@ -63,4 +63,33 @@ it('returns null when there is neither', async () => {
   getServerSession.mockResolvedValue(null)
   cookieGet.mockReturnValue(undefined)
   await expect(getUserId()).resolves.toBeNull()
+})
+
+// getRequester keeps what getUserId throws away — WHERE the id came from — so the API guard can
+// refuse guests on routes that are for signed-up users only.
+describe('getRequester', () => {
+  it('reports a session user as not a guest', async () => {
+    getServerSession.mockResolvedValue({ user: { id: 'real-user' } })
+    await expect(getRequester()).resolves.toEqual({ userId: 'real-user', isGuest: false })
+  })
+
+  it('reports a validated cookie as a guest', async () => {
+    getServerSession.mockResolvedValue(null)
+    cookieGet.mockReturnValue({ value: 'guest-1' })
+    findUnique.mockResolvedValue({ email: 'guest-1@lunastak.local' })
+    await expect(getRequester()).resolves.toEqual({ userId: 'guest-1', isGuest: true })
+  })
+
+  it('returns null for a cookie naming a real user', async () => {
+    getServerSession.mockResolvedValue(null)
+    cookieGet.mockReturnValue({ value: 'someone-elses-id' })
+    findUnique.mockResolvedValue({ email: 'someone@example.com' })
+    await expect(getRequester()).resolves.toBeNull()
+  })
+
+  it('returns null when there is neither', async () => {
+    getServerSession.mockResolvedValue(null)
+    cookieGet.mockReturnValue(undefined)
+    await expect(getRequester()).resolves.toBeNull()
+  })
 })
