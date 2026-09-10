@@ -60,11 +60,26 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
   })
 
   it('presents the review when a DOCUMENT finishes in session — the half 2.8.0 was missing', () => {
-    expect(source).toMatch(/if \(event\.detail\.documentId\) presentIngestReview\('document', event\.detail\.documentId\)/)
+    expect(source).toMatch(/presentIngestReview\('document', documentId\)/)
   })
 
   it('presents the review when a BUNDLE import closes — "Show me" used to only close the dialog', () => {
     expect(source).toMatch(/presentIngestReview\('bundle', result\.importBatchId\)/)
+  })
+
+  it('returns a DEEP-DIVE upload to its deep dive, decided before the review is considered', () => {
+    /*
+     * Deep-dive uploads reopened their sheet on a `documentProcessed` event nothing had dispatched
+     * since 2026-09-09. Completion is `extractionComplete` now, and it has two possible outcomes for
+     * a document — so ORDER matters: check the deep dive first, or the review is navigated to and the
+     * sheet opens on top of it.
+     */
+    const lookup = source.indexOf('deepDiveUploadsRef.current.get(documentId)')
+    const review = source.indexOf("presentIngestReview('document', documentId)")
+    expect(lookup).toBeGreaterThan(-1)
+    expect(review).toBeGreaterThan(-1)
+    expect(lookup).toBeLessThan(review)
+    expect(source).toMatch(/if \(deepDiveId\) \{[\s\S]{0,200}setDeepDiveSheetOpen\(true\)\s*\n\s*return/)
   })
 
   it('records a deferral against the ingest, not the project, then leaves the review address', () => {

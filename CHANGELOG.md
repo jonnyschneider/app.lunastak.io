@@ -35,6 +35,23 @@ deferring costs nothing.
 Existing per-project deferrals are ignored rather than migrated, so a project whose review was
 deferred under 2.8.0 will offer its ingests' reviews again on the next visit.
 
+### Fixed — uploading a document into a deep dive reopens the deep dive again (2026-09-10)
+
+Broken since 2026-09-09. When document processing moved onto the shared background-task service,
+its completion signal changed from a `documentProcessed` window event to `extractionComplete` — by
+design, with the same detail — but three listeners on the old name were never moved. An event
+nobody dispatches fails silently, so the deep-dive sheet simply stopped coming back after an upload
+into it, and nothing reported it.
+
+Completion now goes through `extractionComplete`, and a document uploaded into a deep dive returns
+the user to that deep dive rather than to the ground-truth review: they started inside that thread,
+and its review stays pending for their next visit. It is now tracked per document, so a second
+upload started before the first finishes no longer makes the first come back to nothing.
+
+The dead first-upload chat branch that hung off the same event — gated on a flag nothing ever set —
+is removed. A new test fails if any app event is listened for but dispatched nowhere, which is how
+this one went unnoticed.
+
 ## [2.8.0] - 2026-09-10
 
 ### Added — the project's mode is a URL, and the landing is decided on the server (2026-09-10)

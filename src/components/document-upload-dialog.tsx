@@ -3,7 +3,7 @@
 import { useBackgroundTaskContext } from '@/components/providers/BackgroundTaskProvider'
 import { ingestComplete, ingestRunning, ingestFailed } from '@/lib/ingest-messaging'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Dialog,
@@ -23,7 +23,17 @@ interface DocumentUploadDialogProps {
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUploadComplete: (fileName?: string) => void
+  /**
+   * The upload was accepted and is now processing in the background — the dialog closes here.
+   *
+   * ⚠ THIS REPLACED `onUploadComplete`, 2026-09-10. That fired on a `documentProcessed` window
+   * event which nothing had dispatched since `DocumentProcessingProvider` was deleted on 2026-09-09
+   * — so it never fired, and a document uploaded into a deep dive stopped reopening the deep dive.
+   * Completion is `extractionComplete` with a `documentId`, and the page decides what it means there.
+   * All this dialog can usefully report is which document it started, and for which deep dive, so
+   * the page can recognise it when it finishes.
+   */
+  onUploadStarted?: (upload: { documentId: string; deepDiveId?: string }) => void
   deepDiveId?: string
 }
 
@@ -36,7 +46,7 @@ export function DocumentUploadDialog({
   projectId,
   open,
   onOpenChange,
-  onUploadComplete,
+  onUploadStarted,
   deepDiveId,
 }: DocumentUploadDialogProps) {
   const { data: session } = useSession()
@@ -49,19 +59,6 @@ export function DocumentUploadDialog({
 
   const { startTask } = useBackgroundTaskContext()
 
-  // Listen for document processed events to trigger onUploadComplete
-  useEffect(() => {
-    const handleDocumentProcessed = (event: CustomEvent<{ projectId: string }>) => {
-      if (event.detail.projectId === projectId) {
-        onUploadComplete()
-      }
-    }
-
-    window.addEventListener('documentProcessed', handleDocumentProcessed as EventListener)
-    return () => {
-      window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
-    }
-  }, [projectId, onUploadComplete])
 
   // Guest users need to sign in to upload documents
   if (!session?.user) {
@@ -138,6 +135,8 @@ export function DocumentUploadDialog({
         completeDescription: `{{fragmentCount}} ground truths added. ${ingestComplete({ source: 'document' }).description}`,
         failedDescription: ingestFailed('document').description,
       })
+
+      onUploadStarted?.({ documentId: data.documentId, deepDiveId })
 
       // Close dialog - processing continues in background with indicator
       onOpenChange(false)

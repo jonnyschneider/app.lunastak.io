@@ -527,7 +527,6 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
   // Track if current upload is first content (set when upload starts, cleared on completion)
-  const [pendingFirstContentUpload, setPendingFirstContentUpload] = useState(false)
 
   // Pro upgrade flow for gated features
   const {
@@ -685,35 +684,37 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     }
   }, [])
 
-  // Listen for documentProcessed event - open chat if this was first content
-  useEffect(() => {
-    const handleDocumentProcessed = (event: CustomEvent<{ projectId: string }>) => {
-      if (event.detail.projectId !== projectId) return
-
-      fetchProjectData()
-
-      if (pendingFirstContentUpload) {
-        setPendingFirstContentUpload(false)
-        setChatInitialQuestion("I've got the gist from your document. What would you like to explore?")
-        setChatDeepDiveId(undefined)
-        setChatGapExploration(undefined)
-        setChatResumeConversationId(undefined)
-        setChatViewOnly(false)
-        setChatSheetOpen(true)
-      }
-    }
-    window.addEventListener('documentProcessed', handleDocumentProcessed as EventListener)
-    return () => window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
-  }, [projectId, pendingFirstContentUpload])
 
   // Listen for extractionComplete event (fired when background extraction finishes)
   useEffect(() => {
     const handleExtractionComplete = (event: CustomEvent<{ projectId: string; documentId?: string }>) => {
       if (event.detail.projectId !== projectId) return
       fetchProjectData()
-      // A DOCUMENT finishing is an ingest the user handed over and is waiting on. A conversation's
-      // extraction fires this same event (with `conversationId`) and deliberately does not move them.
-      if (event.detail.documentId) presentIngestReview('document', event.detail.documentId)
+      // A conversation's extraction fires this same event (with `conversationId`) and deliberately
+      // does not move the user.
+      const documentId = event.detail.documentId
+      if (!documentId) return
+
+      /*
+       * ⚠ A DOCUMENT UPLOADED INTO A DEEP DIVE GOES BACK TO THE DEEP DIVE — not to the review.
+       * The user started inside that thread, and the sheet shows what the document added to it; the
+       * review would pull them out of the context they chose. The document's review stays pending,
+       * so the landing table offers it the next time they arrive.
+       *
+       * Keyed by DOCUMENT, recorded when the upload started. It used to read `uploadDeepDiveId` page
+       * state at completion, which any later upload overwrote — start a deep-dive upload, then an
+       * ordinary one before the first finished, and the first came back to nothing.
+       */
+      const deepDiveId = deepDiveUploadsRef.current.get(documentId)
+      if (deepDiveId) {
+        deepDiveUploadsRef.current.delete(documentId)
+        setSelectedDeepDiveId(deepDiveId)
+        setDeepDiveSheetOpen(true)
+        return
+      }
+
+      // Otherwise it is an ingest the user handed over and is waiting on: show them what it produced.
+      presentIngestReview('document', documentId)
     }
     window.addEventListener('extractionComplete', handleExtractionComplete as EventListener)
     return () => window.removeEventListener('extractionComplete', handleExtractionComplete as EventListener)
@@ -736,22 +737,18 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     setChatSheetOpen(true)
   }
 
+  /**
+   * Documents uploaded into a deep dive, by documentId → deepDiveId, so the completion listener can
+   * recognise them when `extractionComplete` arrives (see there). A ref: the listener is registered
+   * once, and it only ever needs the current contents, never a re-render.
+   */
+  const deepDiveUploadsRef = useRef(new Map<string, string>())
+
   const handleUploadToDeepDive = (deepDiveId: string) => {
     // Close sheet and open upload dialog with deep dive context
     setDeepDiveSheetOpen(false)
     setUploadDeepDiveId(deepDiveId)
     setUploadDialogOpen(true)
-  }
-
-  const handleDocumentUploadComplete = async () => {
-    // Re-open the deep dive sheet to show the newly processed document
-    if (uploadDeepDiveId) {
-      setSelectedDeepDiveId(uploadDeepDiveId)
-      setDeepDiveSheetOpen(true)
-      setUploadDeepDiveId(undefined)
-    }
-    // Note: fetchProjectData and first-content chat opening are handled
-    // by the documentProcessed event listener above
   }
 
   // Toggle conversation star
@@ -1721,7 +1718,9 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         projectId={projectId}
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        onUploadComplete={handleDocumentUploadComplete}
+        onUploadStarted={({ documentId, deepDiveId }) => {
+          if (deepDiveId) deepDiveUploadsRef.current.set(documentId, deepDiveId)
+        }}
         deepDiveId={uploadDeepDiveId}
       />
 
