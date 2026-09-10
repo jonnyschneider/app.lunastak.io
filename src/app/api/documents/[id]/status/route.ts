@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
 import { prisma } from '@/lib/db'
+import { isDenied, requireDocumentAccess } from '@/lib/auth/guard'
 
 /**
  * GET /api/documents/[id]/status
@@ -19,6 +20,11 @@ export async function GET(
       { status: 400 }
     )
   }
+
+  // Scoped to the caller's own documents (or a demo project's): the id alone used to be enough to
+  // read any document's status and file name.
+  const auth = await requireDocumentAccess(id, { access: 'read' })
+  if (isDenied(auth)) return auth
 
   const document = await prisma.document.findUnique({
     where: { id },
