@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createGuestUser, createEmptyGuestProject } from '@/lib/projects'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
+import { GUEST_COOKIE_NAME } from '@/lib/auth/current-user'
 
 /**
  * GET /api/guest/init

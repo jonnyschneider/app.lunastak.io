@@ -114,6 +114,18 @@ describe('API route auth', () => {
     expect(KNOWN_UNGUARDED.filter(guarded), 'now guarded — delete from KNOWN_UNGUARDED').toEqual([])
   })
 
+  /** The fingerprint of a hand-rolled "who is this request" — 17 of them existed on 2026-09-11. */
+  const HAND_ROLLED = [/const\s+GUEST_COOKIE_NAME\s*=/, /async\s+function\s+get\w*UserId\s*\(/]
+
+  it('no route re-implements identity — import getRequester / GUEST_COOKIE_NAME instead', () => {
+    // Routes still on KNOWN_UNGUARDED are exempt while they wait their turn; the exemption goes
+    // when that list does (auth-gap plan Task 11, Step 3).
+    const offenders = routeFiles().filter(
+      f => !KNOWN_UNGUARDED.includes(f) && HAND_ROLLED.some(re => re.test(readFileSync(f, 'utf8'))),
+    )
+    expect(offenders).toEqual([])
+  })
+
   /**
    * Importing the guard isn't the same as using the RIGHT guard. The likeliest future mistake is
    * `requireUser()` followed by a `findUnique({ where: { id } })`: authenticated, but not authorised.
