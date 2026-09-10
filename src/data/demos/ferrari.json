@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 4,
+  "bundleVersion": 5,
   "projectId": "cmnxrkvuv0094ow1betk3sjzr",
   "projectName": "Ferrari",
   "isDemo": true,
   "demoSlug": "ferrari",
   "description": "Cornered resource and brand power",
-  "exportedAt": "2026-09-10T04:12:30.658Z",
+  "exportedAt": "2026-09-10T07:56:56.451Z",
   "knowledgeSummary": "You've been building out the Ferrari case as a strategy study, and Luna now has a detailed picture of how the whole system fits together.\n\n**The rule that runs everything.** Enzo's dictum, always deliver one car fewer than demanded, isn't nostalgia, it's the operating policy. It shows up in the SUV capped at 20% of volume, the order book sold out to 2027, and the fact that 81% of sales go to existing owners. Growth comes from selling deeper into 180,000 known customers, not from chasing new ones.\n\n**The dream, not the car.** Ferrari's own framing is that it doesn't sell transportation, it sells a way to feel maximally alive. That's why unreliability never hurt demand, why the Mille Miglia scandal made the cars more desirable, and why buyers are handed several genuinely true reasons (engineering, heritage, appreciation) to make the purchase feel justified.\n\n**What no one else has replicated.** The racing team, constructor and service operation under one roof since the 1940s, in-house casting and assembly at Maranello, no shared platforms with anyone, a private test track, and a complete record of every living owner. Luca added the commercial machine (waitlists, Classiche certification, licensed goods) on top of Enzo's myth.\n\n**The economics, and the open question.** 50% gross margins, roughly $170,000 profit per car, and single models like the F80 driving outsized profit swings. But management just guided to 5% growth after the stock fell from $90B to $55B, and the new EV, revealed by Jony Ive with no styling shown, is explicitly a second pyramid aimed at people the current brand doesn't reach.\n\nWorth digging into next: whether that EV bet strengthens the myth or dilutes it.",
   "suggestedQuestions": [
     {
@@ -230,7 +230,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "How the ownership actually works",
@@ -255,7 +265,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Ferrari owns the customer; dealers are infrastructure",
@@ -280,7 +300,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The secondary market is cultivated, not captured",
@@ -305,7 +335,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Classiche monetises the secondary market indirectly",
@@ -330,7 +370,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The widest gap between who knows the product and who owns it",
@@ -355,7 +405,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Almost every car goes to someone who already has one",
@@ -380,7 +444,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A fan base that will never buy anything",
@@ -405,7 +479,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "New geographies as the only non-diluting way to grow volume",
@@ -430,7 +514,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Widening the base through lifestyle, deliberately",
@@ -455,7 +549,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The community is unusually inclusive for a luxury brand",
@@ -480,7 +588,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The job is not transportation",
@@ -505,7 +623,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Speed as a way of fighting death",
@@ -530,7 +658,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Tragedy compounded the myth rather than damaging it",
@@ -555,7 +693,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The functional alibi",
@@ -580,7 +728,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Flaws are not a defect in the proposition",
@@ -605,7 +763,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Buying a live connection to the pinnacle of motorsport",
@@ -630,7 +798,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A bundle of product and service, not a product",
@@ -655,7 +833,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Racing thrills as an engineered product characteristic",
@@ -680,7 +872,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Every car unique, by construction",
@@ -705,7 +907,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Passion as the thing actually purchased",
@@ -730,7 +942,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Lamborghini diluted itself into a different category",
@@ -755,7 +977,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Platform sharing is structurally incompatible with the model",
@@ -780,7 +1012,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Why nobody else has run this playbook",
@@ -805,7 +1047,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The Goldilocks scale nobody else occupies",
@@ -830,7 +1082,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Ferrari nearly lost to Honda",
@@ -855,7 +1117,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Chinese EVs as a category risk rather than a direct one",
@@ -880,7 +1152,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Margins that place it with luxury houses, not carmakers",
@@ -905,7 +1187,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Absolute profit per car is the more striking number",
@@ -930,7 +1222,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The business is extremely top-heavy",
@@ -955,7 +1253,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The Icona series exists to smooth supercar seasonality",
@@ -980,7 +1288,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Formula 1 turned from a cost into a profit centre",
@@ -1005,7 +1323,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Valued as an apex luxury house",
@@ -1030,7 +1358,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Growth has decelerated, and that is the bear case",
@@ -1055,7 +1393,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The pyramid needs somewhere to graduate to, always",
@@ -1080,7 +1428,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Access is earned through purchase history",
@@ -1105,7 +1463,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The top of the pyramid is an operating business of its own",
@@ -1130,7 +1498,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Four new models a year, discontinued fast",
@@ -1155,7 +1533,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Vertical integration to the raw ingot",
@@ -1180,7 +1568,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Deliberate manufacturing inefficiency",
@@ -1205,7 +1603,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The FUV, capped at 20% of volume",
@@ -1230,7 +1638,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Most Ferraris are never driven",
@@ -1255,7 +1677,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The Luce as a parallel pyramid, not a new tier",
@@ -1280,7 +1712,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The myth as a cornered resource",
@@ -1305,7 +1751,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Enzo was a marketer, not an engineer",
@@ -1330,7 +1786,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Luca brought the luxury strategy Enzo never knew existed",
@@ -1355,7 +1821,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The team, the technology, the myth",
@@ -1380,7 +1860,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Racing feeds the myth without selling cars directly",
@@ -1399,7 +1893,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "They probably know every owner by name",
@@ -1424,7 +1932,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A racetrack around the founder's house",
@@ -1449,7 +1967,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Brand licensing is the standing dilution risk",
@@ -1474,7 +2002,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Overproduction is the cardinal sin, and Ferrari has committed it before",
@@ -1499,7 +2037,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The EV transition is genuinely existential",
@@ -1524,7 +2072,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Pricing power has a visible ceiling",
@@ -1549,7 +2111,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Public markets pull against luxury discipline",
@@ -1574,7 +2146,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Succession has repeatedly arrived as sudden loss",
@@ -1599,7 +2181,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Rising prices are changing the community",
@@ -1618,7 +2210,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Both exclusive and inclusive at once",
@@ -1643,7 +2245,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Independence as inherited doctrine",
@@ -1668,7 +2284,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Scarcity managed as a permanent discipline",
@@ -1693,7 +2319,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Continuity as the actual moat",
@@ -1718,7 +2358,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Myth-building as deliberate, sustained work",
@@ -1743,7 +2393,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Technology went from something to resist to something to lead",
@@ -1768,7 +2428,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1780,7 +2454,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1792,7 +2472,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1804,7 +2490,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1816,7 +2508,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1828,7 +2526,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     }
   ],
   "syntheses": [

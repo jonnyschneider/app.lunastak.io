@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 4,
+  "bundleVersion": 5,
   "projectId": "cmn8an6ivpa0xoehj",
   "projectName": "Costco",
   "isDemo": true,
   "demoSlug": "costco",
   "description": null,
-  "exportedAt": "2026-09-10T04:12:28.987Z",
+  "exportedAt": "2026-09-10T07:56:54.358Z",
   "knowledgeSummary": "You've been working through Costco as a case study, and Luna now has a pretty rich picture of how the model actually works.\n\n**The engine is the cap, not the growth.** The whole business runs on a self-imposed 14% markup ceiling (averaging ~11%), a constraint that traces back to Sol Price's original legal workaround of using \"membership\" to dodge minimum-pricing laws. That cap forces everything else: 3,800 SKUs instead of 100,000+, 92% cross-docking, no advertising, and a negative cash conversion cycle earned through inventory speed rather than supplier leverage.\n\n**The inversion you keep coming back to.** Costco has retail's lowest prices but its wealthiest customers, because the annual fee and bulk buy-in filter for households with cash flow and storage space, not because Costco targeted the wealthy. That filter, plus the executive-tier split (45% of members, 73% of sales), is what produces 93% renewal.\n\n**Why competitors can't just copy it.** Sam Walton saw the whole model in 1982 and launched Sam's Club within a year, yet the gap has only widened. Copying Costco means destroying the margin structure the competitor's existing business depends on, which is why counter-positioning works even as a $230B incumbent rather than a scrappy challenger.\n\n**Growth as the open question.** International expansion into dense Asian markets shouldn't have worked by the format's own logic, but did, suggesting the appeal is the value itself, not the warehouse format. China's 400,000 members in two years versus a 68,000 mature US average hints at how much headroom is left.\n\nAll eleven strategic dimensions are now well covered. Worth turning next to where this model's ceiling actually is, and what would break the discipline that holds it together.",
   "suggestedQuestions": [
     {
@@ -233,7 +233,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Scale of the member base and share of US households",
@@ -258,7 +268,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Renewal rates behave unlike any consumer subscription",
@@ -283,7 +303,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The consumer business was an accident, not a plan",
@@ -308,7 +338,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Executive members are a minority of members but most of the volume",
@@ -333,7 +373,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Value translates across cultures better than expected",
@@ -352,7 +402,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Conventional retail markup is the problem being attacked",
@@ -377,7 +437,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The membership club began as a legal workaround",
@@ -396,7 +466,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Pooled buying power as the founding idea",
@@ -421,7 +501,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The insight that the margin was in the warehouse, not the store",
@@ -440,7 +530,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Price beats friction — the assumption that proved wrong",
@@ -459,7 +559,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "A hard internal cap on markup, not a pricing target",
@@ -484,7 +594,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Why the cap is enforced as a cultural constraint rather than a policy",
@@ -503,7 +623,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Supplier savings flow almost entirely to the member",
@@ -528,7 +658,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The hot dog as a public, unmovable price commitment",
@@ -553,7 +693,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Selection is traded away deliberately, and quality is what makes it acceptable",
@@ -578,7 +728,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The intelligent loss of sales",
@@ -603,7 +763,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Kirkland Signature is a value instrument, not a margin instrument",
@@ -628,7 +798,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Sam's Club was cloned directly from Price Club, with the founder's consent",
@@ -653,7 +833,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The closest competitor has fallen further behind over time",
@@ -678,7 +868,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Counter-positioning against e-commerce convenience",
@@ -703,7 +903,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "An incumbent holding counter-positioning power is rare",
@@ -722,7 +932,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The overhead gap is the thing competitors cannot cross",
@@ -747,7 +967,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The relevant contest is not warehouse retail",
@@ -766,7 +996,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Suppliers finance the inventory",
@@ -791,7 +1031,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The float is earned on standard terms, not extracted from suppliers",
@@ -810,7 +1056,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Inventory velocity against the rest of retail",
@@ -835,7 +1091,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "SKU count is actively driven down, not held",
@@ -854,7 +1120,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Two businesses under one roof",
@@ -879,7 +1155,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Absolute margin dollars over margin percentage",
@@ -904,7 +1186,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Labour and real estate productivity",
@@ -929,7 +1217,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The executive membership is priced to break even for the member",
@@ -954,7 +1252,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The margin structure made credit cards impossible, which became leverage",
@@ -979,7 +1287,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A modest retailer wrapped around an exceptional fee business",
@@ -1004,7 +1322,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "There is effectively no marketing spend",
@@ -1029,7 +1357,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Word of mouth was designed in from the credit union moment",
@@ -1048,7 +1386,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Earned media has been cultivated deliberately since FedMart",
@@ -1073,7 +1421,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Social reach without any social presence",
@@ -1098,7 +1452,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "International expansion succeeded where the format looked wrong",
@@ -1117,7 +1481,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "China demand runs far ahead of the US baseline",
@@ -1136,7 +1510,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "E-commerce is approached on terms that avoid the overhead",
@@ -1161,7 +1545,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A quarter of the assortment exists to create novelty",
@@ -1186,7 +1584,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Running out of stock is the intended behaviour",
@@ -1205,7 +1613,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Layout is engineered around traffic, not convenience",
@@ -1230,7 +1648,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "LOW"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Cross-docking moves goods without ever storing them",
@@ -1255,7 +1683,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "An effectively unlimited return policy",
@@ -1280,7 +1722,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Unique SKUs remove the ability to price-compare",
@@ -1299,7 +1751,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Buyers hold genuine commodity expertise",
@@ -1324,7 +1786,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Low SKU count is what makes deep buyer relationships possible",
@@ -1349,7 +1821,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Kirkland Signature is the largest consumer packaged brand in the world",
@@ -1374,7 +1856,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Vertical integration is used narrowly, and only to protect members",
@@ -1399,7 +1891,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "LOW"
+        }
+      ]
     },
     {
       "title": "Paying above market produces lower total labour cost",
@@ -1424,7 +1930,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Leadership continuity as an institutional asset",
@@ -1449,7 +1965,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Supplier leverage comes from concentration, not overall size",
@@ -1474,7 +2000,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The e-commerce miss was luck, not foresight",
@@ -1499,7 +2035,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The cost structure forecloses conventional e-commerce permanently",
@@ -1524,7 +2070,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Growth is bounded physically, and cash cannot relieve it",
@@ -1549,7 +2105,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The trade-offs are interlocking, so any single reversal breaks the system",
@@ -1574,7 +2140,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Culture is the load-bearing asset and the concentrated risk",
@@ -1593,7 +2169,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Brand resistance took decades to overcome and is conditional",
@@ -1618,7 +2208,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The code of ethics is an explicit priority order",
@@ -1643,7 +2243,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "LOW"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Shareholders are deliberately absent from the stated priorities",
@@ -1668,7 +2282,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Scale economies shared is the organising idea",
@@ -1693,7 +2317,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Advantages are held latent rather than monetised",
@@ -1718,7 +2352,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Two kinds of company",
@@ -1737,7 +2381,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "LOW"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Patience as an operating norm",
@@ -1762,7 +2420,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Every cent matters, literally",
@@ -1781,7 +2449,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1793,7 +2471,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1805,7 +2489,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1817,7 +2507,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1829,7 +2525,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1841,7 +2543,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     }
   ],
   "syntheses": [

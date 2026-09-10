@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 4,
+  "bundleVersion": 5,
   "projectId": "cmn8anbaapaww1709",
   "projectName": "TSMC",
   "isDemo": true,
   "demoSlug": "tsmc",
   "description": null,
-  "exportedAt": "2026-09-10T04:12:31.490Z",
+  "exportedAt": "2026-09-10T07:56:57.501Z",
   "knowledgeSummary": "You've been building out the TSMC case as a strategy study, and it's a rich one. A few threads stand out.\n\n**The problem you found, not predicted.** Morris Chang didn't forecast a fabless chip industry, he'd watched designers at TI and General Instrument who wanted to start companies but couldn't raise enough to build a fab. Pulling the fab requirement out of the equation is what created Nvidia, Qualcomm, and the rest. TSMC's own founding was almost the mirror image: no design capability, no IP, no sales engine, just one possible strength (wafer manufacturing) and a government that ordered the company into existence in three days.\n\n**The moat that compounds instead of decaying.** Capital intensity is normally a weakness. Here, Moore's Law halving cost per transistor and Rock's Law doubling fab costs every four years combine into a flywheel: high margins fund more advanced fabs, better process pulls in customers, customers fund the next fab. Layered on top: 40 years of process knowledge no amount of money can buy back, and a single-source dependency on ASML's EUV machines that even an unlimited budget can't shortcut.\n\n**The trust proposition, and the invisible brand.** TSMC's commitment to never design its own chips is what makes customers safe handing over their most advanced designs, and it's the one thing Samsung and Intel structurally can't copy without dismantling their own businesses. The tradeoff is that TSMC is deliberately invisible: Apple takes the stage credit, TSMC takes the margin.\n\n**The one risk that actually matters.** Everything sits on Taiwan. Nobody knows if the capability would survive an evacuation, and the chip shortage already showed what happens when supply pauses even briefly.\n\nWorth exploring next: how this origin story and moat structure might translate to a business you're actually building.",
   "suggestedQuestions": [
     {
@@ -226,7 +226,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The market did not exist when the company was founded",
@@ -251,7 +261,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Morris could see the demand because he had watched it be suppressed",
@@ -276,7 +296,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Effectively a monopoly at the leading edge",
@@ -301,7 +331,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Concentration in one customer, and one relationship",
@@ -326,7 +366,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Always needing the leading edge",
@@ -351,7 +401,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Taiwan had exactly one asset worth building on",
@@ -370,7 +430,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Starting from 4-5% gross margins as a national baseline",
@@ -395,7 +465,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The founder did not choose to found it",
@@ -420,7 +500,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The idea was widely considered bad",
@@ -445,7 +535,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The founder took no equity",
@@ -470,7 +570,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "A career built on two rejections",
@@ -495,7 +605,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The promise never to compete with the customer",
@@ -514,7 +630,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Access to manufacturing nobody else can offer at any price",
@@ -539,7 +665,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The customer takes the credit, deliberately",
@@ -564,7 +700,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Learning-curve pricing, invented at TI and now reversed",
@@ -589,7 +735,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Yield is the product",
@@ -608,7 +760,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Intel's decline took a long time and is not finished",
@@ -633,7 +795,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Intel saw EUV first and declined to commit",
@@ -658,7 +830,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The single most expensive strategic mistake",
@@ -683,7 +865,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Indecision has cost Intel more than any single choice",
@@ -708,7 +900,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Money cannot buy what TSMC has",
@@ -733,7 +939,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The treadmill punishes a single missed step",
@@ -752,7 +972,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A contract manufacturer with 40% operating margins",
@@ -777,7 +1007,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Nearly all profit is recycled into the next generation",
@@ -802,7 +1042,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Twenty percent compounded for twenty-seven years",
@@ -827,7 +1077,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The flywheel that took a decade to start turning",
@@ -846,7 +1106,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Rock's Law implies a monopoly",
@@ -871,7 +1141,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Capital intensity as a better moat than software margins",
@@ -896,7 +1176,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Begging the incumbents, then seeding the challengers",
@@ -921,7 +1211,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The founder's reputation was the entire sales strategy",
@@ -946,7 +1246,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The Apple deal required a third act",
@@ -971,7 +1281,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Diversification is driven by subsidy, not strategy",
@@ -996,7 +1316,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "What an EUV machine actually does",
@@ -1021,7 +1351,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The physics required inventing new mirrors",
@@ -1046,7 +1386,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Roughly fifty machines a year exist",
@@ -1071,7 +1421,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The node names are marketing, and physics is closing in",
@@ -1096,7 +1456,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The clearest case of process power there is",
@@ -1121,7 +1491,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The ASML relationship is mutual dependence",
@@ -1146,7 +1526,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Switching costs that are technical, not contractual",
@@ -1171,7 +1565,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "An ecosystem effect that is not quite a network effect",
@@ -1196,7 +1600,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A founder who learned the industry in a hotel bar",
@@ -1221,7 +1635,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "LOW"
+        }
+      ]
     },
     {
       "title": "Government backing as founding capability",
@@ -1246,7 +1670,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The geopolitical concentration is the whole bear case",
@@ -1271,7 +1705,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Whether process power can be airlifted",
@@ -1296,7 +1740,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "What the world loses if it goes wrong",
@@ -1321,7 +1775,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A single supplier for the critical input",
@@ -1346,7 +1810,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The strategy was bad and worked anyway",
@@ -1371,7 +1845,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Stay pure-play, whatever the temptation",
@@ -1390,7 +1874,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Enable the customers, take none of the credit",
@@ -1409,7 +1907,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Outsource everything that does not make the beer taste better",
@@ -1434,7 +1942,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Fighting spirit at seventy-eight",
@@ -1459,7 +1977,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1471,7 +1999,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1483,7 +2017,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1495,7 +2035,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1507,7 +2053,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1519,7 +2071,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     }
   ],
   "syntheses": [

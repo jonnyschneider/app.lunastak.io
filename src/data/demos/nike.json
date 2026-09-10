@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 4,
+  "bundleVersion": 5,
   "projectId": "cmn8anetr5kwlmbmq",
   "projectName": "Nike",
   "isDemo": true,
   "demoSlug": "nike",
   "description": null,
-  "exportedAt": "2026-09-10T04:12:29.801Z",
+  "exportedAt": "2026-09-10T07:56:55.404Z",
   "knowledgeSummary": "You've been building out a detailed strategic picture of Nike, and it's rich enough now to read almost like a full case study rather than scattered notes.\n\n**The market wasn't sized, it was widened.** Bowerman's \"if you have a body, you're an athlete\" line, and Knight's willingness to claim a billion-dollar market when the real number was $2 billion, both point to the same move: Nike didn't discover demand, it redefined who counts as a customer until the market caught up.\n\n**The founding constraint became the culture.** Impossible unit economics on Tigers, a banker who wouldn't lend against growth, and a 100% debt-to-assets ratio weren't choices so much as survival tactics, yet they hardened into Nike's permanent growth orientation, even now with $10.7 billion in cash sitting against that old identity.\n\n**Scale, not brand, is the real moat.** You've landed on a sharp distinction: Nike doesn't out-margin Adidas, it out-volumes it. The Kobe story (paying to leave Adidas) shows the mechanism, bigger athlete platform attracts bigger stars attracts bigger platform, a loop small rivals like Under Armour can't replicate no matter how much they spend.\n\n**The unresolved tension.** Knight himself called Nike a marketing company that happens to sell shoes as its best marketing tool, and you've flagged the counter-read: maybe the athletes are the product and the shoe is just the monetization. That question sits unanswered at the center of everything else, including live risks, women's underdevelopment, resale value walked away from, and running fragmenting under Nike from On and Hoka.\n\nThis is dense, well-covered ground. Where it'd be worth pushing next is turning the Nike pattern into a live decision, what would *your* version of \"widening the definition\" or \"scale through talent\" actually look like applied elsewhere.",
   "suggestedQuestions": [
     {
@@ -220,7 +220,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Scale today, and the shape of the customer base",
@@ -245,7 +259,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Women are the largest underserved segment inside the business",
@@ -270,7 +294,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Near-monopoly in basketball, the category that converts to everyday wear",
@@ -295,7 +329,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "A replacement market of fourteen billion feet",
@@ -320,7 +364,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Sneakers became identity, and a secondary market followed",
@@ -345,7 +399,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The founding insight was manufacturing arbitrage, borrowed from cameras",
@@ -370,7 +434,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The market was correctly judged too small — and the judgement was irrelevant",
@@ -395,7 +469,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The original business had no product and no defensibility",
@@ -420,7 +504,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The gross margin never penciled, which forced everything else",
@@ -445,7 +539,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Banks could not value a company that had no assets",
@@ -470,7 +574,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The equity route failed, including a rename to sound like tech",
@@ -495,7 +609,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Growth as a survival requirement, not an ambition",
@@ -520,7 +644,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The product is a way to participate in the dream",
@@ -545,7 +679,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Genuine performance innovation underwrites the aspiration",
@@ -570,7 +714,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Brand power that shows up as consideration, not price",
@@ -595,7 +749,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The premium is deliberately left on the table",
@@ -620,7 +784,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Two different products under one swoosh",
@@ -645,7 +819,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Knight's own account, and the disagreement with it",
@@ -670,7 +854,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "A power law unlike the rest of apparel",
@@ -695,7 +889,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "No switching costs and no network effects",
@@ -720,7 +924,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The Jordan deal was counter-positioning the incumbents could not copy",
@@ -745,7 +959,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Reebok overtook Nike by serving a market Nike refused on principle",
@@ -770,7 +994,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Adidas has repeatedly lost on its own strategy",
@@ -795,7 +1029,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The danger of being caught in the middle",
@@ -820,7 +1064,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Niche competitors are winning in the founding category",
@@ -845,7 +1099,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "A fabless shoe company",
@@ -870,7 +1134,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Margins that are good, and nothing like luxury",
@@ -895,7 +1173,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "LOW"
+        }
+      ]
     },
     {
       "title": "The Futures Program moved financing onto retailers",
@@ -920,7 +1208,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The trading company that made everything possible",
@@ -945,7 +1243,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The Jordan deal economics, and what they actually paid",
@@ -970,7 +1282,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Jordan as a compounding annuity long after retirement",
@@ -995,7 +1317,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "From capital-starved to not knowing what to do with cash",
@@ -1020,7 +1348,13 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Never taking dilution is how the founder ended up owning half of it",
@@ -1045,7 +1379,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Sports marketing was effectively invented to get around amateurism rules",
@@ -1070,7 +1414,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Buying the middle of the market rather than the stars",
@@ -1095,7 +1449,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Athletes are content, and scale buys the content",
@@ -1120,7 +1484,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "$4 billion a year, booked as demand creation",
@@ -1145,7 +1519,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Paying to be a billboard on jerseys someone else sells",
@@ -1170,7 +1558,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The banned-shoe story as manufactured myth",
@@ -1195,7 +1593,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Taking a position as media strategy",
@@ -1220,7 +1628,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The wholesale-to-direct transition, still unfinished",
@@ -1245,7 +1667,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Innovation arriving from outside the shoe industry",
@@ -1270,7 +1706,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The Jordan 3 was designed by asking the customer what he wanted",
@@ -1295,7 +1741,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "A bad product nearly lost the whole relationship",
@@ -1320,7 +1780,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Year one of Jordan was inflated by stuffing the channel",
@@ -1345,7 +1815,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Breaking2 as a spectacle deliberately outside the rules",
@@ -1370,7 +1850,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Digital as relationship infrastructure, learned from a failed product",
@@ -1395,7 +1889,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The ability to make an athlete into something larger than an athlete",
@@ -1420,7 +1928,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Scale as the thing an athlete cannot get anywhere else",
@@ -1445,7 +1967,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Ten principles typed in anger, still operative",
@@ -1470,7 +2006,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Bowerman's contributions were rare and enormous",
@@ -1495,7 +2041,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Scale advantage inside a fragmented factory ecosystem",
@@ -1520,7 +2076,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Personalisation at a scale nobody else can reach",
@@ -1545,7 +2115,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PRODUCT_EXPERIENCE",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A deeply insular culture that grows its own",
@@ -1570,7 +2154,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The founding strength became the defining scandal",
@@ -1595,7 +2189,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The betrayal that shaped the culture",
@@ -1620,7 +2224,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Winning made them slow",
@@ -1645,7 +2263,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "The reorganisation may have traded focus for legibility",
@@ -1670,7 +2298,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "COMPETITIVE_LANDSCAPE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "A CEO from outside the shoe business, and a thin bench",
@@ -1695,7 +2337,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CAPABILITIES_ASSETS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "China is both the largest opportunity and the least controllable",
@@ -1720,7 +2372,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "CUSTOMER_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "PROBLEM_OPPORTUNITY",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Everything rests on continuously repurchased relevance",
@@ -1745,7 +2411,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Growth declared as identity",
@@ -1770,7 +2450,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Competing to the line and one toe past it",
@@ -1795,7 +2485,17 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Standing with the athlete as the durable position",
@@ -1820,7 +2520,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Deliberately giving value away to keep the dream reachable",
@@ -1845,7 +2559,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Betting that scale lets them go direct",
@@ -1870,7 +2598,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "BUSINESS_MODEL_ECONOMICS",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "GO_TO_MARKET",
+          "confidence": "HIGH"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "The unresolved question the company is built on",
@@ -1895,7 +2637,21 @@
         }
       ],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "DIFFERENTIATION_ADVANTAGE",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "STRATEGIC_INTENT",
+          "confidence": "MEDIUM"
+        },
+        {
+          "dimension": "VALUE_PROPOSITION",
+          "confidence": "HIGH"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1907,7 +2663,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1919,7 +2681,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1931,7 +2699,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1943,7 +2717,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     },
     {
       "title": "Strategic tension",
@@ -1955,7 +2735,13 @@
       "reviewedAt": null,
       "evidence": [],
       "generatedBy": "claude-code-plugin@1.2.0",
-      "importMode": "transform"
+      "importMode": "transform",
+      "dimensions": [
+        {
+          "dimension": "RISKS_CONSTRAINTS",
+          "confidence": "MEDIUM"
+        }
+      ]
     }
   ],
   "syntheses": [

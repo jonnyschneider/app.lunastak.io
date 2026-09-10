@@ -14,7 +14,7 @@
  */
 import { z } from 'zod'
 
-export const BUNDLE_VERSION = 4 as const
+export const BUNDLE_VERSION = 5 as const
 
 const ConfidenceSchema = z.enum(['HIGH', 'MEDIUM', 'LOW'])
 
@@ -23,6 +23,24 @@ const ComponentSchema = z
     id: z.string().min(1),
   })
   .passthrough() // component shape varies by type and may evolve; preserve unknown fields
+
+/**
+ * Which strategic dimensions a fragment was tagged into.
+ *
+ * Added in v5. `FragmentDimensionTag` was NEVER carried by this format, so every export dropped it
+ * and every restore produced a project whose fragments belong to no dimension at all — the coverage
+ * grid empty, every ground truth filed under "not filed anywhere". The four committed demos have
+ * shipped that way for as long as they have existed, which is why nobody connected the empty
+ * Harvey balls to a data problem: there was nothing to compare against.
+ *
+ * `reasoning` and `subdimension` are deliberately NOT carried. The first is a note about how a tag
+ * was arrived at, not the tag; the second is unused (Tier 2 is future work). Both would be dead
+ * weight in a file that is read by people.
+ */
+const DimensionTagSchema = z.object({
+  dimension: z.string(),
+  confidence: z.string().nullable().optional(),
+})
 
 /**
  * The verbatim span a fragment rests on. Three verification states, not a
@@ -60,6 +78,8 @@ const FragmentSchema = z.object({
    */
   generatedBy: z.string().nullable().optional(),
   importMode: z.string().nullable().optional(),
+  /** v5. Optional so a v4 bundle still restores — absent means "exported before dimensions". */
+  dimensions: z.array(DimensionTagSchema).optional(),
 })
 
 const GapSchema = z.object({

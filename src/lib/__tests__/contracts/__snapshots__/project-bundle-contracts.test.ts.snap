@@ -9,7 +9,7 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
       "additionalProperties": false,
       "properties": {
         "bundleVersion": {
-          "const": 4,
+          "const": 5,
           "type": "number",
         },
         "decisionStack": {
@@ -138,6 +138,27 @@ exports[`Project Bundle contracts > schema shape > JSON Schema is stable (snapsh
               },
               "contentType": {
                 "type": "string",
+              },
+              "dimensions": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "confidence": {
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "dimension": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "dimension",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
               },
               "evidence": {
                 "items": {

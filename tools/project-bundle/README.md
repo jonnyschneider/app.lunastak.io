@@ -76,6 +76,32 @@ When you change the bundle shape:
 
 ## Version history
 
+### v5 — 2026-09-10
+
+`fragments[]` gains `dimensions` — the `FragmentDimensionTag` rows behind each fragment.
+
+This one was never carried at all, rather than dropped in a refactor. Every restore
+therefore produced a project whose fragments belonged to no dimension: the coverage
+grid empty, every ground truth filed under "not filed anywhere". The four committed
+demos had shipped that way for as long as they had existed, which is precisely why
+nobody connected the empty Harvey balls to a data problem — there was no working
+example to compare against.
+
+Found by exporting a freshly imported project (141 tags) and restoring it as a demo
+(0 tags), then putting the two side by side.
+
+**Third time for this format.** v3 carried evidence, v4 carried provenance, v5 carries
+dimensions — each one a column that was added to `Fragment` while this boundary was
+left behind. `fragments.ts` states the rule in its own header; the rule keeps being
+missed. If a fourth is ever needed, the question to ask is not "which column now" but
+why the boundary is not derived from the model.
+
+`reasoning` and `subdimension` are deliberately NOT carried: the first is a note about
+how a tag was arrived at rather than the tag, and the second is unused.
+
+**A v4 bundle needs only `bundleVersion: 5`** to come forward — purely additive, and a
+bundle without the field restores with no tags exactly as it does today.
+
 ### v4 — 2026-09-10
 
 `fragments[]` gains `generatedBy` and `importMode` — which tool produced the

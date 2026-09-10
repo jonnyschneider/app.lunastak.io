@@ -27,6 +27,10 @@ export interface ExportableFragment {
     verification: string
     ordinal: number
   }[]
+  dimensionTags: {
+    dimension: string
+    confidence: string | null
+  }[]
 }
 
 /**
@@ -48,6 +52,14 @@ export interface FragmentRow {
   status: string
 }
 
+export interface DimensionTagRow {
+  id: string
+  fragmentId: string
+  dimension: string
+  confidence: string | null
+  reasoning: string
+}
+
 export interface EvidenceRow {
   id: string
   fragmentId: string
@@ -60,6 +72,7 @@ export interface EvidenceRow {
 export interface FragmentWriteClient {
   fragment: { createMany(args: { data: FragmentRow[] }): Promise<unknown> }
   evidence: { createMany(args: { data: EvidenceRow[] }): Promise<unknown> }
+  fragmentDimensionTag: { createMany(args: { data: DimensionTagRow[] }): Promise<unknown> }
 }
 
 export function toBundleFragment(f: ExportableFragment): BundleFragment {
@@ -73,6 +86,10 @@ export function toBundleFragment(f: ExportableFragment): BundleFragment {
     reviewedAt: f.reviewedAt ? new Date(f.reviewedAt).toISOString() : null,
     generatedBy: f.generatedBy ?? null,
     importMode: f.importMode ?? null,
+    dimensions: (f.dimensionTags ?? []).map((t) => ({
+      dimension: t.dimension,
+      confidence: t.confidence ?? null,
+    })),
     evidence: (f.evidence ?? [])
       .slice()
       .sort((a, b) => a.ordinal - b.ordinal)
@@ -133,8 +150,32 @@ export async function writeFragments(
     })),
   )
 
+  /**
+   * `@@unique([fragmentId, dimension])` — a bundle that somehow lists a dimension twice for one
+   * fragment would fail the whole `createMany`, so de-duplicate per fragment on the way in. The
+   * first wins; a second tag for the same dimension carries no information the first does not.
+   */
+  const dimensionTagRows: DimensionTagRow[] = fragments.flatMap((f, i) => {
+    const seen = new Set<string>()
+    return (f.dimensions ?? []).flatMap((d) => {
+      if (seen.has(d.dimension)) return []
+      seen.add(d.dimension)
+      return [{
+        id: randomUUID(),
+        fragmentId: fragmentRows[i].id,
+        dimension: d.dimension,
+        confidence: d.confidence ?? null,
+        /* Says where the row came from, matching the import path's own note. */
+        reasoning: 'Restored from project bundle',
+      }]
+    })
+  })
+
   await tx.fragment.createMany({ data: fragmentRows })
   if (evidenceRows.length > 0) {
     await tx.evidence.createMany({ data: evidenceRows })
+  }
+  if (dimensionTagRows.length > 0) {
+    await tx.fragmentDimensionTag.createMany({ data: dimensionTagRows })
   }
 }
