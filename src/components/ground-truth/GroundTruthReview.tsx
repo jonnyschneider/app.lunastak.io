@@ -414,7 +414,7 @@ export function GroundTruthReview({
         <div key={g.dimension ?? 'none'}>
           {/* Filtered to one dimension, the host has already named it — saying it twice is noise. */}
           {!dimension && (
-            <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+            <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground">
               {g.label}
             </h3>
           )}
@@ -449,7 +449,7 @@ function DiffSection({ label, items, empty, renderRow }: {
 }) {
   return (
     <div>
-      <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground/60">
+      <h3 className="border-b pb-1.5 text-xs font-medium uppercase tracking-wide text-foreground">
         {label}{items && ` (${items.length})`}
       </h3>
       {items === null ? (
