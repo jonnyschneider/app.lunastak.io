@@ -18,7 +18,7 @@ import { resolveProjectMode, type ModeInputs } from '../resolve-mode'
 const base: ModeInputs = {
   hasContext: true,
   hasStrategy: false,
-  reviewSeen: true,
+  hasPendingReview: false,
   evidenceParam: false,
   modeCookie: null,
   isDemo: false,
@@ -38,7 +38,7 @@ describe('resolveProjectMode', () => {
      * could not land a user on a branch that no longer exists. That is what makes deleting the
      * knowledgebase's empty state safe by construction rather than by argument.
      */
-    expect(resolveProjectMode({ ...base, hasContext: false, modeCookie: 'knowledge', evidenceParam: true, reviewSeen: false }))
+    expect(resolveProjectMode({ ...base, hasContext: false, modeCookie: 'knowledge', evidenceParam: true, hasPendingReview: true }))
       .toBe('stack')
   })
 
@@ -46,16 +46,16 @@ describe('resolveProjectMode', () => {
     expect(resolveProjectMode({ ...base, evidenceParam: true, modeCookie: 'stack' })).toBe('knowledge')
   })
 
-  it('row 3: a pending first look lands on the review', () => {
-    expect(resolveProjectMode({ ...base, reviewSeen: false })).toBe('review')
+  it('a pending ingest review lands on the review', () => {
+    expect(resolveProjectMode({ ...base, hasPendingReview: true })).toBe('review')
   })
 
   it('row 3 beats a stored preference — the first look is the one thing worth overriding it for', () => {
-    expect(resolveProjectMode({ ...base, reviewSeen: false, modeCookie: 'stack' })).toBe('review')
+    expect(resolveProjectMode({ ...base, hasPendingReview: true, modeCookie: 'stack' })).toBe('review')
   })
 
   it('row 3 requires !hasStrategy, or a user who built without reviewing is redirected forever', () => {
-    expect(resolveProjectMode({ ...base, reviewSeen: false, hasStrategy: true })).toBe('stack')
+    expect(resolveProjectMode({ ...base, hasPendingReview: true, hasStrategy: true })).toBe('stack')
   })
 
   it('row 4: the user\'s own preference, in both directions', () => {
@@ -82,12 +82,12 @@ describe('resolveProjectMode', () => {
     const cookies = [null, 'stack', 'knowledge', 'review', 'direction', '']
     for (const hasContext of bools)
       for (const hasStrategy of bools)
-        for (const reviewSeen of bools)
+        for (const hasPendingReview of bools)
           for (const evidenceParam of bools)
             for (const isDemo of bools)
               for (const modeCookie of cookies)
                 expect(['stack', 'knowledge', 'review']).toContain(
-                  resolveProjectMode({ hasContext, hasStrategy, reviewSeen, evidenceParam, modeCookie, isDemo })
+                  resolveProjectMode({ hasContext, hasStrategy, hasPendingReview, evidenceParam, modeCookie, isDemo })
                 )
   })
 
@@ -113,7 +113,7 @@ describe('resolveProjectMode', () => {
      * silently depend on that staying true: a half-restored demo must still never open the walker
      * at a visitor who has nothing to review and no way to act on it.
      */
-    expect(resolveProjectMode({ ...demo, hasStrategy: false, reviewSeen: false })).toBe('stack')
+    expect(resolveProjectMode({ ...demo, hasStrategy: false, hasPendingReview: true })).toBe('stack')
   })
 
   it('row 2 still outranks it: ?evidence=1 asks for the ground truths by name', () => {

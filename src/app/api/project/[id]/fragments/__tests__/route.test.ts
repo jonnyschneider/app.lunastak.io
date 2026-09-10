@@ -75,6 +75,7 @@ function fragmentRow(overrides: Record<string, unknown> = {}) {
     confidence: 'HIGH',
     sourceType: 'conversation',
     dimensionTags: [{ dimension: 'CUSTOMER_MARKET', confidence: 'HIGH' }],
+    conversationId: 'conv-1',
     conversation: { id: 'conv-1', title: 'Kickoff' },
     document: null,
     capturedAt,
@@ -237,6 +238,8 @@ describe('GET /api/project/[id]/fragments — existing shape is unchanged', () =
           confidence: 'HIGH',
           sourceType: 'conversation',
           dimensions: [{ dimension: 'CUSTOMER_MARKET', confidence: 'HIGH' }],
+          // Added 2026-09-10 for the per-ingest review. A conversation is its own batch.
+          reviewBatch: 'chat:conv-1',
           source: { type: 'conversation', id: 'conv-1', name: 'Kickoff' },
           capturedAt: capturedAt.toISOString(),
           interpretationType: 'verbatim',
@@ -248,6 +251,25 @@ describe('GET /api/project/[id]/fragments — existing shape is unchanged', () =
       activeCount: 7,
       archivedCount: 3,
     })
+  })
+
+  it('names the ingest each fragment arrived in, so the review can scope to it', async () => {
+    /*
+     * The per-ingest review (2026-09-10) filters on this. After an upload the user sees what was
+     * drawn from THAT document; after an import, from that bundle's batch; after a chat, from it.
+     */
+    mockFragmentFindMany.mockResolvedValue([
+      fragmentRow({ id: 'd', conversationId: null, conversation: null, documentId: 'doc-1', document: { id: 'doc-1', fileName: 'gtm.md' } }),
+      fragmentRow({ id: 'b', conversationId: null, conversation: null, sourceType: 'import', importBatchId: 'batch-9' }),
+      fragmentRow({ id: 'c' }),
+      // An import with no batch id cannot be scoped — null, never a key built from `undefined`.
+      fragmentRow({ id: 'x', conversationId: null, conversation: null, sourceType: 'import', importBatchId: null }),
+    ])
+
+    const { body } = await getJson()
+    const byId = Object.fromEntries(body.fragments.map((f: { id: string; reviewBatch: string | null }) => [f.id, f.reviewBatch]))
+
+    expect(byId).toEqual({ d: 'doc:doc-1', b: 'bundle:batch-9', c: 'chat:conv-1', x: null })
   })
 
   it('still resolves a document source and still honours the dimension filter', async () => {

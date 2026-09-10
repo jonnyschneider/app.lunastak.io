@@ -24,6 +24,7 @@ import { prisma } from '@/lib/db'
 import { getUserId } from '@/lib/auth/current-user'
 import { resolveProjectMode, type ProjectMode } from '@/lib/navigation/resolve-mode'
 import { MODE_COOKIE_NAME, readModeCookieValue } from '@/lib/navigation/mode-cookie'
+import { pickPendingBatch, reviewBatchKey } from '@/lib/navigation/review-batch'
 import ProjectClient from './ProjectClient'
 
 const GROUND_TRUTH_REVIEW_ITEM_TYPE = 'ground_truth_review'
@@ -64,7 +65,7 @@ export default async function ProjectRoute({
    */
   const userId = await getUserId()
 
-  const [counts, reviewDismissal, cookieStore] = await Promise.all([
+  const [counts, cookieStore] = await Promise.all([
     /*
      * ⚠ SCOPED, not `findUnique({ where: { id } })`. An unscoped read would let any caller infer
      * another user's project state from where the redirect lands — a project with fragments and no
@@ -83,12 +84,6 @@ export default async function ProjectRoute({
         decisionStack: { select: { vision: true } },
       },
     }),
-    /* `userId ?? ''` matches nothing, so an anonymous visitor simply has no dismissals — which is
-     * true, and is the answer that lets rule 3 be decided without knowing who they are. */
-    prisma.userDismissal.findFirst({
-      where: { userId: userId ?? '', projectId: id, itemType: GROUND_TRUTH_REVIEW_ITEM_TYPE },
-      select: { id: true },
-    }),
     cookies(),
   ])
 
@@ -105,16 +100,71 @@ export default async function ProjectRoute({
     (counts?._count.conversations ?? 0) > 0 ||
     (counts?._count.documents ?? 0) > 0
 
+  /*
+   * ⚠ MATCHES THE API'S DEFINITION, which is `!!decisionStack && vision !== ''`
+   * (`api/project/[id]/route.ts:266`) — NOT merely "a DecisionStack row exists". A row with an
+   * empty vision is created before generation completes, so counting it would make the review rule
+   * see a strategy that is not there yet and send a user past the review of what they just shared.
+   */
+  const hasStrategy = !!counts?.decisionStack && counts.decisionStack.vision !== ''
+
+  /*
+   * ═══ WHICH INGEST, IF ANY, IS STILL WAITING FOR ITS REVIEW? ═══
+   *
+   * Per ingest since 2026-09-10 (see `review-batch.ts` for why the per-project model failed on prod).
+   * An ingest is a completed document with live ground truths, a bundle's import batch, or a chat that
+   * produced ground truths. It is
+   * pending until its own `ground_truth_review` row exists — which only "Review these later" writes.
+   *
+   * Only asked when it can matter: an authorised project (`counts` is null otherwise — rule 1 sends
+   * that caller to the stack, and nothing about the project's ingests may reach the URL), with no
+   * strategy yet (the review is framed for first contact). A second round-trip, but only here, on a
+   * bare URL, pre-strategy — never on a toggle.
+   *
+   * `userId ?? ''` matches nothing, so an anonymous visitor has no deferrals, which is true. It never
+   * matters in practice: the only projects an anonymous visitor can open are demos, and a demo has a
+   * strategy.
+   */
+  let pendingBatch: string | null = null
+  if (counts && !hasStrategy) {
+    const [docs, bundles, chats, deferrals] = await Promise.all([
+      prisma.document.findMany({
+        where: { projectId: id, status: 'complete', fragments: { some: { status: 'active' } } },
+        select: { id: true, createdAt: true },
+      }),
+      prisma.fragment.groupBy({
+        by: ['importBatchId'],
+        where: { projectId: id, sourceType: 'import', status: 'active', importBatchId: { not: null } },
+        _max: { createdAt: true },
+      }),
+      prisma.conversation.findMany({
+        where: { projectId: id, fragments: { some: { status: 'active' } } },
+        select: { id: true, updatedAt: true },
+      }),
+      prisma.userDismissal.findMany({
+        where: { userId: userId ?? '', projectId: id, itemType: GROUND_TRUTH_REVIEW_ITEM_TYPE },
+        select: { itemKey: true },
+      }),
+    ])
+    pendingBatch = pickPendingBatch(
+      [
+        ...docs.map((d) => ({ key: reviewBatchKey('document', d.id), at: d.createdAt })),
+        // `updatedAt`: a chat is ingested when it ENDS, not when it starts.
+        ...chats.map((c) => ({ key: reviewBatchKey('conversation', c.id), at: c.updatedAt })),
+        ...bundles.flatMap((b) =>
+          b.importBatchId && b._max.createdAt
+            ? [{ key: reviewBatchKey('bundle', b.importBatchId), at: b._max.createdAt }]
+            : []
+        ),
+      ],
+      new Set(deferrals.map((d) => d.itemKey))
+    )
+  }
+
   const resolved = resolveProjectMode({
     hasContext,
-    /*
-     * ⚠ MATCHES THE API'S DEFINITION, which is `!!decisionStack && vision !== ''`
-     * (`api/project/[id]/route.ts:266`) — NOT merely "a DecisionStack row exists". A row with an
-     * empty vision is created before generation completes, so counting it would make row 3 see a
-     * strategy that is not there yet and send a user past their first look.
-     */
-    hasStrategy: !!counts?.decisionStack && counts.decisionStack.vision !== '',
-    reviewSeen: !!reviewDismissal,
+    hasStrategy,
+    hasPendingReview: pendingBatch !== null,
     evidenceParam: sp.evidence === '1',
     modeCookie: readModeCookieValue(cookieStore.get(MODE_COOKIE_NAME)?.value, id),
     /* A missing project reads as `false`, which is right: it lands on the stack via row 1 anyway. */
@@ -131,15 +181,18 @@ export default async function ProjectRoute({
   if (typeof sp.dimension === 'string') query.set('dimension', sp.dimension)
 
   /*
-   * `resolved === 'review'` IS row 3 — the first-context landing — and nothing else: rows 1, 2 and 5
-   * return a stack or knowledge, and row 4 excludes `review` from the preference cookie precisely
-   * because it is a moment rather than a place to return to.
+   * `resolved === 'review'` IS the pending-ingest rule and nothing else: every other row returns a
+   * stack or knowledge, and the preference cookie excludes `review` precisely because it is a moment
+   * rather than a place to return to. `batch` scopes the review to the ingest that is waiting.
    *
    * ⚠ THE EVENT IS NOT LOGGED HERE. `<Link>` prefetches RSC payloads, which executes this component
    * — so a server-side log would count users who only hovered. The param hands it to the client,
    * which fires once on real arrival and strips it.
    */
-  if (resolved === 'review') query.set('landed', '1')
+  if (resolved === 'review' && pendingBatch) {
+    query.set('batch', pendingBatch)
+    query.set('landed', '1')
+  }
 
   redirect(`/project/${id}?${query}`)
 }

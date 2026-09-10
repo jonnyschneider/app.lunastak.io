@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2026-09-10
+
+### Fixed — every document and bundle gets its own review, and it actually appears (2026-09-10)
+
+On production, 2.8.0 never showed the ground-truth review after an upload, and could not show it
+after a second ingest. Two causes, found by reading the prod project Jonny tested on:
+
+**An uploaded document landed on the pre-strategy signpost, not the review.** The move to the
+review had been relocated to the server's landing table, which only runs when a request arrives
+with no `?mode` — it handles *arriving* at a project with a review waiting. An in-session ingest
+never makes that request: a new project's cold start is already `?mode=stack`, and ingest
+completion only refetched. So `hasContext` flipped, the mode stayed `stack`, and the review never
+came. The bundle dialog's **Show me** had the same hole — it closed the dialog and went nowhere.
+Both now open the review the moment the ingest finishes.
+
+**One deferral silenced every later ingest.** The review was keyed on the *project* — one first
+look per project — so a bundle imported 26 seconds after deferring a document's review landed on
+the dashboard with its 20 new ground truths never offered. The review is now **per ingest**: each
+document and each bundle opens its own review, scoped to what *that* ingest produced ("Here are the
+2 ground truths we found in your bundle"), and "Review these later" defers that one alone. Arriving
+at a project later lands on whichever ingest is still waiting. Pre-strategy only — the screen is
+framed for first contact.
+
+This reverses a documented 2026-09-09 decision that the review was "a standing state… not a
+per-ingest gate… review the lot once". It is still not a gate: every review is deferrable, and
+deferring costs nothing.
+
+Existing per-project deferrals are ignored rather than migrated, so a project whose review was
+deferred under 2.8.0 will offer its ingests' reviews again on the next visit.
+
+### Fixed — a chat gets its review too, and says "ground truths" like everything else (2026-09-10)
+
+Found on preview after the fix above: a chat's 6 new ground truths arrived with a toast and no
+review, beside a document and a bundle that each got theirs. Chats had been left out of the
+per-ingest review on a guess — that a conversation's extraction finishes after the user has moved
+on — which was never put to Jonny as a decision. A chat is material handed over and waited on, like
+the other two, and now opens its own review scoped to what it produced.
+
+It needed its own completion signal: the first chat on a project is tracked as a generation task,
+whose completion event names no conversation, so the chat now reports its own completion from both
+of the ways it can end. A chat inside a deep dive is reviewed first and then hands back to that deep
+dive, as a document does.
+
+The toast said "New insights added" because that branch still hand-rolled its copy and was missed
+when every ingest was given one voice; it now reads "ground truths added", like the others.
+
+### Fixed — uploading a document into a deep dive reopens the deep dive again (2026-09-10)
+
+Broken since 2026-09-09. When document processing moved onto the shared background-task service,
+its completion signal changed from a `documentProcessed` window event to `extractionComplete` — by
+design, with the same detail — but three listeners on the old name were never moved. An event
+nobody dispatches fails silently, so the deep-dive sheet simply stopped coming back after an upload
+into it, and nothing reported it.
+
+Completion now goes through `extractionComplete`. A document uploaded into a deep dive opens its
+ground-truth review first, then hands the user back to the deep dive when they leave it — the
+deep-dive sheet lists its documents and chats but none of their ground truths, so skipping the
+review would have hidden what every deep-dive ingest produced. "Add more" from that review adds
+into the same deep dive. After a strategy exists there is no review, and a deep-dive upload goes
+straight back to its deep dive. Uploads are now tracked per document, so a second upload started
+before the first finishes no longer makes the first come back to nothing.
+
+The dead first-upload chat branch that hung off the same event — gated on a flag nothing ever set —
+is removed. A new test fails if any app event is listened for but dispatched nowhere, which is how
+this one went unnoticed.
+
 ## [2.8.0] - 2026-09-10
 
 ### Added — the project's mode is a URL, and the landing is decided on the server (2026-09-10)

@@ -75,6 +75,7 @@ import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
 import { ProjectTabNav } from './ProjectTabNav'
 import type { ProjectMode } from '@/lib/navigation/resolve-mode'
 import { writeModeCookie } from '@/lib/navigation/mode-cookie'
+import { parseReviewBatchKey, reviewBatchKey, type ReviewBatchSource } from '@/lib/navigation/review-batch'
 import { writeLastProjectCookie } from '@/lib/navigation/last-project-cookie'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -285,14 +286,23 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   )
 
   /**
-   * Has the user already had their first look at the ground truths on this project?
-   *
-   * Persisted, not component state — the review screen promises "you can come back to these any
-   * time", and a screen that reappears on every load makes that promise false. Keyed on the
-   * project, since there is exactly one first look per project.
+   * The ingest the review is scoped to — `?batch=doc:<id>` | `bundle:<id>` — validated, never trusted:
+   * it is a URL param, and junk must not filter the review down to nothing.
    */
-  const { dismissed: reviewSeen, loaded: reviewSeenLoaded, dismiss: markReviewSeen } =
-    useDismissed(projectId, GROUND_TRUTH_REVIEW_ITEM_TYPE, projectId)
+  const reviewBatch = parseReviewBatchKey(searchParams.get('batch')) ? searchParams.get('batch') : null
+
+  /**
+   * "Review these later", recorded per INGEST (2026-09-10).
+   *
+   * It was keyed on the project — one first look per project — so deferring once silenced every
+   * later ingest's review. On prod a bundle imported 26 seconds after a deferral landed on the
+   * dashboard with its 20 new ground truths never offered. The row now names the ingest, and the
+   * server's landing table (`page.tsx`) offers whichever ingest is still waiting.
+   */
+  const { dismiss: deferReview } = useDismissed(projectId, GROUND_TRUTH_REVIEW_ITEM_TYPE, reviewBatch)
+
+  /** The deep dive this review hands back to when the user leaves it — only meaningful on the review. */
+  const reviewDeepDive = mode === 'review' ? searchParams.get('deepDive') : null
 
   /**
    * ═══ THE MODE COMES FROM THE URL ═══
@@ -323,10 +333,17 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * later visit arrives with no `?mode` at all (`resolveProjectMode` row 4) — it is a hint, never
    * the authority. `review` is never written: it is a moment, not a place to return to.
    */
-  const setMode = useCallback((next: ProjectMode) => {
+  const setMode = useCallback((next: ProjectMode, opts?: { batch?: string; deepDive?: string }) => {
     if (next !== 'review') writeModeCookie(projectId, next)
     const url = new URL(window.location.href)
     url.searchParams.set('mode', next)
+    // `batch` only means something on the review. Leaving it on another mode's URL would make that
+    // address carry a scope it ignores — and a later jump to review would silently inherit it.
+    if (next === 'review' && opts?.batch) url.searchParams.set('batch', opts.batch)
+    else url.searchParams.delete('batch')
+    // Same rule for the deep dive the review should hand back to — meaningless anywhere else.
+    if (next === 'review' && opts?.deepDive) url.searchParams.set('deepDive', opts.deepDive)
+    else url.searchParams.delete('deepDive')
     /*
      * ⚠ `push`, NOT `replace`, and that is a decision rather than a default.
      *
@@ -342,32 +359,64 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   }, [projectId, router])
 
   /**
-   * ═══ DOES THE FIRST LOOK TAKE THE WHOLE SURFACE? ═══
+   * ═══ AN INGEST JUST FINISHED, WHILE THE USER IS HERE ═══
    *
-   * Two ways in, and they are deliberately NOT the same rule.
+   * ⚠ THIS IS THE HALF THAT WAS MISSING IN 2.8.0. The landing table in `page.tsx` only runs when a
+   * request arrives with no `?mode` — it handles ARRIVING at a project with a review waiting. An
+   * in-session ingest never makes that request: a new project's cold start is already `?mode=stack`,
+   * and ingest completion only refetched. So on prod, an uploaded document's ground truths arrived,
+   * `hasContext` flipped, the mode stayed `stack`, and the user got the pre-strategy signpost with no
+   * review at all. Before slice 2 a client effect made this move; slice 2 relocated it to a place an
+   * in-session transition never reaches.
    *
-   * `?mode=review` is an ADDRESS. It renders the review whatever the dismissal says — otherwise the
-   * address is a lie the first time guidance links a user back to it after they deferred, and an
-   * address that silently shows something else is worse than no address at all.
+   * Pre-strategy only — the review is framed for first contact, Build is its primary exit.
+   * `hasStrategy` is read through a ref: the listeners below are registered once, and a stale
+   * closure would decide on the value from when they were attached.
+   */
+  const hasStrategyRef = useRef(hasStrategy)
+  hasStrategyRef.current = hasStrategy
+  /*
+   * ⚠ REVIEW FIRST, EVEN INSIDE A DEEP DIVE — and the deep dive rides along (2026-09-10).
    *
-   * `?mode=knowledge` is the DASHBOARD, which yields to a first look that has not happened yet. That
-   * branch is gated on `reviewSeenLoaded` and must stay so: `reviewSeen` arrives from a client fetch,
-   * so without the gate the dashboard paints and is then yanked away a round-trip later for users who
-   * had already dismissed it.
+   * For about an hour a deep-dive ingest skipped the review and reopened the deep dive instead. That
+   * hid what it produced almost completely: the deep-dive sheet lists its documents and chats but
+   * shows none of their ground truths, and a deep dive can hold several of each. Jonny: "if they're
+   * not reviewed on upload, when would they be shown to the user?" — the honest answer was "barely".
    *
-   * ⚠ AND THIS IS WHY THE GATE IS NOT A REDIRECT. A redirect cannot be gated on "the answer has
-   * arrived" — it either fires before the dismissals land or fires late and the user watches the
-   * jump. The entry decides; the route always renders.
+   * So the review comes first, carrying `deepDive` in its URL, and leaving it ("Review these later")
+   * hands the user back to that deep dive — both the high-context look AND the thread they were in.
    *
-   * The demo fork keeps its exclusion: a demo's ground truths are not the user's to review.
+   * After a strategy exists there is no review (it is framed for first contact), so a deep-dive
+   * ingest goes straight back to its deep dive, as it always did.
+   */
+  const presentIngestReview = useCallback((source: ReviewBatchSource, id: string, deepDiveId?: string) => {
+    if (hasStrategyRef.current || projectData?.isDemo === true) {
+      if (deepDiveId) {
+        setSelectedDeepDiveId(deepDiveId)
+        setDeepDiveSheetOpen(true)
+      }
+      return
+    }
+    logAndFlush('tab_switch', 'ingest-landed', { projectId, source, inDeepDive: String(!!deepDiveId) })
+    setMode('review', { batch: reviewBatchKey(source, id), deepDive: deepDiveId })
+  }, [projectId, projectData?.isDemo, setMode])
+
+  /**
+   * ═══ THE REVIEW IS REACHED BY ADDRESS, AND ONLY BY ADDRESS ═══
    *
-   * ⚠ ONE CONSEQUENCE, ACCEPTED. The review therefore renders at TWO addresses: its own, and
-   * `?mode=knowledge` while a first look is still pending. So a user who reaches it by pressing
-   * Knowledgebase and bookmarks there gets a URL that shows the dashboard once they have reviewed.
-   * Left alone deliberately — the alternative is redirecting `?mode=knowledge` to `?mode=review`,
-   * which is the flash-prone redirect this whole gate exists to avoid. The canonical address exists
-   * and is what guidance links to; the bookmark degrades to the dashboard, which is where that user
-   * was heading anyway.
+   * `?mode=review[&batch=…]` renders it, whatever any dismissal says — an address that silently shows
+   * something else is worse than none. Two things send a user there:
+   *
+   *   - ARRIVING: `page.tsx` redirects a bare URL to the ingest whose review is still waiting.
+   *   - IN SESSION: `presentIngestReview`, when a document finishes or a bundle import closes.
+   *
+   * ⚠ `?mode=knowledge` NO LONGER YIELDS TO A PENDING REVIEW (2026-09-10). That rule belonged to the
+   * per-project model — "the dashboard steps aside for the one first look" — and per ingest it has
+   * nothing to mean. It was also the only reason the review needed a client-side dismissal read, and
+   * the `reviewSeenLoaded` gate that stopped the dashboard painting and then being yanked away. With
+   * the review reached only by address there is nothing to flash, so both went.
+   *
+   * The demo fork keeps its exclusion: a demo's ground truths are not the visitor's to review.
    */
   /**
    * `?filter=changed` — the address for guidance register row 4, "my stack is behind my knowledge".
@@ -381,9 +430,15 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    */
   const initialFilter = searchParams.get('filter') === 'changed' ? 'changed' : null
 
-  const canReview =
-    projectData?.isDemo !== true && !hasStrategy && (projectData?.stats?.fragmentCount ?? 0) > 0
-  const showReview = canReview && (mode === 'review' || (reviewSeenLoaded && !reviewSeen))
+  /*
+   * ⚠ NO `fragmentCount > 0` CLAUSE. It belonged to the old yield rule — don't let an empty dashboard
+   * step aside for nothing. For an explicit address it is actively harmful: `presentIngestReview`
+   * navigates the moment a document finishes, BEFORE the refetch lands, so on a first ingest the count
+   * still reads 0 and the dashboard would paint and then be swapped for the review. The review loads
+   * its own list and says "Nothing to review yet" if there genuinely is nothing.
+   */
+  const canReview = projectData?.isDemo !== true && !hasStrategy
+  const showReview = canReview && mode === 'review'
 
   /**
    * `tab_switch` / `first-context-landed` — the one measure of whether the first-context landing
@@ -498,7 +553,6 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   // Track recent generation to hide "Generate strategy" button while knowledgebase syncs
   const [recentlyGenerated, setRecentlyGenerated] = useState(false)
   // Track if current upload is first content (set when upload starts, cleared on completion)
-  const [pendingFirstContentUpload, setPendingFirstContentUpload] = useState(false)
 
   // Pro upgrade flow for gated features
   const {
@@ -656,36 +710,32 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     }
   }, [])
 
-  // Listen for documentProcessed event - open chat if this was first content
-  useEffect(() => {
-    const handleDocumentProcessed = (event: CustomEvent<{ projectId: string }>) => {
-      if (event.detail.projectId !== projectId) return
-
-      fetchProjectData()
-
-      if (pendingFirstContentUpload) {
-        setPendingFirstContentUpload(false)
-        setChatInitialQuestion("I've got the gist from your document. What would you like to explore?")
-        setChatDeepDiveId(undefined)
-        setChatGapExploration(undefined)
-        setChatResumeConversationId(undefined)
-        setChatViewOnly(false)
-        setChatSheetOpen(true)
-      }
-    }
-    window.addEventListener('documentProcessed', handleDocumentProcessed as EventListener)
-    return () => window.removeEventListener('documentProcessed', handleDocumentProcessed as EventListener)
-  }, [projectId, pendingFirstContentUpload])
 
   // Listen for extractionComplete event (fired when background extraction finishes)
   useEffect(() => {
-    const handleExtractionComplete = (event: CustomEvent<{ projectId: string }>) => {
+    const handleExtractionComplete = (event: CustomEvent<{ projectId: string; documentId?: string }>) => {
       if (event.detail.projectId !== projectId) return
       fetchProjectData()
+      // A conversation's extraction fires this same event (with `conversationId`) and deliberately
+      // does not move the user.
+      const documentId = event.detail.documentId
+      if (!documentId) return
+
+      /*
+       * Every document opens its review — including one uploaded into a deep dive, which carries the
+       * deep dive along so leaving the review hands the user back to it (see `presentIngestReview`).
+       *
+       * Keyed by DOCUMENT, recorded when the upload started. It used to read `uploadDeepDiveId` page
+       * state at completion, which any later upload overwrote — start a deep-dive upload, then an
+       * ordinary one before the first finished, and the first came back to nothing.
+       */
+      const deepDiveId = deepDiveUploadsRef.current.get(documentId)
+      deepDiveUploadsRef.current.delete(documentId)
+      presentIngestReview('document', documentId, deepDiveId)
     }
     window.addEventListener('extractionComplete', handleExtractionComplete as EventListener)
     return () => window.removeEventListener('extractionComplete', handleExtractionComplete as EventListener)
-  }, [projectId, fetchProjectData])
+  }, [projectId, fetchProjectData, presentIngestReview])
 
   // Deep dive handlers
   const openDeepDiveSheet = (id: string) => {
@@ -704,22 +754,18 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     setChatSheetOpen(true)
   }
 
+  /**
+   * Documents uploaded into a deep dive, by documentId → deepDiveId, so the completion listener can
+   * recognise them when `extractionComplete` arrives (see there). A ref: the listener is registered
+   * once, and it only ever needs the current contents, never a re-render.
+   */
+  const deepDiveUploadsRef = useRef(new Map<string, string>())
+
   const handleUploadToDeepDive = (deepDiveId: string) => {
     // Close sheet and open upload dialog with deep dive context
     setDeepDiveSheetOpen(false)
     setUploadDeepDiveId(deepDiveId)
     setUploadDialogOpen(true)
-  }
-
-  const handleDocumentUploadComplete = async () => {
-    // Re-open the deep dive sheet to show the newly processed document
-    if (uploadDeepDiveId) {
-      setSelectedDeepDiveId(uploadDeepDiveId)
-      setDeepDiveSheetOpen(true)
-      setUploadDeepDiveId(undefined)
-    }
-    // Note: fetchProjectData and first-content chat opening are handled
-    // by the documentProcessed event listener above
   }
 
   // Toggle conversation star
@@ -1209,12 +1255,14 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
             {showReview ? (
               <GroundTruthReviewScreen
                 projectId={projectId}
+                batch={reviewBatch}
                 fragmentCount={stats.fragmentCount ?? 0}
                 onBuild={handleGenerateStrategy}
                 onStartChat={() => {
                   logAndFlush('cta_new_chat', 'ground-truth-review', { projectId })
                   setChatInitialQuestion(undefined)
-                  setChatDeepDiveId(undefined)
+                  // Adding from a deep dive's review adds INTO that deep dive, so the thread stays whole.
+                  setChatDeepDiveId(reviewDeepDive ?? undefined)
                   setChatGapExploration(undefined)
                   setChatResumeConversationId(undefined)
                   setChatViewOnly(false)
@@ -1222,7 +1270,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                 }}
                 onUploadDocument={() => {
                   logAndFlush('cta_upload_doc', 'ground-truth-review', { projectId })
-                  setUploadDeepDiveId(undefined)
+                  setUploadDeepDiveId(reviewDeepDive ?? undefined)
                   setUploadDialogOpen(true)
                 }}
                 onImportBundle={() => {
@@ -1236,16 +1284,21 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                   logAndFlush('review_deferred', 'ground-truth-review', {
                     projectId,
                     fragmentCount: String(stats.fragmentCount ?? 0),
+                    // Per ingest since 2026-09-10 — which KIND of ingest is being deferred is the
+                    // useful split ("do people read what a bundle produced?"). `unscoped` is a
+                    // review opened by hand, with no ingest to name.
+                    batchSource: parseReviewBatchKey(reviewBatch)?.source ?? 'unscoped',
                   })
-                  markReviewSeen()
-                  /*
-                   * ⚠ AND LEAVE THE ADDRESS. `?mode=review` renders the review regardless of the
-                   * dismissal — that is what makes it a real address rather than a redirect that
-                   * sometimes works. Which means dismissing while standing ON it changes nothing
-                   * the user can see: the screen would sit there having just been told to go away.
-                   * The mode has to move too.
-                   */
-                  if (mode === 'review') setMode('knowledge')
+                  // Records THIS ingest only; any other ingest still waiting keeps its own review.
+                  // An unscoped `?mode=review` (opened by hand) has no ingest to record — leaving is
+                  // enough, and the landing table will offer whatever is still pending next time.
+                  if (reviewBatch) deferReview(reviewBatch)
+                  setMode('knowledge')
+                  // Reviewed something from inside a deep dive: hand them back to it.
+                  if (reviewDeepDive) {
+                    setSelectedDeepDiveId(reviewDeepDive)
+                    setDeepDiveSheetOpen(true)
+                  }
                 }}
               />
             ) : isDemo ? (
@@ -1358,7 +1411,9 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               // back to this when it cannot. Kept honest rather than thrown away.
               onDimensionClick={() => setMode('knowledge')}
               knowledgeBusyMessage={
-                isRunning(projectId, 'extraction') ? 'processing insights...'
+                // "ground truths" everywhere, never "insights" — the one vocabulary every ingest shares
+                // (ingest-messaging.ts). This label was the last place a chat still said otherwise.
+                isRunning(projectId, 'extraction') ? 'reading conversation...'
                 : recentlyGenerated && !hasActiveTasks(projectId) ? 'updating...'
                 : isRunning(projectId, 'document') ? `reading ${runningCount(projectId, 'document') > 1 ? `${runningCount(projectId, 'document')} documents` : 'document'}...`
                 : null
@@ -1688,7 +1743,9 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         projectId={projectId}
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        onUploadComplete={handleDocumentUploadComplete}
+        onUploadStarted={({ documentId, deepDiveId }) => {
+          if (deepDiveId) deepDiveUploadsRef.current.set(documentId, deepDiveId)
+        }}
         deepDiveId={uploadDeepDiveId}
       />
 
@@ -1716,6 +1773,10 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         hasKnowledgebaseContent={(stats.fragmentCount ?? 0) > 0}
         viewOnly={chatViewOnly}
         origin={chatOrigin}
+        onIngestComplete={({ conversationId, deepDiveId }) => {
+          // The same as a document: review first, and a deep dive rides along to be handed back to.
+          presentIngestReview('conversation', conversationId, deepDiveId)
+        }}
       />
 
       {/* Add Deep Dive Dialog */}
@@ -1790,7 +1851,12 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         projectId={projectId}
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
-        onImported={() => fetchProjectData()}
+        onImported={(result) => {
+          fetchProjectData()
+          // "Show me" used to only close the dialog, so the user stayed wherever they imported from
+          // and never saw what the bundle produced. It shows them now.
+          if (result.importBatchId) presentIngestReview('bundle', result.importBatchId)
+        }}
       />
 
       {/* Generation Confirm Dialog (refresh + opportunities) */}

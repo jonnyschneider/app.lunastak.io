@@ -12,11 +12,21 @@ import { Upload, Loader2, Check, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { ingestComplete } from '@/lib/ingest-messaging'
 
+/**
+ * What the import route returns. `importBatchId` is the key the per-ingest review is scoped to
+ * (2026-09-10) — the route always sent it; the type dropped it, so nothing downstream could use it.
+ */
+export interface ImportResult {
+  fragmentsCreated: number
+  questionsAdded: number
+  importBatchId?: string
+}
+
 interface ImportBundleDialogProps {
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onImported: (result: { fragmentsCreated: number; questionsAdded: number }) => void
+  onImported: (result: ImportResult) => void
 }
 
 export function ImportBundleDialog({
@@ -29,7 +39,7 @@ export function ImportBundleDialog({
   const [importing, setImporting] = useState(false)
   const [importPhase, setImportPhase] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [imported, setImported] = useState<{ fragmentsCreated: number; questionsAdded: number } | null>(null)
+  const [imported, setImported] = useState<ImportResult | null>(null)
   const [preview, setPreview] = useState<{
     themes: number
     questions: number

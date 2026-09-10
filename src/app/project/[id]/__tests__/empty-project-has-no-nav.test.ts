@@ -29,41 +29,80 @@ import * as path from 'path'
 /** The client component. It moved out of `page.tsx` when the route became a server redirector. */
 const PAGE = path.join(__dirname, '../ProjectClient.tsx')
 
-describe('the ground-truth review has two entries, with different rules', () => {
+describe('the ground-truth review is per ingest, and reached by address', () => {
   const source = fs.readFileSync(PAGE, 'utf-8')
 
   /*
-   * ⚠ THE ENTRY DECIDES; THE ROUTE ALWAYS RENDERS. These two rules look like one rule with an extra
-   * clause, which is exactly how a later refactor collapses them — so they are pinned separately.
+   * ⚠ THE MODEL CHANGED 2026-09-10, AFTER THE OLD ONE REACHED PROD IN 2.8.0.
    *
-   *   `?mode=review` is an ADDRESS. It must render the review whatever the dismissal says, or the
-   *   address is a lie the first time guidance links a user back after they deferred.
+   * It was "one first look per project", with two entries: `?mode=review`, and `?mode=knowledge`
+   * yielding to a first look still pending. On prod that failed twice over:
    *
-   *   `?mode=knowledge` is the DASHBOARD, which yields to a first look that has not happened. That
-   *   half MUST stay gated on `reviewSeenLoaded`: `reviewSeen` comes from a client fetch, so without
-   *   it the dashboard paints and is yanked away a round-trip later for users who already dismissed.
+   *   1. An uploaded document never offered its review. The landing that used to move a user there
+   *      had been relocated to the server table, which only runs on a bare URL — and an in-session
+   *      ingest never makes that request. The user got the pre-strategy signpost instead.
+   *   2. A bundle imported 26 seconds after deferring the document's review landed on the dashboard,
+   *      because the deferral was keyed on the project and so silenced every later ingest too.
    *
-   * And it is why the gate is a render branch and never a redirect — a redirect cannot be gated on
-   * "the answer has arrived". It fires early or it fires visibly.
+   * These pin the replacement, so a later refactor cannot quietly restore either.
    */
-  it('renders the review on ?mode=review regardless of dismissal', () => {
-    expect(source).toMatch(/mode === 'review' \|\| \(reviewSeenLoaded && !reviewSeen\)/)
+  it('renders the review on ?mode=review, and only there', () => {
+    expect(source).toMatch(/const showReview = canReview && mode === 'review'/)
   })
 
-  it('still gates the dashboard half on reviewSeenLoaded — the anti-flash guard', () => {
-    expect(source).toContain('reviewSeenLoaded && !reviewSeen')
+  it('no longer lets the dashboard yield to a pending review — that was the per-project model', () => {
+    expect(source).not.toContain('reviewSeenLoaded && !reviewSeen')
   })
 
-  it('never turns that gate into a redirect', () => {
+  it('never turns the review into a client redirect gated on a dismissal read', () => {
     // If this ever fails, read the design doc §8 before "fixing" it. It is the rejected design.
     expect(source).not.toMatch(/if \(!reviewSeen\)[^\n]*router\.(replace|push)/)
   })
 
-  it('leaves the review address when the user defers, or the screen cannot dismiss itself', () => {
-    expect(source).toMatch(/markReviewSeen\(\)[\s\S]{0,600}?if \(mode === 'review'\) setMode\('knowledge'\)/)
+  it('presents the review when a DOCUMENT finishes in session — the half 2.8.0 was missing', () => {
+    expect(source).toMatch(/presentIngestReview\('document', documentId/)
   })
 
-  it('keeps the demo exclusion — a demo\'s ground truths are not the user\'s to review', () => {
+  it('presents the review when a BUNDLE import closes — "Show me" used to only close the dialog', () => {
+    expect(source).toMatch(/presentIngestReview\('bundle', result\.importBatchId\)/)
+  })
+
+  it('presents the review when a CHAT finishes — both extraction branches report through one callback', () => {
+    // A chat's 6 ground truths reached preview with a toast and no review. The first chat on a
+    // project is a `generation` task whose completion event names no conversation, so the event
+    // route cannot cover it; the sheet reports its own completion instead.
+    expect(source).toMatch(/presentIngestReview\('conversation', conversationId/)
+    const chat = fs.readFileSync(path.join(__dirname, '../../../../components/chat-sheet.tsx'), 'utf-8')
+    expect(chat.match(/onComplete: \(\) => reportIngest\(/g)?.length, 'both branches must report').toBe(2)
+    expect(chat).not.toContain("'New insights added'")
+  })
+
+  it('reviews a DEEP-DIVE ingest first, then hands the user back to the deep dive', () => {
+    /*
+     * For about an hour a deep-dive ingest skipped the review and reopened the deep dive — which hid
+     * what it produced almost completely, since the deep-dive sheet shows no ground truths. Jonny:
+     * "if they're not reviewed on upload, when would they be shown to the user?"
+     *
+     * Now: the review first, carrying the deep dive; "Review these later" hands back to it.
+     */
+    expect(source).toMatch(/presentIngestReview\('document', documentId, deepDiveId\)/)
+    expect(source).toMatch(/presentIngestReview\('conversation', conversationId, deepDiveId\)/)
+    expect(source).toMatch(/setMode\('review', \{ batch: reviewBatchKey\(source, id\), deepDive: deepDiveId \}\)/)
+    // …and the defer path reopens it.
+    expect(source).toMatch(/setMode\('knowledge'\)\s*\n[\s\S]{0,160}if \(reviewDeepDive\) \{\s*\n\s*setSelectedDeepDiveId\(reviewDeepDive\)/)
+  })
+
+  it('after a strategy exists, a deep-dive ingest still goes straight back to its deep dive', () => {
+    // There is no review post-strategy (it is first-contact framed) — so the deep dive is the answer.
+    expect(source).toMatch(/if \(hasStrategyRef\.current \|\| projectData\?\.isDemo === true\) \{\s*\n\s*if \(deepDiveId\) \{\s*\n\s*setSelectedDeepDiveId\(deepDiveId\)/)
+  })
+
+  it('records a deferral against the ingest, not the project, then leaves the review address', () => {
+    expect(source).toMatch(/if \(reviewBatch\) deferReview\(reviewBatch\)\s*\n\s*setMode\('knowledge'\)/)
+    expect(source).not.toMatch(/useDismissed\(projectId, GROUND_TRUTH_REVIEW_ITEM_TYPE, projectId\)/)
+  })
+
+  it('keeps the demo exclusion — a demo\'s ground truths are not the visitor\'s to review', () => {
     expect(source).toMatch(/const canReview =\s*\n?\s*projectData\?\.isDemo !== true/)
   })
 })
