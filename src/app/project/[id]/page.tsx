@@ -14,25 +14,11 @@ import {
   Loader2,
   Star,
   CornerDownRight,
-  MoreHorizontal,
-  RefreshCw,
-  Target,
-  Download,
-  Clock,
   Package,
   Plus,
   X,
-  Share2,
   ArrowRight,
 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
 import { AddDeepDiveDialog } from '@/components/add-deep-dive-dialog'
@@ -77,6 +63,7 @@ import { SignInGateDialog } from '@/components/SignInGateDialog'
 import { FragmentExplorer } from '@/components/FragmentExplorer'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
+import { ProjectTabNav, type ProjectTab } from './ProjectTabNav'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -401,217 +388,27 @@ export default function ProjectPage() {
       return
     }
     setTabNav(
-      <div className="flex items-center gap-2">
-      <div className="inline-flex rounded-lg border border-input">
-        <button
-          onClick={() => {
-            setActiveTab('decision-stack')
-            // `chip` says whether the strategy-ready dot was on the button they just pressed —
-            // the only way to tell a chip-driven visit from an ordinary one without a second event.
-            logAndFlush('tab_switch', 'decision-stack', { projectId, chip: String(strategyReady) })
-          }}
-          className={cn(
-            'rounded-l-lg px-4 py-1.5 text-sm font-medium transition-colors',
-            activeTab === 'decision-stack' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-          )}
-        >
-          Decision Stack
-          {/*
-            ⚠ ARRIVAL, NOT PROGRESS. Build is pressed from the knowledgebase and the user stays
-            there — so the finished strategy lands on the tab they are not looking at. A toast is
-            the wrong instrument: it announces something HAPPENING, and this is something READY
-            FOR REVIEW, which outlives five seconds and the session both. The press is already
-            never dead — the Build button becomes a disabled spinner.
-
-            No counter. There is exactly one strategy; a count would imply a queue.
-
-            ⚠ IN THE LABEL, NOT ON THE CORNER. This was an absolutely-positioned corner badge and
-            it landed in the MIDDLE OF THE GROUP: Decision Stack is the left button, so its
-            top-right corner is the seam against Knowledgebase. Corner badges only work on a
-            group's outer edges.
-
-            It sits in the same slot as the Knowledgebase button's fragment count instead — one
-            pattern for "state of this tab", mirrored. A styled span rather than a • glyph, which
-            would inherit font metrics and shift its size and baseline with the font stack.
-
-            Only ever renders on the INACTIVE button (see the guard), so it only has to read
-            against the unselected background — never against `bg-primary`.
-          */}
-          {strategyReady && activeTab !== 'decision-stack' && (
-            <span
-              role="img"
-              aria-label="New strategy to review"
-              className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[hsl(var(--luna))] align-middle"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => { setActiveTab('knowledgebase'); logAndFlush('tab_switch', 'knowledgebase', { projectId }) }}
-          className={cn(
-            'border-l border-input px-4 py-1.5 text-sm font-medium transition-colors',
-            activeTab === 'knowledgebase' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
-            isDemo ? 'rounded-r-lg' : ''
-          )}
-        >
-          Knowledgebase
-          {(projectData?.stats?.fragmentCount ?? 0) > 0 && (
-            <span className="ml-1.5 text-xs opacity-70">{projectData?.stats?.fragmentCount}</span>
-          )}
-        </button>
-        {!isDemo && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="border-l border-input px-3 py-1.5 text-sm hover:bg-muted transition-colors rounded-r-lg"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Add Context</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_new_chat', 'overflow-menu', { projectId })
-                setChatInitialQuestion(undefined); setChatDeepDiveId(undefined); setChatGapExploration(undefined)
-                setChatResumeConversationId(undefined); setChatViewOnly(false); setChatSheetOpen(true)
-              }}>
-                <MessageSquare className="h-4 w-4 mr-2" />New Chat
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_upload_doc', 'overflow-menu', { projectId })
-                setUploadDeepDiveId(undefined); setUploadDialogOpen(true)
-              }}>
-                <Upload className="h-4 w-4 mr-2" />Upload Document
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_import_bundle', 'overflow-menu', { projectId })
-                setImportDialogOpen(true)
-              }}>
-                <Package className="h-4 w-4 mr-2" />Import Context Bundle
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Update Strategy</DropdownMenuLabel>
-              <DropdownMenuItem
-                disabled={!hasStrategy && (projectData?.stats?.fragmentCount ?? 0) === 0}
-                onClick={() => {
-                  logAndFlush('cta_update_direction', 'overflow-menu', { projectId })
-                  if (hasStrategy) { { setGenerationDialogAction('refresh'); setGenerationDialogOpen(true) } } else { handleGenerateStrategy() }
-                }}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                <div><div>{hasStrategy ? 'Refresh Decision Stack' : 'Generate Decision Stack'}</div>
-                  <div className="text-[10px] text-muted-foreground">{hasStrategy ? 'Update V/S/O from latest context' : 'Create your first Decision Stack'}</div>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={!hasStrategy} onClick={() => {
-                logAndFlush('cta_draft_opportunities', 'overflow-menu', { projectId })
-                { setGenerationDialogAction('opportunities'); setGenerationDialogOpen(true) }
-              }}>
-                <Target className="h-4 w-4 mr-2" />
-                <div><div>Generate Opportunities</div>
-                  <div className="text-[10px] text-muted-foreground">{hasStrategy ? 'Create initiatives for your objectives' : 'Generate strategy first'}</div>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Export</DropdownMenuLabel>
-              <DropdownMenuItem disabled={!hasStrategy} onClick={async () => {
-                logAndFlush('cta_export_brief', 'overflow-menu', { projectId })
-                const res = await fetch(`/api/project/${projectId}/export-brief`)
-                if (res.ok) {
-                  const blob = await res.blob(); const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
-                }
-              }}>
-                <Download className="h-4 w-4 mr-2" />Export Strategic Brief
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_version_history', 'overflow-menu', { projectId })
-                setVersionHistoryOpen(true)
-              }}>
-                <Clock className="h-4 w-4 mr-2" />Version History
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">Examples</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmnxrkvuv0094ow1betk3sjzr', demo: 'Ferrari' })
-                router.push('/project/cmnxrkvuv0094ow1betk3sjzr')
-              }}>Ferrari</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anetr5kwlmbmq', demo: 'Nike' })
-                router.push('/project/cmn8anetr5kwlmbmq')
-              }}>Nike</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8an6ivpa0xoehj', demo: 'Costco' })
-                router.push('/project/cmn8an6ivpa0xoehj')
-              }}>Costco</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logAndFlush('cta_view_demo', 'overflow-menu', { source: 'app', projectId: 'cmn8anbaapaww1709', demo: 'TSMC' })
-                router.push('/project/cmn8anbaapaww1709')
-              }}>TSMC</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-      {/*
-        ═══ THE FINISHED-ARTEFACT TRIO ═══
-        Share · Export · History. All three act on the built stack, so all three are Decision Stack
-        only — they have nothing to act on from the Knowledgebase.
-
-        Export and History arrived here from the overflow menu, where they were the two items with
-        no other permanent home and were filed under a GLOBAL control while being scoped to one
-        mode. Three outline buttons rather than a menu behind a `⋯`: a menu is the thing being
-        removed, and three items do not need one.
-
-        The version stamp's "view past revisions →" link stays. It is a second door to the same
-        sheet, sitting on the stamp it describes — that is a contextual control, not a duplicate.
-      */}
-      {!isDemo && hasStrategy && activeTab === 'decision-stack' && (
-        <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
-            if (isSignedUp) {
-              setShareDialogOpen(true)
-            } else {
-              setShareSignInGateOpen(true)
-            }
-          }}
-          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-        >
-          <Share2 />
-          Share
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            logAndFlush('cta_export_brief', 'stack-header', { projectId })
-            const res = await fetch(`/api/project/${projectId}/export-brief`)
-            if (res.ok) {
-              const blob = await res.blob(); const url = URL.createObjectURL(blob)
-              const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
-            }
-          }}
-          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-        >
-          <Download />
-          Export
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            logAndFlush('cta_version_history', 'stack-header', { projectId })
-            setVersionHistoryOpen(true)
-          }}
-          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-        >
-          <Clock />
-          History
-        </Button>
-        </div>
-      )}
-      </div>
+      <ProjectTabNav
+        projectId={projectId}
+        activeTab={activeTab as ProjectTab}
+        onSelectTab={setActiveTab}
+        fragmentCount={projectData?.stats?.fragmentCount ?? 0}
+        isDemo={isDemo}
+        hasStrategy={hasStrategy}
+        isSignedUp={isSignedUp}
+        strategyReady={strategyReady}
+        onShare={() => {
+          if (isSignedUp) { setShareDialogOpen(true) } else { setShareSignInGateOpen(true) }
+        }}
+        onExport={async () => {
+          const res = await fetch(`/api/project/${projectId}/export-brief`)
+          if (res.ok) {
+            const blob = await res.blob(); const url = URL.createObjectURL(blob)
+            const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
+          }
+        }}
+        onHistory={() => setVersionHistoryOpen(true)}
+      />
     )
     return () => setTabNav(null)
     /**
