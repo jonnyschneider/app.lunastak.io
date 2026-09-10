@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed — a review scoped to one upload opens its first row, and marks only what it showed (2026-09-11)
+
+A review of one document's ground truths opened with every row collapsed, and quietly marked every
+ground truth in the project as reviewed — not just the ones on screen. The list is loaded for the
+whole project and narrowed to the upload at display time, and both the "open the first row" pick and
+the reviewed stamp ran on the whole list. Per-ingest reviews in 2.8.1 made that the common case. Both
+now act on the rows the user can actually see.
+
 ## [2.8.1] - 2026-09-10
 
 ### Fixed — every document and bundle gets its own review, and it actually appears (2026-09-10)
