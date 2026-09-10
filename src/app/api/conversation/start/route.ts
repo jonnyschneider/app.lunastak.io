@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { cookies } from 'next/headers';
-import { authOptions } from '@/lib/auth';
+import { getRequester } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/db';
 import { createMessage } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
@@ -9,8 +7,6 @@ import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions';
 import { extractText } from '@/lib/extract-text';
-
-const GUEST_COOKIE_NAME = 'guestUserId';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -101,21 +97,14 @@ export async function POST(req: Request) {
     };
     console.log(`[Start API] Parsed body in ${Date.now() - startTime}ms, suggestedQuestion: ${!!suggestedQuestion}`);
 
-    // Get session to check if user is authenticated
-    const session = await getServerSession(authOptions);
-    console.log(`[Start API] Got session in ${Date.now() - startTime}ms`);
+    // Identity: session > VALIDATED guest cookie > (null → mint a new guest below).
+    // The raw cookie used to go straight to getOrCreateDefaultProject — a cookie set to a signed-up
+    // user's id started chats in their projects (auth-gap inventory 2026-09-11).
+    const requester = await getRequester();
+    console.log(`[Start API] Got requester in ${Date.now() - startTime}ms`);
 
-    // Check for existing guest cookie FIRST - before creating new users
-    const cookieStore = await cookies();
-    const existingGuestId = cookieStore.get(GUEST_COOKIE_NAME)?.value;
-
-    // Determine user identity: authenticated > existing guest > new guest
-    const authenticatedUserId = session?.user?.id || null;
-    const existingUserId = authenticatedUserId || existingGuestId || null;
-
-    // Get or create project - pass existing user ID if available
-    // This ensures we use the existing guest's projects, not create a new user
-    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(existingUserId);
+    // An existing requester keeps their projects; null creates a fresh guest user + project.
+    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(requester?.userId ?? null);
     console.log(`[Start API] Got project in ${Date.now() - startTime}ms`);
 
     // Use the requested project if provided and user has access, otherwise use default
