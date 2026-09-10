@@ -8,6 +8,12 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   FileText,
   MessageSquare,
   Upload,
@@ -21,6 +27,7 @@ import {
   Share2,
   Download,
   Clock,
+  MoreHorizontal,
 } from 'lucide-react'
 
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -1016,70 +1023,80 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                     })()
                   ) : (
                     <>
-                      {/* Badged like the input counts in the knowledgebase panel — one visual
-                          language for "a number that identifies something". */}
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
-                        v{(projectData as any)?.latestSnapshotVersion || projectData?.strategyOutputs?.[0]?.version || 1}
-                      </span>
                       {/*
-                        ═══ THE FINISHED-ARTEFACT TRIO, BESIDE THE THING IT ACTS ON ═══
-                        Share · Export · History. All three act on the built stack and nothing else,
-                        so they belong on the stack rather than in a header that persists across
-                        both modes and every project.
+                        ═══ THE VERSION CONTROL: A SPLIT PILL, THEN SHARE ═══
 
-                        ⚠ "view past revisions →" IS GONE, and History is why. The link was
-                        described as "a second door to the same sheet" when the buttons lived in the
-                        header and the two were far apart. Sitting next to each other they are not
-                        two doors, they are the same door drawn twice — so the one that names itself
-                        wins and the underlined text goes.
+                        `Version 3 | ⋯` reads as one object — which version you are looking at, and
+                        what you can do about it — with Export and Past versions inside the menu.
+                        Share sits apart because it acts on the stack rather than on this version
+                        of it: publishing a link is not a thing you do to v3.
 
-                        Hidden on the demos: a visitor cannot share, export or revise someone
-                        else's example, and the right-hand slot carries the podcast attribution
-                        there instead.
+                        ⚠ YES, AN OVERFLOW MENU, THE DAY ONE WAS DELETED. The ⋯ removed earlier
+                        today was a GLOBAL header menu of ten items, nine of them duplicates of
+                        controls that already sat on the objects they acted on. The objection was
+                        never "menus"; it was a contextual control with its object taken away. This
+                        one is attached to the object, holds only things that act on it, and holds
+                        no item that has another door. That is the same principle arriving at a
+                        different answer, not a reversal of it.
+
+                        The version label is not a button. It names what the menu acts on, and
+                        making it a second way to open Past versions would rebuild the duplicate
+                        door removed a commit ago.
                       */}
+                      <div className="flex items-center rounded-lg border border-input bg-background">
+                        <span className="px-3 py-1.5 text-sm font-medium tabular-nums text-foreground">
+                          Version {(projectData as any)?.latestSnapshotVersion || projectData?.strategyOutputs?.[0]?.version || 1}
+                        </span>
+                        {hasStrategy && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                aria-label="Version actions"
+                                className="border-l border-input px-2.5 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  logAndFlush('cta_export_brief', 'version-menu', { projectId })
+                                  const res = await fetch(`/api/project/${projectId}/export-brief`)
+                                  if (res.ok) {
+                                    const blob = await res.blob(); const url = URL.createObjectURL(blob)
+                                    const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
+                                  }
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                                Export
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  logAndFlush('cta_version_history', 'version-menu', { projectId })
+                                  setVersionHistoryOpen(true)
+                                }}
+                              >
+                                <Clock className="h-4 w-4" />
+                                Past versions
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                       {hasStrategy && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
-                              if (isSignedUp) { setShareDialogOpen(true) } else { setShareSignInGateOpen(true) }
-                            }}
-                            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-                          >
-                            <Share2 />
-                            Share
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={async () => {
-                              logAndFlush('cta_export_brief', 'stack-masthead', { projectId })
-                              const res = await fetch(`/api/project/${projectId}/export-brief`)
-                              if (res.ok) {
-                                const blob = await res.blob(); const url = URL.createObjectURL(blob)
-                                const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
-                              }
-                            }}
-                            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-                          >
-                            <Download />
-                            Export
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              logAndFlush('cta_version_history', 'stack-masthead', { projectId })
-                              setVersionHistoryOpen(true)
-                            }}
-                            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-                          >
-                            <Clock />
-                            History
-                          </Button>
-                        </>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
+                            if (isSignedUp) { setShareDialogOpen(true) } else { setShareSignInGateOpen(true) }
+                          }}
+                          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
+                        >
+                          <Share2 />
+                          Share
+                        </Button>
                       )}
                     </>
                   )}

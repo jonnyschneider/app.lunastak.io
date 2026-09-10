@@ -124,16 +124,24 @@ lifecycle and vanished with it on a project with no context.
 | `cta_import_bundle` | `integrations-card` | the Integrations card header's **Import context** |
 | `cta_update_direction` | **nothing — retired** | `overflow-menu` was its ONLY surface. The panel's own action emits `cta_refresh_strategy` / `knowledge-panel`, a different event. Use that; `cta_update_direction` goes to zero and stays there |
 | `cta_draft_opportunities` | `opportunity-section` | already the primary door; the menu copy was second |
-| `cta_export_brief` | `stack-header` → `stack-masthead` | **moved twice on the same day** — out of the overflow menu into the header, then out of the header onto the stack. See below |
-| `cta_version_history` | `stack-header` → `stack-masthead` | same journey; "view past revisions →" was removed rather than kept as a second door |
+| `cta_export_brief` | `stack-header` → `version-menu` | **moved three times on the same day** — overflow menu → header → stack masthead → the version control's own menu. See below |
+| `cta_version_history` | `stack-header` → `version-menu` | same journey; "view past revisions →" was removed rather than kept as a second door |
 | `cta_open_evidence` | — | the menu's *View all N fragments* item went with the Evidence sheet on 2026-09-08 |
 | `cta_view_demo` | `project-switcher` | **a genuinely new surface** — see below |
 
 ### ⚠ `stack-header` goes to zero on 2026-09-10, the same day it appeared
 
-`cta_export_brief` and `cta_version_history` were moved out of the overflow menu into the project
-header earlier today, and out of the header onto the Decision Stack masthead later the same day.
-`cta_share` made the second hop with them. All three now emit `stack-masthead`.
+`cta_export_brief` and `cta_version_history` moved three times on 2026-09-10: out of the overflow
+menu into the project header, out of the header onto the Decision Stack masthead, and finally into
+the ⋯ menu of the version control itself. They now emit `version-menu`.
+
+`cta_share` made the second hop with them and stopped there — Share is a sibling button on the
+masthead, not a menu item, because it acts on the stack rather than on one version of it. It has no
+`surface` param; `value` carries `signed_up` / `guest`.
+
+**`stack-masthead` never shipped.** It existed only between two commits on the same afternoon, so
+no production event ever carried it. Named here so a reader finding it in a diff knows it was never
+a real surface rather than one that went quiet.
 
 **`stack-header` will flatline from today and that is expected.** Recorded loudly because 2.7.1
 exists on account of precisely this shape: a control was dropped from the launchpad by defocus,
@@ -199,8 +207,8 @@ Design: `docs/_plans/2026-09-10-empty-state-consolidation-design.md`.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_export_brief` | client | `stack-masthead` | `projectId`, userType | User exported a strategic brief. |
-| `cta_version_history` | client | `stack-masthead` | `projectId`, userType | User opened version history. |
+| `cta_export_brief` | client | `version-menu` | `projectId`, userType | User exported a strategic brief, from the version control's ⋯ menu. |
+| `cta_version_history` | client | `version-menu` | `projectId`, userType | User opened past versions, from the version control's ⋯ menu. |
 | `version_history_downloaded` | client | `version-history` | `projectId`, `version`, userType | User downloaded a specific version snapshot. |
 | `tab_switch` | client | `decision-stack` \| `knowledgebase` \| `first-context-landed` \| `pre-strategy-add-context` | `projectId`, `chip` (on `decision-stack`), userType | User switched tabs in the project view. `chip: 'true'` means the strategy-ready dot was on the Decision Stack button when it was pressed — that is how a chip-driven visit is told from an ordinary one, without a second event. The two non-tab values are app-initiated moves, not clicks: `first-context-landed` is the one-shot move to the knowledgebase when a project's first context arrives, and `pre-strategy-add-context` is the "Add more context" exit from the empty Decision Stack tab. Segment them out before reading this as user behaviour. |
 | `card_thinking_viewed` | client | `vision` \| `strategy` \| `objective` \| `opportunity` \| `principle` | `projectId`, userType | User revealed the back of a Decision Stack card via the "The thinking" strip. Fires on the **reveal only** — flipping back is not a second read. Segment by `value` to see which layers people actually read. **No pre-2026-08-27 baseline exists** — the flip was completely uninstrumented before the disclosure strip shipped, so this measures the new affordance, not the improvement over the old one. |
