@@ -979,32 +979,46 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
           {hasContext && activeTab === 'decision-stack' && <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {strategyData ? (
               <>
-                {/* Demo company logo */}
-                {isDemo && DEMO_META[projectId] && (
-                  <div className="flex justify-center pt-2 pb-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={DEMO_META[projectId].logo} alt={DEMO_META[projectId].name} className="h-20" />
-                  </div>
-                )}
-                {/* Branding leads, version stamp trails — the mark says what this is, the stamp
-                    says which one of it you are looking at. */}
-                {/* The mark centres and the version stamp sits right, so the row reads as a
-                    masthead rather than two things pushed to opposite ends. */}
                 {/*
-                  ═══ MASTHEAD: MARK CENTRED, PROVENANCE AND ACTIONS TRAILING ═══
+                  ═══ MASTHEAD: FRAMEWORK LEFT, SUBJECT CENTRE, VERSION RIGHT ═══
 
-                  A grid rather than the absolute-positioned right slot this used to be. The slot
-                  held one short text stamp, which fits beside a centred mark; it now holds the
-                  Share · Export · History trio as well, and three buttons overlap the mark on a
-                  phone. The empty first cell is what keeps the mark optically centred on desktop
-                  without taking anything out of flow.
+                  Three cells, each answering a different question. Left: what framework is this.
+                  Centre: whose stack is it — the demo company's mark, and deliberately nothing on
+                  your own project, because you know whose it is. Right: which version, and what
+                  you can do with it.
 
-                  Below `md` it stacks and centres, so the actions sit under the mark instead of
-                  fighting it for the same row — which is the case that sent them here from the
-                  header in the first place.
+                  The company logo used to sit in its own centred block ABOVE this row, which read
+                  as a banner with a toolbar beneath it. In the row it reads as a masthead — and
+                  the Decision Stack mark moving left is what makes room, because a centred
+                  framework mark and a centred company mark cannot both be the middle of one row.
+
+                  `1fr auto 1fr` keeps the centre cell optically centred whatever the side cells
+                  weigh, so a long version label never shunts the company logo off true. The empty
+                  centre element holds that column open on a project with no logo.
+
+                  Below `md` it stacks to one centred column: mark, company, actions. The actions
+                  carry `order-last` at every breakpoint — they sit second in the DOM so the mark
+                  can lead, and without it they would take the centre cell.
                 */}
                 <div className="grid grid-cols-1 items-center justify-items-center gap-3 text-xs text-muted-foreground md:grid-cols-[1fr_auto_1fr]">
-                <div className="hidden md:block" aria-hidden />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="md:justify-self-start">
+                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-10" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="start" className="w-64 text-xs space-y-2">
+                    <p className="text-muted-foreground">
+                      <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">The Decision Stack</a> by <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Martin Eriksson</a>. Used with permission.
+                    </p>
+                  </PopoverContent>
+                </Popover>
+                {isDemo && DEMO_META[projectId] ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={DEMO_META[projectId].logo} alt={DEMO_META[projectId].name} className="h-14" />
+                ) : (
+                  <div aria-hidden />
+                )}
                 <div className="order-last flex flex-wrap items-center justify-center gap-2 md:justify-end md:justify-self-end">
                   {isDemo ? (
                     (() => {
@@ -1101,18 +1115,6 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                     </>
                   )}
                 </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button>
-                      <img src="/Decision Stack Logo.svg" alt="The Decision Stack" className="h-10" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent side="bottom" align="end" className="w-64 text-xs space-y-2">
-                    <p className="text-muted-foreground">
-                      <a href="https://thedecisionstack.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">The Decision Stack</a> by <a href="https://martineriksson.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">Martin Eriksson</a>. Used with permission.
-                    </p>
-                  </PopoverContent>
-                </Popover>
                 </div>
                 <StrategyDisplay
                   strategy={strategyData.strategy}
