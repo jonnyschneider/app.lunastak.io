@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 3,
+  "bundleVersion": 4,
   "projectId": "cmn8anetr5kwlmbmq",
   "projectName": "Nike",
   "isDemo": true,
   "demoSlug": "nike",
   "description": null,
-  "exportedAt": "2026-09-10T04:08:29.921Z",
+  "exportedAt": "2026-09-10T04:12:29.801Z",
   "knowledgeSummary": "You've been building out a detailed strategic picture of Nike, and it's rich enough now to read almost like a full case study rather than scattered notes.\n\n**The market wasn't sized, it was widened.** Bowerman's \"if you have a body, you're an athlete\" line, and Knight's willingness to claim a billion-dollar market when the real number was $2 billion, both point to the same move: Nike didn't discover demand, it redefined who counts as a customer until the market caught up.\n\n**The founding constraint became the culture.** Impossible unit economics on Tigers, a banker who wouldn't lend against growth, and a 100% debt-to-assets ratio weren't choices so much as survival tactics, yet they hardened into Nike's permanent growth orientation, even now with $10.7 billion in cash sitting against that old identity.\n\n**Scale, not brand, is the real moat.** You've landed on a sharp distinction: Nike doesn't out-margin Adidas, it out-volumes it. The Kobe story (paying to leave Adidas) shows the mechanism, bigger athlete platform attracts bigger stars attracts bigger platform, a loop small rivals like Under Armour can't replicate no matter how much they spend.\n\n**The unresolved tension.** Knight himself called Nike a marketing company that happens to sell shoes as its best marketing tool, and you've flagged the counter-read: maybe the athletes are the product and the shoe is just the monetization. That question sits unanswered at the center of everything else, including live risks, women's underdevelopment, resale value walked away from, and running fragmenting under Nike from On and Hoka.\n\nThis is dense, well-covered ground. Where it'd be worth pushing next is turning the Nike pattern into a live decision, what would *your* version of \"widening the definition\" or \"scale through talent\" actually look like applied elsewhere.",
   "suggestedQuestions": [
     {
@@ -218,7 +218,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Scale today, and the shape of the customer base",
@@ -241,7 +243,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Women are the largest underserved segment inside the business",
@@ -264,7 +268,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Near-monopoly in basketball, the category that converts to everyday wear",
@@ -287,7 +293,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A replacement market of fourteen billion feet",
@@ -310,7 +318,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Sneakers became identity, and a secondary market followed",
@@ -333,7 +343,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The founding insight was manufacturing arbitrage, borrowed from cameras",
@@ -356,7 +368,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The market was correctly judged too small — and the judgement was irrelevant",
@@ -379,7 +393,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The original business had no product and no defensibility",
@@ -402,7 +418,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The gross margin never penciled, which forced everything else",
@@ -425,7 +443,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Banks could not value a company that had no assets",
@@ -448,7 +468,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The equity route failed, including a rename to sound like tech",
@@ -471,7 +493,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Growth as a survival requirement, not an ambition",
@@ -494,7 +518,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The product is a way to participate in the dream",
@@ -517,7 +543,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Genuine performance innovation underwrites the aspiration",
@@ -540,7 +568,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Brand power that shows up as consideration, not price",
@@ -563,7 +593,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The premium is deliberately left on the table",
@@ -586,7 +618,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Two different products under one swoosh",
@@ -609,7 +643,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Knight's own account, and the disagreement with it",
@@ -632,7 +668,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A power law unlike the rest of apparel",
@@ -655,7 +693,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "No switching costs and no network effects",
@@ -678,7 +718,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Jordan deal was counter-positioning the incumbents could not copy",
@@ -701,7 +743,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Reebok overtook Nike by serving a market Nike refused on principle",
@@ -724,7 +768,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Adidas has repeatedly lost on its own strategy",
@@ -747,7 +793,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The danger of being caught in the middle",
@@ -770,7 +818,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Niche competitors are winning in the founding category",
@@ -793,7 +843,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A fabless shoe company",
@@ -816,7 +868,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Margins that are good, and nothing like luxury",
@@ -839,7 +893,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Futures Program moved financing onto retailers",
@@ -862,7 +918,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The trading company that made everything possible",
@@ -885,7 +943,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Jordan deal economics, and what they actually paid",
@@ -908,7 +968,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Jordan as a compounding annuity long after retirement",
@@ -931,7 +993,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "From capital-starved to not knowing what to do with cash",
@@ -954,7 +1018,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Never taking dilution is how the founder ended up owning half of it",
@@ -977,7 +1043,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Sports marketing was effectively invented to get around amateurism rules",
@@ -1000,7 +1068,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Buying the middle of the market rather than the stars",
@@ -1023,7 +1093,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Athletes are content, and scale buys the content",
@@ -1046,7 +1118,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "$4 billion a year, booked as demand creation",
@@ -1069,7 +1143,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Paying to be a billboard on jerseys someone else sells",
@@ -1092,7 +1168,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The banned-shoe story as manufactured myth",
@@ -1115,7 +1193,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Taking a position as media strategy",
@@ -1138,7 +1218,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The wholesale-to-direct transition, still unfinished",
@@ -1161,7 +1243,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Innovation arriving from outside the shoe industry",
@@ -1184,7 +1268,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Jordan 3 was designed by asking the customer what he wanted",
@@ -1207,7 +1293,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A bad product nearly lost the whole relationship",
@@ -1230,7 +1318,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Year one of Jordan was inflated by stuffing the channel",
@@ -1253,7 +1343,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Breaking2 as a spectacle deliberately outside the rules",
@@ -1276,7 +1368,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Digital as relationship infrastructure, learned from a failed product",
@@ -1299,7 +1393,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The ability to make an athlete into something larger than an athlete",
@@ -1322,7 +1418,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Scale as the thing an athlete cannot get anywhere else",
@@ -1345,7 +1443,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Ten principles typed in anger, still operative",
@@ -1368,7 +1468,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Bowerman's contributions were rare and enormous",
@@ -1391,7 +1493,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Scale advantage inside a fragmented factory ecosystem",
@@ -1414,7 +1518,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Personalisation at a scale nobody else can reach",
@@ -1437,7 +1543,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A deeply insular culture that grows its own",
@@ -1460,7 +1568,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The founding strength became the defining scandal",
@@ -1483,7 +1593,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The betrayal that shaped the culture",
@@ -1506,7 +1618,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Winning made them slow",
@@ -1529,7 +1643,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The reorganisation may have traded focus for legibility",
@@ -1552,7 +1668,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A CEO from outside the shoe business, and a thin bench",
@@ -1575,7 +1693,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "China is both the largest opportunity and the least controllable",
@@ -1598,7 +1718,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Everything rests on continuously repurchased relevance",
@@ -1621,7 +1743,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Growth declared as identity",
@@ -1644,7 +1768,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Competing to the line and one toe past it",
@@ -1667,7 +1793,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Standing with the athlete as the durable position",
@@ -1690,7 +1818,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Deliberately giving value away to keep the dream reachable",
@@ -1713,7 +1843,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Betting that scale lets them go direct",
@@ -1736,7 +1868,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The unresolved question the company is built on",
@@ -1759,7 +1893,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1769,7 +1905,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1779,7 +1917,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1789,7 +1929,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1799,7 +1941,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1809,7 +1953,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     }
   ],
   "syntheses": [

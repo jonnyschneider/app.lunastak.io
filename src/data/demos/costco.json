@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 3,
+  "bundleVersion": 4,
   "projectId": "cmn8an6ivpa0xoehj",
   "projectName": "Costco",
   "isDemo": true,
   "demoSlug": "costco",
   "description": null,
-  "exportedAt": "2026-09-10T04:08:29.035Z",
+  "exportedAt": "2026-09-10T04:12:28.987Z",
   "knowledgeSummary": "You've been working through Costco as a case study, and Luna now has a pretty rich picture of how the model actually works.\n\n**The engine is the cap, not the growth.** The whole business runs on a self-imposed 14% markup ceiling (averaging ~11%), a constraint that traces back to Sol Price's original legal workaround of using \"membership\" to dodge minimum-pricing laws. That cap forces everything else: 3,800 SKUs instead of 100,000+, 92% cross-docking, no advertising, and a negative cash conversion cycle earned through inventory speed rather than supplier leverage.\n\n**The inversion you keep coming back to.** Costco has retail's lowest prices but its wealthiest customers, because the annual fee and bulk buy-in filter for households with cash flow and storage space, not because Costco targeted the wealthy. That filter, plus the executive-tier split (45% of members, 73% of sales), is what produces 93% renewal.\n\n**Why competitors can't just copy it.** Sam Walton saw the whole model in 1982 and launched Sam's Club within a year, yet the gap has only widened. Copying Costco means destroying the margin structure the competitor's existing business depends on, which is why counter-positioning works even as a $230B incumbent rather than a scrappy challenger.\n\n**Growth as the open question.** International expansion into dense Asian markets shouldn't have worked by the format's own logic, but did, suggesting the appeal is the value itself, not the warehouse format. China's 400,000 members in two years versus a 68,000 mature US average hints at how much headroom is left.\n\nAll eleven strategic dimensions are now well covered. Worth turning next to where this model's ceiling actually is, and what would break the discipline that holds it together.",
   "suggestedQuestions": [
     {
@@ -231,7 +231,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Scale of the member base and share of US households",
@@ -254,7 +256,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Renewal rates behave unlike any consumer subscription",
@@ -277,7 +281,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The consumer business was an accident, not a plan",
@@ -300,7 +306,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Executive members are a minority of members but most of the volume",
@@ -323,7 +331,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Value translates across cultures better than expected",
@@ -340,7 +350,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Conventional retail markup is the problem being attacked",
@@ -363,7 +375,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The membership club began as a legal workaround",
@@ -380,7 +394,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Pooled buying power as the founding idea",
@@ -403,7 +419,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The insight that the margin was in the warehouse, not the store",
@@ -420,7 +438,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Price beats friction — the assumption that proved wrong",
@@ -437,7 +457,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A hard internal cap on markup, not a pricing target",
@@ -460,7 +482,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Why the cap is enforced as a cultural constraint rather than a policy",
@@ -477,7 +501,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Supplier savings flow almost entirely to the member",
@@ -500,7 +526,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The hot dog as a public, unmovable price commitment",
@@ -523,7 +551,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Selection is traded away deliberately, and quality is what makes it acceptable",
@@ -546,7 +576,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The intelligent loss of sales",
@@ -569,7 +601,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Kirkland Signature is a value instrument, not a margin instrument",
@@ -592,7 +626,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Sam's Club was cloned directly from Price Club, with the founder's consent",
@@ -615,7 +651,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The closest competitor has fallen further behind over time",
@@ -638,7 +676,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Counter-positioning against e-commerce convenience",
@@ -661,7 +701,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "An incumbent holding counter-positioning power is rare",
@@ -678,7 +720,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The overhead gap is the thing competitors cannot cross",
@@ -701,7 +745,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The relevant contest is not warehouse retail",
@@ -718,7 +764,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Suppliers finance the inventory",
@@ -741,7 +789,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The float is earned on standard terms, not extracted from suppliers",
@@ -758,7 +808,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Inventory velocity against the rest of retail",
@@ -781,7 +833,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "SKU count is actively driven down, not held",
@@ -798,7 +852,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Two businesses under one roof",
@@ -821,7 +877,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Absolute margin dollars over margin percentage",
@@ -844,7 +902,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Labour and real estate productivity",
@@ -867,7 +927,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The executive membership is priced to break even for the member",
@@ -890,7 +952,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The margin structure made credit cards impossible, which became leverage",
@@ -913,7 +977,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A modest retailer wrapped around an exceptional fee business",
@@ -936,7 +1002,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "There is effectively no marketing spend",
@@ -959,7 +1027,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Word of mouth was designed in from the credit union moment",
@@ -976,7 +1046,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Earned media has been cultivated deliberately since FedMart",
@@ -999,7 +1071,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Social reach without any social presence",
@@ -1022,7 +1096,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "International expansion succeeded where the format looked wrong",
@@ -1039,7 +1115,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "China demand runs far ahead of the US baseline",
@@ -1056,7 +1134,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "E-commerce is approached on terms that avoid the overhead",
@@ -1079,7 +1159,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A quarter of the assortment exists to create novelty",
@@ -1102,7 +1184,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Running out of stock is the intended behaviour",
@@ -1119,7 +1203,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Layout is engineered around traffic, not convenience",
@@ -1142,7 +1228,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Cross-docking moves goods without ever storing them",
@@ -1165,7 +1253,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "An effectively unlimited return policy",
@@ -1188,7 +1278,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Unique SKUs remove the ability to price-compare",
@@ -1205,7 +1297,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Buyers hold genuine commodity expertise",
@@ -1228,7 +1322,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Low SKU count is what makes deep buyer relationships possible",
@@ -1251,7 +1347,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Kirkland Signature is the largest consumer packaged brand in the world",
@@ -1274,7 +1372,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Vertical integration is used narrowly, and only to protect members",
@@ -1297,7 +1397,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Paying above market produces lower total labour cost",
@@ -1320,7 +1422,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Leadership continuity as an institutional asset",
@@ -1343,7 +1447,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Supplier leverage comes from concentration, not overall size",
@@ -1366,7 +1472,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The e-commerce miss was luck, not foresight",
@@ -1389,7 +1497,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The cost structure forecloses conventional e-commerce permanently",
@@ -1412,7 +1522,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Growth is bounded physically, and cash cannot relieve it",
@@ -1435,7 +1547,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The trade-offs are interlocking, so any single reversal breaks the system",
@@ -1458,7 +1572,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Culture is the load-bearing asset and the concentrated risk",
@@ -1475,7 +1591,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Brand resistance took decades to overcome and is conditional",
@@ -1498,7 +1616,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The code of ethics is an explicit priority order",
@@ -1521,7 +1641,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Shareholders are deliberately absent from the stated priorities",
@@ -1544,7 +1666,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Scale economies shared is the organising idea",
@@ -1567,7 +1691,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Advantages are held latent rather than monetised",
@@ -1590,7 +1716,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Two kinds of company",
@@ -1607,7 +1735,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Patience as an operating norm",
@@ -1630,7 +1760,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Every cent matters, literally",
@@ -1647,7 +1779,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1657,7 +1791,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1667,7 +1803,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1677,7 +1815,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1687,7 +1827,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1697,7 +1839,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     }
   ],
   "syntheses": [

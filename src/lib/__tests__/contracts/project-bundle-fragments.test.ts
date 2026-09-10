@@ -50,6 +50,8 @@ const dbFragment = {
   sourceType: 'extraction',
   interpretationType: 'interpretation' as string | null,
   reviewedAt: REVIEWED_AT as Date | null,
+  generatedBy: 'claude-code-plugin@1.2.0' as string | null,
+  importMode: 'transform' as string | null,
   evidence: [
     { text: 'we never build the last thousand', sourceRole: 'user', verification: 'verified', ordinal: 0 },
     { text: 'scarcity is the product', sourceRole: 'assistant', verification: 'unverifiable', ordinal: 1 },
@@ -81,6 +83,53 @@ function bundleAround(fragments: unknown[]) {
     syntheses: [],
   }
 }
+
+describe('Project Bundle fragment provenance', () => {
+  /**
+   * Added with bundle v4, 2026-09-10. `generatedBy` / `importMode` landed on Fragment
+   * on 2026-09-09 and this boundary was never updated, so every dev → preview → prod
+   * hop silently erased them — the same failure v3 fixed for evidence, repeated within
+   * a fortnight. Caught when a restored preview showed 0 of 300 fragments carrying
+   * provenance that the dev database had on all of them.
+   *
+   * Provenance exists so the different ways of preparing context can be compared. A
+   * format that drops it on the way to the environment where the comparison happens
+   * defeats the feature entirely.
+   */
+  test('export → schema → restore preserves generatedBy and importMode', async () => {
+    const bundle = parseBundle(bundleAround([toBundleFragment(dbFragment)]))
+    expect(bundle.fragments[0].generatedBy).toBe('claude-code-plugin@1.2.0')
+    expect(bundle.fragments[0].importMode).toBe('transform')
+
+    const { client, fragmentRows } = fakeTx()
+    await writeFragments(client, 'proj_1', bundle.fragments)
+    expect(fragmentRows[0]).toMatchObject({
+      generatedBy: 'claude-code-plugin@1.2.0',
+      importMode: 'transform',
+    })
+  })
+
+  test('a fragment with no provenance restores as null, not undefined', async () => {
+    const noProvenance = { ...dbFragment, generatedBy: null, importMode: null }
+    const bundle = parseBundle(bundleAround([toBundleFragment(noProvenance)]))
+
+    const { client, fragmentRows } = fakeTx()
+    await writeFragments(client, 'proj_1', bundle.fragments)
+    expect(fragmentRows[0].generatedBy).toBeNull()
+    expect(fragmentRows[0].importMode).toBeNull()
+  })
+
+  test('a pre-v4 bundle omitting the fields still restores', async () => {
+    const exported = toBundleFragment(dbFragment) as Record<string, unknown>
+    delete exported.generatedBy
+    delete exported.importMode
+
+    const bundle = parseBundle(bundleAround([exported]))
+    const { client, fragmentRows } = fakeTx()
+    await writeFragments(client, 'proj_1', bundle.fragments)
+    expect(fragmentRows[0].generatedBy).toBeNull()
+  })
+})
 
 describe('Project Bundle fragment evidence', () => {
   test('export → schema → restore preserves evidence, ordinal order and all three verification states', async () => {

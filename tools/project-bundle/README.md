@@ -76,6 +76,31 @@ When you change the bundle shape:
 
 ## Version history
 
+### v4 — 2026-09-10
+
+`fragments[]` gains `generatedBy` and `importMode` — which tool produced the
+context bundle a fragment came from, and how it was imported
+(`src/lib/import/provenance.ts`).
+
+Both columns landed on `Fragment` on 2026-09-09 and this boundary was never
+updated, so **every dev → preview → prod hop silently erased them**. Exactly the
+failure v3 fixed for evidence, repeated within a fortnight, and caught the same
+way: a restored preview showed 0 of 300 fragments carrying provenance that the
+dev database had on all of them.
+
+Provenance exists so the different ways of preparing context can be compared. A
+format that drops it on the way to the environment where that comparison happens
+defeats the feature entirely.
+
+Both are **optional and nullable**: absent means "exported before v4", null means
+the bundle claimed nothing. Neither is a category — see `provenance.ts` on why
+null must never be charted as a source.
+
+**A v3 bundle needs only `bundleVersion: 4`** to come forward — purely additive.
+
+The four committed demos were re-exported rather than migrated, because they were
+being regenerated in the same change and the dev database held the provenance.
+
 ### v3 — 2026-09-06
 
 `fragments[]` gains `evidence[]`, `interpretationType` and `reviewedAt` — the

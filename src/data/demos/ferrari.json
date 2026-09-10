@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 3,
+  "bundleVersion": 4,
   "projectId": "cmnxrkvuv0094ow1betk3sjzr",
   "projectName": "Ferrari",
   "isDemo": true,
   "demoSlug": "ferrari",
   "description": "Cornered resource and brand power",
-  "exportedAt": "2026-09-10T04:08:30.818Z",
+  "exportedAt": "2026-09-10T04:12:30.658Z",
   "knowledgeSummary": "You've been building out the Ferrari case as a strategy study, and Luna now has a detailed picture of how the whole system fits together.\n\n**The rule that runs everything.** Enzo's dictum, always deliver one car fewer than demanded, isn't nostalgia, it's the operating policy. It shows up in the SUV capped at 20% of volume, the order book sold out to 2027, and the fact that 81% of sales go to existing owners. Growth comes from selling deeper into 180,000 known customers, not from chasing new ones.\n\n**The dream, not the car.** Ferrari's own framing is that it doesn't sell transportation, it sells a way to feel maximally alive. That's why unreliability never hurt demand, why the Mille Miglia scandal made the cars more desirable, and why buyers are handed several genuinely true reasons (engineering, heritage, appreciation) to make the purchase feel justified.\n\n**What no one else has replicated.** The racing team, constructor and service operation under one roof since the 1940s, in-house casting and assembly at Maranello, no shared platforms with anyone, a private test track, and a complete record of every living owner. Luca added the commercial machine (waitlists, Classiche certification, licensed goods) on top of Enzo's myth.\n\n**The economics, and the open question.** 50% gross margins, roughly $170,000 profit per car, and single models like the F80 driving outsized profit swings. But management just guided to 5% growth after the stock fell from $90B to $55B, and the new EV, revealed by Jony Ive with no styling shown, is explicitly a second pyramid aimed at people the current brand doesn't reach.\n\nWorth digging into next: whether that EV bet strengthens the myth or dilutes it.",
   "suggestedQuestions": [
     {
@@ -228,7 +228,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "How the ownership actually works",
@@ -251,7 +253,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Ferrari owns the customer; dealers are infrastructure",
@@ -274,7 +278,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The secondary market is cultivated, not captured",
@@ -297,7 +303,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Classiche monetises the secondary market indirectly",
@@ -320,7 +328,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The widest gap between who knows the product and who owns it",
@@ -343,7 +353,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Almost every car goes to someone who already has one",
@@ -366,7 +378,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A fan base that will never buy anything",
@@ -389,7 +403,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "New geographies as the only non-diluting way to grow volume",
@@ -412,7 +428,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Widening the base through lifestyle, deliberately",
@@ -435,7 +453,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The community is unusually inclusive for a luxury brand",
@@ -458,7 +478,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The job is not transportation",
@@ -481,7 +503,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Speed as a way of fighting death",
@@ -504,7 +528,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Tragedy compounded the myth rather than damaging it",
@@ -527,7 +553,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The functional alibi",
@@ -550,7 +578,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Flaws are not a defect in the proposition",
@@ -573,7 +603,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Buying a live connection to the pinnacle of motorsport",
@@ -596,7 +628,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A bundle of product and service, not a product",
@@ -619,7 +653,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Racing thrills as an engineered product characteristic",
@@ -642,7 +678,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Every car unique, by construction",
@@ -665,7 +703,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Passion as the thing actually purchased",
@@ -688,7 +728,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Lamborghini diluted itself into a different category",
@@ -711,7 +753,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Platform sharing is structurally incompatible with the model",
@@ -734,7 +778,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Why nobody else has run this playbook",
@@ -757,7 +803,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Goldilocks scale nobody else occupies",
@@ -780,7 +828,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Ferrari nearly lost to Honda",
@@ -803,7 +853,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Chinese EVs as a category risk rather than a direct one",
@@ -826,7 +878,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Margins that place it with luxury houses, not carmakers",
@@ -849,7 +903,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Absolute profit per car is the more striking number",
@@ -872,7 +928,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The business is extremely top-heavy",
@@ -895,7 +953,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Icona series exists to smooth supercar seasonality",
@@ -918,7 +978,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Formula 1 turned from a cost into a profit centre",
@@ -941,7 +1003,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Valued as an apex luxury house",
@@ -964,7 +1028,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Growth has decelerated, and that is the bear case",
@@ -987,7 +1053,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The pyramid needs somewhere to graduate to, always",
@@ -1010,7 +1078,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Access is earned through purchase history",
@@ -1033,7 +1103,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The top of the pyramid is an operating business of its own",
@@ -1056,7 +1128,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Four new models a year, discontinued fast",
@@ -1079,7 +1153,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Vertical integration to the raw ingot",
@@ -1102,7 +1178,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Deliberate manufacturing inefficiency",
@@ -1125,7 +1203,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The FUV, capped at 20% of volume",
@@ -1148,7 +1228,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Most Ferraris are never driven",
@@ -1171,7 +1253,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Luce as a parallel pyramid, not a new tier",
@@ -1194,7 +1278,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The myth as a cornered resource",
@@ -1217,7 +1303,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Enzo was a marketer, not an engineer",
@@ -1240,7 +1328,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Luca brought the luxury strategy Enzo never knew existed",
@@ -1263,7 +1353,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The team, the technology, the myth",
@@ -1286,7 +1378,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Racing feeds the myth without selling cars directly",
@@ -1303,7 +1397,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "They probably know every owner by name",
@@ -1326,7 +1422,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A racetrack around the founder's house",
@@ -1349,7 +1447,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Brand licensing is the standing dilution risk",
@@ -1372,7 +1472,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Overproduction is the cardinal sin, and Ferrari has committed it before",
@@ -1395,7 +1497,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The EV transition is genuinely existential",
@@ -1418,7 +1522,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Pricing power has a visible ceiling",
@@ -1441,7 +1547,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Public markets pull against luxury discipline",
@@ -1464,7 +1572,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Succession has repeatedly arrived as sudden loss",
@@ -1487,7 +1597,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Rising prices are changing the community",
@@ -1504,7 +1616,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Both exclusive and inclusive at once",
@@ -1527,7 +1641,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Independence as inherited doctrine",
@@ -1550,7 +1666,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Scarcity managed as a permanent discipline",
@@ -1573,7 +1691,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Continuity as the actual moat",
@@ -1596,7 +1716,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Myth-building as deliberate, sustained work",
@@ -1619,7 +1741,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Technology went from something to resist to something to lead",
@@ -1642,7 +1766,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1652,7 +1778,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1662,7 +1790,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1672,7 +1802,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1682,7 +1814,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1692,7 +1826,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     }
   ],
   "syntheses": [

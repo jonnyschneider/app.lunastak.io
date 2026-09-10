@@ -1,11 +1,11 @@
 {
-  "bundleVersion": 3,
+  "bundleVersion": 4,
   "projectId": "cmn8anbaapaww1709",
   "projectName": "TSMC",
   "isDemo": true,
   "demoSlug": "tsmc",
   "description": null,
-  "exportedAt": "2026-09-10T04:08:31.647Z",
+  "exportedAt": "2026-09-10T04:12:31.490Z",
   "knowledgeSummary": "You've been building out the TSMC case as a strategy study, and it's a rich one. A few threads stand out.\n\n**The problem you found, not predicted.** Morris Chang didn't forecast a fabless chip industry, he'd watched designers at TI and General Instrument who wanted to start companies but couldn't raise enough to build a fab. Pulling the fab requirement out of the equation is what created Nvidia, Qualcomm, and the rest. TSMC's own founding was almost the mirror image: no design capability, no IP, no sales engine, just one possible strength (wafer manufacturing) and a government that ordered the company into existence in three days.\n\n**The moat that compounds instead of decaying.** Capital intensity is normally a weakness. Here, Moore's Law halving cost per transistor and Rock's Law doubling fab costs every four years combine into a flywheel: high margins fund more advanced fabs, better process pulls in customers, customers fund the next fab. Layered on top: 40 years of process knowledge no amount of money can buy back, and a single-source dependency on ASML's EUV machines that even an unlimited budget can't shortcut.\n\n**The trust proposition, and the invisible brand.** TSMC's commitment to never design its own chips is what makes customers safe handing over their most advanced designs, and it's the one thing Samsung and Intel structurally can't copy without dismantling their own businesses. The tradeoff is that TSMC is deliberately invisible: Apple takes the stage credit, TSMC takes the margin.\n\n**The one risk that actually matters.** Everything sits on Taiwan. Nobody knows if the capability would survive an evacuation, and the chip shortage already showed what happens when supply pauses even briefly.\n\nWorth exploring next: how this origin story and moat structure might translate to a business you're actually building.",
   "suggestedQuestions": [
     {
@@ -224,7 +224,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The market did not exist when the company was founded",
@@ -247,7 +249,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Morris could see the demand because he had watched it be suppressed",
@@ -270,7 +274,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Effectively a monopoly at the leading edge",
@@ -293,7 +299,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Concentration in one customer, and one relationship",
@@ -316,7 +324,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Always needing the leading edge",
@@ -339,7 +349,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Taiwan had exactly one asset worth building on",
@@ -356,7 +368,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Starting from 4-5% gross margins as a national baseline",
@@ -379,7 +393,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The founder did not choose to found it",
@@ -402,7 +418,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The idea was widely considered bad",
@@ -425,7 +443,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The founder took no equity",
@@ -448,7 +468,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A career built on two rejections",
@@ -471,7 +493,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The promise never to compete with the customer",
@@ -488,7 +512,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Access to manufacturing nobody else can offer at any price",
@@ -511,7 +537,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The customer takes the credit, deliberately",
@@ -534,7 +562,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Learning-curve pricing, invented at TI and now reversed",
@@ -557,7 +587,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Yield is the product",
@@ -574,7 +606,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Intel's decline took a long time and is not finished",
@@ -597,7 +631,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Intel saw EUV first and declined to commit",
@@ -620,7 +656,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The single most expensive strategic mistake",
@@ -643,7 +681,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Indecision has cost Intel more than any single choice",
@@ -666,7 +706,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Money cannot buy what TSMC has",
@@ -689,7 +731,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The treadmill punishes a single missed step",
@@ -706,7 +750,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A contract manufacturer with 40% operating margins",
@@ -729,7 +775,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Nearly all profit is recycled into the next generation",
@@ -752,7 +800,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Twenty percent compounded for twenty-seven years",
@@ -775,7 +825,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The flywheel that took a decade to start turning",
@@ -792,7 +844,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Rock's Law implies a monopoly",
@@ -815,7 +869,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Capital intensity as a better moat than software margins",
@@ -838,7 +894,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Begging the incumbents, then seeding the challengers",
@@ -861,7 +919,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The founder's reputation was the entire sales strategy",
@@ -884,7 +944,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The Apple deal required a third act",
@@ -907,7 +969,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Diversification is driven by subsidy, not strategy",
@@ -930,7 +994,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "What an EUV machine actually does",
@@ -953,7 +1019,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The physics required inventing new mirrors",
@@ -976,7 +1044,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Roughly fifty machines a year exist",
@@ -999,7 +1069,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The node names are marketing, and physics is closing in",
@@ -1022,7 +1094,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The clearest case of process power there is",
@@ -1045,7 +1119,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The ASML relationship is mutual dependence",
@@ -1068,7 +1144,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Switching costs that are technical, not contractual",
@@ -1091,7 +1169,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "An ecosystem effect that is not quite a network effect",
@@ -1114,7 +1194,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A founder who learned the industry in a hotel bar",
@@ -1137,7 +1219,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Government backing as founding capability",
@@ -1160,7 +1244,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The geopolitical concentration is the whole bear case",
@@ -1183,7 +1269,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Whether process power can be airlifted",
@@ -1206,7 +1294,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "What the world loses if it goes wrong",
@@ -1229,7 +1319,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "A single supplier for the critical input",
@@ -1252,7 +1344,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "The strategy was bad and worked anyway",
@@ -1275,7 +1369,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Stay pure-play, whatever the temptation",
@@ -1292,7 +1388,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Enable the customers, take none of the credit",
@@ -1309,7 +1407,9 @@
           "verification": "unverifiable",
           "ordinal": 0
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Outsource everything that does not make the beer taste better",
@@ -1332,7 +1432,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Fighting spirit at seventy-eight",
@@ -1355,7 +1457,9 @@
           "verification": "unverifiable",
           "ordinal": 1
         }
-      ]
+      ],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1365,7 +1469,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1375,7 +1481,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1385,7 +1493,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1395,7 +1505,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     },
     {
       "title": "Strategic tension",
@@ -1405,7 +1517,9 @@
       "sourceType": "import",
       "interpretationType": null,
       "reviewedAt": null,
-      "evidence": []
+      "evidence": [],
+      "generatedBy": "claude-code-plugin@1.2.0",
+      "importMode": "transform"
     }
   ],
   "syntheses": [

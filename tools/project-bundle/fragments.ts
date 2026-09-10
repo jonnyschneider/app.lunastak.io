@@ -19,6 +19,8 @@ export interface ExportableFragment {
   sourceType: string
   interpretationType: string | null
   reviewedAt: Date | string | null
+  generatedBy: string | null
+  importMode: string | null
   evidence: {
     text: string
     sourceRole: string | null
@@ -41,6 +43,8 @@ export interface FragmentRow {
   sourceType: string
   interpretationType: string | null
   reviewedAt: Date | null
+  generatedBy: string | null
+  importMode: string | null
   status: string
 }
 
@@ -67,6 +71,8 @@ export function toBundleFragment(f: ExportableFragment): BundleFragment {
     sourceType: f.sourceType,
     interpretationType: f.interpretationType ?? null,
     reviewedAt: f.reviewedAt ? new Date(f.reviewedAt).toISOString() : null,
+    generatedBy: f.generatedBy ?? null,
+    importMode: f.importMode ?? null,
     evidence: (f.evidence ?? [])
       .slice()
       .sort((a, b) => a.ordinal - b.ordinal)
@@ -110,6 +116,8 @@ export async function writeFragments(
     sourceType: f.sourceType,
     interpretationType: f.interpretationType ?? null,
     reviewedAt: f.reviewedAt ? new Date(f.reviewedAt) : null,
+    generatedBy: f.generatedBy ?? null,
+    importMode: f.importMode ?? null,
     status: 'active',
   }))
 

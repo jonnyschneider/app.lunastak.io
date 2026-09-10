@@ -14,7 +14,7 @@
  */
 import { z } from 'zod'
 
-export const BUNDLE_VERSION = 3 as const
+export const BUNDLE_VERSION = 4 as const
 
 const ConfidenceSchema = z.enum(['HIGH', 'MEDIUM', 'LOW'])
 
@@ -49,6 +49,17 @@ const FragmentSchema = z.object({
   interpretationType: z.string().nullable().optional(), // verbatim | interpretation
   reviewedAt: z.string().datetime().nullable().optional(),
   evidence: z.array(EvidenceSchema).optional(),
+  /**
+   * Which tool produced the context bundle this fragment came from, and how it was
+   * imported. Added in v4 — the columns landed 2026-09-09 (src/lib/import/provenance.ts)
+   * and this boundary was never updated, so every dev → preview → prod hop silently
+   * erased them. Exactly the failure v3 fixed for evidence, repeated.
+   *
+   * Optional and nullable: absent means "exported before provenance existed", null means
+   * the bundle claimed nothing. Neither is a category — see provenance.ts.
+   */
+  generatedBy: z.string().nullable().optional(),
+  importMode: z.string().nullable().optional(),
 })
 
 const GapSchema = z.object({
