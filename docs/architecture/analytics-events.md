@@ -124,10 +124,32 @@ lifecycle and vanished with it on a project with no context.
 | `cta_import_bundle` | `integrations-card` | the Integrations card header's **Import context** |
 | `cta_update_direction` | **nothing — retired** | `overflow-menu` was its ONLY surface. The panel's own action emits `cta_refresh_strategy` / `knowledge-panel`, a different event. Use that; `cta_update_direction` goes to zero and stays there |
 | `cta_draft_opportunities` | `opportunity-section` | already the primary door; the menu copy was second |
-| `cta_export_brief` | `stack-header` | **moved, not re-homed** — it is Decision-Stack-scoped and was filed under a global control |
-| `cta_version_history` | `stack-header` | same; the version stamp's "view past revisions →" is the other door |
+| `cta_export_brief` | `stack-header` → `stack-masthead` | **moved twice on the same day** — out of the overflow menu into the header, then out of the header onto the stack. See below |
+| `cta_version_history` | `stack-header` → `stack-masthead` | same journey; "view past revisions →" was removed rather than kept as a second door |
 | `cta_open_evidence` | — | the menu's *View all N fragments* item went with the Evidence sheet on 2026-09-08 |
 | `cta_view_demo` | `project-switcher` | **a genuinely new surface** — see below |
+
+### ⚠ `stack-header` goes to zero on 2026-09-10, the same day it appeared
+
+`cta_export_brief` and `cta_version_history` were moved out of the overflow menu into the project
+header earlier today, and out of the header onto the Decision Stack masthead later the same day.
+`cta_share` made the second hop with them. All three now emit `stack-masthead`.
+
+**`stack-header` will flatline from today and that is expected.** Recorded loudly because 2.7.1
+exists on account of precisely this shape: a control was dropped from the launchpad by defocus,
+its event kept firing from other surfaces, nothing said "removed", and nobody noticed for six
+months. A surface that appears and disappears inside one day is exactly the kind nobody thinks
+to write down.
+
+Why the second move: the header persists across both modes and every project, while the trio acts
+on one built stack — it was already gating itself on `!isDemo && hasStrategy && activeTab ===
+'decision-stack'`, three conditions undoing the fact that it was in the wrong place. On a phone the
+three buttons crowded the surface with the least room.
+
+The version stamp's "view past revisions →" link is **gone**, not kept. It was defensible as a
+second door while History sat far away in the header; beside each other they were the same door
+drawn twice. `cta_version_history` therefore now counts every route to that sheet, where before it
+counted one of two — a step UP in coverage, not a like-for-like move.
 
 **⚠ Three of those replacement surfaces did not exist until this commit.** The Chats, Documents and
 Integrations card headers — the *permanent* doors — emitted **nothing**. Every event for those three
@@ -177,8 +199,8 @@ Design: `docs/_plans/2026-09-10-empty-state-consolidation-design.md`.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_export_brief` | client | `stack-header` | `projectId`, userType | User exported a strategic brief. |
-| `cta_version_history` | client | `stack-header` | `projectId`, userType | User opened version history. |
+| `cta_export_brief` | client | `stack-masthead` | `projectId`, userType | User exported a strategic brief. |
+| `cta_version_history` | client | `stack-masthead` | `projectId`, userType | User opened version history. |
 | `version_history_downloaded` | client | `version-history` | `projectId`, `version`, userType | User downloaded a specific version snapshot. |
 | `tab_switch` | client | `decision-stack` \| `knowledgebase` \| `first-context-landed` \| `pre-strategy-add-context` | `projectId`, `chip` (on `decision-stack`), userType | User switched tabs in the project view. `chip: 'true'` means the strategy-ready dot was on the Decision Stack button when it was pressed — that is how a chip-driven visit is told from an ordinary one, without a second event. The two non-tab values are app-initiated moves, not clicks: `first-context-landed` is the one-shot move to the knowledgebase when a project's first context arrives, and `pre-strategy-add-context` is the "Add more context" exit from the empty Decision Stack tab. Segment them out before reading this as user behaviour. |
 | `card_thinking_viewed` | client | `vision` \| `strategy` \| `objective` \| `opportunity` \| `principle` | `projectId`, userType | User revealed the back of a Decision Stack card via the "The thinking" strip. Fires on the **reveal only** — flipping back is not a second read. Segment by `value` to see which layers people actually read. **No pre-2026-08-27 baseline exists** — the flip was completely uninstrumented before the disclosure strip shipped, so this measures the new affordance, not the improvement over the old one. |
@@ -190,7 +212,7 @@ Design: `docs/_plans/2026-09-10-empty-state-consolidation-design.md`.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_share` | client | `signed_up` \| `guest` | `projectId`, userType | User clicked the Share button in the project header. Guests get the sign-in gate instead of the dialog — `value` splits the two. |
+| `cta_share` | client | `signed_up` \| `guest` | `projectId`, userType | User clicked the Share button on the Decision Stack masthead (in the project header until 2026-09-10). Guests get the sign-in gate instead of the dialog — `value` splits the two. |
 | `share_link_enabled` | client | `<projectId>` | `projectId`, userType | Owner turned sharing on ("anyone with the link can view"). |
 | `share_link_disabled` | client | `<projectId>` | `projectId`, userType | Owner turned sharing off — link goes dead immediately. |
 | `share_link_copied` | client | `<projectId>` | `projectId`, userType | Owner copied the share URL. Best proxy for "actually sent to someone". |

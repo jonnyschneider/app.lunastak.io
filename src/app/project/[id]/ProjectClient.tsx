@@ -18,6 +18,9 @@ import {
   Plus,
   X,
   ArrowRight,
+  Share2,
+  Download,
+  Clock,
 } from 'lucide-react'
 
 import { DocumentUploadDialog } from '@/components/document-upload-dialog'
@@ -432,21 +435,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         activeTab={activeTab}
         onSelectTab={(tab) => setMode(tab === 'decision-stack' ? 'stack' : 'knowledge')}
         fragmentCount={projectData?.stats?.fragmentCount ?? 0}
-        isDemo={isDemo}
-        hasStrategy={hasStrategy}
-        isSignedUp={isSignedUp}
         strategyReady={strategyReady}
-        onShare={() => {
-          if (isSignedUp) { setShareDialogOpen(true) } else { setShareSignInGateOpen(true) }
-        }}
-        onExport={async () => {
-          const res = await fetch(`/api/project/${projectId}/export-brief`)
-          if (res.ok) {
-            const blob = await res.blob(); const url = URL.createObjectURL(blob)
-            const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
-          }
-        }}
-        onHistory={() => setVersionHistoryOpen(true)}
       />
     )
     return () => setTabNav(null)
@@ -994,8 +983,22 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                     says which one of it you are looking at. */}
                 {/* The mark centres and the version stamp sits right, so the row reads as a
                     masthead rather than two things pushed to opposite ends. */}
-                <div className="relative flex items-center justify-center gap-3 text-xs text-muted-foreground">
-                <div className="absolute right-0 flex items-center gap-2">
+                {/*
+                  ═══ MASTHEAD: MARK CENTRED, PROVENANCE AND ACTIONS TRAILING ═══
+
+                  A grid rather than the absolute-positioned right slot this used to be. The slot
+                  held one short text stamp, which fits beside a centred mark; it now holds the
+                  Share · Export · History trio as well, and three buttons overlap the mark on a
+                  phone. The empty first cell is what keeps the mark optically centred on desktop
+                  without taking anything out of flow.
+
+                  Below `md` it stacks and centres, so the actions sit under the mark instead of
+                  fighting it for the same row — which is the case that sent them here from the
+                  header in the first place.
+                */}
+                <div className="grid grid-cols-1 items-center justify-items-center gap-3 text-xs text-muted-foreground md:grid-cols-[1fr_auto_1fr]">
+                <div className="hidden md:block" aria-hidden />
+                <div className="order-last flex flex-wrap items-center justify-center gap-2 md:justify-end md:justify-self-end">
                   {isDemo ? (
                     (() => {
                       const episodeUrl = DEMO_EPISODE_URLS[projectId]
@@ -1018,12 +1021,66 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                       <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold tabular-nums text-foreground">
                         v{(projectData as any)?.latestSnapshotVersion || projectData?.strategyOutputs?.[0]?.version || 1}
                       </span>
-                      <button
-                        onClick={() => setVersionHistoryOpen(true)}
-                        className="underline underline-offset-4 transition-colors hover:text-foreground"
-                      >
-                        view past revisions
-                      </button>
+                      {/*
+                        ═══ THE FINISHED-ARTEFACT TRIO, BESIDE THE THING IT ACTS ON ═══
+                        Share · Export · History. All three act on the built stack and nothing else,
+                        so they belong on the stack rather than in a header that persists across
+                        both modes and every project.
+
+                        ⚠ "view past revisions →" IS GONE, and History is why. The link was
+                        described as "a second door to the same sheet" when the buttons lived in the
+                        header and the two were far apart. Sitting next to each other they are not
+                        two doors, they are the same door drawn twice — so the one that names itself
+                        wins and the underlined text goes.
+
+                        Hidden on the demos: a visitor cannot share, export or revise someone
+                        else's example, and the right-hand slot carries the podcast attribution
+                        there instead.
+                      */}
+                      {hasStrategy && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
+                              if (isSignedUp) { setShareDialogOpen(true) } else { setShareSignInGateOpen(true) }
+                            }}
+                            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
+                          >
+                            <Share2 />
+                            Share
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              logAndFlush('cta_export_brief', 'stack-masthead', { projectId })
+                              const res = await fetch(`/api/project/${projectId}/export-brief`)
+                              if (res.ok) {
+                                const blob = await res.blob(); const url = URL.createObjectURL(blob)
+                                const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
+                              }
+                            }}
+                            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
+                          >
+                            <Download />
+                            Export
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              logAndFlush('cta_version_history', 'stack-masthead', { projectId })
+                              setVersionHistoryOpen(true)
+                            }}
+                            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
+                          >
+                            <Clock />
+                            History
+                          </Button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>

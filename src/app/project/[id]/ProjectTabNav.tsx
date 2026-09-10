@@ -1,6 +1,5 @@
 'use client'
 
-import { Clock, Download, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { logAndFlush } from '@/components/StatsigProvider'
 import { cn } from '@/lib/utils'
@@ -13,13 +12,7 @@ interface ProjectTabNavProps {
   onSelectTab: (tab: ProjectTab) => void
   /** Ground truths. Zero renders no count — a "0" would read as a result rather than an absence. */
   fragmentCount: number
-  isDemo: boolean
-  hasStrategy: boolean
-  isSignedUp: boolean
   strategyReady: boolean
-  onShare: () => void
-  onExport: () => void
-  onHistory: () => void
 }
 
 /**
@@ -43,13 +36,7 @@ export function ProjectTabNav({
   activeTab,
   onSelectTab,
   fragmentCount,
-  isDemo,
-  hasStrategy,
-  isSignedUp,
   strategyReady,
-  onShare,
-  onExport,
-  onHistory,
 }: ProjectTabNavProps) {
   return (
     <div className="flex items-center gap-2">
@@ -113,59 +100,6 @@ export function ProjectTabNav({
         </button>
       </div>
 
-      {/*
-        ═══ THE FINISHED-ARTEFACT TRIO ═══
-        Share · Export · History. All three act on the built stack, so all three are Decision Stack
-        only — they have nothing to act on from the Knowledgebase.
-
-        Export and History arrived here from the overflow menu, where they were the two items with
-        no other permanent home and were filed under a GLOBAL control while being scoped to one
-        mode. Three outline buttons rather than a menu behind a ⋯: a menu is the thing being
-        removed, and three items do not need one.
-
-        The version stamp's "view past revisions →" link stays. It is a second door to the same
-        sheet, sitting on the stamp it describes — a contextual control, not a duplicate.
-      */}
-      {!isDemo && hasStrategy && activeTab === 'decision-stack' && (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              logAndFlush('cta_share', isSignedUp ? 'signed_up' : 'guest', { projectId })
-              onShare()
-            }}
-            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-          >
-            <Share2 />
-            Share
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              logAndFlush('cta_export_brief', 'stack-header', { projectId })
-              onExport()
-            }}
-            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-          >
-            <Download />
-            Export
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              logAndFlush('cta_version_history', 'stack-header', { projectId })
-              onHistory()
-            }}
-            className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
-          >
-            <Clock />
-            History
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

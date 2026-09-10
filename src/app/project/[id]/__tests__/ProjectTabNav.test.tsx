@@ -37,13 +37,7 @@ function renderNav(props: Partial<React.ComponentProps<typeof ProjectTabNav>> = 
       activeTab="decision-stack"
       onSelectTab={vi.fn()}
       fragmentCount={0}
-      isDemo={false}
-      hasStrategy={false}
-      isSignedUp
       strategyReady={false}
-      onShare={vi.fn()}
-      onExport={vi.fn()}
-      onHistory={vi.fn()}
       {...props}
     />
   )
@@ -87,11 +81,10 @@ describe('there is no overflow menu', () => {
    * header is a contextual control with the object taken away.
    */
   it('renders no ⋯ trigger and none of its group headings', () => {
-    renderNav({ hasStrategy: true })
+    renderNav()
     expect(screen.queryByText('Add Context')).not.toBeInTheDocument()
     expect(screen.queryByText('Update Strategy')).not.toBeInTheDocument()
     expect(screen.queryByText('Examples')).not.toBeInTheDocument()
-    // Three buttons exactly: two modes plus Share… (Export/History assert separately)
     expect(screen.queryByRole('button', { name: /^$/ })).not.toBeInTheDocument()
   })
 })
@@ -123,40 +116,33 @@ describe('the strategy-ready chip', () => {
   })
 })
 
-describe('the finished-artefact trio', () => {
-  const withStack = { hasStrategy: true, activeTab: 'decision-stack' as const }
-
-  it('offers Share, Export and History on the built stack', () => {
-    renderNav(withStack)
-    for (const name of ['Share', 'Export', 'History']) {
-      expect(screen.getByRole('button', { name })).toBeInTheDocument()
-    }
-  })
-
-  it('offers none of them from the Knowledgebase — they act on the stack', () => {
-    renderNav({ ...withStack, activeTab: 'knowledgebase' })
+/**
+ * ═══ THE TRIO IS NOT HERE ANY MORE (2026-09-10) ═══
+ *
+ * Share · Export · History moved out of the header and onto the Decision Stack masthead, beside
+ * the version stamp they act on. Two reasons, both structural rather than aesthetic:
+ *
+ *  - The header persists across both modes and every project; the trio applies to exactly one
+ *    built stack. It was already gating itself on `!isDemo && hasStrategy && activeTab ===
+ *    'decision-stack'` — three conditions to undo the fact that it was in the wrong place.
+ *  - On a phone the three buttons crowded the header, which is the surface with least room and
+ *    most competition.
+ *
+ * These assertions are the inverse of the ones they replace, and they are worth keeping rather
+ * than deleting: the nav now has exactly one job, and something drifting back into it should
+ * fail here.
+ */
+describe('the header carries the modes and nothing else', () => {
+  it('offers no Share, Export or History — they live on the stack now', () => {
+    renderNav({ activeTab: 'decision-stack' })
     for (const name of ['Share', 'Export', 'History']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
   })
 
-  it('offers none of them before a stack exists', () => {
-    renderNav({ hasStrategy: false, activeTab: 'decision-stack' })
-    expect(screen.queryByRole('button', { name: 'Export' })).not.toBeInTheDocument()
-  })
-
-  it('offers none of them on a demo — a demo is not yours to publish', () => {
-    renderNav({ ...withStack, isDemo: true })
-    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument()
-  })
-
-  it('wires each button to its own action', async () => {
-    const onShare = vi.fn(), onExport = vi.fn(), onHistory = vi.fn()
-    renderNav({ ...withStack, onShare, onExport, onHistory })
-    await userEvent.click(screen.getByRole('button', { name: 'Export' }))
-    expect(onExport).toHaveBeenCalled()
-    expect(onShare).not.toHaveBeenCalled()
-    await userEvent.click(screen.getByRole('button', { name: 'History' }))
-    expect(onHistory).toHaveBeenCalled()
+  it('renders exactly the two mode buttons', () => {
+    renderNav({ activeTab: 'decision-stack' })
+    const buttons = screen.getAllByRole('button')
+    expect(buttons).toHaveLength(2)
   })
 })
