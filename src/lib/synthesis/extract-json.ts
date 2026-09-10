@@ -43,6 +43,26 @@
  * state to find the closing brace — also escapes any control character it sees
  * inside a string. Newlines BETWEEN tokens are untouched; only those inside string
  * literals are illegal JSON.
+ *
+ * ## Stray structural closers
+ *
+ * A third class, observed 2026-09-10 during the Costco demo-fixture rerun: the model
+ * closed the `summary` string and appended a `]` that closes nothing —
+ * `"...the culture running it."], "gaps": [` — where `summary` is a plain string and
+ * no array is open. `JSON.parse` reports `Expected ',' or '}' after property value`,
+ * pointing at the bracket.
+ *
+ * 2 of 11 `full_synthesis` calls in one generation, and it hit the LONGEST, most
+ * multi-paragraph summaries — the good ones. Both affected dimensions
+ * (CAPABILITIES_ASSETS, VALUE_PROPOSITION) landed as empty syntheses carrying the
+ * "Synthesis failed" gap, which is the one synthesis field rendered to the user.
+ *
+ * The walk below previously counted `{`/`}` only and never tracked `[`/`]` at all, so
+ * a stray `]` sailed through untouched. It now keeps a container stack and DROPS any
+ * closer that does not match what is actually open — the same rule
+ * `dropStrayClosingTags` applies to XML, and the same underlying model behaviour:
+ * emitting a closing delimiter for a container it never opened. Never invent
+ * structure, never close on the model's behalf; only discard what cannot be valid.
  */
 export function extractJsonFromResponse(content: string): string {
   // Step 1: Remove markdown code blocks
@@ -78,7 +98,10 @@ export function extractJsonFromResponse(content: string): string {
   }
 
   const out: string[] = []
-  let depth = 0
+  // What is actually open, innermost last — '{' or '['. Counting braces alone cannot
+  // tell a legitimate closer from one the model invented; the stack can.
+  const open: string[] = []
+  const strays: string[] = []
   let inString = false
   let escaped = false
   let endIndex = -1
@@ -118,14 +141,32 @@ export function extractJsonFromResponse(content: string): string {
     const norm = STRUCTURAL_ASCII[char] ?? char
     if (norm !== char) out[out.length - 1] = norm
 
-    if (norm === '{') depth++
-    if (norm === '}') {
-      depth--
-      if (depth === 0) {
+    if (norm === '{' || norm === '[') {
+      open.push(norm)
+      continue
+    }
+
+    if (norm === '}' || norm === ']') {
+      const expected = norm === '}' ? '{' : '['
+      if (open[open.length - 1] !== expected) {
+        // Closes nothing that is open — model noise, not structure. Drop it, and do
+        // NOT touch the stack: the container it pretended to close is still open.
+        out.pop()
+        strays.push(norm)
+        continue
+      }
+      open.pop()
+      if (open.length === 0) {
         endIndex = i
         break
       }
     }
+  }
+
+  if (strays.length > 0) {
+    console.warn(
+      `[extractJson] dropped stray structural closer(s): ${strays.join(' ')} — model closed a container it never opened`
+    )
   }
 
   return endIndex !== -1 ? out.join('') : cleaned
