@@ -63,6 +63,7 @@ import { useProjectActions } from '@/hooks/use-project-actions'
 import { getStatsigClient, logAndFlush } from '@/components/StatsigProvider'
 import { usePaywall } from '@/hooks/use-paywall'
 import { useHeaderSlot } from '@/components/HeaderContext'
+import { DEMO_PROJECTS } from '@/lib/demos'
 import { cn } from '@/lib/utils'
 
 interface Project {
@@ -312,6 +313,32 @@ export function AppLayout({
                           <span>Delete</span>
                         </CommandItem>
                       )}
+                    </CommandGroup>
+                    {/*
+                      ⚠ THE DEMOS' FIRST PERMANENT HOME, 2026-09-10.
+                      They lived on the launchpad and in the overflow menu — both cold-start-only
+                      surfaces, so once a project had context there was no way back to an example.
+                      They are ordinary `/project/<id>` routes, so the project switcher is where
+                      they belong: this is the control for "which project am I looking at", and a
+                      demo is a project. `value` makes them searchable through the CommandInput
+                      above for free.
+                    */}
+                    <CommandSeparator />
+                    <CommandGroup heading="Examples">
+                      {DEMO_PROJECTS.map((demo) => (
+                        <CommandItem
+                          key={demo.id}
+                          value={demo.name}
+                          onSelect={() => {
+                            logAndFlush('cta_view_demo', 'project-switcher', { source: 'app', projectId: demo.id, demo: demo.name })
+                            router.push(`/project/${demo.id}`)
+                            setProjectSwitcherOpen(false)
+                          }}
+                        >
+                          <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate text-sm">{demo.name}</span>
+                        </CommandItem>
+                      ))}
                     </CommandGroup>
                   </CommandList>
                 </Command>
