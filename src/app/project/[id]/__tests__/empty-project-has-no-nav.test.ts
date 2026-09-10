@@ -31,6 +31,13 @@ const PAGE = path.join(__dirname, '../page.tsx')
 describe('the empty project is given no nav', () => {
   const source = fs.readFileSync(PAGE, 'utf-8')
 
+  /** The dependency array of the effect that injects the header nav — identified by `setTabNav`. */
+  function headerEffectDeps(): string {
+    const match = source.match(/\}, \[([^\]]*setTabNav[^\]]*)\]\)/)
+    if (!match) throw new Error('could not find the header effect dependency array')
+    return match[1]
+  }
+
   it('guards the header effect on `!hasContext` and injects null', () => {
     expect(source).toMatch(/if \(!hasContext\) \{\s*setTabNav\(null\)\s*return\s*\}/)
   })
@@ -44,8 +51,9 @@ describe('the empty project is given no nav', () => {
   })
 
   it('lists `hasContext` in the effect dependency array that reads it', () => {
-    const deps = source.match(/\}, \[hasContext,[^\]]*setTabNav\]\)/)
-    expect(deps, 'the header effect must depend on hasContext — see the docblock above it').not.toBeNull()
+    // Order-independent on purpose: the invariant is that the value is PRESENT, not where it sits.
+    expect(headerEffectDeps(), 'the header effect must depend on hasContext — see the docblock above it')
+      .toContain('hasContext')
   })
 
   it('keeps the raw fragmentCount in that array, with no `?? 0`', () => {
@@ -54,8 +62,7 @@ describe('the empty project is given no nav', () => {
      * to 0 makes the value constant across that transition, and an empty project would hold a toggle
      * forever. The PROP of the same name does coalesce — the two are deliberately different.
      */
-    const deps = source.match(/\}, \[hasContext,[^\]]*setTabNav\]\)/)?.[0] ?? ''
-    expect(deps).toContain('projectData?.stats?.fragmentCount')
-    expect(deps).not.toContain('projectData?.stats?.fragmentCount ?? 0')
+    expect(headerEffectDeps()).toContain('projectData?.stats?.fragmentCount')
+    expect(headerEffectDeps()).not.toContain('projectData?.stats?.fragmentCount ?? 0')
   })
 })
