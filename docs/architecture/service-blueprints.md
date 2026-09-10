@@ -148,16 +148,16 @@ quality?*
 |---|---|---|---|---|
 | 1 | ▲ | — | Opens chat, converses. Messages persisted per turn | `chat-sheet.tsx` · `/api/conversation/*` |
 | 2 | ▲ | — | Luna offers an early exit; clicks **Generate Strategy** (green, deliberately not mulberry — see the comment, inside the transcript) — or ends the chat, or it completes on its own | `ChatInterface.tsx:134` · `chat-sheet.tsx` (`extractContext`) |
-| 3 | ▼ | **ADMIT** | `POST /api/extract {isInitial:true}` — auth; `setGenerationStatus('generating')`; conversation → `extracting`; returns immediately, work in `waitUntil`. **No confirmation gate** on this path | `extract/route.ts:286` |
+| 3 | ▼ | **ADMIT** | **Two request shapes.** Ending on its own (or via *Generate Strategy*) with no strategy yet → `POST /api/extract {isInitial:true}` — `setGenerationStatus('generating')`, conversation → `extracting`. Pressing **End**, or any chat once a strategy exists → `{lightweight:true}`. Both return immediately, work in `waitUntil`. **No confirmation gate** on either | `extract/route.ts:189,286` · `chat-sheet.tsx` (`extractContext`) |
 | 4 | ▼ | **ADMIT** | `planPipeline({conversation_ended, isInitial:true})` → extraction ✓, persist ✓, **synthesis ✗**, **generation `null`** | `pipeline/plan.ts:14` |
-| 5 | ▲ | — | Sheet closes; toast; task polling begins | `chat-sheet.tsx` |
+| 5 | ▲ | — | Sheet closes; toast; task polling begins — as a **`generation`** task for `isInitial`, an **`extraction`** task for `lightweight`. Only the second's completion event names the conversation, which is why the chat reports its own completion (`onIngestComplete`, from both) | `chat-sheet.tsx` |
 | 6 | ▼ | **REASON** | Emergent extraction → 3–7 themes + dimension tags, each with a verbatim span and a self-reported `verbatim \| interpretation` type | `extract/route.ts` · `lib/evidence/parse.ts` |
 | 7 | ▼ | **COMMIT** | `createFragmentsFromThemes` → `Fragment(contentType:'theme')` + tags + `Evidence` rows, one transaction; spans verified at ingest against the user's turns | `lib/fragments.ts` · `lib/evidence/verify.ts` |
 | 8 | ▼ | **COMMIT** | Plan generated nothing, so the executor clears `generationStatus` — but only if this run set it (`ownsGenerationStatus`) | `executor.ts` |
-| 9 | ▲ | **REVEAL** | Task completes → `presentIngestReview('conversation')` → `?mode=review&batch=chat:<id>`. Pre-strategy only. A user who left and comes back is sent to the same place by the landing table (rule 4) | `ProjectClient.tsx:392` · `project/[id]/page.tsx` · `navigation/resolve-mode.ts` |
+| 9 | ▲ | **REVEAL** | Task completes → `ChatSheet`'s `onIngestComplete` → `presentIngestReview('conversation')` → `?mode=review&batch=chat:<id>`. Pre-strategy only. A user who left and comes back is sent to the same place by the landing table (rule 4) | `ProjectClient.tsx:392` · `project/[id]/page.tsx` · `navigation/resolve-mode.ts` |
 | 10 | ⛔ | **REVEAL** | **Ground-truth review** — this chat's fragments, and the spans they rest on, shown before any strategy exists. One list, discard only | `GroundTruthReviewScreen.tsx` · `GroundTruthReview.tsx` · `ground-truth/derive.ts` |
 | 11 | ▲ | — | Discards a wrong row → `PATCH /fragments {ids, status:'archived', archivedReason:'ground_truth_review'}`, one at a time, optimistically. Removal is the confirmation; an undo puts it back | `GroundTruthReview.tsx` · `project/[id]/fragments/route.ts` |
-| 12 | ▲ | — | Being *shown* the list stamps `reviewedAt` (`PATCH {ids, reviewed:true}`) — reviewing is being shown something, not clicking it | `GroundTruthReview.tsx:165` |
+| 12 | ▲ | — | Being *shown* the list stamps `reviewedAt` on the rows shown (`PATCH {ids, reviewed:true}`) — reviewing is being shown something, not clicking it. Filtered, only the filtered rows (since `1076ea8`; before that, the whole project) | `GroundTruthReview.tsx:313` |
 | 13 | ▲ | — | Clicks **Build my strategy** — or **Review these later**, which writes `UserDismissal(ground_truth_review, chat:<id>)` and lands on `?mode=knowledge` | `GroundTruthReviewScreen.tsx` · `ProjectClient.tsx:1280` |
 | 14 | ▼ | **ADMIT** | `POST /generate-strategy` — auth, fragment count > 0, guest quota, **409 `already_generating`** guard; `planPipeline('generate_from_knowledge')` → synthesis ✓ fg, summary ✓ fg, generation `initial` | `generate-strategy/route.ts` |
 | 15 | ▼ | **GATHER** | Load active fragments with their evidence spans | `pipeline/generation.ts` |
@@ -212,8 +212,9 @@ called by nothing but the dev pipeline harness. Two further changes since:
 | 12 | ⛔ | **REVEAL** | *Pre-strategy only:* `presentIngestReview('document')` → `?mode=review&batch=doc:<id>` — the review of this document's ground truths, as task 2 steps 10–13. Uploaded from inside a deep dive, leaving the review hands back to that deep dive | `ProjectClient.tsx:392` · `GroundTruthReviewScreen.tsx` |
 
 **Exposes.** *(disposition: `by-design` — accepted.)* ~~**No gate anywhere** — the only task with
-zero.~~ **Corrected 2026-09-11:** pre-strategy, every upload now lands on its own review (step 12,
-2.8.1). After a strategy exists there is still no gate and no review screen — the new ground truths
+zero.~~ **Corrected 2026-09-11:** pre-strategy, every upload now gets its own review (step 12, 2.8.1)
+— straight away if the user is still on the project when it finishes, otherwise on their next
+arrival through a bare project URL (the landing table's pending-ingest rule). After a strategy exists there is still no gate and no review screen — the new ground truths
 join the panel's list and the *changed* diff. The upload itself passes no gate on the way in either
 way. ~~whether it triggers meaning-making depends
 on an invisible counter~~ **Corrected 2026-08-29:** the threshold *is* surfaced — the panel shows
@@ -289,18 +290,18 @@ there is no gate after it. This is the altitude the review-pass primitive was ac
 |---|---|---|---|---|
 | 1 | ▼ | **GATHER** | Filter syntheses to `confidence === 'LOW' && gaps.length > 0`; take `gaps[0]` | `ExploreNextSection.tsx:116-124` |
 | 2 | ▲ | **REVEAL** | Gap title + description render as an **action card** | `ExploreNextSection` |
-| 3 | ▲ | — | Clicks it (or dismisses — `UserDismissal`) | `/api/dismissal` |
-| 4 | ▼ | **COMMIT** | `DeepDive(topic, origin, status:'pending')` | `deep-dive/route.ts:67` |
-| 5 | ▲ | — | Chat opens seeded with the topic | `DeepDiveSheet` → `chat-sheet.tsx` |
+| 3 | ▲ | — | Clicks it (or dismisses — `UserDismissal`) | `ProjectClient.tsx` (Explore Next `onItemClick`) · `/api/dismissal` |
+| 4 | ▼ | — | **No `DeepDive` is created.** A gap card opens the chat directly, seeded with `gapExploration` and no deep dive (`setChatDeepDiveId(undefined)`); a provocation card, likewise, with its question. `DeepDive` rows come only from *Add Deep Dive* (`deep-dive/route.ts:67`), and only a `deep-dive` card opens one | `ProjectClient.tsx` · `deep-dive/route.ts:67` |
+| 5 | ▲ | — | Chat sheet opens seeded with the gap — not via `DeepDiveSheet` | `chat-sheet.tsx` |
 | 6 | ▼ | — | From here it is task 2's extraction path (`isInitial:false`, no generation) — or task 3's, for a document uploaded into the deep dive | `extract/route.ts` |
-| 7 | ▲ | **REVEAL** | *Pre-strategy:* the ingest's own review first, carrying `&deepDive=<id>`; leaving it reopens the deep dive. *With a strategy:* straight back to the deep dive, which lists the chat or document but **none of its ground truths** | `ProjectClient.tsx:392` · `deep-dive-sheet.tsx` |
+| 7 | ▲ | **REVEAL** | *Pre-strategy:* the chat's own review — a plain one, since a gap chat belongs to no deep dive. For an ingest inside a real deep dive (a *deep-dive* card, or Add Deep Dive), the review carries `&deepDive=<id>` and leaving it reopens that deep dive. *With a strategy:* no review; a deep-dive ingest goes straight back to its deep dive, which lists the chat or document but **none of its ground truths** | `ProjectClient.tsx:392` · `deep-dive-sheet.tsx` |
 
 **Exposes.** **No gate between the model's gap and the user's click — still the shortest path from
-an LLM output to a user action in the whole product.** (Step 7's review gates what the deep dive
+an LLM output to a user action in the whole product.** (Step 7's review gates what the chat
 *produces*, not the premise that started it.) A `gap` goes from model output to a card the user clicks with nothing in
 between — no grounding check, no confidence display, no provenance. It is also the *only* place
 `gaps` surfaces, which is why audit Finding 2 concentrates here: the invented premise
-(*"builders profit from keeping estimates opaque"*) becomes a deep-dive topic the user is invited
+(*"builders profit from keeping estimates opaque"*) becomes a card — and then a chat — the user is invited
 to explore, which then generates more fragments *about the invented premise*.
 
 ---
@@ -309,8 +310,6 @@ to explore, which then generates more fragments *about the invented premise*.
 
 *"Some of this is wrong. Let me clean it up."*
 
-| # | | phase | Step | Governed by |
-|---|---|---|---|---|
 *Rewritten 2026-09-11.* The Evidence sheet and `FragmentExplorer` are deleted; pruning happens in the
 one list the knowledge panel renders, and the ground truths are on the page (`screen-map.md` §3.3).
 
@@ -318,7 +317,7 @@ one list the knowledge panel renders, and the ground truths are on the page (`sc
 |---|---|---|---|---|
 | 1 | ▲ | — | Opens the knowledgebase (`?mode=knowledge`) and expands the knowledge panel | `ProjectClient.tsx` · `KnowledgeSummaryPanel` |
 | 2 | ▼ | **GATHER** | Load active ground truths with their evidence; filter in place by dimension, or to the *changed since vN* ids | `/api/project/[id]/fragments` · `GroundTruthReview` |
-| 3 | ▲ | **REVEAL** | Ground truths grouped by dimension, interpretations first, each with the quote it rests on and its verification state. Rendering stamps `reviewedAt` | `GroundTruthReview` · `ground-truth/derive.ts` · `EvidenceQuote` |
+| 3 | ▲ | **REVEAL** | Ground truths grouped by dimension, interpretations first, each with the quote it rests on and its verification state. The rows shown are stamped `reviewedAt` — with a dimension or *changed* filter on, only those | `GroundTruthReview` · `ground-truth/derive.ts` · `EvidenceQuote` |
 | 4 | ▲ | — | Discards one — a single click, optimistic; a failed write puts it back; undo restores | `GroundTruthReview` |
 | 5 | ▼ | **COMMIT** | `PATCH /fragments` → `status:'archived'`, `archivedAt`, `archivedReason:'ground_truth_review'` | `fragments/route.ts:177-227` |
 | 6 | ▲ | **REVEAL** | Row moves to the Archived list; counts update | `GroundTruthReview` |

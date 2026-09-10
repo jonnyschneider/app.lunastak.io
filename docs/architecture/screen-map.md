@@ -1,6 +1,6 @@
 # Screen map — what exists, where it lives, and what state it can be in
 
-**Date:** 2026-09-11 (refreshed against `052c3ce`, after the navigation routing and 2.8.1)
+**Date:** 2026-09-11 (refreshed against `052c3ce`, after the navigation routing and 2.8.1; accuracy-corrected against `1076ea8`)
 **Previous:** 2026-09-07, which described `development` *before* the ground truth gate and the
 routing landed — see §8 for what changed and why the old version is not worth reading.
 **Status:** Descriptive. Current state of `development`.
@@ -92,6 +92,12 @@ the switcher, the Launchpad and the project page.
   StatusBanner — only while a task runs  (demo: the Demo strip)
 ```
 
+The **•** after *Decision Stack* is the **strategy-ready dot** (`ProjectTabNav.tsx`): a strategy
+finished while the user was on another mode. It renders only on the inactive button, in the label
+rather than on the corner (the corner is the group's seam), and clears when the stack is viewed.
+Persisted per trace in `UserDismissal(itemType:'strategy_ready', itemKey:<traceId>)`, so a refresh
+raises a fresh one (`useStrategyReady.ts`).
+
 ### 3.0 How a mode is chosen
 
 **The mode is `?mode=`**, parsed on the server (`page.tsx`) and passed to `ProjectClient` as a prop.
@@ -143,7 +149,7 @@ screen. `Launchpad.tsx`:
 | The premise — *"Every company has a story. And every strategy is a Decision Stack."* | — |
 | Talk to Luna card | opens chat sheet (`cta_new_chat` / `launchpad`) |
 | Upload a document card | opens upload dialog |
-| Import context bundle card | opens import dialog |
+| Import from AI card | opens import dialog |
 | *See it on four real companies* — 4 demo cards | navigates to the demo |
 
 ### 3.2 Mode: `stack`
@@ -206,7 +212,7 @@ with a strategy, `?mode=review` falls through to the ordinary knowledgebase.
 |---|---|
 | *"Here are the N ground truths we found"*, scoped to `batch` when given | discard (one at a time, immediate, undoable) |
 | **Build my strategy** — the primary exit | generate |
-| Add more: chat · upload · import | same doors as the Launchpad; inside a deep dive they add *into* it |
+| Add more: chat · upload · import | same doors as the Launchpad; inside a deep dive, chat and upload add *into* it (a bundle cannot belong to a deep dive) |
 | **Review these later** | writes the ingest's `ground_truth_review` dismissal → `knowledge`; hands back to the deep dive if there was one |
 
 It is reached **only by address** — two ways: the landing table on arrival (rule 4), and
@@ -215,7 +221,10 @@ bundle import closes, or a chat's extraction completes. Both are pre-strategy on
 exists an ingest produces no review (a deep-dive ingest just reopens its deep dive).
 
 **Being shown is reviewing.** Every `GroundTruthReview` mount — this screen *and* the knowledge
-panel's list — stamps `reviewedAt` on every row it renders (`GroundTruthReview.tsx:165`).
+panel's list — stamps `reviewedAt` on the rows it **shows**: the batch, changed-id and dimension
+filters applied, each row once per mount (`GroundTruthReview.tsx:313`). Until 2026-09-11
+(`1076ea8`) it stamped every active fragment in the project on load, whatever the filter — a
+3-row scoped review marked all 19 as reviewed.
 
 ---
 
@@ -255,14 +264,14 @@ Read against `prisma/schema.prisma`.
 | `Fragment` | **`GroundTruthReview`** — in the knowledge panel, on the review screen, read-only on demos; counts in the tab nav, the panel and the Documents card | discard / restore | the list is on the page now, not behind a sheet |
 | `Evidence` | the quote under each ground truth, with its verification state (`EvidenceQuote.tsx`) | — | `failed` spans never render as the user's own words |
 | `Fragment.interpretationType` | **ordering** only — interpretations sort before verbatims (`ground-truth/derive.ts:325`) | — | never shown as a label |
-| `Fragment.reviewedAt` | **nowhere** | — | written by every `GroundTruthReview` render; read by nothing |
+| `Fragment.reviewedAt` | **nowhere** | — | written for the rows a `GroundTruthReview` shows; read by nothing |
 | `Fragment.archivedReason` | nowhere | — | written (`'ground_truth_review'`); read by nothing |
 | `FragmentDimensionTag` | dimension rows (as counts, and as the filter) | — | `reasoning` never shown |
 | `DimensionalSynthesis` | `summary` → knowledge summary; `gaps` → Explore Next; `confidence` → Explore Next's gap filter and the (unrendered) coverage warnings | — | — |
 | `DecisionStack` + components | the stack; share page; trace view | inline per card | vision/strategy are columns, not addressable rows |
 | `DecisionStackSnapshot` | Version history sheet; **the sync line and the changed diff** (`fragmentIds`) | — | user edits are **not** snapshotted (blueprint task 8) |
 | `DeepDive` | Explore Next; deep dive sheet; the review's hand-back | add via dialog | — |
-| `UserDismissal` | invisibly removes Explore Next cards; **decides whether a review is pending** (per ingest) | dismiss / *Review these later* | — |
+| `UserDismissal` | invisibly removes Explore Next cards; **decides whether a review is pending** (per ingest); **whether the strategy-ready dot shows** (per trace) | dismiss / *Review these later* / viewing the stack | — |
 | `Trace` | `/strategy/[traceId]` | — | reachable by direct link and the legacy `/project/[id]/strategy` redirect |
 
 ---
@@ -300,10 +309,11 @@ The three sheets, the dimension filter and the Archived list are still component
 row 5 (*"some of this is thin"* → `/knowledge?dimension=<d>`) assumes this filter is addressable. It
 is not; wiring it is small (an `initialDimension` prop beside `initialFilter`), but it has to be done.
 
-**`reviewedAt` means "was rendered", not "was reviewed".** Every `GroundTruthReview` mount stamps
+**`reviewedAt` means "was shown", not "was reviewed".** Every `GroundTruthReview` mount stamps
 every row it shows, including the knowledge panel's list whenever it is expanded. So `reviewedAt IS
 NULL` means *never displayed in any list* — narrower than register row 6's *"I never actually looked
-at these"*. Worth knowing before building row 6 on it.
+at these"*. Worth knowing before building row 6 on it. (Only true since `1076ea8`, 2026-09-11: before
+that a filtered list stamped the whole project, so older timestamps over-report.)
 
 **One route still carries the whole product.** `ProjectClient.tsx` is 1,911 lines — larger than the
 `page.tsx` it replaced ever was (1,799 at slice 2), because slice 2 moved the mode decision out
@@ -335,7 +345,7 @@ For anyone holding the old map. Every line of §3 was superseded; the substance:
 | was | is | when |
 |---|---|---|
 | mode in `activeTab` state; reload → stack | `?mode=` from a server landing table; back undoes a toggle | 2026-09-10 (`714ef3f`) |
-| header `⋯` with twelve actions | gone; Export + Past versions in `Version N \| ⋯`, Share beside it, demos in the switcher | 2026-09-10 |
+| header `⋯` with ten actions | gone; Export + Past versions in `Version N \| ⋯`, Share beside it, demos in the switcher | 2026-09-10 |
 | `page.tsx`, one `'use client'` file | `page.tsx` server redirector + `ProjectClient.tsx` | 2026-09-10 |
 | demo ids in three places | `lib/demos.ts` | 2026-09-10 |
 | KB empty state | deleted; empty projects get the cold start with no nav | 2026-09-10 |
