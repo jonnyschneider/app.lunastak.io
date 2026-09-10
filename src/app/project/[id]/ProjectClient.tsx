@@ -479,7 +479,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
 
 
   // Inject tab nav + demo right slot into header
-  const { setTabNav, setRightSlot } = useHeaderTabNav()
+  const { setTabNav } = useHeaderTabNav()
   const isDemo = projectData?.isDemo === true
 
   const isSignedUp = !!session?.user?.id

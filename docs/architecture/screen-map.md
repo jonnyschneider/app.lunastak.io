@@ -26,7 +26,7 @@ and the app shell is a single sticky top header, 56px, defined in
 |---|---|---|
 | left | Lunastak logo → current project (or `/`) | `app-layout.tsx:236` |
 | centre | **`tabNav` — an empty slot the page fills** | `HeaderContext.tsx` · `app-layout.tsx:242` |
-| right | `rightSlot` if set, else project switcher + account menu | `app-layout.tsx:250` |
+| right | project switcher + account menu | `app-layout.tsx:250` |
 
 Below the header, `StatusBanner` renders a single line of running-task text when any background task
 is active, and nothing otherwise (`StatusBanner.tsx`). Demo projects get a mulberry **Demo** strip
@@ -36,9 +36,8 @@ there instead, with an ✕ that exits to `/` (`ProjectClient.tsx:985`).
 `HeaderContext` — on a project it is `ProjectTabNav`. Below `md` it moves to a second header row
 (`app-layout.tsx:478`), so it is never lost at any width.
 
-**`rightSlot` is dead plumbing.** Nothing calls `setRightSlot` any more (the project page destructures
-it and never uses it, `ProjectClient.tsx:476`); demo mode used to inject here. The switcher and
-account menu always render.
+`rightSlot` — a second slot that let demo mode replace the switcher — was deleted 2026-09-11; nothing
+had written to it since the demos moved into the switcher.
 
 **Project switcher** (popover, `app-layout.tsx:258`) — searchable project list, New Project, Rename,
 Delete, and an **Examples** group listing the four demos (`app-layout.tsx:335`, `cta_view_demo` /
@@ -248,7 +247,7 @@ interstitial · upgrade success · Pro coming soon — plus Add Principle, owned
 
 `GenerationConfirmDialog` fronts **two** actions (`GenerationAction = 'refresh' | 'opportunities'`),
 and auto-confirms — no dialog shown — when it is a first-time opportunities run. It shows **no quality
-signal**; see the blueprints, task 5. `RefreshStrategyDialog.tsx` exists and is imported by nothing.
+signal**; see the blueprints, task 5. (`RefreshStrategyDialog.tsx`, imported by nothing, was deleted 2026-09-11.)
 
 ---
 
