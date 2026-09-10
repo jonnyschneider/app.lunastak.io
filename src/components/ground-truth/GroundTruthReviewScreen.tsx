@@ -5,6 +5,7 @@ import { ArrowRight, ChevronDown, Loader2, MessageSquare, Package, Plus, Upload 
 import { Button } from '@/components/ui/button'
 import { Steps } from '@/components/ui/steps'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
+import { parseReviewBatchKey } from '@/lib/navigation/review-batch'
 import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
@@ -55,6 +56,14 @@ interface GroundTruthReviewScreenProps {
   onImportBundle: () => void
   /** "Later." Not building, not adding — moving on, with the ground truths still there to come back to. */
   onDefer: () => void
+  /**
+   * The ingest being reviewed (`doc:<id>` | `bundle:<id>`), or null for the whole project.
+   *
+   * Per ingest since 2026-09-10: after an upload or an import the user sees what was drawn from THAT
+   * — the high-context moment the screen exists for. Null when someone opens `?mode=review` by hand,
+   * where the honest thing to show is everything.
+   */
+  batch?: string | null
 }
 
 export function GroundTruthReviewScreen({
@@ -65,6 +74,7 @@ export function GroundTruthReviewScreen({
   onUploadDocument,
   onImportBundle,
   onDefer,
+  batch = null,
 }: GroundTruthReviewScreenProps) {
   /**
    * Pressing Build must LOOK like it did something, immediately. Generation reports through the
@@ -88,8 +98,17 @@ export function GroundTruthReviewScreen({
   // change on every render and re-fire it.
   const handleCount = useCallback((r: number, t: number) => { setRemaining(r); setTotal(t) }, [])
 
-  const shown = total ?? fragmentCount
-  const pruned = remaining !== null && total !== null && remaining < total
+  const source = parseReviewBatchKey(batch)?.source ?? null
+  /*
+   * Before the list reports in, `fragmentCount` is the project total — right for an unscoped review,
+   * wrong above a one-ingest list. So a scoped review says nothing numeric until the count arrives.
+   */
+  const shown = total ?? (source ? 0 : fragmentCount)
+  /*
+   * ⚠ "BUILD MY STRATEGY FROM N" ONLY WHEN UNSCOPED. Build always uses every ground truth in the
+   * project, so a count read off a one-ingest list would understate what it builds from.
+   */
+  const pruned = !source && remaining !== null && total !== null && remaining < total
 
   return (
     <div className="mx-auto max-w-3xl px-4 md:px-6 pb-8">
@@ -110,7 +129,13 @@ export function GroundTruthReviewScreen({
         <div className="space-y-4 p-6 md:p-8">
           <div>
             <h1 className="text-xl font-semibold tracking-tight">
-              {shown > 0 ? `Here are the ${shown} ground truths we found` : 'Here are your ground truths'}
+              {source
+                ? shown > 0
+                  ? `Here are the ${shown} ground truths we found in your ${source === 'document' ? 'document' : 'bundle'}`
+                  : `Here's what we found in your ${source === 'document' ? 'document' : 'bundle'}`
+                : shown > 0
+                  ? `Here are the ${shown} ground truths we found`
+                  : 'Here are your ground truths'}
             </h1>
             {/*
               ⚠ SHOWS, DOES NOT PRESS. The earlier copy — "Discard any items that are wrong" —
@@ -119,14 +144,22 @@ export function GroundTruthReviewScreen({
               Skip genuinely free rather than nominally free: a user who believes this is their
               only chance to fix something will not skip it, whatever the button says.
             */}
+            {/*
+              ⚠ SCOPED COPY MUST NOT SAY "EVERYTHING". A one-ingest review shows a slice; the stack is
+              built from the slice plus whatever was already there. Claiming this list is the whole
+              basis would be false the moment a second ingest lands — which is now the common case.
+            */}
             <p className="mt-1 text-sm text-foreground/60">
-              This is everything your Decision Stack will be built from. Have a read — discard
-              anything that isn&apos;t right, or leave it all as it is. You can review and change
-              these at any time from your knowledgebase.
+              {source
+                ? <>This is what we drew from what you just shared. Your Decision Stack is built from
+                    these and everything else in your knowledgebase. </>
+                : <>This is everything your Decision Stack will be built from. </>}
+              Have a read — discard anything that isn&apos;t right, or leave it all as it is. You can
+              review and change these at any time from your knowledgebase.
             </p>
           </div>
 
-          <GroundTruthReview projectId={projectId} onCountChange={handleCount} />
+          <GroundTruthReview projectId={projectId} batch={batch} onCountChange={handleCount} />
         </div>
 
         {/*

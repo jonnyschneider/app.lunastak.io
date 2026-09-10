@@ -237,6 +237,8 @@ describe('GET /api/project/[id]/fragments — existing shape is unchanged', () =
           confidence: 'HIGH',
           sourceType: 'conversation',
           dimensions: [{ dimension: 'CUSTOMER_MARKET', confidence: 'HIGH' }],
+          // Added 2026-09-10 for the per-ingest review. A conversation is not a review batch.
+          reviewBatch: null,
           source: { type: 'conversation', id: 'conv-1', name: 'Kickoff' },
           capturedAt: capturedAt.toISOString(),
           interpretationType: 'verbatim',
@@ -248,6 +250,25 @@ describe('GET /api/project/[id]/fragments — existing shape is unchanged', () =
       activeCount: 7,
       archivedCount: 3,
     })
+  })
+
+  it('names the ingest each fragment arrived in, so the review can scope to it', async () => {
+    /*
+     * The per-ingest review (2026-09-10) filters on this. After an upload the user sees what was
+     * drawn from THAT document; after an import, from that bundle's batch. Chats are not a batch.
+     */
+    mockFragmentFindMany.mockResolvedValue([
+      fragmentRow({ id: 'd', conversation: null, documentId: 'doc-1', document: { id: 'doc-1', fileName: 'gtm.md' } }),
+      fragmentRow({ id: 'b', conversation: null, sourceType: 'import', importBatchId: 'batch-9' }),
+      fragmentRow({ id: 'c' }),
+      // An import with no batch id cannot be scoped — null, never a key built from `undefined`.
+      fragmentRow({ id: 'x', conversation: null, sourceType: 'import', importBatchId: null }),
+    ])
+
+    const { body } = await getJson()
+    const byId = Object.fromEntries(body.fragments.map((f: { id: string; reviewBatch: string | null }) => [f.id, f.reviewBatch]))
+
+    expect(byId).toEqual({ d: 'doc:doc-1', b: 'bundle:batch-9', c: null, x: null })
   })
 
   it('still resolves a document source and still honours the dimension filter', async () => {

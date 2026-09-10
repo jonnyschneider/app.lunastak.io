@@ -51,6 +51,7 @@ export function GroundTruthReview({
   archivedOpen: archivedOpenProp,
   onArchivedOpenChange,
   idFilter,
+  batch,
   readOnly = false,
 }: {
   projectId: string
@@ -87,6 +88,15 @@ export function GroundTruthReview({
    * knew about live rows could answer half the question.
    */
   idFilter?: string[] | null
+  /**
+   * Show only what arrived in one ingest (`doc:<id>` | `bundle:<id>`). Set by the per-ingest review:
+   * after an upload or import the user is shown what was drawn from THAT, which is the whole point of
+   * the moment — a second bundle is exactly as high-context as the first (2026-09-10).
+   *
+   * Applied to the COUNT as well as the list. The review's heading reads its number from
+   * `onCountChange`, and a project total above a one-ingest list would announce the wrong thing.
+   */
+  batch?: string | null
   /**
    * Show the ground truths without offering to change them.
    *
@@ -178,9 +188,10 @@ export function GroundTruthReview({
      * `archivedCount` stays whole: it comes from the server as a project-wide figure, and the
      * discards are not dimension-grouped in the recovery list either.
      */
-    const inScope = dimension ? items.filter(i => i.dimension === dimension) : items
+    const inBatch = batch ? items.filter(i => i.reviewBatch === batch) : items
+    const inScope = dimension ? inBatch.filter(i => i.dimension === dimension) : inBatch
     onCountChange?.(inScope.length, inScope.length, archivedCount)
-  }, [items, dimension, archivedCount, onCountChange])
+  }, [items, dimension, batch, archivedCount, onCountChange])
 
   /**
    * Persisted IMMEDIATELY, one fragment at a time — never staged awaiting a submit.
@@ -278,10 +289,9 @@ export function GroundTruthReview({
   }, [projectId, archivedItems, controlled, archivedOpen, onArchivedOpenChange])
 
   const filterSet = idFilter ? new Set(idFilter) : null
-  const shown: GateItem[] = filterSet ? (items ?? []).filter(i => filterSet.has(i.id)) : (items ?? [])
-  const shownArchived = filterSet
-    ? archivedItems?.filter(i => filterSet.has(i.id)) ?? null
-    : archivedItems
+  const keep = (i: GateItem) => (!filterSet || filterSet.has(i.id)) && (!batch || i.reviewBatch === batch)
+  const shown: GateItem[] = (items ?? []).filter(keep)
+  const shownArchived = filterSet || batch ? archivedItems?.filter(keep) ?? null : archivedItems
 
   if (error && !items) return <p className="py-6 text-sm text-destructive">{error}</p>
   if (!items) {

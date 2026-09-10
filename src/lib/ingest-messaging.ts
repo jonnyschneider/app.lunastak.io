@@ -16,10 +16,16 @@
  * their own copy, because they are not this event.
  *
  * ⚠ ADDITIVE, NEVER TERMINAL. Two of the three used to end with "then build your strategy", which
- * frames every ingest as the last one — while the natural behaviour is to add a bundle, then a
- * document, then a chat, and review the lot once. The review is a standing state of the
- * pre-strategy project page, not a per-ingest gate, so the copy should never imply otherwise.
- * The Build action lives on the review itself and does not need advertising three times.
+ * frames every ingest as the last one. The copy should never imply this ingest is the final one —
+ * the Build action lives on the review itself and does not need advertising three times.
+ *
+ * ⚠ BUT THE REVIEW IS NOW PER INGEST — REVERSED 2026-09-10. This comment used to say the review
+ * was "a standing state of the pre-strategy project page, not a per-ingest gate… review the lot
+ * once". That model shipped in 2.8.0 and failed on prod: a single deferral silenced every later
+ * ingest's review, so a bundle's 20 new ground truths were never offered as the focused thing they
+ * arrived as. Each completed document and each bundle import now opens its own review, scoped to
+ * what THAT ingest produced (`src/lib/navigation/review-batch.ts`). It is still not a GATE — it is
+ * deferrable every time, and deferring costs nothing.
  */
 
 /** Every way context can arrive. Add a case here and the wording follows automatically. */

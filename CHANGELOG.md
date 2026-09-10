@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed — every document and bundle gets its own review, and it actually appears (2026-09-10)
+
+On production, 2.8.0 never showed the ground-truth review after an upload, and could not show it
+after a second ingest. Two causes, found by reading the prod project Jonny tested on:
+
+**An uploaded document landed on the pre-strategy signpost, not the review.** The move to the
+review had been relocated to the server's landing table, which only runs when a request arrives
+with no `?mode` — it handles *arriving* at a project with a review waiting. An in-session ingest
+never makes that request: a new project's cold start is already `?mode=stack`, and ingest
+completion only refetched. So `hasContext` flipped, the mode stayed `stack`, and the review never
+came. The bundle dialog's **Show me** had the same hole — it closed the dialog and went nowhere.
+Both now open the review the moment the ingest finishes.
+
+**One deferral silenced every later ingest.** The review was keyed on the *project* — one first
+look per project — so a bundle imported 26 seconds after deferring a document's review landed on
+the dashboard with its 20 new ground truths never offered. The review is now **per ingest**: each
+document and each bundle opens its own review, scoped to what *that* ingest produced ("Here are the
+2 ground truths we found in your bundle"), and "Review these later" defers that one alone. Arriving
+at a project later lands on whichever ingest is still waiting. Pre-strategy only — the screen is
+framed for first contact.
+
+This reverses a documented 2026-09-09 decision that the review was "a standing state… not a
+per-ingest gate… review the lot once". It is still not a gate: every review is deferrable, and
+deferring costs nothing.
+
+Existing per-project deferrals are ignored rather than migrated, so a project whose review was
+deferred under 2.8.0 will offer its ingests' reviews again on the next visit.
+
 ## [2.8.0] - 2026-09-10
 
 ### Added — the project's mode is a URL, and the landing is decided on the server (2026-09-10)

@@ -26,6 +26,8 @@ export interface ApiFragment {
   reviewedAt: string | null
   dimensions: { dimension: string; confidence: string | null }[]
   source: { type: 'conversation' | 'document'; id: string; name: string } | null
+  /** The ingest this came from (`doc:<id>` | `bundle:<id>`), or null — see `review-batch.ts`. */
+  reviewBatch?: string | null
   capturedAt: string
   evidence: { text: string; verification: string; sourceRole: string | null; ordinal: number }[]
 }
@@ -84,6 +86,8 @@ export interface GateItem {
    * is worth keeping.
    */
   sourceId: string | null
+  /** The ingest this row arrived in, so the review can be scoped to "what you just shared". */
+  reviewBatch: string | null
   type: 'verbatim' | 'interpretation' | null
   dimensions: string[]
   /** The dimension the row is filed under. First tag wins; extraction lists them best-first. */
@@ -289,6 +293,7 @@ export function toItem(f: ApiFragment, convIndex: Map<string, number> = new Map(
     sourceShort: sourceShort(f, convIndex, docCount),
     sourceKind: sourceKind(f),
     sourceId: f.source?.id ?? null,
+    reviewBatch: f.reviewBatch ?? null,
     type: f.interpretationType,
     dimensions: f.dimensions.map(d => d.dimension),
     dimension: primary,

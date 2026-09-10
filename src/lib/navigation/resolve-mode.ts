@@ -30,14 +30,18 @@ export interface ModeInputs {
   hasContext: boolean
   hasStrategy: boolean
   /**
-   * The `ground_truth_review` row in `UserDismissal` — "has this user had their first look?".
+   * Some INGEST — a document, or a bundle's import batch — has not yet had its review deferred.
    *
-   * Deliberately NOT the old `project-<id>-landed-kb` localStorage latch, which answered the same
-   * question per-device while being, by the design doc's own taxonomy, guidance state. This survives
-   * a reload, works for guests via the `guestUserId` cookie, and is reassigned at signup by
-   * `transfer-session.ts` — so the first look is not offered twice on a second device.
+   * ⚠ PER INGEST, NOT PER PROJECT, since 2026-09-10. This was `reviewSeen`, "has this user had their
+   * first look?", keyed on the project — so one deferral silenced every later ingest's review too.
+   * On prod a bundle imported 26 seconds after a deferral landed on the dashboard with its 20 new
+   * ground truths never shown. Each ingest now carries its own `ground_truth_review` row in
+   * `UserDismissal` (`itemKey` = `doc:<id>` | `bundle:<id>`, see `review-batch.ts`).
+   *
+   * Still `UserDismissal` rather than a per-device latch: it survives a reload, works for guests via
+   * the `guestUserId` cookie, and is reassigned at signup by `transfer-session.ts`.
    */
-  reviewSeen: boolean
+  hasPendingReview: boolean
   /** `?evidence=1` — "take me to what was extracted". Arrives from outside the app. */
   evidenceParam: boolean
   /** The per-device mode preference. Junk and legacy values are ignored, never trusted. */
@@ -75,9 +79,10 @@ export function resolveProjectMode(i: ModeInputs): ProjectMode {
   //    demo case does not depend on that remaining true.
   if (i.isDemo) return 'stack'
 
-  // 4. A first look that has not happened yet. `!hasStrategy` is load-bearing: without it, a user who
-  //    built a strategy without ever reviewing would be sent here on every single visit, forever.
-  if (!i.hasStrategy && !i.reviewSeen) return 'review'
+  // 4. An ingest whose review has not happened yet. `!hasStrategy` is load-bearing: the review is
+  //    framed for first contact (Build is its primary exit), and without the clause a user who built
+  //    a strategy without reviewing would be sent here on every single visit, forever.
+  if (!i.hasStrategy && i.hasPendingReview) return 'review'
 
   // 5. The user's own last choice. `review` is excluded on purpose — it is a moment, not a place to
   //    return to, and rows 1-4 are the only things that may offer it.
