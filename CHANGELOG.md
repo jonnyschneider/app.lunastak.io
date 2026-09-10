@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the stack says when it is behind your knowledgebase (2026-09-11)
+
+Under the Version control on the Decision Stack: *"3 changes since v3"*, whenever ground truths have
+been added or discarded since that version was built. It links straight to the knowledgebase's
+*Changed since v3* list, where Rebuild already is. It is a fact about the version, not a nudge — it
+shows while it is true and goes when you rebuild; there is nothing to dismiss. Guidance register
+row 4 (`guidance_shown` / `cta_view_changes`).
+
+### Fixed — "N discarded since" counted things you never discarded (2026-09-11)
+
+The knowledgebase's *"discarded since v3"* counted every piece of system context the stack was built
+from — bundle tensions and the like — as discarded, because it compared the stack's inputs against
+your ground truths only. One project on dev read *10 discarded* with one real discard. It now counts
+only what is genuinely no longer active.
+
 ### Fixed — a review scoped to one upload opens its first row, and marks only what it showed (2026-09-11)
 
 A review of one document's ground truths opened with every row collapsed, and quietly marked every

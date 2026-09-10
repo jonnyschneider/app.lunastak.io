@@ -190,11 +190,11 @@ state is [`screen-map.md`](screen-map.md) §3. This section is the **how to buil
 
 | job | use | never |
 |---|---|---|
-| Change mode | `setMode(next, { batch?, deepDive? })` — `ProjectClient.tsx` | `router.push('?mode=…')` by hand. `setMode` writes the mode cookie (never for `review`), strips `batch`/`deepDive` outside the review, and pushes (so back undoes a toggle) |
+| Change mode | `setMode(next, { batch?, deepDive?, filter? })` — `ProjectClient.tsx` | `router.push('?mode=…')` by hand. `setMode` writes the mode cookie (never for `review`), strips `batch`/`deepDive` outside the review, carries a knowledge `filter` only on the move that asks for it (a filter is an arrival instruction), and pushes (so back undoes a toggle) |
 | Decide where a bare URL lands | a **row** in `resolveProjectMode` — `src/lib/navigation/resolve-mode.ts`, tested by enumeration | a client effect, or a special case at a call site. The table replaced four racing effects |
 | Show an ingest's review | `presentIngestReview(source, id, deepDiveId?)` — `ProjectClient.tsx` | `setMode('review')` directly. It enforces pre-strategy / non-demo, refuses to act for a project no longer on screen, and will not yank a user out of a review they are reading |
 | Name an ingest | `reviewBatchKey(source, id)` / `parseReviewBatchKey(key)` — `review-batch.ts` | string templates like `` `doc:${id}` ``. The parser is the shape gate for user input |
-| Link into a filtered knowledgebase | `knowledgeHref(projectId, filter)`; read with `parseKnowledgeFilter` — `knowledge-filter.ts` | hand-built `?dimension=` / `?filter=`. Two writers and no reader is how `?dimension=` went dead for a day |
+| Link into a filtered knowledgebase | from outside the page, `knowledgeHref(projectId, filter)`; from inside it, `setMode('knowledge', { filter })`; read with `parseKnowledgeFilter` — `knowledge-filter.ts` (both write through `knowledgeFilterParams`) | hand-built `?dimension=` / `?filter=`. Two writers and no reader is how `?dimension=` went dead for a day |
 | "Does this project have a strategy?" | `projectHasStrategy({ hasVision, generationTraceCount })` + `hasStackVision(vision)` — `has-strategy.ts` | `!!decisionStack`, or `strategyOutputs.length` on its own. Server and client disagreeing on this stranded users on an unrenderable review |
 | Per-device memory | `writeModeCookie` / `readModeCookieValue` (`mode-cookie.ts`); `writeLastProjectCookie` / `readLastProjectCookie` / `readLastProjectCookieFromDocument` (`last-project-cookie.ts`) | `localStorage` for anything the server must read — the redirect runs before any client code |
 | Record that a review was deferred | `useDismissed(projectId, 'ground_truth_review', batchKey).dismiss` | a per-project key. Reviews are per ingest; one deferral must not silence the next ingest |
@@ -242,6 +242,20 @@ through (`page.tsx`, beside `dimension` and `filter`); validate any entity id it
 
 **A new landing rule:** a row in `resolveProjectMode` with its reason in a comment, an enumeration
 test, and — if it needs new state — a query behind the no-mode branch only (invariant 2).
+
+**A guidance register row** (design §6; row 4 is the worked example):
+1. Trigger and words in `src/lib/guidance/<row>.ts` — a pure function over data the page already
+   has, returning null when the row should say nothing (`stack-behind.ts`). Test it.
+2. Check invariant 5 first: if the trigger can fire on a project with a strategy, its destination
+   is a filter, never the review screen.
+3. Shape follows the job. **State** (true until something changes it) sits on the object it is
+   about and is not dismissible — `GuidanceLink` (`components/ui/guidance-link.tsx`). A **prompt**
+   (advice the user may decline) needs dismissal, and a component that does not exist yet — build
+   it in `components/ui/`, not inline.
+4. Destination through `setMode` / `knowledgeHref` — never a hand-built URL.
+5. An exposure event (`guidance_shown`, `value` = the row) and an action event, in
+   `analytics-events.md` in the same commit. Anything that owns a hook sits above
+   `ProjectClient`'s loading/error returns (pinned by a test).
 
 ---
 

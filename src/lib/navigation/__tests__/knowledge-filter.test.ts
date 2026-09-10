@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseKnowledgeFilter, knowledgeHref } from '../knowledge-filter'
+import { parseKnowledgeFilter, knowledgeHref, knowledgeFilterParams } from '../knowledge-filter'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 
 const params = (q: string) => new URLSearchParams(q)
@@ -33,5 +33,13 @@ describe('knowledgeHref', () => {
       expect(url.searchParams.get('mode')).toBe('knowledge')
       expect(parseKnowledgeFilter(url.searchParams)).toEqual(filter)
     }
+  })
+})
+
+describe('knowledgeFilterParams — the one encoding setMode and knowledgeHref share', () => {
+  it('encodes each filter, and nothing for none', () => {
+    expect(knowledgeFilterParams({ kind: 'changed' })).toEqual({ filter: 'changed' })
+    expect(knowledgeFilterParams({ kind: 'dimension', dimension: DIM })).toEqual({ dimension: DIM })
+    expect(knowledgeFilterParams(null)).toEqual({})
   })
 })

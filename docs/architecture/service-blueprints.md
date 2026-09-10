@@ -99,7 +99,7 @@ quality?*
 
 | # | | phase | Step | Governed by |
 |---|---|---|---|---|
-| 1 | ▲ | — | Stack shows as **changed** — the knowledge panel's sync line, *"Stack v3 · 4 added, 1 discarded since"*, from the latest snapshot's `fragmentIds` vs the active ground truths; **All / Changed since v3** chips filter the list to exactly those rows (`?filter=changed` opens it there) | `KnowledgeSummaryPanel` · `api/project/[id]/route.ts:308-322` |
+| 1 | ▲ | — | Stack shows as **changed** — on the stack itself, *"N changes since v3"* under the version control (guidance row 4, 2026-09-11), and in the knowledge panel's sync line, *"Stack v3 · 4 added, 1 discarded since"*, from the latest snapshot's `fragmentIds` vs the active ground truths; **All / Changed since v3** chips filter the list to exactly those rows (`?filter=changed` opens it there) | `KnowledgeSummaryPanel` · `api/project/[id]/route.ts:308-322` |
 | 2 | ▲ | — | Clicks **Refresh** on the knowledge summary | `ProjectClient.tsx:1465` |
 | 3 | ⛔ | — | **Confirmation gate** — explains what will happen, asks to proceed | `GenerationConfirmDialog` (`action: 'refresh'`) |
 | 4 | ▼ | **ADMIT** | `POST /refresh-strategy` — auth, project lookup, already-generating guard (409) | `refresh-strategy/route.ts` |
