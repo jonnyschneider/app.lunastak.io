@@ -176,15 +176,14 @@ export default async function ProjectRoute({
    * was asking for is now in the URL properly — which retires the localStorage double-write it
    * needed to survive a `router.replace` remount.
    *
-   * ⚠ `dimension` IS CARRIED THROUGH, BUT NOTHING READS IT. The legacy `/fragments` route and old links
-   * still send it, and it is preserved so they do not lose it — but since `FragmentExplorer` was
-   * deleted, `KnowledgeSummaryPanel`'s `selectedDimension` starts at `null` and has no URL input.
-   * Guidance register row 5 ("some of this is thin" → `?mode=knowledge&dimension=<d>`) needs it
-   * wired: an `initialDimension` prop beside `initialFilter`. (This comment claimed the panel still
-   * filtered on it until 2026-09-11.)
+   * `dimension` and `filter` are CARRIED THROUGH: they are the knowledgebase's addressable filters
+   * (`lib/navigation/knowledge-filter.ts`), and a bare-URL arrival must not lose them on the way to a
+   * mode. `ProjectClient` validates them; this only preserves them. (`dimension` was read by nothing
+   * from `FragmentExplorer`'s deletion until 2026-09-11, when the parser gave it a reader again.)
    */
   const query = new URLSearchParams({ mode: resolved })
   if (typeof sp.dimension === 'string') query.set('dimension', sp.dimension)
+  if (typeof sp.filter === 'string') query.set('filter', sp.filter)
 
   /*
    * `resolved === 'review'` IS the pending-ingest rule and nothing else: every other row returns a

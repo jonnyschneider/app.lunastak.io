@@ -77,6 +77,7 @@ import type { ProjectMode } from '@/lib/navigation/resolve-mode'
 import { writeModeCookie } from '@/lib/navigation/mode-cookie'
 import { parseReviewBatchKey, reviewBatchKey, type ReviewBatchSource } from '@/lib/navigation/review-batch'
 import { writeLastProjectCookie } from '@/lib/navigation/last-project-cookie'
+import { parseKnowledgeFilter } from '@/lib/navigation/knowledge-filter'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -427,8 +428,13 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * wrong in every one of those particulars. Only row 2, which carries `!hasStrategy` in its trigger,
    * gets the screen. This was already the shipped judgement for the diff itself: "the diff is a
    * filter you can see, not a place you land in" (2026-09-08).
+   *
+   * `?dimension=<d>` is the other addressable filter. Both are read through `parseKnowledgeFilter`
+   * and built with `knowledgeHref` (`lib/navigation/knowledge-filter.ts`) — never by hand.
    */
-  const initialFilter = searchParams.get('filter') === 'changed' ? 'changed' : null
+  const knowledgeFilter = parseKnowledgeFilter(searchParams)
+  const initialFilter = knowledgeFilter?.kind === 'changed' ? 'changed' : null
+  const initialDimension = knowledgeFilter?.kind === 'dimension' ? knowledgeFilter.dimension : null
 
   /*
    * ⚠ NO `fragmentCount > 0` CLAUSE. It belonged to the old yield rule — don't let an empty dashboard
@@ -1354,6 +1360,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               readOnly
               /* The only thing on a demo's knowledgebase — collapsed, it is a blank page. */
               defaultExpanded
+              initialDimension={initialDimension}
             />
             </div>
             ) : (
@@ -1426,6 +1433,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               // above becomes the fallback it now only takes in demo mode.
               projectId={projectId}
               initialFilter={initialFilter}
+              initialDimension={initialDimension}
               onResumeConversation={(convId: string) => {
                 setChatResumeConversationId(convId)
                 setChatViewOnly(false)
