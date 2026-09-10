@@ -550,9 +550,21 @@ export default function ProjectPage() {
           </DropdownMenu>
         )}
       </div>
-      {/* Decision Stack only: the link publishes the strategy, so it has nothing to act on from
-          the Knowledgebase. */}
+      {/*
+        ═══ THE FINISHED-ARTEFACT TRIO ═══
+        Share · Export · History. All three act on the built stack, so all three are Decision Stack
+        only — they have nothing to act on from the Knowledgebase.
+
+        Export and History arrived here from the overflow menu, where they were the two items with
+        no other permanent home and were filed under a GLOBAL control while being scoped to one
+        mode. Three outline buttons rather than a menu behind a `⋯`: a menu is the thing being
+        removed, and three items do not need one.
+
+        The version stamp's "view past revisions →" link stays. It is a second door to the same
+        sheet, sitting on the stamp it describes — that is a contextual control, not a duplicate.
+      */}
       {!isDemo && hasStrategy && activeTab === 'decision-stack' && (
+        <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -569,6 +581,35 @@ export default function ProjectPage() {
           <Share2 />
           Share
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            logAndFlush('cta_export_brief', 'stack-header', { projectId })
+            const res = await fetch(`/api/project/${projectId}/export-brief`)
+            if (res.ok) {
+              const blob = await res.blob(); const url = URL.createObjectURL(blob)
+              const a = document.createElement('a'); a.href = url; a.download = 'strategic-brief.md'; a.click(); URL.revokeObjectURL(url)
+            }
+          }}
+          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
+        >
+          <Download />
+          Export
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            logAndFlush('cta_version_history', 'stack-header', { projectId })
+            setVersionHistoryOpen(true)
+          }}
+          className="gap-1.5 rounded-lg px-3 text-sm shadow-none [&_svg]:size-3.5"
+        >
+          <Clock />
+          History
+        </Button>
+        </div>
       )}
       </div>
     )
