@@ -1272,6 +1272,11 @@ export default function ProjectPage() {
                     </CardTitle>
                     {!isDemo && (
                       <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
+                        // ⚠ THIS SURFACE WAS UNMEASURED UNTIL 2026-09-10. The card headers are the
+                        // PERMANENT doors — launchpad and ground-truth-review are both first-run —
+                        // so without this the event only ever fired for new projects, and deleting
+                        // the overflow menu would have read as users abandoning chat.
+                        logAndFlush('cta_new_chat', 'chats-card', { projectId })
                         setChatInitialQuestion(undefined)
                         setChatDeepDiveId(undefined)
                         setChatGapExploration(undefined)
@@ -1364,6 +1369,8 @@ export default function ProjectPage() {
                     </CardTitle>
                     {!isDemo && (
                       <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
+                        // The permanent upload door — see the note on the Chats card above.
+                        logAndFlush('cta_upload_doc', 'documents-card', { projectId })
                         setUploadDeepDiveId(undefined)
                         setUploadDialogOpen(true)
                       }}>
@@ -1436,7 +1443,11 @@ export default function ProjectPage() {
                         <Package className="h-4 w-4" />
                         Integrations
                       </CardTitle>
-                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setImportDialogOpen(true)}>
+                      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => {
+                        // The permanent import door — see the note on the Chats card above.
+                        logAndFlush('cta_import_bundle', 'integrations-card', { projectId })
+                        setImportDialogOpen(true)
+                      }}>
                         <Plus className="h-3 w-3" />
                         Import context
                       </Button>
