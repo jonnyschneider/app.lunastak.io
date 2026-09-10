@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
-import { isGuestUser, createGuestUser } from '@/lib/projects'
+import { createGuestUser } from '@/lib/projects'
 import { computeDimensionSupport, type SupportLevel } from '@/lib/support/dimension-support'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
+import { getRequester, GUEST_COOKIE_NAME } from '@/lib/auth/current-user'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 
 /**
  * GET /api/project/[id]
@@ -19,31 +17,11 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
   const { id: projectId } = await params
 
-  // Determine user ID from session or guest cookie
-  let userId: string | null = session?.user?.id || null
+  let requester = await getRequester()
 
-  if (!userId) {
-    // Check for guest cookie
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-    if (guestCookie?.value) {
-      // Validate it's a real guest user
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  if (!userId) {
+  if (!requester) {
     // Demo deep-link fallback: if the requested project is a demo, mint a
     // guest session inline so unauthenticated visitors from marketing/share
     // links can view it. Mirrors /api/guest/init.
@@ -54,7 +32,6 @@ export async function GET(
 
     if (demoCheck) {
       const guestUser = await createGuestUser()
-      userId = guestUser.id
 
       const cookieStore = await cookies()
       cookieStore.set(GUEST_COOKIE_NAME, guestUser.id, {
@@ -63,25 +40,24 @@ export async function GET(
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30,
       })
+
+      // The cookie just set can't be read back in this request, so the guard is told who it is.
+      requester = { userId: guestUser.id, isGuest: true }
     }
   }
 
-  if (!userId) {
+  if (!requester) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Demo projects are readable by anyone signed in (or just minted, above).
+  const auth = await requireProjectAccess(projectId, { access: 'read', as: requester })
+  if (isDenied(auth)) return auth
+
   try {
     // Get the project with related data
-    // Demo projects are accessible to any authenticated user
     const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        status: 'active',
-        OR: [
-          { userId: userId },
-          { isDemo: true },
-        ],
-      },
+      where: { id: projectId, status: 'active' },
       include: {
         conversations: {
           where: { status: { not: 'abandoned' } },
