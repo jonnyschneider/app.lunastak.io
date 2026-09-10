@@ -23,7 +23,7 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { getUserId } from '@/lib/auth/current-user'
 import { resolveProjectMode, type ProjectMode } from '@/lib/navigation/resolve-mode'
-import { modeCookieName, readModeCookieValue } from '@/lib/navigation/mode-cookie'
+import { MODE_COOKIE_NAME, readModeCookieValue } from '@/lib/navigation/mode-cookie'
 import ProjectClient from './ProjectClient'
 
 const GROUND_TRUTH_REVIEW_ITEM_TYPE = 'ground_truth_review'
@@ -49,19 +49,43 @@ export default async function ProjectRoute({
 
   // ── From here down is the no-mode branch ONLY. Everything below hits the database. ──
 
+  /*
+   * ⚠ A NULL `userId` IS NOT AN ERROR HERE, and redirecting on it broke anonymous demo deep links.
+   *
+   * A visitor arriving cold from the marketing site has no session AND no guest cookie, so
+   * `getUserId()` returns null — that is exactly the person a `/project/<demoId>` link is for. The
+   * API mints them a guest inline for this case (`api/project/[id]/route.ts:46-67`), but this
+   * redirect runs BEFORE the client mounts, so bouncing them to sign-in means that fallback never
+   * gets to run. It does not reproduce from inside the app, because in-app demo links carry
+   * `?mode=stack` and take the no-database branch above; only cold, in a clean browser.
+   *
+   * So: no auth gate. Authorisation stays exactly where it already was — in the API the client is
+   * about to call, which returns 401 for a project that is neither yours nor a demo.
+   */
   const userId = await getUserId()
-  if (!userId) redirect('/auth/signin')
 
   const [counts, reviewDismissal, cookieStore] = await Promise.all([
-    prisma.project.findUnique({
-      where: { id },
+    /*
+     * ⚠ SCOPED, not `findUnique({ where: { id } })`. An unscoped read would let any caller infer
+     * another user's project state from where the redirect lands — a project with fragments and no
+     * strategy sends you somewhere different from an empty one. No match resolves to "no context",
+     * which is rule 1 and lands on the stack, telling an unauthorised caller nothing.
+     */
+    prisma.project.findFirst({
+      where: {
+        id,
+        status: 'active',
+        OR: [{ userId: userId ?? '' }, { isDemo: true }],
+      },
       select: {
         _count: { select: { fragments: true, conversations: true, documents: true } },
         decisionStack: { select: { vision: true } },
       },
     }),
+    /* `userId ?? ''` matches nothing, so an anonymous visitor simply has no dismissals — which is
+     * true, and is the answer that lets rule 3 be decided without knowing who they are. */
     prisma.userDismissal.findFirst({
-      where: { userId, projectId: id, itemType: GROUND_TRUTH_REVIEW_ITEM_TYPE },
+      where: { userId: userId ?? '', projectId: id, itemType: GROUND_TRUTH_REVIEW_ITEM_TYPE },
       select: { id: true },
     }),
     cookies(),
@@ -91,7 +115,7 @@ export default async function ProjectRoute({
     hasStrategy: !!counts?.decisionStack && counts.decisionStack.vision !== '',
     reviewSeen: !!reviewDismissal,
     evidenceParam: sp.evidence === '1',
-    modeCookie: readModeCookieValue(cookieStore.get(modeCookieName(id))?.value),
+    modeCookie: readModeCookieValue(cookieStore.get(MODE_COOKIE_NAME)?.value, id),
   })
 
   /*

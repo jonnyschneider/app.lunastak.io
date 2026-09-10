@@ -317,6 +317,17 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     if (next !== 'review') writeModeCookie(projectId, next)
     const url = new URL(window.location.href)
     url.searchParams.set('mode', next)
+    /*
+     * ⚠ `push`, NOT `replace`, and that is a decision rather than a default.
+     *
+     * Every toggle adds a history entry, so back undoes a mode change. That is what a user who just
+     * pressed Knowledgebase expects back to do — the alternative silently teleports them out of the
+     * project, which is worse for the far more common gesture.
+     *
+     * It does mean the "back leaves the project" behaviour verified on arrival describes ENTRY only:
+     * after N toggles it takes N+1 presses. Correct, and worth stating because the entry evidence
+     * reads like a claim about the steady state.
+     */
     router.push(url.pathname + url.search, { scroll: false })
   }, [projectId, router])
 
@@ -339,6 +350,14 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * jump. The entry decides; the route always renders.
    *
    * The demo fork keeps its exclusion: a demo's ground truths are not the user's to review.
+   *
+   * ⚠ ONE CONSEQUENCE, ACCEPTED. The review therefore renders at TWO addresses: its own, and
+   * `?mode=knowledge` while a first look is still pending. So a user who reaches it by pressing
+   * Knowledgebase and bookmarks there gets a URL that shows the dashboard once they have reviewed.
+   * Left alone deliberately — the alternative is redirecting `?mode=knowledge` to `?mode=review`,
+   * which is the flash-prone redirect this whole gate exists to avoid. The canonical address exists
+   * and is what guidance links to; the bookmark degrades to the dashboard, which is where that user
+   * was heading anyway.
    */
   /**
    * `?filter=changed` — the address for guidance register row 4, "my stack is behind my knowledge".
