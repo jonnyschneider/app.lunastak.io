@@ -205,6 +205,14 @@ interface KnowledgeSummaryPanelProps {
    */
   onDimensionClick: (dimension: string) => void
   /**
+   * The filter this panel opens on, from `?filter=` on the URL.
+   *
+   * Exists so guidance can LINK here: "2 ground truths discarded since v3" is only actionable if
+   * pressing it lands on exactly those. Opening the panel is part of it — the filter chips live in
+   * the expanded view, so arriving filtered but collapsed would show a closed panel and no reason.
+   */
+  initialFilter?: 'changed' | null
+  /**
    * Set to bring the ground truths INTO this panel. Design: `docs/_plans/2026-09-08-post-uat-batch.md`
    * §4. The coverage grid asks "how well covered is this dimension?" and the fragments behind it
    * answer "here is what that judgement is made of" — one thought, which was spanning two surfaces
@@ -238,6 +246,7 @@ export function KnowledgeSummaryPanel({
   onOpenStrategy,
   onRefreshClick,
   onDimensionClick,
+  initialFilter = null,
   projectId,
   onResumeConversation,
   knowledgeBusyMessage = null,
@@ -248,7 +257,7 @@ export function KnowledgeSummaryPanel({
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
   const isBusy = knowledgeBusy || strategyBusy
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(initialFilter !== null)
   const expandedAtRef = useRef<number | null>(null)
 
   const handleToggle = useCallback(() => {
@@ -282,7 +291,7 @@ export function KnowledgeSummaryPanel({
   const [archivedOpen, setArchivedOpen] = useState(false)
   /** Showing only what changed since the stack was built. Cleared when a dimension is picked —
    *  two filters at once answers neither question. */
-  const [changedOnly, setChangedOnly] = useState(false)
+  const [changedOnly, setChangedOnly] = useState(initialFilter === 'changed')
   const changedIds = strategySync
     ? [...strategySync.addedIds, ...strategySync.removedIds]
     : []
