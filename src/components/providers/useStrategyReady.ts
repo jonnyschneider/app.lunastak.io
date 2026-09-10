@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useDismissed } from './useDismissed'
 
 /**
  * "There is a new strategy you have not looked at."
@@ -28,44 +29,13 @@ import { useCallback, useEffect, useState } from 'react'
  */
 export const STRATEGY_READY_ITEM_TYPE = 'strategy_ready'
 
-interface DismissalRow {
-  itemType: string
-  itemKey: string
-  projectId: string | null
-}
-
 /**
  * @param projectId the project whose strategy this is
  * @param traceId   the latest strategy's trace, or null when there is no strategy yet
  */
 export function useStrategyReady(projectId: string, traceId: string | null) {
-  /**
-   * The traces this user has already looked at. `null` means "not loaded yet" and is deliberately
-   * distinct from the empty set: until the dismissals are back we do NOT know whether the chip is
-   * due, and showing one optimistically would flash a badge at every user on every page load.
-   */
-  const [seen, setSeen] = useState<Set<string> | null>(null)
   /** The trace announced by a completion this session, before any refetch has landed. */
   const [justBuilt, setJustBuilt] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(`/api/dismissal?projectId=${projectId}`)
-      .then((r) => (r.ok ? r.json() : { dismissals: [] }))
-      .then((d: { dismissals?: DismissalRow[] }) => {
-        if (cancelled) return
-        setSeen(
-          new Set(
-            (d.dismissals ?? [])
-              .filter((row) => row.itemType === STRATEGY_READY_ITEM_TYPE)
-              .map((row) => row.itemKey)
-          )
-        )
-      })
-      // A failed fetch means we cannot tell whether the chip is due. Say no rather than nag.
-      .catch(() => { if (!cancelled) setSeen(new Set()) })
-    return () => { cancelled = true }
-  }, [projectId])
 
   /**
    * The orchestrator owns knowing that generation finished — `BackgroundTaskProvider` polls, and
@@ -83,35 +53,13 @@ export function useStrategyReady(projectId: string, traceId: string | null) {
   }, [projectId])
 
   const trace = justBuilt ?? traceId
-  const ready = seen !== null && !!trace && !seen.has(trace)
+  const { dismissed, loaded, dismiss } = useDismissed(projectId, STRATEGY_READY_ITEM_TYPE, trace)
+  const ready = loaded && !!trace && !dismissed
 
   /**
    * Called when the user actually LOOKS — landing on the Decision Stack, not merely being near it.
-   * Optimistic: the chip clears immediately and the write follows, because a badge that lingers
-   * for a round-trip after you have already looked at the thing reads as broken.
    */
-  const markSeen = useCallback(() => {
-    if (!trace) return
-    setSeen((prev) => {
-      if (prev === null) return prev
-      if (prev.has(trace)) return prev
-      const next = new Set(prev)
-      next.add(trace)
-      return next
-    })
-    fetch('/api/dismissal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        itemType: STRATEGY_READY_ITEM_TYPE,
-        itemContent: trace,
-        projectId,
-      }),
-    }).catch(() => {
-      // Best effort. Worst case the chip returns on the next load, which is a smaller failure
-      // than blocking the view on a write the user did not ask for.
-    })
-  }, [trace, projectId])
+  const markSeen = useCallback(() => { dismiss() }, [dismiss])
 
   return { ready, markSeen }
 }

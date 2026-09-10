@@ -67,6 +67,8 @@ import StrategyDisplay from '@/components/StrategyDisplay'
 import { OpportunitySection } from '@/components/OpportunitySection'
 import { Launchpad } from '@/components/Launchpad'
 import { useStrategyReady } from '@/components/providers/useStrategyReady'
+import { useDismissed } from '@/components/providers/useDismissed'
+import { GroundTruthReviewScreen } from '@/components/ground-truth/GroundTruthReviewScreen'
 import { StatusBanner } from '@/components/StatusBanner'
 import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
@@ -198,6 +200,9 @@ interface Dismissal {
   itemKey: string
   projectId: string | null
 }
+
+/** One first look per project. Lives here because the page owns when it is over. */
+const GROUND_TRUTH_REVIEW_ITEM_TYPE = 'ground_truth_review'
 
 export default function ProjectPage() {
   const { data: session, status } = useSession()
@@ -347,6 +352,16 @@ export default function ProjectPage() {
     if (!strategyReady || activeTab !== 'decision-stack') return
     markStrategySeen()
   }, [strategyReady, activeTab, markStrategySeen])
+
+  /**
+   * Has the user already had their first look at the ground truths on this project?
+   *
+   * Persisted, not component state — the review screen promises "you can come back to these any
+   * time", and a screen that reappears on every load makes that promise false. Keyed on the
+   * project, since there is exactly one first look per project.
+   */
+  const { dismissed: reviewSeen, loaded: reviewSeenLoaded, dismiss: markReviewSeen } =
+    useDismissed(projectId, GROUND_TRUTH_REVIEW_ITEM_TYPE, projectId)
 
   /** Rule 1 of the tab state machine above: an empty project has no toggle, so it has no choice. */
   useEffect(() => {
@@ -1203,7 +1218,51 @@ export default function ProjectPage() {
             empty", and an invariant that depends on effect ordering is not one.
           */}
           {hasContext && activeTab === 'knowledgebase' && <div>
-            {isDemo ? (
+            {/*
+              ═══ FIRST LOOK REPLACES THE DASHBOARD ═══
+              Fragments exist, no strategy does, and the user has not yet said they have looked.
+              The knowledgebase renders ONLY this — the summary, chats, documents and integrations
+              all wait. A first-time user meeting a four-card dashboard has no way to tell that the
+              thing that matters is the list in one quadrant of it.
+
+              `reviewSeenLoaded` gates the whole branch so the dashboard never flashes up and get
+              replaced a beat later by a screen the user had already dismissed.
+            */}
+            {!isDemo && reviewSeenLoaded && !reviewSeen && !hasStrategy && (stats.fragmentCount ?? 0) > 0 ? (
+              <GroundTruthReviewScreen
+                projectId={projectId}
+                fragmentCount={stats.fragmentCount ?? 0}
+                onBuild={handleGenerateStrategy}
+                onStartChat={() => {
+                  logAndFlush('cta_new_chat', 'ground-truth-review', { projectId })
+                  setChatInitialQuestion(undefined)
+                  setChatDeepDiveId(undefined)
+                  setChatGapExploration(undefined)
+                  setChatResumeConversationId(undefined)
+                  setChatViewOnly(false)
+                  setChatSheetOpen(true)
+                }}
+                onUploadDocument={() => {
+                  logAndFlush('cta_upload_doc', 'ground-truth-review', { projectId })
+                  setUploadDeepDiveId(undefined)
+                  setUploadDialogOpen(true)
+                }}
+                onImportBundle={() => {
+                  logAndFlush('cta_import_bundle', 'ground-truth-review', { projectId })
+                  setImportDialogOpen(true)
+                }}
+                onDefer={() => {
+                  // Recorded, unlike its deleted predecessor. "Did anyone actually read this?" is
+                  // the question this screen exists to be judged on, and deferring is the answer
+                  // "not now" — which is data, not an absence of it.
+                  logAndFlush('review_deferred', 'ground-truth-review', {
+                    projectId,
+                    fragmentCount: String(stats.fragmentCount ?? 0),
+                  })
+                  markReviewSeen()
+                }}
+              />
+            ) : isDemo ? (
             <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
             {/* Demo: simplified KB — coverage grid + inline fragments */}
             <KnowledgeSummaryPanel
@@ -1267,11 +1326,6 @@ export default function ProjectPage() {
               knowledgeSummary={projectData?.knowledgeSummary || null}
               dimensionalCoverage={stats.dimensionalCoverage}
               latestStrategyTraceId={projectData?.strategyOutputs?.[0]?.id || null}
-              /* Fragments exist, no strategy does — the review moment, in the one place the
-                 ground truths, the summary they feed and the documents they came from are
-                 already on screen together. */
-              reviewMode={!hasStrategy && (stats.fragmentCount ?? 0) > 0}
-              onBuildStrategy={handleGenerateStrategy}
               strategySync={stats.strategySync}
               onOpenStrategy={() => {
                 logAndFlush('tab_switch', 'sync-version', { projectId })
