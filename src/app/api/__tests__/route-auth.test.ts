@@ -42,7 +42,6 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
 const KNOWN_UNGUARDED: string[] = [
   'src/app/api/admin/eval/[evalId]/route.ts',
   'src/app/api/admin/eval/route.ts',
-  'src/app/api/admin/regenerate/route.ts',
   'src/app/api/auth/prepare-transfer/route.ts',
   'src/app/api/conversation/[id]/detail/route.ts',
   'src/app/api/conversation/[id]/star/route.ts',
@@ -68,7 +67,6 @@ const KNOWN_UNGUARDED: string[] = [
   'src/app/api/project/[id]/template-entry/route.ts',
   'src/app/api/projects/[id]/route.ts',
   'src/app/api/projects/route.ts',
-  'src/app/api/quality-rating/route.ts',
   'src/app/api/strategies/[id]/route.ts',
   'src/app/api/strategies/route.ts',
   'src/app/api/suggest-opposite/route.ts',
