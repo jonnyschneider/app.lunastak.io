@@ -112,7 +112,8 @@ export default async function ProjectRoute({
    * ═══ WHICH INGEST, IF ANY, IS STILL WAITING FOR ITS REVIEW? ═══
    *
    * Per ingest since 2026-09-10 (see `review-batch.ts` for why the per-project model failed on prod).
-   * An ingest is a completed document with live ground truths, or a bundle's import batch. It is
+   * An ingest is a completed document with live ground truths, a bundle's import batch, or a chat that
+   * produced ground truths. It is
    * pending until its own `ground_truth_review` row exists — which only "Review these later" writes.
    *
    * Only asked when it can matter: an authorised project (`counts` is null otherwise — rule 1 sends
@@ -126,7 +127,7 @@ export default async function ProjectRoute({
    */
   let pendingBatch: string | null = null
   if (counts && !hasStrategy) {
-    const [docs, bundles, deferrals] = await Promise.all([
+    const [docs, bundles, chats, deferrals] = await Promise.all([
       prisma.document.findMany({
         where: { projectId: id, status: 'complete', fragments: { some: { status: 'active' } } },
         select: { id: true, createdAt: true },
@@ -136,6 +137,10 @@ export default async function ProjectRoute({
         where: { projectId: id, sourceType: 'import', status: 'active', importBatchId: { not: null } },
         _max: { createdAt: true },
       }),
+      prisma.conversation.findMany({
+        where: { projectId: id, fragments: { some: { status: 'active' } } },
+        select: { id: true, updatedAt: true },
+      }),
       prisma.userDismissal.findMany({
         where: { userId: userId ?? '', projectId: id, itemType: GROUND_TRUTH_REVIEW_ITEM_TYPE },
         select: { itemKey: true },
@@ -144,6 +149,8 @@ export default async function ProjectRoute({
     pendingBatch = pickPendingBatch(
       [
         ...docs.map((d) => ({ key: reviewBatchKey('document', d.id), at: d.createdAt })),
+        // `updatedAt`: a chat is ingested when it ENDS, not when it starts.
+        ...chats.map((c) => ({ key: reviewBatchKey('conversation', c.id), at: c.updatedAt })),
         ...bundles.flatMap((b) =>
           b.importBatchId && b._max.createdAt
             ? [{ key: reviewBatchKey('bundle', b.importBatchId), at: b._max.createdAt }]

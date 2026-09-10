@@ -5,7 +5,7 @@ import { ArrowRight, ChevronDown, Loader2, MessageSquare, Package, Plus, Upload 
 import { Button } from '@/components/ui/button'
 import { Steps } from '@/components/ui/steps'
 import { GroundTruthReview } from '@/components/ground-truth/GroundTruthReview'
-import { parseReviewBatchKey } from '@/lib/navigation/review-batch'
+import { parseReviewBatchKey, type ReviewBatchSource } from '@/lib/navigation/review-batch'
 import { logAndFlush } from '@/components/StatsigProvider'
 import {
   DropdownMenu,
@@ -45,6 +45,13 @@ import {
  * third step names a STATE the material reaches, not an action the user will take.
  */
 const REVIEW_PHASES = ['What you shared', 'Ground truths', 'Ready for strategy'] as const
+
+/** "…we found in your document". A lookup, not a ternary — a two-way ternary said "bundle" for a chat. */
+const SOURCE_NOUN: Record<ReviewBatchSource, string> = {
+  document: 'document',
+  bundle: 'bundle',
+  conversation: 'conversation',
+}
 
 interface GroundTruthReviewScreenProps {
   projectId: string
@@ -131,8 +138,8 @@ export function GroundTruthReviewScreen({
             <h1 className="text-xl font-semibold tracking-tight">
               {source
                 ? shown > 0
-                  ? `Here are the ${shown} ground truths we found in your ${source === 'document' ? 'document' : 'bundle'}`
-                  : `Here's what we found in your ${source === 'document' ? 'document' : 'bundle'}`
+                  ? `Here are the ${shown} ground truths we found in your ${SOURCE_NOUN[source]}`
+                  : `Here's what we found in your ${SOURCE_NOUN[source]}`
                 : shown > 0
                   ? `Here are the ${shown} ground truths we found`
                   : 'Here are your ground truths'}

@@ -121,13 +121,15 @@ export async function GET(
       /*
        * Which ingest this arrived in. The per-ingest review (2026-09-10) filters on it: after an
        * upload or an import, the user is shown what was drawn from THAT, not the whole project.
-       * Chats get null on purpose — they are not a review batch (see `review-batch.ts`).
+       * Chats too, since later on 2026-09-10 (see `review-batch.ts`). Manual entries are no batch.
        */
       reviewBatch: f.documentId
         ? reviewBatchKey('document', f.documentId)
         : f.sourceType === 'import' && f.importBatchId
           ? reviewBatchKey('bundle', f.importBatchId)
-          : null,
+          : f.conversationId
+            ? reviewBatchKey('conversation', f.conversationId)
+            : null,
       source: f.conversation
         ? { type: 'conversation' as const, id: f.conversation.id, name: f.conversation.title || 'Untitled' }
         : f.document

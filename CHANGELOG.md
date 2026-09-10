@@ -35,6 +35,21 @@ deferring costs nothing.
 Existing per-project deferrals are ignored rather than migrated, so a project whose review was
 deferred under 2.8.0 will offer its ingests' reviews again on the next visit.
 
+### Fixed — a chat gets its review too, and says "ground truths" like everything else (2026-09-10)
+
+Found on preview after the fix above: a chat's 6 new ground truths arrived with a toast and no
+review, beside a document and a bundle that each got theirs. Chats had been left out of the
+per-ingest review on a guess — that a conversation's extraction finishes after the user has moved
+on — which was never put to Jonny as a decision. A chat is material handed over and waited on, like
+the other two, and now opens its own review scoped to what it produced.
+
+It needed its own completion signal: the first chat on a project is tracked as a generation task,
+whose completion event names no conversation, so the chat now reports its own completion from both
+of the ways it can end. A chat inside a deep dive returns to that deep dive, as a document does.
+
+The toast said "New insights added" because that branch still hand-rolled its copy and was missed
+when every ingest was given one voice; it now reads "ground truths added", like the others.
+
 ### Fixed — uploading a document into a deep dive reopens the deep dive again (2026-09-10)
 
 Broken since 2026-09-09. When document processing moved onto the shared background-task service,

@@ -23,7 +23,7 @@
  * was "a standing state of the pre-strategy project page, not a per-ingest gate… review the lot
  * once". That model shipped in 2.8.0 and failed on prod: a single deferral silenced every later
  * ingest's review, so a bundle's 20 new ground truths were never offered as the focused thing they
- * arrived as. Each completed document and each bundle import now opens its own review, scoped to
+ * arrived as. Each completed document, bundle import and chat now opens its own review, scoped to
  * what THAT ingest produced (`src/lib/navigation/review-batch.ts`). It is still not a GATE — it is
  * deferrable every time, and deferring costs nothing.
  */

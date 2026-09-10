@@ -75,7 +75,7 @@ import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
 import { ProjectTabNav } from './ProjectTabNav'
 import type { ProjectMode } from '@/lib/navigation/resolve-mode'
 import { writeModeCookie } from '@/lib/navigation/mode-cookie'
-import { parseReviewBatchKey, reviewBatchKey } from '@/lib/navigation/review-batch'
+import { parseReviewBatchKey, reviewBatchKey, type ReviewBatchSource } from '@/lib/navigation/review-batch'
 import { writeLastProjectCookie } from '@/lib/navigation/last-project-cookie'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
@@ -369,7 +369,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    */
   const hasStrategyRef = useRef(hasStrategy)
   hasStrategyRef.current = hasStrategy
-  const presentIngestReview = useCallback((source: 'document' | 'bundle', id: string) => {
+  const presentIngestReview = useCallback((source: ReviewBatchSource, id: string) => {
     if (hasStrategyRef.current || projectData?.isDemo === true) return
     logAndFlush('tab_switch', 'ingest-landed', { projectId, source })
     setMode('review', { batch: reviewBatchKey(source, id) })
@@ -1388,7 +1388,9 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               // back to this when it cannot. Kept honest rather than thrown away.
               onDimensionClick={() => setMode('knowledge')}
               knowledgeBusyMessage={
-                isRunning(projectId, 'extraction') ? 'processing insights...'
+                // "ground truths" everywhere, never "insights" — the one vocabulary every ingest shares
+                // (ingest-messaging.ts). This label was the last place a chat still said otherwise.
+                isRunning(projectId, 'extraction') ? 'reading conversation...'
                 : recentlyGenerated && !hasActiveTasks(projectId) ? 'updating...'
                 : isRunning(projectId, 'document') ? `reading ${runningCount(projectId, 'document') > 1 ? `${runningCount(projectId, 'document')} documents` : 'document'}...`
                 : null
@@ -1748,6 +1750,20 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         hasKnowledgebaseContent={(stats.fragmentCount ?? 0) > 0}
         viewOnly={chatViewOnly}
         origin={chatOrigin}
+        onIngestComplete={({ conversationId, deepDiveId }) => {
+          /*
+           * The same rule as a document: an ingest started inside a deep dive returns the user to
+           * that deep dive, and its review stays pending for their next arrival. Anything else opens
+           * the review of what the chat produced — which is the case that reached preview with a
+           * toast and no review (2026-09-10).
+           */
+          if (deepDiveId) {
+            setSelectedDeepDiveId(deepDiveId)
+            setDeepDiveSheetOpen(true)
+            return
+          }
+          presentIngestReview('conversation', conversationId)
+        }}
       />
 
       {/* Add Deep Dive Dialog */}

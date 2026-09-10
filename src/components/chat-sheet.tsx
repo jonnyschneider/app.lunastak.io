@@ -108,6 +108,17 @@ interface ChatSheetProps {
   hasKnowledgebaseContent?: boolean
   viewOnly?: boolean
   origin?: { type: string; text: string }
+  /**
+   * This chat's ground truths have finished arriving. Called from the background task's `onComplete`
+   * — in BOTH extraction branches — so the page can open the review of what the chat produced.
+   *
+   * ⚠ WHY A CALLBACK AND NOT THE `extractionComplete` EVENT. A chat ends one of two ways, and only one
+   * of them emits that event with a `conversationId`: the first chat on a project is tracked as a
+   * `generation` task (the route still reports through generation status), whose completion event
+   * carries no conversation at all. The task's own `onComplete` fires for both, and the sheet is the
+   * one place that knows the conversation AND the deep dive it belongs to.
+   */
+  onIngestComplete?: (ingest: { conversationId: string; deepDiveId?: string }) => void
 }
 
 export function ChatSheet({
@@ -122,6 +133,7 @@ export function ChatSheet({
   hasKnowledgebaseContent = false,
   viewOnly = false,
   origin,
+  onIngestComplete,
 }: ChatSheetProps) {
   // Background generation context
   const { startTask } = useGenerationStatusContext()
@@ -379,6 +391,14 @@ export function ChatSheet({
     }
   }
 
+  /**
+   * The deep dive is read when the chat ENDS, not when it started: a conversation can be moved onto
+   * a topic mid-chat (`handleTopicChange`), and it is the topic it ended on that it belongs to.
+   */
+  const reportIngest = (id: string) => {
+    onIngestComplete?.({ conversationId: id, deepDiveId: currentDeepDive?.id ?? deepDiveId })
+  }
+
   // Extract context from conversation
   // explicitEnd: passed directly to avoid React state timing issues with isExplicitEnd
   const extractContext = async (explicitEnd = false) => {
@@ -401,14 +421,16 @@ export function ChatSheet({
         const data = await response.json()
 
         if (data.status === 'started') {
+          /*
+           * ⚠ THE SHARED INGEST COPY, NOT "NEW INSIGHTS ADDED". This branch hand-rolled its own
+           * strings and was missed when the three ingest paths were given one voice on 2026-09-09 —
+           * so a chat said "insights" beside a document and a bundle that said "ground truths".
+           */
           startTask('extraction', data.conversationId, projectId, {
-            running: 'Processing insights...',
-            complete: 'New insights added',
-            failed: 'Extraction failed',
-            completeDescription: '{{fragmentCount}} insights added to your knowledge base.',
-            failedDescription: 'Your conversation has been saved.',
+            ...EXTRACTION_TASK_COPY,
+            onComplete: () => reportIngest(data.conversationId),
           })
-          toast.info('Processing insights in the background', {
+          toast.info(ingestRunning('conversation'), {
             description: "You'll be notified when it's ready.",
             duration: 4000,
           })
@@ -440,7 +462,10 @@ export function ChatSheet({
 
       if (data.status === 'started' && data.generationId) {
         // Track via generation polling (covers extracting → generating → complete)
-        startTask('generation', data.generationId, projectId, EXTRACTION_TASK_COPY)
+        startTask('generation', data.generationId, projectId, {
+          ...EXTRACTION_TASK_COPY,
+          onComplete: () => reportIngest(conversationId),
+        })
 
         // Notify listeners
         window.dispatchEvent(new Event('strategySaved'))

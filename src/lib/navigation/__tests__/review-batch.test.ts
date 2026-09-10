@@ -13,19 +13,22 @@
 import { reviewBatchKey, parseReviewBatchKey, pickPendingBatch } from '../review-batch'
 
 describe('reviewBatchKey', () => {
-  it('keys a document and a bundle into distinct namespaces', () => {
+  it('keys a document, a bundle and a conversation into distinct namespaces', () => {
     expect(reviewBatchKey('document', 'abc')).toBe('doc:abc')
     expect(reviewBatchKey('bundle', 'abc')).toBe('bundle:abc')
+    expect(reviewBatchKey('conversation', 'abc')).toBe('chat:abc')
   })
 
   it('round-trips through the parser', () => {
     expect(parseReviewBatchKey('doc:abc')).toEqual({ source: 'document', id: 'abc' })
     expect(parseReviewBatchKey('bundle:x-1')).toEqual({ source: 'bundle', id: 'x-1' })
+    // Chats joined 2026-09-10, after a chat's 6 new ground truths landed on preview with no review.
+    expect(parseReviewBatchKey('chat:c9')).toEqual({ source: 'conversation', id: 'c9' })
   })
 
   it('rejects anything that is not a batch key, rather than guessing', () => {
     // A URL param is user input. `?batch=banana` must not filter the review to nothing.
-    for (const junk of ['', 'abc', 'doc:', 'chat:abc', 'bundle', null, undefined]) {
+    for (const junk of ['', 'abc', 'doc:', 'chat:', 'memo:abc', 'bundle', null, undefined]) {
       expect(parseReviewBatchKey(junk as string | null | undefined)).toBeNull()
     }
   })

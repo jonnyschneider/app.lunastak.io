@@ -67,6 +67,16 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
     expect(source).toMatch(/presentIngestReview\('bundle', result\.importBatchId\)/)
   })
 
+  it('presents the review when a CHAT finishes — both extraction branches report through one callback', () => {
+    // A chat's 6 ground truths reached preview with a toast and no review. The first chat on a
+    // project is a `generation` task whose completion event names no conversation, so the event
+    // route cannot cover it; the sheet reports its own completion instead.
+    expect(source).toMatch(/presentIngestReview\('conversation', conversationId\)/)
+    const chat = fs.readFileSync(path.join(__dirname, '../../../../components/chat-sheet.tsx'), 'utf-8')
+    expect(chat.match(/onComplete: \(\) => reportIngest\(/g)?.length, 'both branches must report').toBe(2)
+    expect(chat).not.toContain("'New insights added'")
+  })
+
   it('returns a DEEP-DIVE upload to its deep dive, decided before the review is considered', () => {
     /*
      * Deep-dive uploads reopened their sheet on a `documentProcessed` event nothing had dispatched
