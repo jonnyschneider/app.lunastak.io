@@ -19,6 +19,38 @@ Reference list of every custom Statsig event emitted by the app. Dashboards buil
 - **Client events** fire from the browser via `logAndFlush(name, value?, metadata?)` in `src/components/StatsigProvider.tsx`. Auto-attach `userType`, flush immediately to survive UI transitions.
 - **Server events** fire from API routes / NextAuth callbacks via `logStatsigEvent(userId, name, value?, metadata?)` in `src/lib/statsig.ts`. Used when the truth lives server-side (signups, server-side resource creation, LLM token accounting).
 
+## PostHog alongside Statsig
+
+From 2026-09-11 every event in this catalogue also goes to **PostHog**, under the same name, while
+we judge whether its reports beat Statsig's. The fan-out lives in the two wrappers above
+(`src/lib/analytics/posthog-{client,server}.ts`), so call sites are untouched. Off unless
+`NEXT_PUBLIC_POSTHOG_KEY` is set.
+
+- **`value`** has no PostHog column, so it arrives as a `value` property. `userType`, `app_version`
+  and `tier` are on every event (`tier` = `production` | `preview` | `development` — filter on it).
+- **Distinct id = the database `User.id`**, guests included, same as Statsig. Anonymous visitors
+  stay anonymous until they become a guest or sign up, and their earlier events join on that step.
+- **Guest → account is stitched server-side.** Signing up gives a guest a new id, and PostHog will
+  not re-identify an identified person. So the browser starts afresh as the new account, and
+  `transferGuestToUser` sends `$merge_dangerously` once its transaction commits — the guest's
+  whole pre-signup journey lands on the account. This is the join Statsig never had, and the reason
+  the funnel below works.
+- **Limit:** a guest created mid-page (first conversation) is identified on the next full load,
+  not at once. Their device's anonymous events are merged when that happens.
+- Autocapture and pageviews (per client-side navigation) come from the SDK. Session replay is a
+  PostHog project setting; inputs are masked by default, rendered text is not.
+
+**The funnel to judge it by** (Product analytics → Funnel, first-touch attribution, 14-day window):
+
+1. `$pageview` (or `cta_start_initial_conversation` to count only people who began)
+2. `cta_start_initial_conversation`
+3. `strategy_generated` — server-side, fires when an initial stack is built
+4. `account_created`
+
+Some people sign up before they build, so read it twice: step order *sequential* for the guest
+path, *any order* for "did they both build and sign up". Break down by `userType` at step 1 and by `$initial_referring_domain` to see which marketing
+sources deliver people who get to a stack.
+
 ---
 
 ## Account & conversion

@@ -66,6 +66,7 @@ import { useHeaderSlot } from '@/components/HeaderContext'
 import { DEMO_PROJECTS } from '@/lib/demos'
 import { readLastProjectCookieFromDocument } from '@/lib/navigation/last-project-cookie'
 import { cn } from '@/lib/utils'
+import { resetPostHog } from '@/lib/analytics/posthog-client'
 
 interface Project {
   id: string
@@ -401,7 +402,7 @@ export function AppLayout({
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => signOut({ callbackUrl: '/?signedOut=true' })}>
+                <DropdownMenuItem onSelect={() => { resetPostHog(); signOut({ callbackUrl: '/?signedOut=true' }) }}>
                   <LogOut className="h-4 w-4" />
                   Log out
                 </DropdownMenuItem>

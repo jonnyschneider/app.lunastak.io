@@ -6,6 +6,7 @@ import { StatsigClient } from '@statsig/js-client';
 import { runStatsigSessionReplay } from '@statsig/session-replay';
 import { runStatsigAutoCapture } from '@statsig/web-analytics';
 import packageJson from '../../package.json';
+import { initPostHog, identifyPostHog, capturePostHog } from '@/lib/analytics/posthog-client';
 
 let statsigClient: StatsigClient | null = null;
 
@@ -22,6 +23,9 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
 
   useEffect(() => {
+    // PostHog runs alongside Statsig while we evaluate a switch — independent of Statsig's key.
+    initPostHog();
+
     const clientKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
 
     if (!clientKey) {
@@ -78,6 +82,7 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
 
     const applyIdentity = (userId: string | null, userType: UserType, email?: string) => {
       currentUserType = userType;
+      if (userId) identifyPostHog(userId, userType, email);
       if (statsigClient) {
         statsigClient.updateUserAsync({
           userID: userId ?? undefined,
@@ -119,8 +124,11 @@ export function logAndFlush(
   value?: string | number,
   metadata?: Record<string, string>
 ) {
-  if (!statsigClient) return;
   const meta = { userType: currentUserType, ...(metadata || {}) };
+  // Statsig's `value` column has no PostHog equivalent, so it travels as a `value` property.
+  capturePostHog(eventName, { ...meta, value });
+
+  if (!statsigClient) return;
   statsigClient.logEvent(eventName, value, meta);
   statsigClient.flush();
 }
