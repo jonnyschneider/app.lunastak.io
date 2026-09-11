@@ -43,7 +43,8 @@ a 404, which doesn't confirm it exists. `route-auth.test.ts` fails on any route 
 the guard nor sits on a commented public allowlist, that re-implements identity, or that is
 addressed by an id and doesn't call that resource's guard. `suggest-opposite` now needs a user
 (guests allowed and still not metered) and caps its input at 200 characters. The eval viewer's API
-is dev-only.
+is dev-only. Feedback is filed as whoever is asking (or anonymously), no longer as whatever
+`userId` the request body named.
 
 Template extraction is no longer a route. The pipeline used to `fetch` its own
 `extract-from-template` endpoint without cookies, so the route couldn't be guarded without breaking

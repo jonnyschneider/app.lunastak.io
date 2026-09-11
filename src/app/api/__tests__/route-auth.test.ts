@@ -28,7 +28,10 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
   'src/app/api/dev/snapshots/route.ts': { reason: 'dev-only', mustContain: 'VERCEL_ENV' },
   'src/app/api/email/webhook/route.ts': { reason: 'Resend webhook, svix-signed', mustContain: 'svix' },
   'src/app/api/events/route.ts': { reason: 'anonymous client analytics, by design' },
-  'src/app/api/feedback/route.ts': { reason: 'anonymous feedback form, by design' },
+  'src/app/api/feedback/route.ts': {
+    reason: 'anonymous-capable feedback, by design; who filed it comes from getRequester(), never the body',
+    mustContain: 'getRequester',
+  },
   'src/app/api/waitlist/route.ts': { reason: 'marketing waitlist signup, by design' },
   'src/app/api/test/seed-user/route.ts': { reason: 'e2e seeding', mustContain: 'ENABLE_TEST_ENDPOINTS' },
 }

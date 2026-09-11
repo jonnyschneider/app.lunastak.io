@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
+import { getRequester } from '@/lib/auth/current-user'
 
-const prisma = new PrismaClient()
-
+/**
+ * POST /api/feedback — free-text feedback on a generated strategy. Anonymous-capable by design
+ * (PUBLIC in route-auth.test.ts), but who filed it comes from the request — session or validated
+ * guest cookie — never from the body. A body `userId` used to be stored as given, so anyone could
+ * file feedback as anyone.
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { traceId, userId, responseText } = await request.json()
+    const { traceId, responseText } = await request.json()
 
     // Validate required fields
     if (!traceId || !responseText) {
@@ -15,11 +20,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create feedback record
+    const requester = await getRequester()
+
     const feedback = await prisma.feedback.create({
       data: {
         traceId,
-        userId: userId || null,
+        userId: requester?.userId ?? null,
         responseText,
       },
     })
