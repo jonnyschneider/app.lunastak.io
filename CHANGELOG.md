@@ -20,8 +20,17 @@ and PostHog won't re-identify an identified person. So the browser starts afresh
 and `transferGuestToUser` sends `$merge_dangerously` once its transaction commits. Verified on the
 PR preview: anonymous pageview → guest → chat → `account_created` → merge, all on one person.
 
+### Removed
+
+- **Session replay, on both the app and the marketing site.** Statsig's replay had been recording
+  sessions, strategy text on screen included, with no mention on the data-security page. Rather
+  than disclose it, we stopped: `@statsig/session-replay` is gone, and PostHog's recording is
+  disabled in code so a dashboard setting can't turn it on.
+
 ### Fixed
 
+- The paywall's **Learn More** opened `lunastak.io/pricing`, which has never existed. It now opens
+  the Plans section of Getting started.
 - `cta_complete_template` called the Statsig client directly, the only event that did, so it missed
   the `userType` tag and the immediate flush every other client event gets. It goes through
   `logAndFlush` now.

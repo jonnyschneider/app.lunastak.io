@@ -58,7 +58,6 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-email/components": "^1.0.3",
     "@statsig/js-client": "^3.31.0",
-    "@statsig/session-replay": "^3.31.0",
     "@statsig/web-analytics": "^3.31.0",
     "@vercel/analytics": "^1.1.1",
     "@vercel/functions": "^3.4.0",

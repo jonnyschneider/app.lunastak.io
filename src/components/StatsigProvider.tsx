@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { StatsigClient } from '@statsig/js-client';
-import { runStatsigSessionReplay } from '@statsig/session-replay';
 import { runStatsigAutoCapture } from '@statsig/web-analytics';
 import packageJson from '../../package.json';
 import { initPostHog, identifyPostHog, capturePostHog } from '@/lib/analytics/posthog-client';
@@ -49,9 +48,6 @@ export function StatsigProvider({ children }: { children: React.ReactNode }) {
         }, {
           environment: { tier },
         });
-
-        // Enable session replay
-        runStatsigSessionReplay(statsigClient);
 
         // Enable web analytics autocapture
         runStatsigAutoCapture(statsigClient);

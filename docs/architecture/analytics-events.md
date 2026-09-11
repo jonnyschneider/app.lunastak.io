@@ -40,8 +40,11 @@ we judge whether its reports beat Statsig's. The fan-out lives in the two wrappe
   the funnel below works.
 - **Limit:** a guest created mid-page (first conversation) is identified on the next full load,
   not at once. Their device's anonymous events are merged when that happens.
-- Autocapture and pageviews (per client-side navigation) come from the SDK. Session replay is a
-  PostHog project setting; inputs are masked by default, rendered text is not.
+- Autocapture and pageviews (per client-side navigation) come from the SDK.
+- **No session replay, on either site (decision 2026-09-11).** Recordings would show strategy text,
+  and the data-security page says we don't record. PostHog's is disabled in `init` — so a project
+  setting can't turn it on — and Statsig's `@statsig/session-replay` is removed. Turning it back on
+  means changing that page first.
 
 **The funnel to judge it by** (Product analytics → Funnel, first-touch attribution, 14-day window):
 

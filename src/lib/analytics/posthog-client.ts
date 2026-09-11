@@ -8,7 +8,7 @@ import packageJson from '../../../package.json'
  *
  * Off unless NEXT_PUBLIC_POSTHOG_KEY is set. Autocapture and pageviews come from the SDK; custom
  * events arrive through `logAndFlush`, so the catalogue in analytics-events.md applies unchanged.
- * Session replay is switched on or off in the PostHog project settings, not here.
+ * Session replay is off, here in code — see the init below.
  */
 
 type UserType = 'guest' | 'signed_up' | 'unknown'
@@ -25,6 +25,8 @@ export function initPostHog(): void {
     capture_pageview: 'history_change',
     // Anonymous visitors cost nothing until they become a guest or sign up.
     person_profiles: 'identified_only',
+    // Replay is off by decision (2026-09-11), in code so no dashboard toggle can turn it on.
+    disable_session_recording: true,
   })
   posthog.register({
     // The marketing site shares this PostHog project (and cookie), and registers `site: marketing`.
