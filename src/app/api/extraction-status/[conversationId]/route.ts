@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
 import { prisma } from '@/lib/db'
+import { requireConversationAccess, isDenied } from '@/lib/auth/guard'
 import type { ExtractionStatusResponseContract } from '@/lib/contracts/extraction-status'
 
 // Polling endpoint — must never be cached
@@ -22,6 +23,11 @@ export async function GET(
       { status: 400 }
     )
   }
+
+  // Polled every 2s — the guard adds one indexed lookup per poll, which is fine. `read` to match
+  // the conversation itself.
+  const auth = await requireConversationAccess(conversationId, { access: 'read' })
+  if (isDenied(auth)) return auth
 
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },

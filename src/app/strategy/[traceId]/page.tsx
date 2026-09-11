@@ -68,10 +68,9 @@ export default function StrategyViewPage() {
       const response = await fetch(`/api/trace/${traceId}`)
 
       if (!response.ok) {
+        // Someone else's strategy is a 404 too — the API doesn't confirm an id exists.
         if (response.status === 404) {
           setError('Strategy not found')
-        } else if (response.status === 403) {
-          setError('You do not have permission to view this strategy')
         } else {
           setError('Failed to load strategy')
         }

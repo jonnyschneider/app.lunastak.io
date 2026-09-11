@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — API routes check who's asking (2026-09-11)
+
+Several API routes checked nothing about the caller. Anyone who knew a conversation's id could read
+it with all its messages, append a turn to it, re-point it at another deep dive, or run extraction
+and generation on it, which spent LLM calls on the owner's behalf. Anyone could also poll any
+project's generation status or any document's processing status and file name, and read any
+strategy's full output from the trace API (whose "no session → allow" branch was left over from
+before guests had a validated cookie). `suggest-opposite` was an open LLM proxy that needed no id at
+all. Ids are unguessable cuids, so everything except that proxy required knowing an id first. But
+conversation ids now appear in review URLs, and URLs get copied.
+
+Three more holes sat behind a login:
+
+- `conversation/start` trusted the guest cookie without validating it, so a cookie set to a
+  signed-up user's id started chats in that user's projects. It also gave any caller with no
+  cookie a brand-new guest and ran the LLM on text from the request, a new guest per call, so the
+  guest quota never applied. It now needs a session or a guest cookie, which every real caller
+  already has.
+- An upload stored the `deepDiveId` it was sent without checking it, so a known deep-dive id from
+  another project put a document in someone else's deep dive. Moving a conversation into a deep
+  dive had the same hole.
+- A demo project's opportunities and principles could be created, edited or deleted by any
+  signed-in user or guest. Opening content *reads* to demos (2026-03-27) had widened the one check
+  its writes shared too.
+
+**Why it happened:** `middleware.ts` does no auth, so every route had to check for itself, and ~17
+of them carried their own copy of "who is this request" while others had none. Nothing noticed a
+route with no check.
+
+**What changed:** one guard module, `src/lib/auth/guard.ts` (`requireUser`,
+`require{Project,Conversation,Trace,Document}Access`). By default a resource is visible to its
+owner only. Demos are readable where asked for and never writable. A resource that isn't yours is
+a 404, which doesn't confirm it exists. `route-auth.test.ts` fails on any route that neither uses
+the guard nor sits on a commented public allowlist, that re-implements identity, or that is
+addressed by an id and doesn't call that resource's guard. `suggest-opposite` now needs a user
+(guests allowed and still not metered) and caps its input at 200 characters. The eval viewer's API
+is dev-only.
+
+Template extraction is no longer a route. The pipeline used to `fetch` its own
+`extract-from-template` endpoint without cookies, so the route couldn't be guarded without breaking
+its only caller. Left open, it let anyone write fragments into any project. Now the pipeline calls
+it directly. Four more open routes had no callers, so they were deleted rather than guarded:
+`conversation/[id]/stub`, `conversation/[id]/messages`, `admin/regenerate` (which spent LLM calls on
+any trace) and `quality-rating` (which wrote to any trace), along with the unused `QualityRating`
+component. So was `feedback`, with its 👍/👎 buttons and an orphaned feedback modal: the buttons sat on
+a chat step that is never reached, and sent a body the route always rejected.
+
+See ARCHITECTURE.md → *API Access*.
+
 ### Added — the stack says when it is behind your knowledgebase (2026-09-11)
 
 Under the Version control on the Decision Stack: *"3 changes since v3"*, whenever ground truths have

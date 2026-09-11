@@ -89,32 +89,15 @@ async function initializeSynthesisRecords(projectId: string): Promise<void> {
 }
 
 /**
- * Get or create a default project for a user
- * For authenticated users: returns existing project or creates one
- * For guests (userId is null): creates a new guest user and project
+ * The requester's oldest (default) project, created if they have none. Takes an existing user —
+ * minting a guest is `/api/guest/init`'s job (and the project GET's, for a demo deep link), because
+ * a guest is only usable once its cookie is set.
  */
-export async function getOrCreateDefaultProject(userId: string | null): Promise<{
+export async function getOrCreateDefaultProject(userId: string): Promise<{
   userId: string
   project: { id: string; name: string }
-  isGuest: boolean
 }> {
-  if (!userId) {
-    // Create guest user with empty project (no demo - user must click "See an example")
-    const guestUser = await createGuestUser()
-    const projectId = await createEmptyGuestProject(guestUser.id)
-
-    const project = await prisma.project.findUniqueOrThrow({
-      where: { id: projectId },
-    })
-
-    return {
-      userId: guestUser.id,
-      project,
-      isGuest: true,
-    }
-  }
-
-  // Authenticated user - try to find existing project
+  // Try to find an existing project
   let project = await prisma.project.findFirst({
     where: { userId },
     orderBy: { createdAt: 'asc' } // Get oldest (default) project
@@ -134,11 +117,7 @@ export async function getOrCreateDefaultProject(userId: string | null): Promise<
     await initializeSynthesisRecords(project.id)
   }
 
-  return {
-    userId,
-    project,
-    isGuest: false,
-  }
+  return { userId, project }
 }
 
 /**

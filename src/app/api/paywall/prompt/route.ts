@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { requireUser, isDenied } from '@/lib/auth/guard';
 import { Prisma } from '@prisma/client';
 import {
   validatePaywallRequest,
@@ -30,11 +29,9 @@ const MODAL_CONTENT: Record<PaywallFeature, { title: string; message: string }> 
 };
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const requester = await requireUser({ guests: false });
+  if (isDenied(requester)) return requester;
+  const { userId } = requester;
 
   const body = await request.json();
 
@@ -43,7 +40,7 @@ export async function POST(request: Request) {
   }
 
   // Check if user is Pro
-  if (await isUserPro(session.user.id)) {
+  if (await isUserPro(userId)) {
     const response: PaywallResponseContract = { blocked: false };
     return NextResponse.json(response);
   }
@@ -53,7 +50,7 @@ export async function POST(request: Request) {
     // Free users can create 1 non-demo project
     const existingProjects = await prisma.project.count({
       where: {
-        userId: session.user.id,
+        userId: userId,
         isDemo: false,
         status: 'active',
       },
@@ -73,7 +70,7 @@ export async function POST(request: Request) {
       eventData: {
         feature: body.feature,
         context: body.context || null,
-        userId: session.user.id,
+        userId: userId,
       } as Prisma.InputJsonValue,
     },
   }).catch((err) => console.error('Failed to log paywall event:', err));

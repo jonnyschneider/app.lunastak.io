@@ -320,9 +320,13 @@ export function GroundTruthReview({
    * A row becomes visible later (the user picks another dimension) and is stamped then. Each row is
    * sent once per mount; the PATCH sets `reviewedAt` to now, so re-sending on every filter toggle
    * would only churn the timestamp.
+   *
+   * Not in `readOnly` (a demo): the stamp is a write, and `PATCH /fragments` is owner-only, so it
+   * could only ever 404 — a viewer of a showcase project hasn't reviewed anything of theirs.
    */
   const stampedRef = useRef(new Set<string>())
   useEffect(() => {
+    if (readOnly) return
     const ids = visible.map(i => i.id).filter(id => !stampedRef.current.has(id))
     if (ids.length === 0) return
     ids.forEach(id => stampedRef.current.add(id))
@@ -332,7 +336,7 @@ export function GroundTruthReview({
       body: JSON.stringify({ ids, reviewed: true }),
     }).catch(() => { /* best-effort: a missing timestamp must not block the review */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, visibleKey])
+  }, [projectId, visibleKey, readOnly])
 
   if (error && !items) return <p className="py-6 text-sm text-destructive">{error}</p>
   if (!items) {

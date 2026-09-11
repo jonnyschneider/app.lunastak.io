@@ -1,25 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireUser, isDenied } from '@/lib/auth/guard'
+import { GUEST_COOKIE_NAME } from '@/lib/auth/current-user'
 import { transferGuestToUser } from '@/lib/transfer-session'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
 
 export async function POST(_request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    // The receiving side must be a signed-in session. A guest cookie on its own is a 401 here —
+    // and the cookie is left alone, so the guest isn't lost.
+    const requester = await requireUser({ guests: false })
+    if (isDenied(requester)) return requester
+    const authenticatedUserId = requester.userId
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const authenticatedUserId = session.user.id
-
-    // Read guestUserId from httpOnly cookie (not accessible via JavaScript)
+    // The raw guest cookie (httpOnly, not readable from JS) is the thing being handed over, not an
+    // identity — transferGuestToUser validates it's a real guest before moving anything.
     const cookieStore = await cookies()
     const guestUserId = cookieStore.get(GUEST_COOKIE_NAME)?.value
 

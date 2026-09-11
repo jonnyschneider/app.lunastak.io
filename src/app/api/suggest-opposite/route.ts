@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMessage } from '@/lib/claude';
 import { extractText } from '@/lib/extract-text';
+import { requireUser, isDenied } from '@/lib/auth/guard';
+
+/** The one free-text field that reaches the prompt — a principle's priority is a few words. */
+const MAX_PRIORITY_LENGTH = 200;
 
 export async function POST(request: NextRequest) {
+  // Guests allowed: PrinciplesSection is on the guest-reachable template page. Deliberately not
+  // metered — no userId goes to createMessage, so the guest quota is untouched (auth-gap plan D4).
+  const requester = await requireUser();
+  if (isDenied(requester)) return requester;
+
   try {
     const { priority } = await request.json();
 
     if (!priority || typeof priority !== 'string') {
       return NextResponse.json({ error: 'Priority is required' }, { status: 400 });
+    }
+    if (priority.length > MAX_PRIORITY_LENGTH) {
+      return NextResponse.json({ error: `Priority must be ${MAX_PRIORITY_LENGTH} characters or fewer` }, { status: 400 });
     }
 
     const message = await createMessage({

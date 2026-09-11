@@ -10,6 +10,7 @@ import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 import { planPipeline, executePipeline } from '@/lib/pipeline';
 import { waitUntil } from '@vercel/functions';
 import { extractText } from '@/lib/extract-text';
+import { requireConversationAccess, isDenied } from '@/lib/auth/guard';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -156,6 +157,11 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  // Before the quota check, any LLM call, or the pipeline: extraction spends on the owner's behalf
+  // and writes fragments into their project. `write` — demo viewers can't run it.
+  const auth = await requireConversationAccess(conversationId);
+  if (isDenied(auth)) return auth;
 
   // Get conversation with messages
   const conversation = await prisma.conversation.findUnique({

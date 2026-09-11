@@ -6,6 +6,7 @@ import { ConversationPhase } from '@/lib/types';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 import { checkAndIncrementGuestApiCalls } from '@/lib/projects';
 import { extractText } from '@/lib/extract-text';
+import { requireConversationAccess, isDenied } from '@/lib/auth/guard';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -25,6 +26,11 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    // Before the quota check and any LLM call: this appends a turn and spends on the owner's behalf.
+    // `write`, so a demo project's viewer can read its conversations but not continue them.
+    const auth = await requireConversationAccess(conversationId);
+    if (isDenied(auth)) return auth;
 
     // Get conversation and messages
     console.log('[Continue API] Fetching conversation from database...');

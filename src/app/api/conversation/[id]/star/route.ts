@@ -1,34 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
-
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-  let userId: string | null = session?.user?.id || null
-
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  return userId
-}
+import { requireConversationAccess, isDenied } from '@/lib/auth/guard'
 
 /**
  * POST /api/conversation/[id]/star
@@ -39,51 +11,29 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await getUserId()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { id: conversationId } = await params
 
-    // Verify the conversation belongs to the user
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId,
-      },
-      include: {
-        traces: {
-          orderBy: { timestamp: 'desc' },
-          take: 1,
-        },
-      },
+    // Starring is a write: owner only, never via a demo project.
+    const auth = await requireConversationAccess(conversationId)
+    if (isDenied(auth)) return auth
+
+    const latestTrace = await prisma.trace.findFirst({
+      where: { conversationId },
+      orderBy: { timestamp: 'desc' },
     })
 
-    if (!conversation) {
-      return NextResponse.json(
-        { error: 'Conversation not found' },
-        { status: 404 }
-      )
-    }
-
-    if (conversation.traces.length === 0) {
+    if (!latestTrace) {
       return NextResponse.json(
         { error: 'Conversation has no strategy output to star' },
         { status: 400 }
       )
     }
 
-    const trace = conversation.traces[0]
-    const newStarredStatus = !trace.starred
+    const newStarredStatus = !latestTrace.starred
 
     // Update the trace's starred status
     await prisma.trace.update({
-      where: { id: trace.id },
+      where: { id: latestTrace.id },
       data: {
         starred: newStarredStatus,
         starredAt: newStarredStatus ? new Date() : null,

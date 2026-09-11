@@ -11,7 +11,7 @@
 import { GET } from '../route'
 
 const mockFindFirstProject = vi.fn()
-const mockGetServerSession = vi.fn()
+const mockGetRequester = vi.fn()
 const mockTraceFindMany = vi.fn()
 const mockSynthesisFindMany = vi.fn()
 const mockSnapshotFindFirst = vi.fn()
@@ -21,16 +21,14 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(async () => ({ get: vi.fn(), set: vi.fn() })),
 }))
 
-vi.mock('next-auth/next', () => ({
-  getServerSession: (...args: unknown[]) => mockGetServerSession(...args),
+vi.mock('@/lib/auth/current-user', () => ({
+  getRequester: (...args: unknown[]) => mockGetRequester(...args),
+  GUEST_COOKIE_NAME: 'guestUserId',
 }))
-
-vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 
 vi.mock('@/lib/db', () => ({
   prisma: {
     project: { findFirst: (...args: unknown[]) => mockFindFirstProject(...args) },
-    user: { findUnique: vi.fn() },
     trace: { findMany: (...args: unknown[]) => mockTraceFindMany(...args) },
     dimensionalSynthesis: { findMany: (...args: unknown[]) => mockSynthesisFindMany(...args) },
     decisionStackSnapshot: {
@@ -41,7 +39,6 @@ vi.mock('@/lib/db', () => ({
 }))
 
 vi.mock('@/lib/projects', () => ({
-  isGuestUser: vi.fn(() => false),
   createGuestUser: vi.fn(),
 }))
 
@@ -69,9 +66,12 @@ const fragment = (c: string, over: Record<string, unknown> = {}) => ({
 })
 
 function setup(fragments: unknown[]) {
-  mockGetServerSession.mockResolvedValue({ user: { id: 'u1' } })
+  mockGetRequester.mockResolvedValue({ userId: 'u1', isGuest: false })
+  // Answers both the guard's access query and the route's data query.
   mockFindFirstProject.mockResolvedValue({
     id: 'p1',
+    userId: 'u1',
+    status: 'active',
     name: 'P',
     isDemo: false,
     knowledgeSummary: null,
@@ -128,7 +128,8 @@ describe('GET /api/project/[id] — dimensional support', () => {
 
   it('asks prisma for the evidence rows the calculator needs', async () => {
     await coverage([fragment('c1')])
-    const arg = mockFindFirstProject.mock.calls[0][0]
+    // The data query, not the guard's access check (which selects only id/owner/demo/status).
+    const arg = mockFindFirstProject.mock.calls.map(([a]) => a).find(a => a.include)
     expect(arg.include.fragments.include).toHaveProperty('evidence')
   })
 })

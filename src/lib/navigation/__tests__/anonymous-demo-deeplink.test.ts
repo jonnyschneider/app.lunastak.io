@@ -6,7 +6,7 @@
  * wrong for exactly the visitor a `/project/<demoId>` link from the marketing site is for: no
  * session, no guest cookie, so `getUserId()` returns null.
  *
- * The API mints a guest inline for that case (`api/project/[id]/route.ts:46-67`) — but the redirect
+ * The API mints a guest inline for that case (`api/project/[id]/route.ts`, GET) — but the redirect
  * runs BEFORE the client mounts, so the fallback never got to run. It also does not reproduce from
  * inside the app, because in-app demo links carry `?mode=stack` and never reach this branch. Cold,
  * clean browser, from marketing, only.
