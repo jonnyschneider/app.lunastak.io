@@ -43,8 +43,7 @@ a 404, which doesn't confirm it exists. `route-auth.test.ts` fails on any route 
 the guard nor sits on a commented public allowlist, that re-implements identity, or that is
 addressed by an id and doesn't call that resource's guard. `suggest-opposite` now needs a user
 (guests allowed and still not metered) and caps its input at 200 characters. The eval viewer's API
-is dev-only. Feedback is filed as whoever is asking (or anonymously), no longer as whatever
-`userId` the request body named.
+is dev-only.
 
 Template extraction is no longer a route. The pipeline used to `fetch` its own
 `extract-from-template` endpoint without cookies, so the route couldn't be guarded without breaking
@@ -52,7 +51,8 @@ its only caller. Left open, it let anyone write fragments into any project. Now 
 it directly. Four more open routes had no callers, so they were deleted rather than guarded:
 `conversation/[id]/stub`, `conversation/[id]/messages`, `admin/regenerate` (which spent LLM calls on
 any trace) and `quality-rating` (which wrote to any trace), along with the unused `QualityRating`
-component.
+component. So was `feedback`, with its 👍/👎 buttons and an orphaned feedback modal: the buttons sat on
+a chat step that is never reached, and sent a body the route always rejected.
 
 See ARCHITECTURE.md → *API Access*.
 

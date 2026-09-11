@@ -25,7 +25,6 @@ import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions'
 import ChatInterface from '@/components/ChatInterface'
 import ExtractionSummary from '@/components/ExtractionSummary'
 import StrategyDisplay from '@/components/StrategyDisplay'
-import FeedbackButtons from '@/components/FeedbackButtons'
 
 interface DeepDiveOption {
   id: string
@@ -603,7 +602,6 @@ export function ChatSheet({
                 traceId={traceId}
                 projectId={projectId}
               />
-              <FeedbackButtons traceId={traceId} />
             </div>
           )}
         </div>

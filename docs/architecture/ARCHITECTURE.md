@@ -478,9 +478,9 @@ the file, such as an env guard (`VERCEL_ENV`, `NODE_ENV`, `ENABLE_TEST_ENDPOINTS
 check is ever removed. Today's list: NextAuth, `auth/verify-marketing` (marketing-site magic-link
 sign-in: the signed JWT is the credential), `guest/init` (it mints the guest cookie, so there is
 no requester yet), dev- and test-only routes, the Resend webhook, public demo content, and
-`events` / `feedback` / `waitlist`, which are anonymous by design. Anonymous-capable still means
-identity comes from `getRequester()` or nowhere: `feedback` stored a body-supplied `userId` as given
-until 2026-09-11.
+`events` / `waitlist`, which are anonymous by design. Anonymous-capable still means identity comes
+from `getRequester()` or nowhere — never from the request body (the retired `feedback` route stored
+a body-supplied `userId` as given until 2026-09-11).
 
 Minting a guest belongs to the two places that also **set the cookie**: `guest/init` and the demo
 deep-link fallback in `project/[id]` GET. A route that mints a guest without setting a cookie makes
