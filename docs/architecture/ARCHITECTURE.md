@@ -487,6 +487,12 @@ deep-link fallback in `project/[id]` GET. A route that mints a guest without set
 a user nobody can come back as, and every call gets a fresh one, so nothing is metered.
 `conversation/start` did exactly that and was an open LLM proxy until it moved to `requireUser()`.
 
+`guest/init` is a POST, called from the browser by `GuestStart` when a cookieless visitor lands on
+`/`. Never make it the target of a server redirect again. When it was a GET that `/` redirected to,
+every crawler and link unfurler following `/` became a guest with a project. That was ~100 rows a
+week against ~70 real sessions across the app and marketing site combined (measured 2026-09-11),
+which made the guest funnel unreadable.
+
 ### What the test holds, and what it can't see
 
 `route-auth.test.ts` fails when:
