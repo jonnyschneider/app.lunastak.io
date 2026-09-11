@@ -49,11 +49,8 @@ export async function POST(request: Request) {
 
     // The guard runs after the form parse because projectId arrives in the form. "No session" is
     // still a 401 before any DB access: requireUser runs first inside the guard.
-    const auth = await requireProjectAccess(projectId, { guests: false })
+    const auth = await requireProjectAccess(projectId, { guests: false, active: true })
     if (isDenied(auth)) return auth
-    if (auth.project.status !== 'active') {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
 
     // deepDiveId is form input. Owning the project doesn't make any deep-dive id yours: without this
     // a known id from another project planted this document in someone else's deep dive.

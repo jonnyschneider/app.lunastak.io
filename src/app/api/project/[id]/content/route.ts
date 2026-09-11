@@ -1,21 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireProjectAccess, isDenied, type Access } from '@/lib/auth/guard'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { createComponent, updateComponent, deleteComponent } from '@/lib/decision-stack'
 
-/**
- * Reading honours demo projects; writing is the owner's alone — a write that honoured `isDemo`
- * would let any guest edit a showcase project's opportunities and principles (it did, until
- * 2026-09-11). Archived projects are not found either way.
- */
-async function projectAccess(projectId: string, access: Access) {
-  const auth = await requireProjectAccess(projectId, { access })
-  if (isDenied(auth)) return auth
-  if (auth.project.status !== 'active') {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
-  return auth
-}
+// Reading honours demo projects; writing is the owner's alone — a write that honoured `isDemo`
+// would let any guest edit a showcase project's opportunities and principles (it did, until
+// 2026-09-11). Archived projects are not found either way (`active: true`).
 
 /**
  * Map a DecisionStackComponent to the UserContent response shape the UI expects.
@@ -54,7 +44,7 @@ export async function GET(
 ) {
   const { id: projectId } = await params
 
-  const auth = await projectAccess(projectId, 'read')
+  const auth = await requireProjectAccess(projectId, { access: 'read', active: true })
   if (isDenied(auth)) return auth
 
   try {
@@ -93,7 +83,7 @@ export async function POST(
 ) {
   const { id: projectId } = await params
 
-  const auth = await projectAccess(projectId, 'write')
+  const auth = await requireProjectAccess(projectId, { active: true })
   if (isDenied(auth)) return auth
 
   try {
@@ -158,7 +148,7 @@ export async function PUT(
 ) {
   const { id: projectId } = await params
 
-  const auth = await projectAccess(projectId, 'write')
+  const auth = await requireProjectAccess(projectId, { active: true })
   if (isDenied(auth)) return auth
 
   try {
@@ -227,7 +217,7 @@ export async function DELETE(
 ) {
   const { id: projectId } = await params
 
-  const auth = await projectAccess(projectId, 'write')
+  const auth = await requireProjectAccess(projectId, { active: true })
   if (isDenied(auth)) return auth
 
   try {

@@ -27,16 +27,9 @@ export async function POST(
 ) {
   const { id: projectId } = await params
 
-  const auth = await requireProjectAccess(projectId)
-  if (isDenied(auth)) return auth
-
   // An archived project is as good as gone to this route.
-  if (auth.project.status !== 'active') {
-    return new Response(JSON.stringify({ error: 'Project not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  const auth = await requireProjectAccess(projectId, { active: true })
+  if (isDenied(auth)) return auth
 
   // Create a streaming response
   const encoder = new TextEncoder()

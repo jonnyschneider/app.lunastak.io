@@ -119,6 +119,25 @@ describe('requireProjectAccess', () => {
     await requireProjectAccess('p1', { as: USER })
     expect(mocks.getRequester).not.toHaveBeenCalled()
   })
+
+  it('active: an archived project is simply not found — the filter is in the query', async () => {
+    mocks.getRequester.mockResolvedValue(USER)
+    mocks.projectFindFirst.mockResolvedValue(null)
+    const r = await requireProjectAccess('p1', { active: true })
+    expect(mocks.projectFindFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'p1', userId: 'u1', status: 'active' },
+    }))
+    expect(isDenied(r) && r.status).toBe(404)
+  })
+
+  it('active combines with read: own or demo, and active either way', async () => {
+    mocks.getRequester.mockResolvedValue(USER)
+    mocks.projectFindFirst.mockResolvedValue({ id: 'p1', userId: 'x', isDemo: true, status: 'active' })
+    await requireProjectAccess('p1', { access: 'read', active: true })
+    expect(mocks.projectFindFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'p1', status: 'active', OR: [{ userId: 'u1' }, { isDemo: true }] },
+    }))
+  })
 })
 
 describe('requireConversationAccess', () => {

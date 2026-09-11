@@ -71,6 +71,16 @@ it('a project that is not the requester’s → 404', async () => {
   expect(mocks.documentCreate).not.toHaveBeenCalled()
 })
 
+it('an archived project → 404, even for its owner', async () => {
+  // A stand-in DB that honours a status filter: the archived row only answers a query that
+  // doesn't ask for `status: 'active'`.
+  const archived = { id: 'p1', userId: 'u1', isDemo: false, status: 'archived' }
+  mocks.projectFindFirst.mockImplementation(async ({ where }: { where: { status?: string } }) =>
+    where.status && where.status !== archived.status ? null : archived)
+  expect((await upload()).status).toBe(404)
+  expect(mocks.documentCreate).not.toHaveBeenCalled()
+})
+
 it('a deepDiveId from another project → 400, and no document is created', async () => {
   const res = await upload({ deepDiveId: 'dd-foreign' })
   expect(res.status).toBe(400)

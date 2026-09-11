@@ -27,11 +27,8 @@ export async function POST(request: Request) {
 
     // The project arrives in the request, so it goes through the guard: owner only, and an
     // archived project is as not-found as someone else's.
-    const auth = await requireProjectAccess(projectId, { as: requester })
+    const auth = await requireProjectAccess(projectId, { as: requester, active: true })
     if (isDenied(auth)) return auth
-    if (auth.project.status !== 'active') {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
 
     // Create the deep dive
     const deepDive = await prisma.deepDive.create({
@@ -81,11 +78,8 @@ export async function GET(request: Request) {
 
     // The project arrives in the request, so it goes through the guard: owner only, and an
     // archived project is as not-found as someone else's.
-    const auth = await requireProjectAccess(projectId, { as: requester })
+    const auth = await requireProjectAccess(projectId, { as: requester, active: true })
     if (isDenied(auth)) return auth
-    if (auth.project.status !== 'active') {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
 
     // Fetch deep dives with conversation and document counts
     const deepDives = await prisma.deepDive.findMany({

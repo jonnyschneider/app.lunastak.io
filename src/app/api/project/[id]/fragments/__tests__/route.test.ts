@@ -323,7 +323,11 @@ describe('/api/project/[id]/fragments — who may do what', () => {
     ['GET', () => GET(req(), makeParams('p1'))],
     ['PATCH', patch],
   ])('%s on an archived project → 404', async (_m, call) => {
-    mockFindFirstProject.mockResolvedValue({ id: 'p1', userId: 'user-1', isDemo: false, status: 'archived' })
+    // A stand-in DB that honours a status filter: the archived row only comes back to a query
+    // that doesn't ask for `status: 'active'`.
+    const archived = { id: 'p1', userId: 'user-1', isDemo: false, status: 'archived' }
+    mockFindFirstProject.mockImplementation(async ({ where }: { where: { status?: string } }) =>
+      where.status && where.status !== archived.status ? null : archived)
     expect((await call()).status).toBe(404)
     expect(mockFragmentFindMany).not.toHaveBeenCalled()
     expect(mockFragmentUpdateMany).not.toHaveBeenCalled()

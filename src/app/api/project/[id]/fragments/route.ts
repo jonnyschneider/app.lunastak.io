@@ -16,11 +16,8 @@ export async function GET(
   const { id: projectId } = await params
 
   // Own projects + demos; an archived project is not found.
-  const auth = await requireProjectAccess(projectId, { access: 'read' })
+  const auth = await requireProjectAccess(projectId, { access: 'read', active: true })
   if (isDenied(auth)) return auth
-  if (auth.project.status !== 'active') {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
 
   const { searchParams } = new URL(request.url)
   const dimensionFilter = searchParams.get('dimension')
@@ -136,11 +133,8 @@ export async function PATCH(
 ) {
   const { id: projectId } = await params
 
-  const auth = await requireProjectAccess(projectId)
+  const auth = await requireProjectAccess(projectId, { active: true })
   if (isDenied(auth)) return auth
-  if (auth.project.status !== 'active') {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
 
   const body = await request.json()
   const { id, ids, status, archivedReason, reviewed } = body

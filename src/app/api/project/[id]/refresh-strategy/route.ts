@@ -15,14 +15,10 @@ export async function POST(
 ) {
   const { id: projectId } = await params
 
-  const auth = await requireProjectAccess(projectId)
+  // An archived project is as good as gone to this route.
+  const auth = await requireProjectAccess(projectId, { active: true })
   if (isDenied(auth)) return auth
   const { userId } = auth.requester
-
-  // An archived project is as good as gone to this route.
-  if (auth.project.status !== 'active') {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
 
   // Check strategy exists to refresh
   const hasStrategy = await hasDecisionStack(projectId)

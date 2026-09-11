@@ -37,6 +37,16 @@ export interface GuardOptions {
   as?: Requester
 }
 
+export interface ProjectGuardOptions extends GuardOptions {
+  /**
+   * true → an archived project is not found (404), even to its owner. It's a filter in the
+   * query, not a check afterwards, so an archived project answers exactly like one that doesn't
+   * exist. Only projects have a status; the other guards don't take this, so it can't be passed
+   * to one and silently ignored.
+   */
+  active?: boolean
+}
+
 export function isDenied(result: unknown): result is NextResponse {
   return result instanceof Response
 }
@@ -58,11 +68,15 @@ export async function requireUser(
   return requester
 }
 
-export async function requireProjectAccess(projectId: string, opts: GuardOptions = {}) {
+export async function requireProjectAccess(projectId: string, opts: ProjectGuardOptions = {}) {
   const requester = await requireUser(opts)
   if (isDenied(requester)) return requester
   const project = await prisma.project.findFirst({
-    where: { id: projectId, ...projectVisibleTo(requester.userId, opts.access ?? 'write') },
+    where: {
+      id: projectId,
+      ...(opts.active ? { status: 'active' } : {}),
+      ...projectVisibleTo(requester.userId, opts.access ?? 'write'),
+    },
     select: { id: true, userId: true, isDemo: true, status: true },
   })
   if (!project) return notFound('Project')
