@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stackBehind, type StackBehindInputs } from '../stack-behind'
+import { stackBehind, describeStackChanges, type StackBehindInputs } from '../stack-behind'
 
 const base: StackBehindInputs = {
   sync: { version: 3, added: 4, removed: 1, comparable: true },
@@ -44,5 +44,16 @@ describe('stackBehind — guidance register row 4', () => {
   it('falls back when the version is unknown', () => {
     expect(stackBehind({ ...base, sync: { version: null, added: 2, removed: 0, comparable: true } }))
       .toMatchObject({ label: '2 changes since this version', detail: '2 ground truths added since this version' })
+  })
+})
+
+describe('describeStackChanges — shared by the pointer and the Rebuild dialog', () => {
+  it('names both directions', () => {
+    expect(describeStackChanges({ added: 4, removed: 1 })).toBe('4 ground truths added, 1 discarded')
+    expect(describeStackChanges({ added: 0, removed: 3 })).toBe('3 discarded')
+    expect(describeStackChanges({ added: 1, removed: 0 })).toBe('1 ground truth added')
+  })
+  it('is empty when nothing changed', () => {
+    expect(describeStackChanges({ added: 0, removed: 0 })).toBe('')
   })
 })

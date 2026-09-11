@@ -744,6 +744,32 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
     fetchProjectDataRef.current?.()
   }, [])
 
+  /*
+   * ═══ RE-READ THE COUNTS, WITHOUT THE LOADER ═══
+   *
+   * `fetchProjectData` sets `isLoading`, which swaps the whole page for a spinner and remounts it —
+   * fine for arriving, unusable mid-review. So a discard or restore used to refetch NOTHING, and the
+   * counts it moves stayed stale: the sync line, the changed-since ids, the stale flag, the version
+   * pointer, and the Rebuild dialog's "what changed" (on preview 2026-09-11, eight restores later the
+   * panel still read the old diff and the dialog said nothing had changed).
+   *
+   * This one only replaces the data. Debounced, so a run of discards is one read; a failure keeps
+   * what is on screen rather than raising the page's error state for a background refresh.
+   */
+  const refreshCountsRef = useRef<ReturnType<typeof debounce>>()
+  useEffect(() => {
+    refreshCountsRef.current = debounce(async () => {
+      try {
+        const response = await fetch(`/api/project/${projectId}`)
+        if (response.ok) setProjectData(await response.json())
+      } catch {
+        /* keep what is shown — the next full read will correct it */
+      }
+    }, 400)
+    return () => refreshCountsRef.current?.cancel()
+  }, [projectId])
+  const refreshCounts = useCallback(() => { refreshCountsRef.current?.() }, [])
+
   useEffect(() => {
     if (status === 'loading') return
 
@@ -1562,6 +1588,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               projectId={projectId}
               initialFilter={initialFilter}
               initialDimension={initialDimension}
+              onGroundTruthsChanged={refreshCounts}
               onResumeConversation={(convId: string) => {
                 setChatResumeConversationId(convId)
                 setChatViewOnly(false)
@@ -2000,12 +2027,13 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         action={generationDialogAction}
         open={generationDialogOpen}
         onOpenChange={setGenerationDialogOpen}
-        fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+        changes={{ added: stats.strategySync?.added ?? stats.fragmentsSinceStrategy, removed: stats.strategySync?.removed ?? 0 }}
         isFirstTime={generationDialogAction === 'opportunities' && opportunityCount === 0}
         onConfirm={async () => {
           logAndFlush(`confirm_${generationDialogAction}`, 'generation-dialog', {
             projectId,
             fragmentsSinceStrategy: String(stats.fragmentsSinceStrategy),
+            removedSinceStrategy: String(stats.strategySync?.removed ?? 0),
           })
           if (generationDialogAction === 'refresh') {
             const res = await fetch(`/api/project/${projectId}/refresh-strategy`, { method: 'POST' })

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { describeStackChanges } from '@/lib/guidance/stack-behind'
 
 export type GenerationAction = 'refresh' | 'opportunities'
 
@@ -18,8 +19,10 @@ interface GenerationConfig {
   description: string
   confirmLabel: string
   confirmLabelNoChanges: string
-  messageWithChanges: (count: number) => string
-  messageNoChanges: string
+  /** Follows the bold change summary ("4 ground truths added, 1 discarded"). */
+  afterChanges: string
+  /** Follows the bold "Nothing has changed". */
+  afterNoChanges: string
   preparingLabel: string
 }
 
@@ -29,10 +32,9 @@ const GENERATION_CONFIGS: Record<GenerationAction, GenerationConfig> = {
     description: 'Your current strategy is saved as a snapshot before updating — nothing is lost.',
     confirmLabel: 'Refresh Decision Stack',
     confirmLabelNoChanges: 'Refresh anyway',
-    messageWithChanges: (n) =>
-      `${n} new insight${n !== 1 ? 's' : ''} added since the last update. Luna will incorporate these into a refreshed strategy.`,
-    messageNoChanges:
-      'No new insights have been added since the last update. Luna will re-analyse your existing knowledge and may produce a refined strategy.',
+    afterChanges: 'since the last update. Luna will rebuild your strategy from your ground truths as they stand now.',
+    afterNoChanges:
+      'in your ground truths since the last update. Luna will re-analyse the same knowledge and may produce a different result.',
     preparingLabel: 'Updating syntheses with your latest insights',
   },
   opportunities: {
@@ -40,10 +42,8 @@ const GENERATION_CONFIGS: Record<GenerationAction, GenerationConfig> = {
     description: 'Luna will create strategic initiatives linked to your objectives.',
     confirmLabel: 'Generate Opportunities',
     confirmLabelNoChanges: 'Generate anyway',
-    messageWithChanges: (n) =>
-      `${n} new insight${n !== 1 ? 's' : ''} added since the last update. Luna will use your latest knowledge to draft fresh opportunities.`,
-    messageNoChanges:
-      'No new insights have been added since the last update. Luna will draft opportunities based on your current knowledge.',
+    afterChanges: 'since the last update. Luna will use your ground truths as they stand now to draft fresh opportunities.',
+    afterNoChanges: 'in your ground truths since the last update. Luna will draft opportunities from your current knowledge.',
     preparingLabel: 'Analysing your strategy and knowledge base',
   },
 }
@@ -53,7 +53,12 @@ interface GenerationConfirmDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: () => Promise<void>
-  fragmentsSinceStrategy?: number
+  /**
+   * What changed in the ground truths since the stack was built — BOTH directions (`strategySync`).
+   * A discard is a change: counting additions only told a user who had just curated their knowledge
+   * that nothing had changed, and offered the re-roll copy.
+   */
+  changes?: { added: number; removed: number }
   isFirstTime?: boolean // true = no existing content for this action (skip confirmation)
 }
 
@@ -62,13 +67,15 @@ export function GenerationConfirmDialog({
   open,
   onOpenChange,
   onConfirm,
-  fragmentsSinceStrategy = 0,
+  changes = { added: 0, removed: 0 },
   isFirstTime = false,
 }: GenerationConfirmDialogProps) {
   const [error, setError] = useState<string | undefined>()
   const [preparing, setPreparing] = useState(false)
   const runningRef = useRef(false)
   const config = GENERATION_CONFIGS[action]
+  const changeSummary = describeStackChanges(changes)
+  const hasChanges = changeSummary !== ''
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -123,10 +130,10 @@ export function GenerationConfirmDialog({
           {!preparing && !error && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                {fragmentsSinceStrategy > 0 ? (
-                  <><span className="font-medium text-foreground">{config.messageWithChanges(fragmentsSinceStrategy).split(' ').slice(0, 3).join(' ')}</span> {config.messageWithChanges(fragmentsSinceStrategy).split(' ').slice(3).join(' ')}</>
+                {hasChanges ? (
+                  <><span className="font-medium text-foreground">{changeSummary}</span> {config.afterChanges}</>
                 ) : (
-                  <><span className="font-medium text-foreground">No new insights have been added</span> {config.messageNoChanges.replace('No new insights have been added ', '')}</>
+                  <><span className="font-medium text-foreground">Nothing has changed</span> {config.afterNoChanges}</>
                 )}
               </p>
               <div className="flex gap-2 justify-end">
@@ -134,7 +141,7 @@ export function GenerationConfirmDialog({
                   Cancel
                 </Button>
                 <Button onClick={handleConfirm}>
-                  {fragmentsSinceStrategy > 0 ? config.confirmLabel : config.confirmLabelNoChanges}
+                  {hasChanges ? config.confirmLabel : config.confirmLabelNoChanges}
                 </Button>
               </div>
             </div>

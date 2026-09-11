@@ -51,11 +51,24 @@ export function stackBehind({ sync, hasStrategy, isDemo, generating }: StackBehi
 
   const since = version ? `v${version}` : 'this version'
   const label = `${total} ${total === 1 ? 'change' : 'changes'} since ${since}`
+  const detail = `${describeStackChanges({ added, removed })} since ${version ? `Version ${version}` : 'this version'}`
 
+  return { added, removed, version, label, detail }
+}
+
+/**
+ * "4 ground truths added, 1 discarded" — the one wording for what changed since a build, shared by
+ * the version pointer and the Rebuild dialog so the two cannot describe the same diff differently.
+ * Empty string when nothing changed.
+ *
+ * ⚠ BOTH DIRECTIONS. The Rebuild dialog used to count additions only ("N new insights added"), so a
+ * change made purely of discards — the curation the whole ground-truth layer exists for — told the
+ * user nothing had changed and offered "Refresh anyway", the copy meant for re-rolling identical
+ * context.
+ */
+export function describeStackChanges({ added, removed }: { added: number; removed: number }): string {
   const parts: string[] = []
   if (added) parts.push(`${added} ground ${added === 1 ? 'truth' : 'truths'} added`)
   if (removed) parts.push(`${removed} discarded`)
-  const detail = `${parts.join(', ')} since ${version ? `Version ${version}` : 'this version'}`
-
-  return { added, removed, version, label, detail }
+  return parts.join(', ')
 }

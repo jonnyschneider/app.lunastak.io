@@ -241,6 +241,8 @@ interface KnowledgeSummaryPanelProps {
    */
   projectId?: string
   onResumeConversation?: (conversationId: string) => void
+  /** A ground truth was discarded or restored here — the host re-reads its counts. */
+  onGroundTruthsChanged?: () => void
   /** Knowledge-side busy message (extraction, doc processing, syncing) */
   knowledgeBusyMessage?: string | null
   /** Strategy-side busy message (generation, refresh) — shown on RHS */
@@ -272,6 +274,7 @@ export function KnowledgeSummaryPanel({
   defaultExpanded = false,
   projectId,
   onResumeConversation,
+  onGroundTruthsChanged,
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
   readOnly = false,
@@ -824,6 +827,7 @@ export function KnowledgeSummaryPanel({
                 archivedOpen={archivedOpen}
                 onArchivedOpenChange={setArchivedOpen}
                 readOnly={readOnly}
+                onChanged={onGroundTruthsChanged}
               />
             </div>
           )}

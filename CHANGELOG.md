@@ -15,6 +15,14 @@ been added or discarded since that version was built. It links straight to the k
 shows while it is true and goes when you rebuild; there is nothing to dismiss. Guidance register
 row 4 (`guidance_shown` / `cta_view_changes`).
 
+### Fixed — discarding or restoring updates the counts straight away, and Rebuild knows (2026-09-11)
+
+After a discard or restore, the knowledgebase kept showing the old *"since v3"* numbers, its
+*Changed since* list could come up empty, and the Rebuild dialog said nothing had changed and
+offered *Refresh anyway*. The counts now update as soon as the change is saved (no reload, no
+spinner), and the dialog names both directions — *"2 ground truths added, 3 discarded since the last
+update"*. It also says "ground truths" rather than "insights".
+
 ### Fixed — "N discarded since" counted things you never discarded (2026-09-11)
 
 The knowledgebase's *"discarded since v3"* counted every piece of system context the stack was built

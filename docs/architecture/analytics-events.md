@@ -66,7 +66,7 @@ reports through `paywall_*` above.
 | `cta_update_direction` | client | **retired 2026-09-10** | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
 | `cta_draft_opportunities` | client | `opportunity-section` | `projectId`, userType | User triggered opportunity drafting. |
-| `confirm_refresh` | client | `generation-dialog` | `projectId`, `fragmentsSinceStrategy`, userType | User confirmed strategy refresh in the generation dialog. `fragmentsSinceStrategy` reveals whether they refreshed with new context (good) or re-rolled without changes. |
+| `confirm_refresh` | client | `generation-dialog` | `projectId`, `fragmentsSinceStrategy`, `removedSinceStrategy` (from 2026-09-11), userType | User confirmed strategy refresh in the generation dialog. Changed context = `fragmentsSinceStrategy` (ground truths added) **plus** `removedSinceStrategy` (discarded). **Before 2026-09-11 only additions were sent**, so a refresh after pure curation reads as a re-roll in older data — and until the same date the value could also be stale, because a discard or restore did not refresh the page's counts. |
 | `confirm_opportunities` | client | `generation-dialog` | `projectId`, userType | User confirmed opportunity generation. |
 
 ## Knowledge base & evidence
