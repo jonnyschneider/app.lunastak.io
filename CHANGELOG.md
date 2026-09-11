@@ -21,7 +21,10 @@ conversation ids now appear in review URLs, and URLs get copied.
 Three more holes sat behind a login:
 
 - `conversation/start` trusted the guest cookie without validating it, so a cookie set to a
-  signed-up user's id started chats in that user's projects.
+  signed-up user's id started chats in that user's projects. It also gave any caller with no
+  cookie a brand-new guest and ran the LLM on text from the request, a new guest per call, so the
+  guest quota never applied. It now needs a session or a guest cookie, which every real caller
+  already has.
 - An upload stored the `deepDiveId` it was sent without checking it, so a known deep-dive id from
   another project put a document in someone else's deep dive. Moving a conversation into a deep
   dive had the same hole.

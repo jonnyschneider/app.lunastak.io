@@ -20,10 +20,6 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
   'src/app/api/auth/[...nextauth]/route.ts': { reason: 'NextAuth itself' },
   'src/app/api/auth/verify-marketing/route.ts': { reason: 'dev-only', mustContain: 'NODE_ENV' },
   'src/app/api/guest/init/route.ts': { reason: 'mints the guest cookie — there is no requester yet' },
-  'src/app/api/conversation/start/route.ts': {
-    reason: 'mints a guest when there is no requester; identity comes from getRequester()',
-    mustContain: 'getRequester',
-  },
   'src/app/api/demo/strategy/route.ts': { reason: 'public demo content' },
   'src/app/api/dev-login/route.ts': { reason: 'dev-only', mustContain: 'NODE_ENV' },
   'src/app/api/dev/fixtures/route.ts': { reason: 'dev-only', mustContain: 'VERCEL_ENV' },

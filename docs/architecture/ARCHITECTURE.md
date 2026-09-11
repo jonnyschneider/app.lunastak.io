@@ -461,9 +461,14 @@ a demo is readable where it should be and never writable. See `src/app/api/__tes
 Add it to `PUBLIC` in `route-auth.test.ts` with a `reason`. If its safety depends on something in
 the file, such as an env guard (`VERCEL_ENV`, `NODE_ENV`, `ENABLE_TEST_ENDPOINTS`), a signature check
 (`svix`) or `getRequester`, also add `mustContain` with that string. The test then fails if that
-check is ever removed. Today's list: NextAuth, the two routes that mint a guest (`guest/init`,
-`conversation/start`), dev- and test-only routes, the Resend webhook, public demo content, and
+check is ever removed. Today's list: NextAuth, `guest/init` (it mints the guest cookie, so there is
+no requester yet), dev- and test-only routes, the Resend webhook, public demo content, and
 `events` / `feedback` / `waitlist`, which are anonymous by design.
+
+Minting a guest belongs to the two places that also **set the cookie**: `guest/init` and the demo
+deep-link fallback in `project/[id]` GET. A route that mints a guest without setting a cookie makes
+a user nobody can come back as, and every call gets a fresh one, so nothing is metered.
+`conversation/start` did exactly that and was an open LLM proxy until it moved to `requireUser()`.
 
 ### What the test holds, and what it can't see
 
@@ -480,6 +485,7 @@ It can't see an id that arrives in the **body**, or a `read` used where `write` 
 
 | don't | what it caused | instead |
 |---|---|---|
+| Mint a guest for a caller with no requester | `conversation/start` gave every cookieless call a fresh guest and project, then ran the LLM on text from the body. It set no cookie, so the chat couldn't be continued, and each call was a new guest, so the guest quota never applied | `requireUser()` → 401. Only `guest/init` and the demo deep link in `project/[id]` GET mint a guest, because they also set the cookie |
 | Read the `guestUserId` cookie yourself | `conversation/start` passed the raw cookie to `getOrCreateDefaultProject`, so a cookie set to a signed-up user's id started chats in **their** projects | `getRequester()` or the guard. (`transfer-session` reads the cookie as the thing being handed over, and `transferGuestToUser` validates it) |
 | Trust a client-supplied id for a **second** resource | `documents/upload` checked the project but stored the form's `deepDiveId` as given, so a known deep-dive id from another project put a document (file name visible) in someone else's deep dive. `conversation/[id]` PATCH was the same bug through a second door | Scope it to the resource you guarded: `deepDiveInProject(deepDiveId, projectId)`, or a lookup with the parent id in its `where` |
 | `fetch` your own API route server-side | The executor fetched `/api/project/[id]/extract-from-template` with no cookies, so the route couldn't be guarded without breaking its only caller. Left unguarded, it let anyone write fragments into any project | Call the library directly (`src/lib/pipeline/extract-from-template.ts`). Routes are thin wrappers, so there is always a library to call |

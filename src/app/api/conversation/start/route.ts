@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRequester } from '@/lib/auth/current-user';
+import { requireUser, isDenied } from '@/lib/auth/guard';
 import { prisma } from '@/lib/db';
 import { createMessage } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
@@ -97,14 +97,15 @@ export async function POST(req: Request) {
     };
     console.log(`[Start API] Parsed body in ${Date.now() - startTime}ms, suggestedQuestion: ${!!suggestedQuestion}`);
 
-    // Identity: session > VALIDATED guest cookie > (null → mint a new guest below).
-    // The raw cookie used to go straight to getOrCreateDefaultProject — a cookie set to a signed-up
-    // user's id started chats in their projects (auth-gap inventory 2026-09-11).
-    const requester = await getRequester();
+    // A session or a VALIDATED guest cookie — guests included. No requester is a 401, not a fresh
+    // guest: minting one per call made this an unmetered LLM proxy for body-supplied text, and the
+    // chat couldn't be continued anyway (no cookie was set). Every real caller — the chat sheet —
+    // sits on a project page that only renders once there is a requester.
+    const requester = await requireUser();
+    if (isDenied(requester)) return requester;
     console.log(`[Start API] Got requester in ${Date.now() - startTime}ms`);
 
-    // An existing requester keeps their projects; null creates a fresh guest user + project.
-    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(requester?.userId ?? null);
+    const { userId, project: defaultProject } = await getOrCreateDefaultProject(requester.userId);
     console.log(`[Start API] Got project in ${Date.now() - startTime}ms`);
 
     // Use the requested project if provided and user has access, otherwise use default
@@ -276,8 +277,6 @@ export async function POST(req: Request) {
       experimentVariant: conversation.experimentVariant,
       // Include deep dive info if conversation is linked to one
       ...(deepDive && { deepDive: { id: deepDive.id, topic: deepDive.topic } }),
-      // Include guestUserId for session transfer when guest authenticates
-      ...(isGuest && { guestUserId: userId }),
     });
   } catch (error) {
     console.error('Start conversation error:', error);
