@@ -36,7 +36,9 @@ export function reviewBatchKey(source: ReviewBatchSource, id: string): string {
  */
 export function parseReviewBatchKey(key: string | null | undefined): { source: ReviewBatchSource; id: string } | null {
   if (!key) return null
-  const match = /^(doc|bundle|chat):(.+)$/.exec(key)
+  // The id is a cuid (documents, chats) or a UUID (bundle batches) — the same shape gate as the
+  // last-project cookie. Anything else never reaches a query or a dismissal row.
+  const match = /^(doc|bundle|chat):([A-Za-z0-9_-]{1,64})$/.exec(key)
   if (!match) return null
   return { source: SOURCE_BY_PREFIX[match[1]], id: match[2] }
 }

@@ -38,6 +38,17 @@ describe('reviewBatchKey', () => {
     // not mistaken for a dismissal of some ingest.
     expect(parseReviewBatchKey('cmtvgo1zl00035xhgbuyqp8s9')).toBeNull()
   })
+
+  it('accepts real id shapes — a cuid and a bundle batch UUID', () => {
+    expect(parseReviewBatchKey('doc:cmtvgo1zl00035xhgbuyqp8s9')?.id).toBe('cmtvgo1zl00035xhgbuyqp8s9')
+    expect(parseReviewBatchKey('bundle:3f2c9a1e-7b44-4c1d-9f0e-2a6d8b1c5e77')?.source).toBe('bundle')
+  })
+
+  it('gates the id shape, so user input never reaches a query or a dismissal row as-is', () => {
+    for (const junk of ['doc:a b', 'chat:../x', 'bundle:' + 'x'.repeat(65), 'doc:<script>', 'chat:a%20b']) {
+      expect(parseReviewBatchKey(junk)).toBeNull()
+    }
+  })
 })
 
 describe('pickPendingBatch', () => {

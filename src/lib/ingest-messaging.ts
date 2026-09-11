@@ -83,6 +83,15 @@ export function ingestComplete({
 }
 
 /** What the status banner says while an ingest is still running. */
+/**
+ * A second ingest finished while the user was already reading another one's review. They are not
+ * moved (being yanked mid-read is worse than waiting); this toast offers the new one instead, and the
+ * landing table offers it again on their next arrival if they let it go.
+ */
+export function ingestReviewWaiting(source: IngestSource): { title: string; action: string } {
+  return { title: `The ground truths from your ${SOURCE_NOUN[source]} are ready`, action: 'Review' }
+}
+
 export function ingestRunning(source: IngestSource): string {
   switch (source) {
     case 'conversation':

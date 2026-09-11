@@ -87,9 +87,25 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
      */
     expect(source).toMatch(/presentIngestReview\('document', documentId, deepDiveId\)/)
     expect(source).toMatch(/presentIngestReview\('conversation', conversationId, deepDiveId\)/)
-    expect(source).toMatch(/setMode\('review', \{ batch: reviewBatchKey\(source, id\), deepDive: deepDiveId \}\)/)
+    expect(source).toMatch(/const batch = reviewBatchKey\(source, id\)/)
+    expect(source).toMatch(/setMode\('review', \{ batch, deepDive: deepDiveId \}\)/)
     // …and the defer path reopens it.
     expect(source).toMatch(/setMode\('knowledge'\)\s*\n[\s\S]{0,160}if \(reviewDeepDive\) \{\s*\n\s*setSelectedDeepDiveId\(reviewDeepDive\)/)
+  })
+
+  it('an ingest for a project no longer on screen moves nobody', () => {
+    // A chat's completion lives in the root-layout task provider and can fire after the user has
+    // left the project; `setMode` would then push `?mode=review` onto whatever page they are on.
+    expect(source).toMatch(/const presentIngestReview = useCallback\([^)]*\) => \{\s*\n\s*if \(liveProjectIdRef\.current !== projectId\) return/)
+    expect(source).toMatch(/return \(\) => \{ liveProjectIdRef\.current = null \}/)
+  })
+
+  it('a second ingest does not yank the user out of a review they are reading', () => {
+    expect(source).toMatch(/if \(openReviewRef\.current !== null && openReviewRef\.current !== batch\) \{[\s\S]{0,200}toast\.info\(/)
+  })
+
+  it('only honours ?deepDive= for a deep dive of this project', () => {
+    expect(source).toMatch(/projectData\?\.deepDives\?\.some\(dd => dd\.id === deepDiveParam\)/)
   })
 
   it('after a strategy exists, a deep-dive ingest still goes straight back to its deep dive', () => {

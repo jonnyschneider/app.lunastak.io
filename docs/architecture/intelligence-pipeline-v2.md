@@ -611,7 +611,7 @@ pipeline change; this one is the correction.
 
 - **`src/lib/support/dimension-support.ts`** (`226f71c`) — computes dimensional support from
   evidence rather than reading a model self-report. Appears in no module-structure list in either
-  doc; only `screen-map.md:148` mentions it.
+  doc; only `screen-map.md` §3.3 mentions it.
 - **Breaking API shape change** — `/api/project/[id]` `dimensionalCoverage[dim].averageConfidence`
   → `.support` (`route.ts:164-176`), consumed at `page.tsx:104`. The old field is gone, not
   deprecated.

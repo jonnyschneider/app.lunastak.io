@@ -30,13 +30,13 @@ export interface ModeInputs {
   hasContext: boolean
   hasStrategy: boolean
   /**
-   * Some INGEST — a document, or a bundle's import batch — has not yet had its review deferred.
+   * Some INGEST — a document, a bundle's import batch, or a chat — has not yet had its review deferred.
    *
    * ⚠ PER INGEST, NOT PER PROJECT, since 2026-09-10. This was `reviewSeen`, "has this user had their
    * first look?", keyed on the project — so one deferral silenced every later ingest's review too.
    * On prod a bundle imported 26 seconds after a deferral landed on the dashboard with its 20 new
    * ground truths never shown. Each ingest now carries its own `ground_truth_review` row in
-   * `UserDismissal` (`itemKey` = `doc:<id>` | `bundle:<id>`, see `review-batch.ts`).
+   * `UserDismissal` (`itemKey` = `doc:<id>` | `bundle:<id>` | `chat:<id>`, see `review-batch.ts`).
    *
    * Still `UserDismissal` rather than a per-device latch: it survives a reload, works for guests via
    * the `guestUserId` cookie, and is reassigned at signup by `transfer-session.ts`.
@@ -51,7 +51,7 @@ export interface ModeInputs {
    * hydrated stack, so that is where it opens every time.
    *
    * The knowledgebase stays reachable by the toggle; it is simply never the landing. Without this,
-   * a demo falls through to row 4 and re-opens whichever mode you last looked at ON THAT DEMO,
+   * a demo falls through to row 5 and re-opens whichever mode you last looked at ON THAT DEMO,
    * which is right for your own project and wrong for an example someone is being shown.
    */
   isDemo: boolean
@@ -70,11 +70,11 @@ export function resolveProjectMode(i: ModeInputs): ProjectMode {
   // 3. A demo always opens on the stack. Rows 1 and 2 still outrank it: an empty demo has nothing
   //    to show, and `?evidence=1` is someone asking for the ground truths by name.
   //
-  //    Placed ABOVE row 4 because that row is "what you last chose here", and a demo is not a
+  //    Placed ABOVE row 5 because that row is "what you last chose here", and a demo is not a
   //    workspace whose state anyone wants restored — it is an example, and it should look the same
   //    to the tenth visitor as to the first.
   //
-  //    Placed above row 5 too, which is belt and braces: a demo carries a hydrated stack, so
+  //    Placed above row 4 too, which is belt and braces: a demo carries a hydrated stack, so
   //    `hasStrategy` is true and the review can never be offered anyway. Stating it here means the
   //    demo case does not depend on that remaining true.
   if (i.isDemo) return 'stack'

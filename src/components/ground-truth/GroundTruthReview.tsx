@@ -14,7 +14,7 @@
  * it called the same function as Build.) Design:
  * `docs/_plans/2026-09-06-ground-truth-gate-interaction-design.md` §4–§7.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, ChevronDown, FileText, MessageSquare, Package, PencilLine, Loader2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -148,28 +148,8 @@ export function GroundTruthReview({
         const model = buildGateModel(res)
         const all = [...model.weak, ...model.confident]
         setItems(all)
-        /**
-         * ⚠ THE FIRST ROW OPENS ITSELF.
-         *
-         * Collapsed, the list is twenty-odd headings and reads as a table of contents — a user can
-         * scan it, decide nothing looks wrong, and never learn the evidence is underneath (Jonny,
-         * 2026-09-09: "to show the user it's not just headings"). One open row teaches the shape of
-         * every other row, for the price of one row's height.
-         *
-         * The first RENDERED row, not `all[0]` — `groupByDimension` reorders, so they differ.
-         */
-        const firstShown = groupByDimension(all)[0]?.items[0]?.id
-        if (firstShown) setExpanded(firstShown)
         setNoEvidence(model.counts['no-evidence'])
         setArchivedCount(res.archivedCount ?? 0)
-        // Reviewing is being SHOWN something, not clicking it. Everything rendered is stamped.
-        if (all.length > 0) {
-          fetch(`/api/project/${projectId}/fragments`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: all.map(i => i.id), reviewed: true }),
-          }).catch(() => { /* best-effort: a missing timestamp must not block the review */ })
-        }
       })
       .catch(e => { if (live) setError(String(e.message ?? e)) })
     return () => { live = false }
@@ -292,6 +272,56 @@ export function GroundTruthReview({
   const keep = (i: GateItem) => (!filterSet || filterSet.has(i.id)) && (!batch || i.reviewBatch === batch)
   const shown: GateItem[] = (items ?? []).filter(keep)
   const shownArchived = filterSet || batch ? archivedItems?.filter(keep) ?? null : archivedItems
+
+  /**
+   * What the user can actually see: the batch / changed-id filters, then the dimension, exactly as
+   * the list below renders them. The two effects that follow act on THIS, never on the fetch.
+   *
+   * ⚠ THEY BOTH USED THE FETCH RESULT UNTIL 2026-09-11. The list is loaded project-wide and filtered
+   * at render, so a review scoped to one document's 3 ground truths stamped all 19 in the project as
+   * reviewed, and its auto-opened row was usually one the filter had hidden — nothing opened.
+   */
+  const visible = shown.filter(i => !dimension || i.dimension === dimension)
+  const visibleKey = visible.map(i => i.id).join(',')
+
+  /**
+   * ⚠ THE FIRST ROW OPENS ITSELF — the first one RENDERED, once per mount.
+   *
+   * Collapsed, the list is twenty-odd headings and reads as a table of contents — a user can scan it,
+   * decide nothing looks wrong, and never learn the evidence is underneath (Jonny, 2026-09-09: "to
+   * show the user it's not just headings"). One open row teaches the shape of every other row, for
+   * the price of one row's height. `groupByDimension` reorders, so "first rendered" is not
+   * `visible[0]`. Latched: a later filter change or a restore must not yank the user's own expansion.
+   */
+  const autoOpenedRef = useRef(false)
+  useEffect(() => {
+    if (autoOpenedRef.current || !items) return
+    const first = groupByDimension(visible)[0]?.items[0]?.id
+    if (!first) return
+    autoOpenedRef.current = true
+    setExpanded(first)
+    // `visibleKey` stands in for `visible`, which is a fresh array every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, visibleKey])
+
+  /**
+   * Reviewing is being SHOWN something, not clicking it — so what is shown is stamped, and only that.
+   * A row becomes visible later (the user picks another dimension) and is stamped then. Each row is
+   * sent once per mount; the PATCH sets `reviewedAt` to now, so re-sending on every filter toggle
+   * would only churn the timestamp.
+   */
+  const stampedRef = useRef(new Set<string>())
+  useEffect(() => {
+    const ids = visible.map(i => i.id).filter(id => !stampedRef.current.has(id))
+    if (ids.length === 0) return
+    ids.forEach(id => stampedRef.current.add(id))
+    fetch(`/api/project/${projectId}/fragments`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, reviewed: true }),
+    }).catch(() => { /* best-effort: a missing timestamp must not block the review */ })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, visibleKey])
 
   if (error && !items) return <p className="py-6 text-sm text-destructive">{error}</p>
   if (!items) {

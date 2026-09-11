@@ -33,7 +33,11 @@ API Routes (thin) → planPipeline() → executePipeline()
    verbatim span from its source and self-reports `verbatim | interpretation`
    (`src/lib/evidence/`); spans are verified at ingest, and the source is not persisted.
 1. **Structuring** — Persist as Fragments with dimensional tags and their `Evidence` rows
-2. **Meaning-Making** — Synthesise across 11 strategic dimensions (LLM, background)
+2. **Meaning-Making** — Synthesise across 11 strategic dimensions (LLM, background). A dimension's
+   summary describes **exactly its active fragments**: any change to that set since the last run —
+   a discard, or a restore — forces a full rebuild on the next synthesis run (`decideSynthesis`,
+   `src/lib/synthesis/update-synthesis.ts`). Refresh reads these summaries, so a discard must reach
+   them; nothing regenerates *on* a discard itself.
 3. **Output** — Generate Decision Stack: vision, strategy, objectives (LLM). **Does not follow
    Layer 1 automatically.** An initial conversation stops after fragments; the user reviews the
    ground truths, and the first strategy is generated only on a later `generate_from_knowledge`
@@ -164,6 +168,80 @@ When adding a new API or data flow:
 1. Define contract types in `src/lib/contracts/`
 2. Add validation tests in `src/lib/__tests__/contracts/`
 3. Update smoke test if it affects the critical path
+
+---
+
+## Navigation & Landing — `/project/[id]`
+
+*Added 2026-09-11.* The project page's mode is a URL (`?mode=stack | knowledge | review`), where a
+user lands is decided by **one server-side table**, and everything that moves a user between modes
+or into a review goes through a small set of handlers. The design is
+`docs/_plans/2026-09-10-navigation-and-guidance-map-design.md` (local); what is on screen in each
+state is [`screen-map.md`](screen-map.md) §3. This section is the **how to build on it** half.
+
+```
+/project/[id]            page.tsx (server) ── no ?mode ──▶ resolveProjectMode() ──▶ redirect ?mode=…
+/project/[id]?mode=…     page.tsx (server) ── has mode ──▶ <ProjectClient mode=…>   (no DB work)
+                                                              │
+                         setMode() · presentIngestReview() ◀──┘  every in-session move
+```
+
+### Preferred handlers — use these, not the thing they wrap
+
+| job | use | never |
+|---|---|---|
+| Change mode | `setMode(next, { batch?, deepDive? })` — `ProjectClient.tsx` | `router.push('?mode=…')` by hand. `setMode` writes the mode cookie (never for `review`), strips `batch`/`deepDive` outside the review, and pushes (so back undoes a toggle) |
+| Decide where a bare URL lands | a **row** in `resolveProjectMode` — `src/lib/navigation/resolve-mode.ts`, tested by enumeration | a client effect, or a special case at a call site. The table replaced four racing effects |
+| Show an ingest's review | `presentIngestReview(source, id, deepDiveId?)` — `ProjectClient.tsx` | `setMode('review')` directly. It enforces pre-strategy / non-demo, refuses to act for a project no longer on screen, and will not yank a user out of a review they are reading |
+| Name an ingest | `reviewBatchKey(source, id)` / `parseReviewBatchKey(key)` — `review-batch.ts` | string templates like `` `doc:${id}` ``. The parser is the shape gate for user input |
+| Link into a filtered knowledgebase | `knowledgeHref(projectId, filter)`; read with `parseKnowledgeFilter` — `knowledge-filter.ts` | hand-built `?dimension=` / `?filter=`. Two writers and no reader is how `?dimension=` went dead for a day |
+| "Does this project have a strategy?" | `projectHasStrategy({ hasVision, generationTraceCount })` + `hasStackVision(vision)` — `has-strategy.ts` | `!!decisionStack`, or `strategyOutputs.length` on its own. Server and client disagreeing on this stranded users on an unrenderable review |
+| Per-device memory | `writeModeCookie` / `readModeCookieValue` (`mode-cookie.ts`); `writeLastProjectCookie` / `readLastProjectCookie` / `readLastProjectCookieFromDocument` (`last-project-cookie.ts`) | `localStorage` for anything the server must read — the redirect runs before any client code |
+| Record that a review was deferred | `useDismissed(projectId, 'ground_truth_review', batchKey).dismiss` | a per-project key. Reviews are per ingest; one deferral must not silence the next ingest |
+| "Who is this request?" (server) | `getUserId()` — `src/lib/auth/current-user.ts` | reading the `guestUserId` cookie directly. The cookie is an id, not a proof — see [Security & Access Control](#security--access-control) |
+
+### Invariants — each one has already cost a bug
+
+1. **The redirect happens on the server, before render.** A client redirect makes the back button
+   return to the redirector, which sends the user forward again — they cannot leave the project.
+2. **A URL with `?mode` does no database work.** A search-param change re-executes the server
+   component, so any query there puts a round-trip on every toggle. State reads stay behind the
+   no-mode branch of `page.tsx`.
+3. **An empty project renders the cold start whatever the URL says.** The server only checks when
+   `?mode` is absent, so `ProjectClient` re-applies rule 1 itself.
+4. **`review` is a moment, not a place.** Never written to the cookie; reached only by address (the
+   landing table on arrival, `presentIngestReview` in session); only for a project with no
+   strategy, and never a demo.
+5. **A prompt that can fire on a project with a strategy cannot point at the review screen.** The
+   review is first-contact framed (Build is its primary exit). Post-strategy destinations are
+   filters on `?mode=knowledge` — `filter=changed`, `dimension=<d>` — not screens.
+6. **Anything in the URL that names an entity is validated.** Shape-gated always (`batch`, the
+   mode cookie, the last-project cookie); checked against `projectData` when it drives an action
+   (`deepDive` decides what a review's uploads attach to).
+7. **Callbacks can outlive the page.** Background-task completions are held by the root-layout
+   provider and fire after navigation. Anything that navigates from one checks the project is still
+   the one on screen (`liveProjectIdRef` in `ProjectClient`).
+8. **Demos are shop windows.** Always land on `stack`, never offered a review, never recorded as the
+   last project.
+
+### Adding things — the checklists
+
+**A new ingest source** (something that produces ground truths). All four must agree:
+1. `ReviewBatchSource` + its prefix in `review-batch.ts` (and a parser test).
+2. The pending-ingest queries in `project/[id]/page.tsx` — how the landing table finds one waiting.
+3. The batch labelling in `api/project/[id]/fragments/route.ts` — how the review filters to it.
+   ⚠ This is a **second, hand-kept copy** of the source-precedence logic in step 2; they agree today
+   only because each fragment carries exactly one source. Unifying them into one
+   `fragmentReviewBatch()` is outstanding.
+4. A `presentIngestReview(source, id)` call when the ingest completes in session, and the source's
+   noun in `ingest-messaging.ts`.
+
+**A new URL param:** parse it into a whitelist in `lib/navigation/` (with a builder if anything
+links to it); decide whether `setMode` keeps or strips it; decide whether the redirector carries it
+through (`page.tsx`, beside `dimension` and `filter`); validate any entity id it names (invariant 6).
+
+**A new landing rule:** a row in `resolveProjectMode` with its reason in a comment, an enumeration
+test, and — if it needs new state — a query behind the no-mode branch only (invariant 2).
 
 ---
 

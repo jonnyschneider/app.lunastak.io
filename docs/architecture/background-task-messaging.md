@@ -128,14 +128,17 @@ Every component that starts a background task. **New callers: check this table, 
 
 | Caller | File | Action | Type | messaging.running | messaging.complete |
 |--------|------|--------|------|--------------------|--------------------|
-| Project page | `project/[id]/page.tsx` | Generate Strategy | `generation` | Generating your strategy... | Your strategy is ready |
-| Project page | `project/[id]/page.tsx` | Draft Opportunities | `generation` | Drafting opportunities... | Opportunities ready |
-| Chat sheet | `chat-sheet.tsx` | Extract (follow-up) | `extraction` | *(ingest preset)* | *(ingest preset)* |
+| Project page | `project/[id]/ProjectClient.tsx` | Build my strategy | `generation` | Generating your strategy... | Your strategy is ready |
+| Project page | `project/[id]/ProjectClient.tsx` | Draft Opportunities | `generation` | Drafting opportunities... | Opportunities ready |
+| Project page | `project/[id]/ProjectClient.tsx` | Refresh strategy (after `GenerationConfirmDialog`) | `generation` | Refreshing strategy... | Strategy updated |
+| Chat sheet | `chat-sheet.tsx` | End chat / follow-up (`lightweight`) | `extraction` | *(ingest preset)* | *(ingest preset)* |
+| Chat sheet | `chat-sheet.tsx` | Initial chat (`isInitial`) — extraction only, then the review | `generation` | *(ingest preset)* | *(ingest preset)* |
 | Upload dialog | `document-upload-dialog.tsx` | Upload document | `document` | *(ingest preset)* | *(ingest preset)* |
-| Chat sheet | `chat-sheet.tsx` | Initial strategy | `generation` | Building your strategy... | Your strategy is ready |
-| Chat sheet | `chat-sheet.tsx` | Generate after review | `generation` | Generating your strategy... | Your strategy is ready |
-| InlineChat | `InlineChat.tsx` | Draft First Strategy | `generation` | Building your strategy... | Your strategy is ready |
-| RefreshStrategyDialog | `RefreshStrategyDialog.tsx` | Refresh strategy | `generation` | Refreshing strategy... | Strategy updated |
+
+*Updated 2026-09-11.* `InlineChat` and `RefreshStrategyDialog` are deleted (both had no importers).
+The initial chat still runs as a `generation` task because `/api/extract {isInitial}` sets the
+generation status it polls — but it produces no strategy since 2.7.0, so it carries the ingest copy,
+not strategy copy.
 
 ### Full caller examples
 
@@ -173,16 +176,13 @@ startTask('extraction', data.conversationId, projectId, {
 })
 ```
 
-**Refresh strategy** (RefreshStrategyDialog):
+**Refresh strategy** (`ProjectClient.tsx`, on confirm):
 ```ts
 startTask('generation', data.generationId, projectId, {
   running: 'Refreshing strategy...',
   complete: 'Strategy updated',
   failed: 'Strategy refresh failed',
   completeDescription: 'Click to view your updated strategy.',
-  completeAction: (data) => data.traceId
-    ? { label: 'View', href: `/strategy/${data.traceId}` }
-    : undefined,
 })
 ```
 

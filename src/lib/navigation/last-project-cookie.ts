@@ -46,6 +46,22 @@ export function readLastProjectCookie(raw: string | undefined | null): string | 
   return ID_SHAPE.test(value) ? value : null
 }
 
+/**
+ * Client-side read, for the two client surfaces that need the same answer as `/`: the `/project`
+ * redirect page and the header's fallback selection off a project page. Same shape gate as the
+ * server read; the caller still checks the id against the user's own project list.
+ *
+ * ⚠ THIS REPLACED `localStorage.lastProjectId` (2026-09-11). `/` read the cookie while `/project` and
+ * the header read localStorage — two memories of one fact, written in different places (the header
+ * wrote localStorage for demos too; the cookie deliberately never records a demo), free to disagree.
+ */
+export function readLastProjectCookieFromDocument(): string | null {
+  if (typeof document === 'undefined') return null
+  const prefix = `${LAST_PROJECT_COOKIE_NAME}=`
+  const raw = document.cookie.split('; ').find((c) => c.startsWith(prefix))?.slice(prefix.length)
+  return readLastProjectCookie(raw)
+}
+
 /** Client-side write, called when a project you own is opened. */
 export function writeLastProjectCookie(projectId: string): void {
   if (typeof document === 'undefined') return

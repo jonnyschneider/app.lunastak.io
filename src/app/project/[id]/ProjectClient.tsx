@@ -77,6 +77,10 @@ import type { ProjectMode } from '@/lib/navigation/resolve-mode'
 import { writeModeCookie } from '@/lib/navigation/mode-cookie'
 import { parseReviewBatchKey, reviewBatchKey, type ReviewBatchSource } from '@/lib/navigation/review-batch'
 import { writeLastProjectCookie } from '@/lib/navigation/last-project-cookie'
+import { parseKnowledgeFilter } from '@/lib/navigation/knowledge-filter'
+import { projectHasStrategy } from '@/lib/navigation/has-strategy'
+import { ingestReviewWaiting } from '@/lib/ingest-messaging'
+import { toast } from 'sonner'
 
 // Debounce utility to prevent rapid-fire refetches (e.g. multiple events in quick succession)
 function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T & { cancel: () => void } {
@@ -194,7 +198,7 @@ interface Dismissal {
   projectId: string | null
 }
 
-/** One first look per project. Lives here because the page owns when it is over. */
+/** One review per ingest, keyed `doc:` | `bundle:` | `chat:` (`review-batch.ts`). The page owns when each is over. */
 const GROUND_TRUTH_REVIEW_ITEM_TYPE = 'ground_truth_review'
 
 interface ProjectClientProps {
@@ -247,7 +251,12 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   const [generationDialogAction, setGenerationDialogAction] = useState<GenerationAction>('refresh')
   const [chatsActiveTab, setChatsActiveTab] = useState<string | undefined>(undefined)
   // Derived state needed by header injection
-  const hasStrategy = projectData?.hasStrategy === true || (projectData?.strategyOutputs?.length ?? 0) > 0
+  // The same definition the landing table uses (`lib/navigation/has-strategy.ts`). `hasStrategy` from
+  // the API is its vision half; `strategyOutputs` are the project's generation traces.
+  const hasStrategy = projectHasStrategy({
+    hasVision: projectData?.hasStrategy === true,
+    generationTraceCount: projectData?.strategyOutputs?.length ?? 0,
+  })
 
   /**
    * ═══ HAS THIS PROJECT BEEN GIVEN ANYTHING? ═══
@@ -286,7 +295,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   )
 
   /**
-   * The ingest the review is scoped to — `?batch=doc:<id>` | `bundle:<id>` — validated, never trusted:
+   * The ingest the review is scoped to — `?batch=doc:<id>` | `bundle:<id>` | `chat:<id>` — validated, never trusted:
    * it is a URL param, and junk must not filter the review down to nothing.
    */
   const reviewBatch = parseReviewBatchKey(searchParams.get('batch')) ? searchParams.get('batch') : null
@@ -302,7 +311,16 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   const { dismiss: deferReview } = useDismissed(projectId, GROUND_TRUTH_REVIEW_ITEM_TYPE, reviewBatch)
 
   /** The deep dive this review hands back to when the user leaves it — only meaningful on the review. */
-  const reviewDeepDive = mode === 'review' ? searchParams.get('deepDive') : null
+  /*
+   * ⚠ ONLY A DEEP DIVE OF THIS PROJECT. `?deepDive=` is user input: leaving the review opens that deep
+   * dive, and adding from the review attaches the upload or chat to it — so a crafted link could
+   * otherwise aim a user's own upload at a deep dive that is not theirs. Unknown ids are dropped.
+   */
+  const deepDiveParam = mode === 'review' ? searchParams.get('deepDive') : null
+  const reviewDeepDive =
+    deepDiveParam && projectData?.deepDives?.some(dd => dd.id === deepDiveParam)
+      ? deepDiveParam
+      : null
 
   /**
    * ═══ THE MODE COMES FROM THE URL ═══
@@ -330,7 +348,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
 
   /**
    * Change mode by navigating. The cookie is the per-device preference the server reads back when a
-   * later visit arrives with no `?mode` at all (`resolveProjectMode` row 4) — it is a hint, never
+   * later visit arrives with no `?mode` at all (`resolveProjectMode` row 5) — it is a hint, never
    * the authority. `review` is never written: it is a moment, not a place to return to.
    */
   const setMode = useCallback((next: ProjectMode, opts?: { batch?: string; deepDive?: string }) => {
@@ -389,7 +407,26 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * After a strategy exists there is no review (it is framed for first contact), so a deep-dive
    * ingest goes straight back to its deep dive, as it always did.
    */
+  /*
+   * ⚠ THE CALLBACK CAN OUTLIVE THE PAGE THAT MADE IT. A chat's completion is stored in the
+   * background-task provider, which lives in the root layout — so it fires after the user has moved
+   * to another project, or off projects entirely, and `setMode` would then push `?mode=review` onto
+   * whatever page they are on now, carrying a batch from a different project. `liveProjectIdRef` is
+   * the project actually on screen (null once unmounted); an ingest for any other project does
+   * nothing here, and the landing table offers its review on the next arrival instead.
+   */
+  const liveProjectIdRef = useRef<string | null>(projectId)
+  liveProjectIdRef.current = projectId
+  useEffect(() => {
+    liveProjectIdRef.current = projectId
+    return () => { liveProjectIdRef.current = null }
+  }, [projectId])
+  /* The review currently open, if any — read at completion time, not at registration. */
+  const openReviewRef = useRef<string | null>(null)
+  openReviewRef.current = mode === 'review' ? (searchParams.get('batch') ?? 'unscoped') : null
+
   const presentIngestReview = useCallback((source: ReviewBatchSource, id: string, deepDiveId?: string) => {
+    if (liveProjectIdRef.current !== projectId) return
     if (hasStrategyRef.current || projectData?.isDemo === true) {
       if (deepDiveId) {
         setSelectedDeepDiveId(deepDiveId)
@@ -397,8 +434,22 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
       }
       return
     }
+    const batch = reviewBatchKey(source, id)
+    /*
+     * ⚠ NOT WHILE ANOTHER REVIEW IS OPEN. Two ingests finishing close together used to push the second
+     * review over the first, mid-read — and the first stayed pending, so back returned to it. The
+     * second is offered as a toast instead; the landing table offers it again if they let it go.
+     */
+    if (openReviewRef.current !== null && openReviewRef.current !== batch) {
+      const waiting = ingestReviewWaiting(source)
+      toast.info(waiting.title, {
+        action: { label: waiting.action, onClick: () => setMode('review', { batch, deepDive: deepDiveId }) },
+        duration: 10000,
+      })
+      return
+    }
     logAndFlush('tab_switch', 'ingest-landed', { projectId, source, inDeepDive: String(!!deepDiveId) })
-    setMode('review', { batch: reviewBatchKey(source, id), deepDive: deepDiveId })
+    setMode('review', { batch, deepDive: deepDiveId })
   }, [projectId, projectData?.isDemo, setMode])
 
   /**
@@ -427,8 +478,13 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * wrong in every one of those particulars. Only row 2, which carries `!hasStrategy` in its trigger,
    * gets the screen. This was already the shipped judgement for the diff itself: "the diff is a
    * filter you can see, not a place you land in" (2026-09-08).
+   *
+   * `?dimension=<d>` is the other addressable filter. Both are read through `parseKnowledgeFilter`
+   * and built with `knowledgeHref` (`lib/navigation/knowledge-filter.ts`) — never by hand.
    */
-  const initialFilter = searchParams.get('filter') === 'changed' ? 'changed' : null
+  const knowledgeFilter = parseKnowledgeFilter(searchParams)
+  const initialFilter = knowledgeFilter?.kind === 'changed' ? 'changed' : null
+  const initialDimension = knowledgeFilter?.kind === 'dimension' ? knowledgeFilter.dimension : null
 
   /*
    * ⚠ NO `fragmentCount > 0` CLAUSE. It belonged to the old yield rule — don't let an empty dashboard
@@ -473,7 +529,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
 
 
   // Inject tab nav + demo right slot into header
-  const { setTabNav, setRightSlot } = useHeaderTabNav()
+  const { setTabNav } = useHeaderTabNav()
   const isDemo = projectData?.isDemo === true
 
   const isSignedUp = !!session?.user?.id
@@ -1243,17 +1299,22 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
           */}
           {hasContext && activeTab === 'knowledgebase' && <div>
             {/*
-              ═══ FIRST LOOK REPLACES THE DASHBOARD ═══
-              Fragments exist, no strategy does, and the user has not yet said they have looked.
-              The knowledgebase renders ONLY this — the summary, chats, documents and integrations
-              all wait. A first-time user meeting a four-card dashboard has no way to tell that the
-              thing that matters is the list in one quadrant of it.
+              ═══ THE REVIEW REPLACES THE DASHBOARD ═══
+              `?mode=review`, no strategy yet, not a demo (`showReview`). The knowledgebase renders
+              ONLY this — the summary, chats, documents and integrations all wait. A first-time user
+              meeting a four-card dashboard has no way to tell that the thing that matters is the
+              list in one quadrant of it.
 
-              `reviewSeenLoaded` gates the whole branch so the dashboard never flashes up and get
-              replaced a beat later by a screen the user had already dismissed.
+              Reached only by address (see "THE REVIEW IS REACHED BY ADDRESS" above), so there is no
+              dismissal read to wait for and nothing to flash — the old `reviewSeenLoaded` gate went
+              with the per-project model.
             */}
             {showReview ? (
               <GroundTruthReviewScreen
+                /* Keyed by batch: its list is fetched once per mount, so moving from one ingest's
+                   review to another's must remount it — today that only happens because a refetch
+                   shows the full-page spinner, which is not something to depend on. */
+                key={reviewBatch ?? 'unscoped'}
                 projectId={projectId}
                 batch={reviewBatch}
                 fragmentCount={stats.fragmentCount ?? 0}
@@ -1354,6 +1415,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               readOnly
               /* The only thing on a demo's knowledgebase — collapsed, it is a blank page. */
               defaultExpanded
+              initialDimension={initialDimension}
             />
             </div>
             ) : (
@@ -1426,6 +1488,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               // above becomes the fallback it now only takes in demo mode.
               projectId={projectId}
               initialFilter={initialFilter}
+              initialDimension={initialDimension}
               onResumeConversation={(convId: string) => {
                 setChatResumeConversationId(convId)
                 setChatViewOnly(false)

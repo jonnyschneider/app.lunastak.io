@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed — a review scoped to one upload opens its first row, and marks only what it showed (2026-09-11)
+
+A review of one document's ground truths opened with every row collapsed, and quietly marked every
+ground truth in the project as reviewed — not just the ones on screen. The list is loaded for the
+whole project and narrowed to the upload at display time, and both the "open the first row" pick and
+the reviewed stamp ran on the whole list. Per-ingest reviews in 2.8.1 made that the common case. Both
+now act on the rows the user can actually see.
+
+### Fixed — a refresh is no longer built on ground truths you discarded (2026-09-11)
+
+Discarding a ground truth and then refreshing should produce a stack without it. It didn't
+reliably: a refresh reads each dimension's summary, and a dimension with nothing *new* was skipped
+— so a discard-only change left the discarded truth inside the summary the refresh read. A
+dimension whose last ground truth was discarded was never revisited at all. Now any change to what a
+dimension's summary was built from (a discard, or an undo) rebuilds it on the next refresh. Nothing
+regenerates on the discard itself.
+
+### Fixed — the review routing, hardened (2026-09-11)
+
+- Finishing a chat, then switching project before its ground truths were ready, could land you on
+  the *other* project in a review of the first one's chat. A finished ingest now only opens a review
+  if you are still on its project; otherwise it is offered on your next visit.
+- Two uploads finishing close together no longer swap you out of the first review mid-read — the
+  second is offered with a *Review* button instead.
+- A project whose strategy exists only in its history (older projects) was offered a first-contact
+  review it could never show, on every visit. The server and the page now agree on what "has a
+  strategy" means.
+- `?dimension=` links (including the old `/fragments` address) open the knowledgebase filtered to
+  that dimension again.
+- `/` and `/project` now agree on which project you were last in.
+
+### Removed (2026-09-11)
+
+- `InlineChat`, `RefreshStrategyDialog`, and the header's unused `rightSlot` — no importers.
+
 ## [2.8.1] - 2026-09-10
 
 ### Fixed — every document and bundle gets its own review, and it actually appears (2026-09-10)

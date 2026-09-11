@@ -25,6 +25,7 @@ import { getUserId } from '@/lib/auth/current-user'
 import { resolveProjectMode, type ProjectMode } from '@/lib/navigation/resolve-mode'
 import { MODE_COOKIE_NAME, readModeCookieValue } from '@/lib/navigation/mode-cookie'
 import { pickPendingBatch, reviewBatchKey } from '@/lib/navigation/review-batch'
+import { hasStackVision, projectHasStrategy } from '@/lib/navigation/has-strategy'
 import ProjectClient from './ProjectClient'
 
 const GROUND_TRUTH_REVIEW_ITEM_TYPE = 'ground_truth_review'
@@ -101,12 +102,18 @@ export default async function ProjectRoute({
     (counts?._count.documents ?? 0) > 0
 
   /*
-   * ⚠ MATCHES THE API'S DEFINITION, which is `!!decisionStack && vision !== ''`
-   * (`api/project/[id]/route.ts:266`) — NOT merely "a DecisionStack row exists". A row with an
-   * empty vision is created before generation completes, so counting it would make the review rule
-   * see a strategy that is not there yet and send a user past the review of what they just shared.
+   * ⚠ THE SAME DEFINITION `ProjectClient` USES — `projectHasStrategy` (`lib/navigation/has-strategy.ts`).
+   * A non-empty vision, or failing that a generation Trace (a legacy project can hold its strategy
+   * only there). Until 2026-09-11 this counted the vision alone while the client also counted traces,
+   * so a trace-only project was offered a review the client would never render, on every visit.
+   *
+   * The trace count is a second query, so it runs only when the vision has not already answered and
+   * only for an authorised project.
    */
-  const hasStrategy = !!counts?.decisionStack && counts.decisionStack.vision !== ''
+  const hasVision = hasStackVision(counts?.decisionStack?.vision)
+  const generationTraceCount =
+    counts && !hasVision ? await prisma.trace.count({ where: { conversation: { projectId: id } } }) : 0
+  const hasStrategy = projectHasStrategy({ hasVision, generationTraceCount })
 
   /*
    * ═══ WHICH INGEST, IF ANY, IS STILL WAITING FOR ITS REVIEW? ═══
@@ -174,11 +181,16 @@ export default async function ProjectRoute({
   /*
    * `evidence` is CONSUMED here. It only ever meant "take me to what was extracted", and the mode it
    * was asking for is now in the URL properly — which retires the localStorage double-write it
-   * needed to survive a `router.replace` remount. `dimension` survives: the panel still filters on
-   * it, and it is a different question.
+   * needed to survive a `router.replace` remount.
+   *
+   * `dimension` and `filter` are CARRIED THROUGH: they are the knowledgebase's addressable filters
+   * (`lib/navigation/knowledge-filter.ts`), and a bare-URL arrival must not lose them on the way to a
+   * mode. `ProjectClient` validates them; this only preserves them. (`dimension` was read by nothing
+   * from `FragmentExplorer`'s deletion until 2026-09-11, when the parser gave it a reader again.)
    */
   const query = new URLSearchParams({ mode: resolved })
   if (typeof sp.dimension === 'string') query.set('dimension', sp.dimension)
+  if (typeof sp.filter === 'string') query.set('filter', sp.filter)
 
   /*
    * `resolved === 'review'` IS the pending-ingest rule and nothing else: every other row returns a
@@ -194,5 +206,5 @@ export default async function ProjectRoute({
     query.set('landed', '1')
   }
 
-  redirect(`/project/${id}?${query}`)
+  redirect(`/project/${encodeURIComponent(id)}?${query}`)
 }
