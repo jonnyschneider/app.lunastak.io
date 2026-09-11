@@ -48,6 +48,46 @@ function routeFiles(): string[] {
 
 const guarded = (f: string) => GUARD_IMPORT.test(readFileSync(f, 'utf8'))
 
+const GUARD_FNS = ['requireUser', 'requireProjectAccess', 'requireConversationAccess', 'requireTraceAccess', 'requireDocumentAccess']
+const HTTP_METHOD = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/
+
+/** Comments out, so a guard named in a doc comment doesn't count. `(^|\s)//` spares `https://`. */
+const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
+
+/**
+ * A route file's top-level functions: `[export] [async] function name` or `[export] const name =`,
+ * each at column 0 (they all are) and running until the next. Imperfect as a parser, fine as a
+ * ratchet: anything it mis-splits fails loudly (a handler reported unguarded), never silently.
+ */
+function declarations(src: string): { name: string; exported: boolean; body: string }[] {
+  const code = stripComments(src)
+  const starts = Array.from(code.matchAll(/^(export\s+)?(?:async\s+)?(?:function\s+(\w+)|const\s+(\w+)\s*=)/gm))
+  return starts.map((m, i) => ({
+    name: m[2] ?? m[3],
+    exported: Boolean(m[1]),
+    body: code.slice(m.index ?? 0, starts[i + 1]?.index ?? code.length),
+  }))
+}
+
+const calls = (body: string, fn: string) => new RegExp(`\\b${fn}\\(`).test(body)
+
+const handlerNames = (src: string) => declarations(src).filter(d => d.exported && HTTP_METHOD.test(d.name)).map(d => d.name)
+
+/**
+ * The exported handlers in `src` that never reach one of `fns`. A handler reaches it by calling it,
+ * or by calling a same-file helper that does (one level — `deep-dive/[id]`'s
+ * `canAccessDeepDiveProject`, `project/[id]/share`'s `requireShareableProject`).
+ */
+function unguardedHandlers(src: string, fns: string[]): string[] {
+  const decls = declarations(src)
+  const reaches = (body: string) => fns.some(fn => calls(body, fn))
+  const guardingHelpers = decls.filter(d => !HTTP_METHOD.test(d.name) && reaches(d.body)).map(d => d.name)
+  return decls
+    .filter(d => d.exported && HTTP_METHOD.test(d.name))
+    .filter(h => !reaches(h.body) && !guardingHelpers.some(helper => calls(h.body, helper)))
+    .map(h => h.name)
+}
+
 describe('API route auth', () => {
   it('discovers the API routes (a broken glob must not pass vacuously)', () => {
     const files = routeFiles()
@@ -58,6 +98,21 @@ describe('API route auth', () => {
   it('every API route imports the guard or is explicitly public', () => {
     const offenders = routeFiles().filter(f => !guarded(f) && !(f in PUBLIC))
     expect(offenders, 'import @/lib/auth/guard, or add to PUBLIC with a reason').toEqual([])
+  })
+
+  /**
+   * Importing the guard is per file; a forgotten check is per handler. Adding an unguarded DELETE
+   * next to a guarded GET must fail here, not pass because the file already imports the guard.
+   */
+  it('every handler in a non-public route reaches a guard', () => {
+    const offenders = routeFiles().filter(f => !(f in PUBLIC))
+      .flatMap(f => unguardedHandlers(readFileSync(f, 'utf8'), GUARD_FNS).map(h => `${f} ${h}`))
+    expect(offenders, 'call a guard in the handler, or in a same-file helper it calls').toEqual([])
+  })
+
+  it('every non-public route has a handler the check can see (an unseen export form would pass vacuously)', () => {
+    const unseen = routeFiles().filter(f => !(f in PUBLIC) && handlerNames(readFileSync(f, 'utf8')).length === 0)
+    expect(unseen, 'export handlers as `export async function GET` or `export const GET =`').toEqual([])
   })
 
   it('public routes still carry the guard their safety depends on', () => {
@@ -93,13 +148,47 @@ describe('API route auth', () => {
     [/\/api\/trace\/\[traceId\]\//, 'requireTraceAccess'],
     [/\/api\/documents\/\[id\]\//, 'requireDocumentAccess'],
     [/\/api\/extraction-status\/\[conversationId\]\//, 'requireConversationAccess'],
+    [/\/api\/projects\/\[id\]\//, 'requireProjectAccess'],
+    [/\/api\/strategies\/\[id\]\//, 'requireTraceAccess'],
   ]
 
-  it('a route addressed by a resource id calls that resource’s guard', () => {
-    const wrong = routeFiles().filter(guarded).flatMap(f => {
+  it('every handler in an addressed-by-id route reaches that resource’s guard', () => {
+    const wrong = routeFiles().filter(f => !(f in PUBLIC)).flatMap(f => {
       const src = readFileSync(f, 'utf8')
-      return SEGMENT_GUARD.filter(([re, fn]) => re.test(f) && !src.includes(`${fn}(`)).map(([, fn]) => `${f} → ${fn}`)
+      return SEGMENT_GUARD.filter(([re]) => re.test(f))
+        .flatMap(([, fn]) => unguardedHandlers(src, [fn]).map(h => `${f} ${h} → ${fn}`))
     })
     expect(wrong).toEqual([])
+  })
+})
+
+describe('unguardedHandlers — the per-handler check the ratchet runs', () => {
+  const guardedGet = `export async function GET() {\n  const auth = await requireProjectAccess(id)\n  return auth\n}\n`
+
+  it('flags an unguarded handler even when another handler in the file is guarded', () => {
+    const src = guardedGet + `export async function DELETE() {\n  await prisma.project.delete({ where: { id } })\n}\n`
+    expect(unguardedHandlers(src, GUARD_FNS)).toEqual(['DELETE'])
+  })
+
+  it('accepts one level of indirection through a same-file helper', () => {
+    const src = `async function canAccess(id) {\n  return requireProjectAccess(id)\n}\n` +
+      `export async function PATCH() {\n  if (!(await canAccess(id))) return nope\n}\n`
+    expect(unguardedHandlers(src, GUARD_FNS)).toEqual([])
+  })
+
+  it('does not count a guard that is only mentioned in a comment', () => {
+    const src = `/**\n * Calls requireUser( before anything.\n */\nexport async function POST() {\n  // requireUser() goes here\n  return ok\n}\n`
+    expect(unguardedHandlers(src, GUARD_FNS)).toEqual(['POST'])
+  })
+
+  it('does not count a guarding helper the handler never calls', () => {
+    const src = `function unused() {\n  return requireUser()\n}\n` + `export const GET = async () => {\n  return list()\n}\n`
+    expect(unguardedHandlers(src, GUARD_FNS)).toEqual(['GET'])
+  })
+
+  it('checks for the specific guard when asked (the SEGMENT_GUARD rule)', () => {
+    const src = `export async function GET() {\n  const r = await requireUser()\n}\n`
+    expect(unguardedHandlers(src, ['requireProjectAccess'])).toEqual(['GET'])
+    expect(unguardedHandlers(src, ['requireUser'])).toEqual([])
   })
 })

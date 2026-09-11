@@ -476,7 +476,10 @@ a user nobody can come back as, and every call gets a fresh one, so nothing is m
 - a route neither imports the guard nor is on `PUBLIC`;
 - a `PUBLIC` entry has lost its `mustContain`, or names a deleted file;
 - a route re-implements identity (its own `GUEST_COOKIE_NAME` or `get*UserId()`);
-- a route whose **path** names a resource by id doesn't call that resource's guard.
+- any **handler** in a non-public route calls no guard. It's checked per exported `GET`/`POST`/…,
+  not per file, so an unguarded `DELETE` beside a guarded `GET` fails. A same-file helper that calls
+  the guard counts, one level deep (`deep-dive/[id]`'s `canAccessDeepDiveProject`);
+- any handler in a route whose **path** names a resource by id doesn't reach that resource's guard.
 
 It can't see an id that arrives in the **body**, or a `read` used where `write` was meant.
 [`conventions-rubric.md`](conventions-rubric.md) C29/C30 cover those at audit.
