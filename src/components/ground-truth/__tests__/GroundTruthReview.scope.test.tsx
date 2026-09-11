@@ -76,4 +76,12 @@ describe('GroundTruthReview — a batch-scoped review', () => {
     await waitFor(() => expect(patches.length).toBeGreaterThan(0))
     expect(patches.flatMap((p) => p.ids).sort()).toEqual(['a', 'b', 'c'])
   })
+
+  // A demo viewer hasn't reviewed anything of theirs, and PATCH /fragments is owner-only — the stamp
+  // could only 404 (seen in the auth-gap UAT on preview, 2026-09-11).
+  it('stamps nothing in readOnly — viewing a demo is not reviewing it', async () => {
+    render(<GroundTruthReview projectId="p1" readOnly />)
+    await waitFor(() => expect(has('EVIDENCE-a') || has('EVIDENCE-b') || has('EVIDENCE-c')).toBe(true))
+    expect(patches).toEqual([])
+  })
 })
