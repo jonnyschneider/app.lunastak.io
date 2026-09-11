@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '@/components/layout/app-layout'
 import { Loader2 } from 'lucide-react'
+import { readLastProjectCookieFromDocument } from '@/lib/navigation/last-project-cookie'
 
 /**
  * Redirect page - fetches user's projects and redirects to the first one
@@ -25,7 +26,7 @@ export default function ProjectRedirect() {
         if (response.ok) {
           const data = await response.json()
           if (data.projects && data.projects.length > 0) {
-            const storedId = localStorage.getItem('lastProjectId')
+            const storedId = readLastProjectCookieFromDocument()
             const target = (storedId && data.projects.some((p: { id: string }) => p.id === storedId)) ? storedId : data.projects[0].id
             router.replace(`/project/${target}`)
           }

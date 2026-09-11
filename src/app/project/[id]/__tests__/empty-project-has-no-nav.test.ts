@@ -87,9 +87,43 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
      */
     expect(source).toMatch(/presentIngestReview\('document', documentId, deepDiveId\)/)
     expect(source).toMatch(/presentIngestReview\('conversation', conversationId, deepDiveId\)/)
-    expect(source).toMatch(/setMode\('review', \{ batch: reviewBatchKey\(source, id\), deepDive: deepDiveId \}\)/)
+    expect(source).toMatch(/const batch = reviewBatchKey\(source, id\)/)
+    expect(source).toMatch(/setMode\('review', \{ batch, deepDive: deepDiveId \}\)/)
     // …and the defer path reopens it.
     expect(source).toMatch(/setMode\('knowledge'\)\s*\n[\s\S]{0,160}if \(reviewDeepDive\) \{\s*\n\s*setSelectedDeepDiveId\(reviewDeepDive\)/)
+  })
+
+  it('an ingest for a project no longer on screen moves nobody', () => {
+    // A chat's completion lives in the root-layout task provider and can fire after the user has
+    // left the project; `setMode` would then push `?mode=review` onto whatever page they are on.
+    expect(source).toMatch(/const presentIngestReview = useCallback\([^)]*\) => \{\s*\n\s*if \(liveProjectIdRef\.current !== projectId\) return/)
+    expect(source).toMatch(/return \(\) => \{ liveProjectIdRef\.current = null \}/)
+  })
+
+  it('a second ingest does not yank the user out of a review they are reading', () => {
+    expect(source).toMatch(/if \(openReviewRef\.current !== null && openReviewRef\.current !== batch\) \{[\s\S]{0,200}toast\.info\(/)
+  })
+
+  it('only honours ?deepDive= for a deep dive of this project', () => {
+    expect(source).toMatch(/projectData\?\.deepDives\?\.some\(dd => dd\.id === deepDiveParam\)/)
+  })
+
+  it('row 4 (stack behind) owns a hook, so it must sit ABOVE the loading/error early returns', () => {
+    // Hooks after an early return change order between the loading render and the loaded one.
+    const hook = source.indexOf("logAndFlush('guidance_shown', 'stack-behind'")
+    const earlyReturn = source.indexOf("if (status === 'loading' || isLoading) {")
+    expect(hook).toBeGreaterThan(0)
+    expect(earlyReturn).toBeGreaterThan(0)
+    expect(hook).toBeLessThan(earlyReturn)
+  })
+
+  it('row 4 leads to the changed-since filter through setMode, not a hand-built URL', () => {
+    expect(source).toMatch(/setMode\('knowledge', \{ filter: \{ kind: 'changed' \} \}\)/)
+  })
+
+  it('setMode strips a knowledge filter from every move that does not ask for one', () => {
+    // An arrival instruction left on the URL would re-open a diff the user had cleared.
+    expect(source).toMatch(/url\.searchParams\.delete\('filter'\)\s*\n\s*url\.searchParams\.delete\('dimension'\)\s*\n\s*if \(next === 'knowledge' && opts\?\.filter\)/)
   })
 
   it('after a strategy exists, a deep-dive ingest still goes straight back to its deep dive', () => {

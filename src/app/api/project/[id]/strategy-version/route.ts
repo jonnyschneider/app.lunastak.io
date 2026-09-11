@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { isGuestUser } from '@/lib/projects';
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard';
 import {
   validateStrategyVersionInput,
   StrategyVersionInputContract,
@@ -14,26 +11,6 @@ import {
   getSnapshots,
 } from '@/lib/decision-stack';
 
-const GUEST_COOKIE_NAME = 'guestUserId';
-
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.id) return session.user.id;
-
-  const cookieStore = await cookies();
-  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME);
-  if (guestCookie?.value) {
-    const guestUser = await prisma.user.findUnique({
-      where: { id: guestCookie.value },
-      select: { email: true },
-    });
-    if (guestUser && isGuestUser(guestUser.email)) {
-      return guestCookie.value;
-    }
-  }
-  return null;
-}
-
 /**
  * GET /api/project/[id]/strategy-version
  * Fetch snapshot history (replaces per-component version history)
@@ -42,26 +19,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { id: projectId } = await params;
 
-  // Verify project access
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      OR: [{ userId }, { isDemo: true }],
-    },
-    select: { id: true },
-  });
-
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
+  // Version history is readable on a demo project, like the rest of it.
+  const auth = await requireProjectAccess(projectId, { access: 'read' });
+  if (isDenied(auth)) return auth;
 
   const snapshots = await getSnapshots(projectId);
 
@@ -86,25 +48,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { id: projectId } = await params;
 
-  // Verify project access
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      userId,
-    },
-  });
-
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
+  const auth = await requireProjectAccess(projectId);
+  if (isDenied(auth)) return auth;
 
   const body = await request.json();
 

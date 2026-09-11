@@ -10,9 +10,11 @@
  *   2. Demos never write it — enforced at the call site in `ProjectClient`, since this module has
  *      no way to know. Noted here so a future writer does not add one carelessly.
  */
+import { afterEach } from 'vitest'
 import {
   LAST_PROJECT_COOKIE_NAME,
   readLastProjectCookie,
+  readLastProjectCookieFromDocument,
   writeLastProjectCookie,
 } from '../last-project-cookie'
 
@@ -63,5 +65,21 @@ describe('readLastProjectCookie', () => {
   it('accepts a plausible id — the database decides whether it is really theirs', () => {
     expect(readLastProjectCookie('clx123abc')).toBe('clx123abc')
     expect(readLastProjectCookie(encodeURIComponent('clx123abc'))).toBe('clx123abc')
+  })
+})
+
+describe('readLastProjectCookieFromDocument — the client half of the same memory', () => {
+  const clear = () => { document.cookie = `${LAST_PROJECT_COOKIE_NAME}=; path=/; max-age=0` }
+  afterEach(clear)
+
+  it('reads back what the project page wrote', () => {
+    writeLastProjectCookie('cmtvgo1zl00035xhgbuyqp8s9')
+    expect(readLastProjectCookieFromDocument()).toBe('cmtvgo1zl00035xhgbuyqp8s9')
+  })
+
+  it('returns null with no cookie, and never trusts junk', () => {
+    expect(readLastProjectCookieFromDocument()).toBeNull()
+    document.cookie = `${LAST_PROJECT_COOKIE_NAME}=${encodeURIComponent('<script>')}; path=/`
+    expect(readLastProjectCookieFromDocument()).toBeNull()
   })
 })

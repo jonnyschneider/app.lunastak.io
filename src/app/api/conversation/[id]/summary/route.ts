@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireConversationAccess, isDenied } from '@/lib/auth/guard';
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions';
 
 /**
@@ -23,6 +24,10 @@ export async function GET(
       { status: 400 }
     );
   }
+
+  // `read`: a demo project's conversations are viewable, so their summaries are too.
+  const auth = await requireConversationAccess(conversationId, { access: 'read' });
+  if (isDenied(auth)) return auth;
 
   // Get conversation with basic info
   const conversation = await prisma.conversation.findUnique({

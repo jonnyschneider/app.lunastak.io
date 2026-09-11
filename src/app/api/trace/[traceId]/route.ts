@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isDenied, requireTraceAccess } from '@/lib/auth/guard'
 
 export async function GET(
   request: NextRequest,
@@ -9,15 +8,17 @@ export async function GET(
 ) {
   try {
     const { traceId } = await params
-    const session = await getServerSession(authOptions)
 
-    // Find the trace with project info (projectId denormalized directly on Trace)
+    // `read`: the owner, or anyone on a demo project's trace. There is no "has the id → allow" case
+    // any more — a guest who just generated carries a validated cookie and passes as the owner, and
+    // shared links go through /share/[token], not here.
+    const auth = await requireTraceAccess(traceId, { access: 'read' })
+    if (isDenied(auth)) return auth
+
+    // projectId is denormalized directly on Trace
     const trace = await prisma.trace.findUnique({
       where: { id: traceId },
       include: {
-        conversation: {
-          select: { userId: true },
-        },
         project: {
           select: { id: true, name: true, isDemo: true },
         },
@@ -30,23 +31,6 @@ export async function GET(
         { status: 404 }
       )
     }
-
-    // Check access: user must own the trace or conversation
-    // For guest users, we allow access if they have the trace ID (shared link scenario)
-    // For authenticated users, verify ownership
-    if (session?.user?.id && !trace.project?.isDemo) {
-      const isOwner = trace.userId === session.user.id ||
-                      trace.conversation?.userId === session.user.id
-
-      if (!isOwner) {
-        return NextResponse.json(
-          { error: 'You do not have permission to view this strategy' },
-          { status: 403 }
-        )
-      }
-    }
-    // Note: For guest users without a session, we currently allow access if they have the traceId
-    // This enables the "just generated" scenario before auth transfer completes
 
     return NextResponse.json({
       id: trace.id,

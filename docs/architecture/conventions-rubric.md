@@ -38,6 +38,8 @@ confirmed by Jonny; the rubric row is itself the written source.
 | C17 | Core logic, types and utilities live in `src/lib/`; `src/components/` is React components | `CLAUDE.md:44-46` | JUDGMENT | `src/**` |
 | C28 | **Narrows G6.** Tombstones live in `docs/architecture/retired-<name>.md`, not `docs/retired-<name>.md` — `docs/*` is gitignored in this repo and an untracked tombstone is not a tombstone. Precedent: `retired-prompt-registry.md` (2026-08-27). | `.gitignore:118-121` + `base-rubric.md` G6 | GREP | `docs/**` |
 | C27 | An App Router `route.ts` exports only handlers and route-segment config — a helper a test wants goes to `src/lib/`, not into the route's exports | `src/lib/__tests__/route-exports.test.ts` (added 2026-09-08 after a preview build failure) | TEST → same file | `src/app/**/route.ts` |
+| C29 | Every API route goes through `@/lib/auth/guard`, or is on `PUBLIC` with a reason; a route addressed by a resource id calls that resource's guard | `ARCHITECTURE.md` → *API Access — every route goes through the guard* (added 2026-09-11 after an inventory found 14 routes with no auth) | TEST → `src/app/api/__tests__/route-auth.test.ts` (guard import or `PUBLIC`; a `PUBLIC` entry's `mustContain` still present; no hand-rolled identity — `GUEST_COOKIE_NAME` / `get*UserId()`; path-segment `[id]` → that resource's guard) **+ JUDGMENT** for ids arriving in the request body, and the `read` vs `write` choice (`read` never on a write) | `src/app/api/**` |
+| C30 | A client-supplied id for a *second* resource (`deepDiveId`, `traceId`, a `projectId` in a body) is checked to belong to the requester's resource before it's stored or acted on | `ARCHITECTURE.md` → *API Access* → Don'ts (the `deepDiveId` planting bug, 2026-09-11) | JUDGMENT | `src/app/api/**`, `src/components/**` |
 
 ## Doc-currency rows
 
@@ -85,6 +87,7 @@ break is known, and the reason is on file._
 | row | where | what happened |
 |---|---|---|
 | G8 (one commit per retirement) | `0b0cde7`, 2026-09-08 | The `ExtractionRun` retirement was folded into a `fix:` commit that also carries three unrelated bug fixes, where G8 wants one dedicated `refactor:`/`chore:` commit. Cause: the dead table was found *during* a conformance review and got swept up with the bugs the same pass found. Left as-is — the commit is pushed history, and rewriting it to satisfy a hygiene rule costs more than the rule is worth. Tombstone and recovery tag are correct, so the retirement is still one command to recover. |
+| *Demo access is read-only* (ARCHITECTURE.md's route table; now C29's `read` vs `write`) | `4ff4995`, 2026-03-27 → caught 2026-09-11 | To let demos read `project/[id]/content`, the fix widened the one access check that GET, POST, PUT and DELETE all shared, so any signed-in user or guest could create, edit or delete a showcase project's opportunities and principles. The doc said owner-only the whole time. No test pinned the writes and no reviewer re-read the table. Caught by the guard migration, whose per-method `access` made each method state its level (`bf4e359`). The fix is in the code; the 5½ months are left on the record. The lesson carried into C29: a shared access helper hides the level each method is actually granted. |
 
 ## Candidates (watching)
 
@@ -104,5 +107,4 @@ _Not violations. They fire on the named trigger. Cleared by doing them, not by a
 | trigger | what goes stale | checklist |
 |---|---|---|
 | deploy of `feat/ground-truth-check-backend` | `intelligence-pipeline-v2.md` §1 Layer 3; §2 decision matrix (mermaid **and** table at `:209`) — `plan.ts` returns `generation: null` for `conversation_ended{isInitial:true}` where the matrix still shows `Generate ✓ mode: initial` | `intelligence-pipeline-v2.md:503-506` |
-| deploy of `feat/ground-truth-check-backend` | `service-blueprints.md` Task 2 (`:133-159`) still describes the pre-`f553d6f` single-call flow | `intelligence-pipeline-v2.md:503-506` |
-| deploy of the 2026-09-04 evidence layer (app branch **+** `lunastak/tools` `feat/verbatim-bundle-evidence`, schema applied beyond dev) | `intelligence-pipeline-v2.md` §1 Layer 0, §3 ERD, §5 LLM table; `service-blueprints.md` **Tasks 2–4**; and `db:check-drift` on preview/prod — currently expected to report drift, which **must not be approved away** until then | `intelligence-pipeline-v2.md:587-590` |
+| deploy of the 2026-09-04 evidence layer (app branch **+** `lunastak/tools` `feat/verbatim-bundle-evidence`, schema applied beyond dev) | `intelligence-pipeline-v2.md` §1 Layer 0, §3 ERD, §5 LLM table; and `db:check-drift` on preview/prod — currently expected to report drift, which **must not be approved away** until then. (`service-blueprints.md` Tasks 2–4: **done 2026-09-11**) | `intelligence-pipeline-v2.md:587-590` |

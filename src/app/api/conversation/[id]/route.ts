@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireConversationAccess, deepDiveInProject, isDenied } from '@/lib/auth/guard';
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  // `read`, not the default `write`: a demo project's conversations open for anyone viewing it.
+  const auth = await requireConversationAccess(id, { access: 'read' });
+  if (isDenied(auth)) return auth;
 
   const conversation = await prisma.conversation.findUnique({
     where: { id },
@@ -43,23 +48,27 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  const auth = await requireConversationAccess(id); // write (the default): owner only — viewing a demo project doesn't let you change it
+  if (isDenied(auth)) return auth;
+
   const { deepDiveId, status } = await req.json();
-
-  const conversation = await prisma.conversation.findUnique({
-    where: { id },
-    select: { id: true },
-  });
-
-  if (!conversation) {
-    return NextResponse.json(
-      { error: 'Conversation not found' },
-      { status: 404 }
-    );
-  }
 
   // Build update data - only include fields that were provided
   const updateData: { deepDiveId?: string | null; status?: string } = {};
   if (deepDiveId !== undefined) {
+    // Owning the conversation doesn't make any deep-dive id yours: only one of the conversation's
+    // own project is accepted, or this door plants the conversation in someone else's deep dive.
+    // A conversation with no project has no deep dives to join. Clearing (null) needs no check.
+    if (deepDiveId) {
+      const { projectId } = auth.conversation;
+      if (!projectId || !(await deepDiveInProject(deepDiveId, projectId))) {
+        return NextResponse.json(
+          { error: 'Deep dive not found in this project' },
+          { status: 400 }
+        );
+      }
+    }
     updateData.deepDiveId = deepDiveId || null;
   }
   if (status !== undefined) {

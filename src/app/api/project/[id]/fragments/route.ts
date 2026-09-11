@@ -1,34 +1,8 @@
 // src/app/api/project/[id]/fragments/route.ts
 import { reviewBatchKey } from '@/lib/navigation/review-batch'
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
-
-async function getAuthUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-  let userId: string | null = session?.user?.id || null
-
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  return userId
-}
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 
 /**
  * GET /api/project/[id]/fragments
@@ -39,26 +13,16 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getAuthUserId()
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id: projectId } = await params
+
+  // Own projects + demos; an archived project is not found.
+  const auth = await requireProjectAccess(projectId, { access: 'read', active: true })
+  if (isDenied(auth)) return auth
+
   const { searchParams } = new URL(request.url)
   const dimensionFilter = searchParams.get('dimension')
   const statusFilter = searchParams.get('status') || 'active'
   const sourceFilter = searchParams.get('source') // 'conversation' | 'document'
-
-  // Verify project access (own projects + demos)
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, status: 'active', OR: [{ userId }, { isDemo: true }] },
-    select: { id: true },
-  })
-
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
 
   // Build where clause
   const where: Record<string, unknown> = { projectId }
@@ -167,24 +131,13 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getAuthUserId()
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id: projectId } = await params
+
+  const auth = await requireProjectAccess(projectId, { active: true })
+  if (isDenied(auth)) return auth
+
   const body = await request.json()
   const { id, ids, status, archivedReason, reviewed } = body
-
-  // Verify project access
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, userId, status: 'active' },
-    select: { id: true },
-  })
-
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
 
   /**
    * `{ ids, reviewed: true }` stamps `reviewedAt` without touching status.

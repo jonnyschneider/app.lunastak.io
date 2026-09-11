@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
+import { requireUser, isDenied } from '@/lib/auth/guard'
 
 /**
  * POST /api/auth/prepare-transfer
@@ -20,24 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true }) // No-op
     }
 
-    const cookieStore = await cookies()
-    const guestUserId = cookieStore.get(GUEST_COOKIE_NAME)?.value
-
-    if (!guestUserId) {
-      console.log('[PrepareTransfer] No guest cookie, nothing to prepare')
+    // Only a guest has anything to hand over. The guard validates the guest cookie against the
+    // database (this route used to do that by hand). Anyone else — no identity, or already signed
+    // in — is a no-op, and still a 200: the sign-in page must never be blocked by this call.
+    const requester = await requireUser()
+    if (isDenied(requester) || !requester.isGuest) {
+      console.log('[PrepareTransfer] No guest to transfer, nothing to prepare')
       return NextResponse.json({ success: true })
     }
-
-    // Verify it's actually a guest user
-    const guestUser = await prisma.user.findUnique({
-      where: { id: guestUserId },
-      select: { email: true },
-    })
-
-    if (!guestUser || !isGuestUser(guestUser.email)) {
-      console.log('[PrepareTransfer] Invalid guest user, skipping')
-      return NextResponse.json({ success: true })
-    }
+    const guestUserId = requester.userId
 
     // Upsert: delete any existing pending transfer for this email, then create
     await prisma.pendingGuestTransfer.deleteMany({

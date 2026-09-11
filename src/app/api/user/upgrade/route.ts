@@ -1,21 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { requireUser, isDenied } from '@/lib/auth/guard';
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Signed-up users only. Keyed by the session's user id — the same row the session email named.
+  const requester = await requireUser({ guests: false });
+  if (isDenied(requester)) return requester;
 
   try {
     const { feature } = await request.json();
 
     // Update user to Pro (set upgradedAt timestamp)
     const user = await prisma.user.update({
-      where: { email: session.user.email },
+      where: { id: requester.userId },
       data: {
         upgradedAt: new Date(),
       },

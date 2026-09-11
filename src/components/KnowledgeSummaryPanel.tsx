@@ -213,6 +213,12 @@ interface KnowledgeSummaryPanelProps {
    */
   initialFilter?: 'changed' | null
   /**
+   * The dimension this panel opens filtered to, from `?dimension=` — validated by
+   * `parseKnowledgeFilter`, so only a real Tier-1 dimension arrives here. Opens the panel for the same
+   * reason `initialFilter` does. Ignored when `initialFilter` is set: one filter at a time.
+   */
+  initialDimension?: Tier1Dimension | null
+  /**
    * Start expanded rather than collapsed.
    *
    * The panel is collapsed by default because it normally sits above conversations, documents and
@@ -235,6 +241,8 @@ interface KnowledgeSummaryPanelProps {
    */
   projectId?: string
   onResumeConversation?: (conversationId: string) => void
+  /** A ground truth was discarded or restored here — the host re-reads its counts. */
+  onGroundTruthsChanged?: () => void
   /** Knowledge-side busy message (extraction, doc processing, syncing) */
   knowledgeBusyMessage?: string | null
   /** Strategy-side busy message (generation, refresh) — shown on RHS */
@@ -262,9 +270,11 @@ export function KnowledgeSummaryPanel({
   onRefreshClick,
   onDimensionClick,
   initialFilter = null,
+  initialDimension = null,
   defaultExpanded = false,
   projectId,
   onResumeConversation,
+  onGroundTruthsChanged,
   knowledgeBusyMessage = null,
   strategyBusyMessage = null,
   readOnly = false,
@@ -273,7 +283,9 @@ export function KnowledgeSummaryPanel({
   const knowledgeBusy = !!knowledgeBusyMessage
   const strategyBusy = !!strategyBusyMessage
   const isBusy = knowledgeBusy || strategyBusy
-  const [isExpanded, setIsExpanded] = useState(initialFilter !== null || defaultExpanded)
+  const [isExpanded, setIsExpanded] = useState(
+    initialFilter !== null || initialDimension !== null || defaultExpanded
+  )
   const expandedAtRef = useRef<number | null>(null)
 
   const handleToggle = useCallback(() => {
@@ -312,7 +324,9 @@ export function KnowledgeSummaryPanel({
    * be fetched.
    */
   const inPlace = !!projectId
-  const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
+  const [selectedDimension, setSelectedDimension] = useState<string | null>(
+    initialFilter === null ? initialDimension : null
+  )
   const [truthCounts, setTruthCounts] = useState<{ total: number; archived: number } | null>(null)
   const [archivedOpen, setArchivedOpen] = useState(false)
   /** Showing only what changed since the stack was built. Cleared when a dimension is picked —
@@ -813,6 +827,7 @@ export function KnowledgeSummaryPanel({
                 archivedOpen={archivedOpen}
                 onArchivedOpenChange={setArchivedOpen}
                 readOnly={readOnly}
+                onChanged={onGroundTruthsChanged}
               />
             </div>
           )}

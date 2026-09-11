@@ -131,7 +131,7 @@ export function shutdownStatsig() {
 
 /**
  * Log a custom event to Statsig for experiment metrics
- * Use for key conversion events like strategy_generated, quality_rating, etc.
+ * Use for key conversion events like strategy_generated.
  */
 export async function logStatsigEvent(
   userId: string,

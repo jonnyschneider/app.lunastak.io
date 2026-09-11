@@ -8,30 +8,57 @@ import { fullSynthesis } from './full-synthesis'
 import { incrementalSynthesis } from './incremental-synthesis'
 import { FragmentForSynthesis } from './types'
 
+export type SynthesisDecision = 'skip' | 'full' | 'incremental'
+
+export interface SynthesisDecisionInputs {
+  existing: { summary: string | null; lastSynthesizedAt: Date; fragmentCount: number }
+  /** Active fragments tagged to the dimension now. */
+  allCount: number
+  /** Of those, captured after the last synthesis. */
+  newCount: number
+  /** Fragments tagged to the dimension that were discarded (archived / soft-deleted) since then. */
+  discardedSince: number
+  now?: Date
+}
+
 /**
- * Determine if we should do full synthesis or incremental
+ * Skip, rebuild, or add to a dimension's synthesis.
+ *
+ * ⚠ A SUMMARY MUST DESCRIBE EXACTLY THE ACTIVE FRAGMENTS. Until 2026-09-11 this only ever asked
+ * "is anything new?", so a discard-only change skipped the dimension outright and the discarded
+ * ground truth stayed baked into the summary that refresh generation reads as its strategic
+ * context — the user removed it, and the next stack was still built on it. Incremental synthesis
+ * cannot fix that either: it is handed the existing summary plus the new fragments, and has no way
+ * to take anything out.
+ *
+ * So any change to the set of fragments the summary was built from forces a FULL rebuild:
+ *
+ *   - `discardedSince > 0` — something was taken out;
+ *   - `allCount - newCount !== existing.fragmentCount` — the already-seen set is not the one the
+ *     summary counted. Catches a discarded fragment being RESTORED (restore clears `archivedAt` and
+ *     its `capturedAt` is old, so it looks neither new nor discarded), and a fragment whose
+ *     `capturedAt` predates the last run but which that run never saw.
+ *
+ * Only when nothing was added or changed is the dimension skipped. This runs on refresh and on the
+ * 15-fragment threshold — never on a discard itself (Dispositions, service-blueprints.md: do NOT
+ * auto-regenerate on archive).
  */
-function shouldFullSynthesis(
-  existingSynthesis: { summary: string | null; lastSynthesizedAt: Date; fragmentCount: number },
-  allFragmentsCount: number,
-  newFragmentsCount: number
-): boolean {
-  // 1. No existing synthesis
-  if (!existingSynthesis.summary) return true
+export function decideSynthesis(i: SynthesisDecisionInputs): SynthesisDecision {
+  const { existing, allCount, newCount, discardedSince } = i
+  if (!existing.summary) return 'full'
 
-  // 2. Synthesis is stale (> 30 days old)
+  const setChanged = discardedSince > 0 || allCount - newCount !== existing.fragmentCount
+  if (newCount === 0 && !setChanged) return 'skip'
+  if (setChanged) return 'full'
+
+  // Unchanged rules for a purely additive change.
+  const now = i.now ?? new Date()
   const daysSinceLastSynthesis =
-    (Date.now() - existingSynthesis.lastSynthesizedAt.getTime()) / (1000 * 60 * 60 * 24)
-  if (daysSinceLastSynthesis > 30) return true
-
-  // 3. Fragments changed significantly (> 50% new)
-  if (allFragmentsCount > 0 && newFragmentsCount / allFragmentsCount > 0.5) return true
-
-  // 4. Very few fragments (< 5) - full synthesis is cheap
-  if (allFragmentsCount < 5) return true
-
-  // Otherwise, use incremental
-  return false
+    (now.getTime() - existing.lastSynthesizedAt.getTime()) / (1000 * 60 * 60 * 24)
+  if (daysSinceLastSynthesis > 30) return 'full' // stale
+  if (allCount > 0 && newCount / allCount > 0.5) return 'full' // >50% new
+  if (allCount < 5) return 'full' // very few fragments — full is cheap
+  return 'incremental'
 }
 
 /**
@@ -111,20 +138,33 @@ export async function updateDimensionalSynthesis(
     f => f.capturedAt > existingSynthesis.lastSynthesizedAt
   )
 
-  // 4. Early exit: if no new fragments and we have an existing synthesis, skip entirely
-  if (newFragments.length === 0 && existingSynthesis.summary) {
-    console.log(`[Synthesis] Skipping ${dimension} - no new fragments`)
+  // 4. Anything taken out of this dimension since the summary was written?
+  const since = existingSynthesis.lastSynthesizedAt
+  const discardedSince = await prisma.fragment.count({
+    where: {
+      projectId,
+      dimensionTags: { some: { dimension } },
+      OR: [
+        { status: 'archived', archivedAt: { gt: since } },
+        { status: 'soft_deleted', softDeletedAt: { gt: since } },
+      ],
+    },
+  })
+
+  // 5. Skip, rebuild, or add — see `decideSynthesis`
+  const decision = decideSynthesis({
+    existing: existingSynthesis,
+    allCount: allFragments.length,
+    newCount: newFragments.length,
+    discardedSince,
+  })
+  if (decision === 'skip') {
+    console.log(`[Synthesis] Skipping ${dimension} - no change since last synthesis`)
     return
   }
+  const useFullSynthesis = decision === 'full'
 
-  // 5. Decide: full or incremental?
-  const useFullSynthesis = shouldFullSynthesis(
-    existingSynthesis,
-    allFragments.length,
-    newFragments.length
-  )
-
-  console.log(`[Synthesis] Using ${useFullSynthesis ? 'FULL' : 'INCREMENTAL'} synthesis (${newFragments.length} new fragments)`)
+  console.log(`[Synthesis] Using ${useFullSynthesis ? 'FULL' : 'INCREMENTAL'} synthesis (${newFragments.length} new, ${discardedSince} discarded)`)
 
   // 6. Run synthesis
   const fragmentsForSynthesis: FragmentForSynthesis[] = useFullSynthesis
@@ -168,7 +208,21 @@ export async function updateAllSyntheses(projectId: string): Promise<void> {
     distinct: ['dimension']
   })
 
-  const dimensions = dimensionsWithFragments.map(d => d.dimension as Tier1Dimension)
+  /*
+   * ⚠ PLUS every dimension that HAD a summary. Asking only "which dimensions have active fragments"
+   * meant a dimension whose last ground truth was discarded was never revisited, so its old summary
+   * (and `fragmentCount > 0`) kept feeding refresh generation. `updateDimensionalSynthesis` resets a
+   * dimension with no active fragments to empty; it has to be called for that to happen.
+   */
+  const previouslySynthesised = await prisma.dimensionalSynthesis.findMany({
+    where: { projectId, fragmentCount: { gt: 0 } },
+    select: { dimension: true },
+  })
+
+  const dimensions = Array.from(new Set([
+    ...dimensionsWithFragments.map(d => d.dimension),
+    ...previouslySynthesised.map(d => d.dimension),
+  ])) as Tier1Dimension[]
 
   console.log(`[Synthesis] Updating ${dimensions.length} dimensions for project ${projectId}`)
 

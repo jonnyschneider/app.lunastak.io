@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { cookies } from 'next/headers';
-import { authOptions } from '@/lib/auth';
+import { requireUser, isDenied } from '@/lib/auth/guard';
 import { prisma } from '@/lib/db';
 import { createMessage } from '@/lib/claude';
 import { getExperimentVariant } from '@/lib/statsig';
@@ -9,8 +7,6 @@ import { getOrCreateDefaultProject } from '@/lib/projects';
 import { getProjectKnowledgeForPrompt } from '@/lib/knowledge-summary';
 import { DIMENSION_CONTEXT, Tier1Dimension } from '@/lib/constants/dimensions';
 import { extractText } from '@/lib/extract-text';
-
-const GUEST_COOKIE_NAME = 'guestUserId';
 
 export const maxDuration = 300; // 5 minutes for Pro plan
 
@@ -101,21 +97,15 @@ export async function POST(req: Request) {
     };
     console.log(`[Start API] Parsed body in ${Date.now() - startTime}ms, suggestedQuestion: ${!!suggestedQuestion}`);
 
-    // Get session to check if user is authenticated
-    const session = await getServerSession(authOptions);
-    console.log(`[Start API] Got session in ${Date.now() - startTime}ms`);
+    // A session or a VALIDATED guest cookie — guests included. No requester is a 401, not a fresh
+    // guest: minting one per call made this an unmetered LLM proxy for body-supplied text, and the
+    // chat couldn't be continued anyway (no cookie was set). Every real caller — the chat sheet —
+    // sits on a project page that only renders once there is a requester.
+    const requester = await requireUser();
+    if (isDenied(requester)) return requester;
+    console.log(`[Start API] Got requester in ${Date.now() - startTime}ms`);
 
-    // Check for existing guest cookie FIRST - before creating new users
-    const cookieStore = await cookies();
-    const existingGuestId = cookieStore.get(GUEST_COOKIE_NAME)?.value;
-
-    // Determine user identity: authenticated > existing guest > new guest
-    const authenticatedUserId = session?.user?.id || null;
-    const existingUserId = authenticatedUserId || existingGuestId || null;
-
-    // Get or create project - pass existing user ID if available
-    // This ensures we use the existing guest's projects, not create a new user
-    const { userId, project: defaultProject, isGuest } = await getOrCreateDefaultProject(existingUserId);
+    const { userId, project: defaultProject } = await getOrCreateDefaultProject(requester.userId);
     console.log(`[Start API] Got project in ${Date.now() - startTime}ms`);
 
     // Use the requested project if provided and user has access, otherwise use default
@@ -287,8 +277,6 @@ export async function POST(req: Request) {
       experimentVariant: conversation.experimentVariant,
       // Include deep dive info if conversation is linked to one
       ...(deepDive && { deepDive: { id: deepDive.id, topic: deepDive.topic } }),
-      // Include guestUserId for session transfer when guest authenticates
-      ...(isGuest && { guestUserId: userId }),
     });
   } catch (error) {
     console.error('Start conversation error:', error);

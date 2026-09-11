@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
-import { isGuestUser, createGuestUser } from '@/lib/projects'
+import { computeStrategySync } from '@/lib/ground-truth/strategy-sync'
+import { createGuestUser } from '@/lib/projects'
 import { computeDimensionSupport, type SupportLevel } from '@/lib/support/dimension-support'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
+import { getRequester, GUEST_COOKIE_NAME } from '@/lib/auth/current-user'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 
 /**
  * GET /api/project/[id]
@@ -19,31 +18,11 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
   const { id: projectId } = await params
 
-  // Determine user ID from session or guest cookie
-  let userId: string | null = session?.user?.id || null
+  let requester = await getRequester()
 
-  if (!userId) {
-    // Check for guest cookie
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-    if (guestCookie?.value) {
-      // Validate it's a real guest user
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  if (!userId) {
+  if (!requester) {
     // Demo deep-link fallback: if the requested project is a demo, mint a
     // guest session inline so unauthenticated visitors from marketing/share
     // links can view it. Mirrors /api/guest/init.
@@ -54,7 +33,6 @@ export async function GET(
 
     if (demoCheck) {
       const guestUser = await createGuestUser()
-      userId = guestUser.id
 
       const cookieStore = await cookies()
       cookieStore.set(GUEST_COOKIE_NAME, guestUser.id, {
@@ -63,25 +41,24 @@ export async function GET(
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30,
       })
+
+      // The cookie just set can't be read back in this request, so the guard is told who it is.
+      requester = { userId: guestUser.id, isGuest: true }
     }
   }
 
-  if (!userId) {
+  if (!requester) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Demo projects are readable by anyone signed in (or just minted, above).
+  const auth = await requireProjectAccess(projectId, { access: 'read', as: requester })
+  if (isDenied(auth)) return auth
+
   try {
     // Get the project with related data
-    // Demo projects are accessible to any authenticated user
     const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        status: 'active',
-        OR: [
-          { userId: userId },
-          { isDemo: true },
-        ],
-      },
+      where: { id: projectId, status: 'active' },
       include: {
         conversations: {
           where: { status: { not: 'abandoned' } },
@@ -293,27 +270,14 @@ export async function GET(
      * through to the timestamp heuristic is wrong in one direction, where treating null as an
      * empty set would report every ground truth as newly added.
      */
-    const snapshotIds = Array.isArray(latestSnapshot?.fragmentIds)
-      ? new Set(latestSnapshot!.fragmentIds as string[])
-      : null
-
-    const activeIds = new Set(groundTruths.map(f => f.id))
-
-    // The ids, not just the tally: "3 added, 2 discarded" is only useful if the user can then ask
-    // WHICH, and the answer is a filter over lists the panel already renders.
-    //
-    // Ground truths only, for the same reason as every other user-facing count: the diff is a
-    // clickable filter over the review, so an id the review will never render would be counted and
-    // then vanish when clicked.
-    const addedIds = snapshotIds
-      ? groundTruths.filter(f => !snapshotIds.has(f.id)).map(f => f.id)
-      : latestSnapshot
-        ? groundTruths.filter(f => f.createdAt > latestSnapshot.createdAt).map(f => f.id)
-        : groundTruths.map(f => f.id)
-
-    const removedIds = snapshotIds
-      ? Array.from(snapshotIds).filter(id => !activeIds.has(id))
-      : []
+    // What changed since the build, by id — `lib/ground-truth/strategy-sync.ts` (tested). Removal is
+    // measured against ALL active fragments, additions against ground truths only; see the module.
+    const { addedIds, removedIds, comparable } = computeStrategySync({
+      snapshotIds: Array.isArray(latestSnapshot?.fragmentIds) ? (latestSnapshot!.fragmentIds as string[]) : null,
+      snapshotAt: latestSnapshot?.createdAt ?? null,
+      activeFragments: project.fragments,
+      groundTruths,
+    })
 
     const addedSinceStrategy = addedIds.length
     const removedSinceStrategy = removedIds.length
@@ -360,7 +324,7 @@ export async function GET(
           version: postSnapshotCount || null,
           added: addedSinceStrategy,
           removed: removedSinceStrategy,
-          comparable: snapshotIds !== null,
+          comparable,
           // The one fact a pre-`fragmentIds` snapshot can still offer. Without it the degraded
           // label is a bare "v1", which says nothing a user could act on.
           builtAt: latestSnapshot?.createdAt.toISOString() ?? null,

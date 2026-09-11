@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getUserId } from '@/lib/auth/current-user'
+import { requireUser, isDenied } from '@/lib/auth/guard'
 
 /**
  * POST /api/dismissal
@@ -8,11 +8,10 @@ import { getUserId } from '@/lib/auth/current-user'
  * Supports both authenticated users and guests
  */
 export async function POST(request: Request) {
-  const userId = await getUserId()
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // Dismissals are the requester's own rows (keyed by userId), so being someone is enough.
+  const requester = await requireUser()
+  if (isDenied(requester)) return requester
+  const { userId } = requester
 
   try {
     const { itemType, itemContent, projectId } = await request.json()
@@ -60,11 +59,9 @@ export async function POST(request: Request) {
  * Supports both authenticated users and guests
  */
 export async function GET(request: Request) {
-  const userId = await getUserId()
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const requester = await requireUser()
+  if (isDenied(requester)) return requester
+  const { userId } = requester
 
   try {
     const { searchParams } = new URL(request.url)
@@ -95,11 +92,9 @@ export async function GET(request: Request) {
  * Supports both authenticated users and guests
  */
 export async function DELETE(request: Request) {
-  const userId = await getUserId()
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const requester = await requireUser()
+  if (isDenied(requester)) return requester
+  const { userId } = requester
 
   try {
     const { itemType, itemContent, projectId } = await request.json()

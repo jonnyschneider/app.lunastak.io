@@ -17,45 +17,32 @@
  * no flattening of evidence to a single "best" span. The client composes.
  *
  * Follows the codebase convention for API tests (see ../../__tests__/route.test.ts):
- * lightweight contract-style tests with the prisma + cookie + auth collaborators mocked.
+ * lightweight contract-style tests with prisma and the requester (`getRequester`) mocked. The
+ * access check is the real guard, so `project.findFirst` is the guard's query.
  */
 
 import { GET, PATCH } from '../route'
 import type { NextRequest } from 'next/server'
 
 const mockFindFirstProject = vi.fn()
-const mockFindUniqueUser = vi.fn()
 const mockFragmentFindMany = vi.fn()
 const mockFragmentCount = vi.fn()
 const mockFragmentUpdateMany = vi.fn()
-const mockCookieGet = vi.fn()
-const mockGetServerSession = vi.fn()
-const mockIsGuestUser = vi.fn()
+const mockGetRequester = vi.fn()
 
-vi.mock('next/headers', () => ({
-  cookies: vi.fn(async () => ({ get: mockCookieGet })),
+vi.mock('@/lib/auth/current-user', () => ({
+  getRequester: (...args: unknown[]) => mockGetRequester(...args),
 }))
-
-vi.mock('next-auth/next', () => ({
-  getServerSession: (...args: unknown[]) => mockGetServerSession(...args),
-}))
-
-vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 
 vi.mock('@/lib/db', () => ({
   prisma: {
     project: { findFirst: (...args: unknown[]) => mockFindFirstProject(...args) },
-    user: { findUnique: (...args: unknown[]) => mockFindUniqueUser(...args) },
     fragment: {
       findMany: (...args: unknown[]) => mockFragmentFindMany(...args),
       count: (...args: unknown[]) => mockFragmentCount(...args),
       updateMany: (...args: unknown[]) => mockFragmentUpdateMany(...args),
     },
   },
-}))
-
-vi.mock('@/lib/projects', () => ({
-  isGuestUser: (...args: unknown[]) => mockIsGuestUser(...args),
 }))
 
 const makeParams = (id: string) => ({ params: Promise.resolve({ id }) })
@@ -93,9 +80,8 @@ async function getJson(qs = '') {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockGetServerSession.mockResolvedValue({ user: { id: 'user-1' } })
-  mockCookieGet.mockReturnValue(undefined)
-  mockFindFirstProject.mockResolvedValue({ id: 'p1' })
+  mockGetRequester.mockResolvedValue({ userId: 'user-1', isGuest: false })
+  mockFindFirstProject.mockResolvedValue({ id: 'p1', userId: 'user-1', isDemo: false, status: 'active' })
   mockFragmentCount.mockResolvedValue(0)
   mockFragmentFindMany.mockResolvedValue([])
   mockFragmentUpdateMany.mockResolvedValue({ count: 0 })
@@ -290,7 +276,7 @@ describe('GET /api/project/[id]/fragments — existing shape is unchanged', () =
   })
 
   it('returns 401 when there is no session and no guest cookie', async () => {
-    mockGetServerSession.mockResolvedValue(null)
+    mockGetRequester.mockResolvedValue(null)
 
     const res = await GET(req(), makeParams('p1'))
 
@@ -303,5 +289,47 @@ describe('GET /api/project/[id]/fragments — existing shape is unchanged', () =
     const res = await GET(req(), makeParams('p1'))
 
     expect(res.status).toBe(404)
+  })
+})
+
+describe('/api/project/[id]/fragments — who may do what', () => {
+  const patch = () =>
+    PATCH(
+      new Request('http://localhost/api/project/p1/fragments', {
+        method: 'PATCH', body: JSON.stringify({ ids: ['a'], reviewed: true }),
+      }) as unknown as NextRequest,
+      makeParams('p1'),
+    )
+  const guardWhere = () => JSON.stringify(mockFindFirstProject.mock.calls[0][0].where)
+
+  it('GET honours demo projects — a demo visitor can read its fragments', async () => {
+    await GET(req(), makeParams('p1'))
+    expect(guardWhere()).toContain('"isDemo":true')
+  })
+
+  it('PATCH is the owner’s alone — a demo project’s fragments are not writable', async () => {
+    await patch()
+    expect(guardWhere()).not.toContain('isDemo')
+    expect(guardWhere()).toContain('"userId":"user-1"')
+  })
+
+  it('PATCH on a project that is not the caller’s → 404, and nothing is written', async () => {
+    mockFindFirstProject.mockResolvedValue(null)
+    expect((await patch()).status).toBe(404)
+    expect(mockFragmentUpdateMany).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['GET', () => GET(req(), makeParams('p1'))],
+    ['PATCH', patch],
+  ])('%s on an archived project → 404', async (_m, call) => {
+    // A stand-in DB that honours a status filter: the archived row only comes back to a query
+    // that doesn't ask for `status: 'active'`.
+    const archived = { id: 'p1', userId: 'user-1', isDemo: false, status: 'archived' }
+    mockFindFirstProject.mockImplementation(async ({ where }: { where: { status?: string } }) =>
+      where.status && where.status !== archived.status ? null : archived)
+    expect((await call()).status).toBe(404)
+    expect(mockFragmentFindMany).not.toHaveBeenCalled()
+    expect(mockFragmentUpdateMany).not.toHaveBeenCalled()
   })
 })

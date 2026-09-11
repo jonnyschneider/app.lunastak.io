@@ -6,6 +6,7 @@ import { runBackgroundTasks } from '@/lib/background-tasks'
 import type { StrategyStatements } from '@/lib/types'
 import type { PipelinePlan, PipelineTrigger, PipelineResult } from './types'
 import { runInitialGeneration, runRefreshGeneration, runOpportunityGeneration } from './generation'
+import { extractFromTemplate } from './extract-from-template'
 
 /**
  * Execute a pipeline plan.
@@ -172,18 +173,15 @@ export async function executePipeline(
         generation = await runTemplateGeneration(t.projectId, t.userId, t.statements)
 
         // Schedule post-hoc extraction in background
+        // Called directly, not via a self-fetch: that hop carried no cookies, so the route it hit
+        // could never be guarded. A throw is logged by name in runBackgroundTasks.
         if (plan.backgroundSteps.includes('extractFromTemplate')) {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
           runBackgroundTasks({
             projectId: t.projectId,
             tasks: [{
               name: 'extractFromTemplate',
               fn: async () => {
-                await fetch(`${baseUrl}/api/project/${t.projectId}/extract-from-template`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ statements: t.statements, traceId: generation!.traceId }),
-                })
+                await extractFromTemplate({ projectId: t.projectId, traceId: generation!.traceId, statements: t.statements })
               },
             }],
           })

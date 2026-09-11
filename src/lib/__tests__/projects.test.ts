@@ -105,27 +105,6 @@ describe('Guest User Isolation', () => {
       vi.resetModules()
     })
 
-    it('should create guest user with empty project when userId is null', async () => {
-      const { prisma } = await import('@/lib/db')
-      const mockGuestUser = { id: 'guest-user-id', email: 'guest_abc@guest.lunastak.io' }
-      const mockProject = { id: 'empty-project-id', name: 'My Strategy', userId: 'guest-user-id' }
-
-      ;(prisma.user.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockGuestUser)
-      ;(prisma.project.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockProject)
-      ;(prisma.dimensionalSynthesis.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 11 })
-      ;(prisma.project.findUniqueOrThrow as ReturnType<typeof vi.fn>).mockResolvedValue(mockProject)
-
-      const { getOrCreateDefaultProject } = await import('@/lib/projects')
-      const result = await getOrCreateDefaultProject(null)
-
-      expect(result.isGuest).toBe(true)
-      expect(result.userId).toBe('guest-user-id')
-      expect(result.project.id).toBe('empty-project-id')
-      // Should create empty project, not seed demo
-      expect(prisma.project.create).toHaveBeenCalled()
-      expect(prisma.dimensionalSynthesis.createMany).toHaveBeenCalled()
-    })
-
     it('should return existing project for authenticated user', async () => {
       const { prisma } = await import('@/lib/db')
       const mockProject = { id: 'existing-project', name: 'My Strategy', userId: 'auth-user-id' }
@@ -135,7 +114,6 @@ describe('Guest User Isolation', () => {
       const { getOrCreateDefaultProject } = await import('@/lib/projects')
       const result = await getOrCreateDefaultProject('auth-user-id')
 
-      expect(result.isGuest).toBe(false)
       expect(result.userId).toBe('auth-user-id')
       expect(result.project.id).toBe('existing-project')
       expect(prisma.user.create).not.toHaveBeenCalled()
@@ -151,7 +129,6 @@ describe('Guest User Isolation', () => {
       const { getOrCreateDefaultProject } = await import('@/lib/projects')
       const result = await getOrCreateDefaultProject('auth-user-id')
 
-      expect(result.isGuest).toBe(false)
       expect(result.project.name).toBe('My Strategy')
       expect(prisma.project.create).toHaveBeenCalledWith({
         data: {

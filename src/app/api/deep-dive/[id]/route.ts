@@ -1,30 +1,19 @@
 // src/app/api/deep-dive/[id]/route.ts
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
+import { requireUser, requireProjectAccess, isDenied } from '@/lib/auth/guard'
+import type { Requester } from '@/lib/auth/current-user'
 import { isValidDeepDiveStatus } from '@/lib/contracts/deep-dive'
 
-const GUEST_COOKIE_NAME = 'guestUserId'
+const deepDiveNotFound = () => NextResponse.json({ error: 'Deep dive not found' }, { status: 404 })
 
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-  if (session?.user?.id) return session.user.id
-
-  const cookieStore = await cookies()
-  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-  if (guestCookie?.value) {
-    const guestUser = await prisma.user.findUnique({
-      where: { id: guestCookie.value },
-      select: { email: true },
-    })
-    if (guestUser && isGuestUser(guestUser.email)) {
-      return guestCookie.value
-    }
-  }
-  return null
+/**
+ * A deep dive is owned through its project, so its project goes through the guard (owner only).
+ * A deep dive in someone else's project answers exactly like one that doesn't exist — until
+ * 2026-09-11 it was a 401 here, which confirmed the id was real.
+ */
+async function canAccessDeepDiveProject(requester: Requester, projectId: string): Promise<boolean> {
+  return !isDenied(await requireProjectAccess(projectId, { as: requester }))
 }
 
 /**
@@ -35,18 +24,14 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
+  const requester = await requireUser()
   const { id } = await params
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (isDenied(requester)) return requester
 
   try {
     const deepDive = await prisma.deepDive.findFirst({
       where: { id },
       include: {
-        project: { select: { userId: true } },
         conversations: {
           where: { status: { not: 'abandoned' } },
           orderBy: { updatedAt: 'desc' },
@@ -60,13 +45,8 @@ export async function GET(
       },
     })
 
-    if (!deepDive) {
-      return NextResponse.json({ error: 'Deep dive not found' }, { status: 404 })
-    }
-
-    // Verify user owns the project
-    if (deepDive.project.userId !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!deepDive || !(await canAccessDeepDiveProject(requester, deepDive.projectId))) {
+      return deepDiveNotFound()
     }
 
     return NextResponse.json({
@@ -110,12 +90,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
+  const requester = await requireUser()
   const { id } = await params
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (isDenied(requester)) return requester
 
   try {
     const body = await request.json()
@@ -126,18 +103,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    // Verify ownership
-    const existing = await prisma.deepDive.findFirst({
-      where: { id },
-      include: { project: { select: { userId: true } } },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Deep dive not found' }, { status: 404 })
-    }
-
-    if (existing.project.userId !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const existing = await prisma.deepDive.findFirst({ where: { id } })
+    if (!existing || !(await canAccessDeepDiveProject(requester, existing.projectId))) {
+      return deepDiveNotFound()
     }
 
     // Build update data
@@ -184,26 +152,14 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
+  const requester = await requireUser()
   const { id } = await params
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (isDenied(requester)) return requester
 
   try {
-    // Verify ownership
-    const existing = await prisma.deepDive.findFirst({
-      where: { id },
-      include: { project: { select: { userId: true } } },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Deep dive not found' }, { status: 404 })
-    }
-
-    if (existing.project.userId !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const existing = await prisma.deepDive.findFirst({ where: { id } })
+    if (!existing || !(await canAccessDeepDiveProject(requester, existing.projectId))) {
+      return deepDiveNotFound()
     }
 
     // Delete the deep dive (onDelete: SetNull will unlink conversations/documents)

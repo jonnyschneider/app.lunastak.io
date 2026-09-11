@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// A local eval viewer over files in evals/ — dev-only, same production guard as the dev/* routes.
 export async function GET() {
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
+  }
+
   try {
     const evalsDir = path.join(process.cwd(), 'evals');
 

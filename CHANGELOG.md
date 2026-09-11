@@ -5,6 +5,115 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-09-11
+
+### Fixed — API routes check who's asking (2026-09-11)
+
+Several API routes checked nothing about the caller. Anyone who knew a conversation's id could read
+it with all its messages, append a turn to it, re-point it at another deep dive, or run extraction
+and generation on it, which spent LLM calls on the owner's behalf. Anyone could also poll any
+project's generation status or any document's processing status and file name, and read any
+strategy's full output from the trace API (whose "no session → allow" branch was left over from
+before guests had a validated cookie). `suggest-opposite` was an open LLM proxy that needed no id at
+all. Ids are unguessable cuids, so everything except that proxy required knowing an id first. But
+conversation ids now appear in review URLs, and URLs get copied.
+
+Three more holes sat behind a login:
+
+- `conversation/start` trusted the guest cookie without validating it, so a cookie set to a
+  signed-up user's id started chats in that user's projects. It also gave any caller with no
+  cookie a brand-new guest and ran the LLM on text from the request, a new guest per call, so the
+  guest quota never applied. It now needs a session or a guest cookie, which every real caller
+  already has.
+- An upload stored the `deepDiveId` it was sent without checking it, so a known deep-dive id from
+  another project put a document in someone else's deep dive. Moving a conversation into a deep
+  dive had the same hole.
+- A demo project's opportunities and principles could be created, edited or deleted by any
+  signed-in user or guest. Opening content *reads* to demos (2026-03-27) had widened the one check
+  its writes shared too.
+
+**Why it happened:** `middleware.ts` does no auth, so every route had to check for itself, and ~17
+of them carried their own copy of "who is this request" while others had none. Nothing noticed a
+route with no check.
+
+**What changed:** one guard module, `src/lib/auth/guard.ts` (`requireUser`,
+`require{Project,Conversation,Trace,Document}Access`). By default a resource is visible to its
+owner only. Demos are readable where asked for and never writable. A resource that isn't yours is
+a 404, which doesn't confirm it exists. `route-auth.test.ts` fails on any route that neither uses
+the guard nor sits on a commented public allowlist, that re-implements identity, or that is
+addressed by an id and doesn't call that resource's guard. `suggest-opposite` now needs a user
+(guests allowed and still not metered) and caps its input at 200 characters. The eval viewer's API
+is dev-only.
+
+Template extraction is no longer a route. The pipeline used to `fetch` its own
+`extract-from-template` endpoint without cookies, so the route couldn't be guarded without breaking
+its only caller. Left open, it let anyone write fragments into any project. Now the pipeline calls
+it directly. Four more open routes had no callers, so they were deleted rather than guarded:
+`conversation/[id]/stub`, `conversation/[id]/messages`, `admin/regenerate` (which spent LLM calls on
+any trace) and `quality-rating` (which wrote to any trace), along with the unused `QualityRating`
+component. So was `feedback`, with its 👍/👎 buttons and an orphaned feedback modal: the buttons sat on
+a chat step that is never reached, and sent a body the route always rejected.
+
+See ARCHITECTURE.md → *API Access*.
+
+### Added — the stack says when it is behind your knowledgebase (2026-09-11)
+
+Under the Version control on the Decision Stack: *"3 changes since v3"*, whenever ground truths have
+been added or discarded since that version was built. It links straight to the knowledgebase's
+*Changed since v3* list, where Rebuild already is. It is a fact about the version, not a nudge — it
+shows while it is true and goes when you rebuild; there is nothing to dismiss. Guidance register
+row 4 (`guidance_shown` / `cta_view_changes`).
+
+### Fixed — discarding or restoring updates the counts straight away, and Rebuild knows (2026-09-11)
+
+After a discard or restore, the knowledgebase kept showing the old *"since v3"* numbers, its
+*Changed since* list could come up empty, and the Rebuild dialog said nothing had changed and
+offered *Refresh anyway*. The counts now update as soon as the change is saved (no reload, no
+spinner), and the dialog names both directions — *"2 ground truths added, 3 discarded since the last
+update"*. It also says "ground truths" rather than "insights".
+
+### Fixed — "N discarded since" counted things you never discarded (2026-09-11)
+
+The knowledgebase's *"discarded since v3"* counted every piece of system context the stack was built
+from — bundle tensions and the like — as discarded, because it compared the stack's inputs against
+your ground truths only. One project on dev read *10 discarded* with one real discard. It now counts
+only what is genuinely no longer active.
+
+### Fixed — a review scoped to one upload opens its first row, and marks only what it showed (2026-09-11)
+
+A review of one document's ground truths opened with every row collapsed, and quietly marked every
+ground truth in the project as reviewed — not just the ones on screen. The list is loaded for the
+whole project and narrowed to the upload at display time, and both the "open the first row" pick and
+the reviewed stamp ran on the whole list. Per-ingest reviews in 2.8.1 made that the common case. Both
+now act on the rows the user can actually see.
+
+### Fixed — a refresh is no longer built on ground truths you discarded (2026-09-11)
+
+Discarding a ground truth and then refreshing should produce a stack without it. It didn't
+reliably: a refresh reads each dimension's summary, and a dimension with nothing *new* was skipped
+— so a discard-only change left the discarded truth inside the summary the refresh read. A
+dimension whose last ground truth was discarded was never revisited at all. Now any change to what a
+dimension's summary was built from (a discard, or an undo) rebuilds it on the next refresh. Nothing
+regenerates on the discard itself.
+
+### Fixed — the review routing, hardened (2026-09-11)
+
+- Finishing a chat, then switching project before its ground truths were ready, could land you on
+  the *other* project in a review of the first one's chat. A finished ingest now only opens a review
+  if you are still on its project; otherwise it is offered on your next visit.
+- Two uploads finishing close together no longer swap you out of the first review mid-read — the
+  second is offered with a *Review* button instead.
+- A project whose strategy exists only in its history (older projects) was offered a first-contact
+  review it could never show, on every visit. The server and the page now agree on what "has a
+  strategy" means.
+- `?dimension=` links (including the old `/fragments` address) open the knowledgebase filtered to
+  that dimension again.
+- `/` and `/project` now agree on which project you were last in.
+
+### Removed (2026-09-11)
+
+- `InlineChat`, `RefreshStrategyDialog`, and the header's unused `rightSlot` — no importers.
+
 ## [2.8.1] - 2026-09-10
 
 ### Fixed — every document and bundle gets its own review, and it actually appears (2026-09-10)

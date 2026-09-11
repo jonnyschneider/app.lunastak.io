@@ -1,50 +1,11 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { createComponent, updateComponent, deleteComponent } from '@/lib/decision-stack'
 
-const GUEST_COOKIE_NAME = 'guestUserId'
-
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-  let userId: string | null = session?.user?.id || null
-
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  return userId
-}
-
-async function verifyProjectAccess(projectId: string, userId: string): Promise<boolean> {
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      status: 'active',
-      OR: [
-        { userId },
-        { isDemo: true },
-      ],
-    },
-    select: { id: true },
-  })
-  return !!project
-}
+// Reading honours demo projects; writing is the owner's alone — a write that honoured `isDemo`
+// would let any guest edit a showcase project's opportunities and principles (it did, until
+// 2026-09-11). Archived projects are not found either way (`active: true`).
 
 /**
  * Map a DecisionStackComponent to the UserContent response shape the UI expects.
@@ -81,16 +42,10 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id: projectId } = await params
 
-  if (!(await verifyProjectAccess(projectId, userId))) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
+  const auth = await requireProjectAccess(projectId, { access: 'read', active: true })
+  if (isDenied(auth)) return auth
 
   try {
     const stack = await prisma.decisionStack.findUnique({
@@ -126,16 +81,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id: projectId } = await params
 
-  if (!(await verifyProjectAccess(projectId, userId))) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
+  const auth = await requireProjectAccess(projectId, { active: true })
+  if (isDenied(auth)) return auth
 
   try {
     const body = await request.json()
@@ -197,16 +146,10 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id: projectId } = await params
 
-  if (!(await verifyProjectAccess(projectId, userId))) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
+  const auth = await requireProjectAccess(projectId, { active: true })
+  if (isDenied(auth)) return auth
 
   try {
     const body = await request.json()
@@ -272,16 +215,10 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserId()
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const { id: projectId } = await params
 
-  if (!(await verifyProjectAccess(projectId, userId))) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
+  const auth = await requireProjectAccess(projectId, { active: true })
+  if (isDenied(auth)) return auth
 
   try {
     const { searchParams } = new URL(request.url)
