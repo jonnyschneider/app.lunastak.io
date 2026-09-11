@@ -315,6 +315,10 @@ custom Statsig event and its metadata is listed there. Update it in the same com
 change to an event's name, value or metadata — dashboards on the "Lunastak v2" board are built
 from it, and drift means someone filters on a field that was never emitted.
 
+**PostHog runs alongside Statsig (spike, from 2026-09-11)** — see
+[analytics-events.md → PostHog](analytics-events.md#posthog-alongside-statsig). Every event goes to
+both through the same two wrappers; nothing changes at call sites.
+
 ### Identity model (read before touching any per-user counter)
 
 Every project has a `userId` — `Project.userId` is non-null. There is no anonymous path:

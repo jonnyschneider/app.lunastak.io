@@ -16,7 +16,7 @@ import {
   useProUpgradeFlow,
 } from '@/components/ProUpgradeFlow';
 import type { StrategyStatements, Objective, Principle } from '@/lib/types';
-import { getStatsigClient } from '@/components/StatsigProvider';
+import { logAndFlush } from '@/components/StatsigProvider';
 
 function generateId(): string {
   return `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -75,7 +75,7 @@ export default function TemplateEntryPage() {
   };
 
   const handleComplete = async () => {
-    getStatsigClient()?.logEvent('cta_complete_template', step === 'review' ? 'review' : 'early-exit', { projectId })
+    logAndFlush('cta_complete_template', step === 'review' ? 'review' : 'early-exit', { projectId })
     setSaving(true);
     setError(null);
     try {

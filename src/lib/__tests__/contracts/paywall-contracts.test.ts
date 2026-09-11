@@ -37,7 +37,7 @@ describe('PaywallContracts', () => {
         title: 'Upgrade to Pro',
         message: 'Create multiple projects with a Pro subscription.',
         ctaLabel: 'Learn More',
-        ctaUrl: 'https://lunastak.io/pricing',
+        ctaUrl: 'https://lunastak.io/docs/getting-started#plans',
       },
     };
 

@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       title: modalContent.title,
       message: modalContent.message,
       ctaLabel: 'Learn More',
-      ctaUrl: 'https://lunastak.io/pricing',
+      ctaUrl: 'https://lunastak.io/docs/getting-started#plans',
     },
   };
 

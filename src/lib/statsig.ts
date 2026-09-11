@@ -1,5 +1,6 @@
 import Statsig from 'statsig-node';
 import packageJson from '../../package.json';
+import { capturePostHogServer } from '@/lib/analytics/posthog-server';
 
 let statsigInitialized = false;
 let statsigInitFailed = false;
@@ -139,6 +140,10 @@ export async function logStatsigEvent(
   value?: number,
   metadata?: Record<string, string>
 ) {
+  // PostHog side-by-side (2026-09-11): the same event, same name. Statsig's `value` column has no
+  // PostHog equivalent, so it travels as a `value` property.
+  await capturePostHogServer(userId, eventName, { ...metadata, value });
+
   await initializeStatsig();
 
   if (!process.env.STATSIG_SERVER_SECRET_KEY || statsigInitFailed) {

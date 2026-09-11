@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-09-11
+
+### Added — PostHog alongside Statsig (2026-09-11)
+
+Every analytics event now also goes to PostHog, under the same name, while we judge whether its
+funnels and retention reports answer our questions better than Statsig's. The fan-out lives in the
+two existing wrappers (`logAndFlush`, `logStatsigEvent`), so no call site changed. Off unless
+`NEXT_PUBLIC_POSTHOG_KEY` is set. The marketing site shares the PostHog project and cookie, so the
+pages a visitor read and what they then did in the app are one person.
+
+**A guest's journey now survives signup.** Guests are real `User` rows, deleted when they sign up,
+and PostHog won't re-identify an identified person. So the browser starts afresh as the new account,
+and `transferGuestToUser` sends `$merge_dangerously` once its transaction commits. Verified on the
+PR preview: anonymous pageview → guest → chat → `account_created` → merge, all on one person.
+
+### Removed
+
+- **Session replay, on both the app and the marketing site.** Statsig's replay had been recording
+  sessions, strategy text on screen included, with no mention on the data-security page. Rather
+  than disclose it, we stopped: `@statsig/session-replay` is gone, and PostHog's recording is
+  disabled in code so a dashboard setting can't turn it on.
+
+### Fixed
+
+- The paywall's **Learn More** opened `lunastak.io/pricing`, which has never existed. It now opens
+  the Plans section of Getting started.
+- `cta_complete_template` called the Statsig client directly, the only event that did, so it missed
+  the `userType` tag and the immediate flush every other client event gets. It goes through
+  `logAndFlush` now.
+- The event catalogue listed `cta_start_initial_conversation` as live. Its emitter has been
+  unreachable for months; the row is marked dead.
+
 ## [2.9.0] - 2026-09-11
 
 ### Fixed — API routes check who's asking (2026-09-11)

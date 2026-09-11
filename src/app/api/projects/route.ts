@@ -101,7 +101,7 @@ export async function POST(request: Request) {
           title: 'Upgrade to Pro',
           message: 'Free accounts are limited to one project. Upgrade to Pro for unlimited projects.',
           ctaLabel: 'Learn More',
-          ctaUrl: 'https://lunastak.io/pricing',
+          ctaUrl: 'https://lunastak.io/docs/getting-started#plans',
         },
       },
     }, { status: 403 })
