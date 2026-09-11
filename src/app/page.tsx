@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { isGuestUser } from '@/lib/projects';
 import { LAST_PROJECT_COOKIE_NAME, readLastProjectCookie } from '@/lib/navigation/last-project-cookie';
+import { GuestStart } from '@/components/GuestStart';
 
 const GUEST_COOKIE_NAME = 'guestUserId';
 
@@ -102,6 +103,6 @@ export default async function Page({
     // Invalid cookie or no project - fall through to create new guest
   }
 
-  // Redirect to API route that creates guest and sets cookie
-  redirect('/api/guest/init');
+  // New visitor: the browser mints the guest, so crawlers following `/` don't (see api/guest/init)
+  return <GuestStart />;
 }
