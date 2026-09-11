@@ -70,6 +70,7 @@ import { ImportBundleDialog } from '@/components/ImportBundleDialog'
 import { VersionHistorySheet } from '@/components/VersionHistorySheet'
 import { ShareDialog } from '@/components/ShareDialog'
 import { SignInGateDialog } from '@/components/SignInGateDialog'
+import { GuestSaveBanner } from '@/components/GuestSaveBanner'
 import { StructuredProvocation, StrategyStatements } from '@/lib/types'
 import { DEMO_META, DEMO_EPISODE_URLS } from '@/lib/demos'
 import { ProjectTabNav } from './ProjectTabNav'
@@ -1331,6 +1332,8 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                 )}
                 </div>
                 </div>
+                {/* Where a guest sees their stack since 2.3.0. The banner was only on /strategy/[traceId], which the toast's View is now the one way into. */}
+                {status === 'unauthenticated' && !isDemo && <GuestSaveBanner />}
                 <StrategyDisplay
                   strategy={strategyData.strategy}
                   conversationId={strategyData.conversationId}
