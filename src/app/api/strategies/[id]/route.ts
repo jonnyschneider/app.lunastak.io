@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
+import { requireTraceAccess, isDenied } from '@/lib/auth/guard'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const { id } = await params
+
+    // Starring a strategy is a write, for signed-up users only.
+    const auth = await requireTraceAccess(id, { guests: false })
+    if (isDenied(auth)) return auth
+
     const body = await request.json()
     const { starred } = body
 
@@ -27,21 +20,6 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'Invalid request: starred must be a boolean' },
         { status: 400 }
-      )
-    }
-
-    // Verify the trace belongs to the user
-    const trace = await prisma.trace.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
-    })
-
-    if (!trace) {
-      return NextResponse.json(
-        { error: 'Strategy not found' },
-        { status: 404 }
       )
     }
 

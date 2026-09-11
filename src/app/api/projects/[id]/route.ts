@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -12,25 +11,11 @@ interface RouteParams {
  * Update project (currently just name)
  */
 export async function PATCH(request: Request, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { id: projectId } = await params;
 
-  // Verify ownership
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      userId: session.user.id,
-    },
-  });
-
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
+  // Signed-up owners only — renaming and deleting projects isn't offered to guests.
+  const auth = await requireProjectAccess(projectId, { guests: false });
+  if (isDenied(auth)) return auth;
 
   try {
     const body = await request.json();
@@ -62,25 +47,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
  * Hard deletes a project and all related data
  */
 export async function DELETE(request: Request, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { id: projectId } = await params;
 
-  // Verify ownership
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      userId: session.user.id,
-    },
-  });
-
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
+  // Signed-up owners only — renaming and deleting projects isn't offered to guests.
+  const auth = await requireProjectAccess(projectId, { guests: false });
+  if (isDenied(auth)) return auth;
 
   try {
     // Delete in correct order to respect foreign keys

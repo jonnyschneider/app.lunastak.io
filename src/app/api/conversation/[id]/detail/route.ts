@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireConversationAccess, isDenied } from '@/lib/auth/guard'
 
 /**
  * GET /api/conversation/[id]/detail
@@ -11,20 +10,16 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
   const { id: conversationId } = await params
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // Signed-up owners only, as it always was — not demo-readable.
+  const auth = await requireConversationAccess(conversationId, { guests: false })
+  if (isDenied(auth)) return auth
 
   try {
     // Get conversation with messages and project info
     const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId: session.user.id,
-      },
+      where: { id: conversationId },
       include: {
         messages: {
           where: { stepNumber: { gt: 0 } }, // Exclude system messages
