@@ -3,6 +3,10 @@ import { requireProjectAccess, isDenied } from '@/lib/auth/guard';
 import { planPipeline, executePipeline } from '@/lib/pipeline';
 import type { StrategyStatements } from '@/lib/types';
 
+// The plan's extractFromTemplate step is an LLM call run in this request's waitUntil, which lives
+// only as long as the function's maxDuration. 300 matches the other LLM routes.
+export const maxDuration = 300;
+
 /**
  * POST /api/project/[id]/template-entry
  * Creates a Decision Stack from user-provided template data

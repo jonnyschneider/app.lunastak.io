@@ -90,6 +90,18 @@ export async function requireProjectAccess(projectId: string, opts: ProjectGuard
  * Either link proves ownership: `transferGuestToUser` rewrites both `conversation.userId` and
  * `project.userId`, but a transferred guest's empty project can be deleted and `projectId` is
  * nullable — so neither link alone is always present.
+ *
+ * ⚠ INVARIANT this relies on. Matching `{ userId }` grants the conversation whichever project its
+ * row points at, and callers (extract, generate, conversation/continue) then write fragments and
+ * strategy into `conversation.projectId` without checking that project again. That is safe only
+ * because every creator keeps `conversation.userId` and `project.userId` aligned:
+ * `conversation/start` (the requester's own project), the pipeline's synthetic conversations
+ * (template entry, refresh, generate-from-knowledge — each written as the owner of the project its
+ * route guarded at `write`), and `transferGuestToUser` (rewrites both together). A new creator
+ * that lets the two diverge — a conversation in someone else's project, or one moved between
+ * projects — makes this OR a way to write into that project, and the `{ userId }` branch must then
+ * also require `project` to be the requester's (or null). `requireTraceAccess` below carries the same
+ * assumption through `conversation: { userId }`.
  */
 export async function requireConversationAccess(conversationId: string, opts: GuardOptions = {}) {
   const requester = await requireUser(opts)
@@ -106,7 +118,11 @@ export async function requireConversationAccess(conversationId: string, opts: Gu
   return { requester, conversation }
 }
 
-/** A trace (a generated strategy) is owned directly, through its conversation, or through its project. */
+/**
+ * A trace (a generated strategy) is owned directly, through its conversation, or through its
+ * project. The first two branches trust the same userId/project alignment as
+ * `requireConversationAccess` above — see its invariant.
+ */
 export async function requireTraceAccess(traceId: string, opts: GuardOptions = {}) {
   const requester = await requireUser(opts)
   if (isDenied(requester)) return requester
