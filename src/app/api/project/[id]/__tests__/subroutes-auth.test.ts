@@ -17,11 +17,26 @@ const mocks = vi.hoisted(() => ({
   getRequester: vi.fn(),
   projectFindFirst: vi.fn(),
   projectFindUnique: vi.fn(),
+  decisionStackFindUnique: vi.fn(),
+  componentFindFirst: vi.fn(),
+  componentFindUnique: vi.fn(),
+  componentFindMany: vi.fn(),
+  fragmentUpdateMany: vi.fn(),
+  updateComponent: vi.fn(),
+  deleteComponent: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/current-user', () => ({ getRequester: mocks.getRequester }))
 vi.mock('@/lib/db', () => ({
-  prisma: { project: { findFirst: mocks.projectFindFirst, findUnique: mocks.projectFindUnique } },
+  prisma: {
+    project: { findFirst: mocks.projectFindFirst, findUnique: mocks.projectFindUnique },
+    // Only the owner cases at the bottom get past the guard to these.
+    decisionStack: { findUnique: mocks.decisionStackFindUnique },
+    decisionStackComponent: {
+      findFirst: mocks.componentFindFirst, findUnique: mocks.componentFindUnique, findMany: mocks.componentFindMany,
+    },
+    fragment: { updateMany: mocks.fragmentUpdateMany },
+  },
 }))
 // Everything past the access check. Every case below is denied before reaching any of it — a
 // route that got this far would throw on the stubs and fail the status assertion.
@@ -31,7 +46,8 @@ vi.mock('@/lib/pipeline', () => ({ planPipeline: vi.fn(), executePipeline: vi.fn
 vi.mock('@/lib/import', () => ({ planImport: vi.fn(), executeImport: vi.fn() }))
 vi.mock('@/lib/decision-stack', () => ({
   setGenerationStatus: vi.fn(), hasDecisionStack: vi.fn(), updateSingleton: vi.fn(),
-  createComponent: vi.fn(), updateComponent: vi.fn(), deleteComponent: vi.fn(), getSnapshots: vi.fn(),
+  createComponent: vi.fn(), updateComponent: mocks.updateComponent, deleteComponent: mocks.deleteComponent,
+  getSnapshots: vi.fn(),
 }))
 vi.mock('@/lib/synthesis/update-synthesis', () => ({ updateAllSyntheses: vi.fn() }))
 vi.mock('@/lib/knowledge-summary', () => ({ generateKnowledgeSummary: vi.fn() }))
@@ -130,4 +146,77 @@ describe.each(ROUTES)('%s', (_name, handler, demoReadable, activeOnly) => {
       expect((await call(handler)).status).toBe(404)
     })
   }
+})
+
+/**
+ * Past the guard. The project check proves the caller owns p1; these pin that a SECOND id in the
+ * request — a component, a fragment — is only acted on inside p1. And they give an owner a 2xx,
+ * so a route that 404'd everyone couldn't pass the table above on denials alone.
+ */
+describe('the owner, and ids that belong to another project', () => {
+  const req = (method: string, url: string, body?: object) =>
+    new NextRequest(`http://x${url}`, { method, ...(body && { body: JSON.stringify(body) }) }) as never
+  const p1 = { params: Promise.resolve({ id: 'p1' }) }
+
+  /** A component whose stack belongs to `projectId`. */
+  const component = (projectId: string) => ({
+    id: 'comp-1', componentType: 'opportunity', componentId: 'opp-1', content: { title: 'x' }, status: 'active',
+    createdAt: new Date(), updatedAt: new Date(), decisionStack: { projectId },
+  })
+
+  beforeEach(() => {
+    mocks.getRequester.mockResolvedValue({ userId: 'owner', isGuest: false })
+    mocks.fragmentUpdateMany.mockResolvedValue({ count: 1 })
+  })
+
+  it('content GET → 200 for the owner', async () => {
+    mocks.decisionStackFindUnique.mockResolvedValue({ id: 's1' })
+    mocks.componentFindMany.mockResolvedValue([component('p1')])
+    const res = await content.GET(req('GET', '/api/project/p1/content'), p1)
+    expect(res.status).toBe(200)
+    expect((await res.json()).content).toHaveLength(1)
+  })
+
+  it('content PUT on the owner’s own component → 200', async () => {
+    mocks.componentFindFirst.mockResolvedValue(component('p1'))
+    mocks.componentFindUnique.mockResolvedValue(component('p1'))
+    const res = await content.PUT(req('PUT', '/api/project/p1/content', { id: 'comp-1', content: '{"title":"y"}' }), p1)
+    expect(res.status).toBe(200)
+    expect(mocks.updateComponent).toHaveBeenCalledWith('p1', 'opportunity', 'opp-1', { title: 'y' })
+  })
+
+  it('content PUT on a component from another project → 404, nothing updated', async () => {
+    mocks.componentFindFirst.mockResolvedValue(component('p2'))
+    const res = await content.PUT(req('PUT', '/api/project/p1/content', { id: 'comp-1', content: '{"title":"y"}' }), p1)
+    expect(res.status).toBe(404)
+    expect(mocks.updateComponent).not.toHaveBeenCalled()
+  })
+
+  it('content DELETE on a component from another project → 404, nothing deleted', async () => {
+    mocks.componentFindFirst.mockResolvedValue(component('p2'))
+    const res = await content.DELETE(req('DELETE', '/api/project/p1/content?id=comp-1'), p1)
+    expect(res.status).toBe(404)
+    expect(mocks.deleteComponent).not.toHaveBeenCalled()
+  })
+
+  it('content DELETE on the owner’s own component → 200', async () => {
+    mocks.componentFindFirst.mockResolvedValue(component('p1'))
+    const res = await content.DELETE(req('DELETE', '/api/project/p1/content?id=comp-1'), p1)
+    expect(res.status).toBe(200)
+    expect(mocks.deleteComponent).toHaveBeenCalledWith('p1', 'opportunity', 'opp-1')
+  })
+
+  it('fragments PATCH archive → 200, and the update is scoped to this project', async () => {
+    const res = await fragments.PATCH(
+      req('PATCH', '/api/project/p1/fragments', { ids: ['f-mine', 'f-theirs'], status: 'archived' }), p1,
+    )
+    expect(res.status).toBe(200)
+    expect(mocks.fragmentUpdateMany).toHaveBeenCalledTimes(1)
+    expect(mocks.fragmentUpdateMany.mock.calls[0][0].where).toEqual({ id: { in: ['f-mine', 'f-theirs'] }, projectId: 'p1' })
+  })
+
+  it('fragments PATCH reviewed → the stamp is scoped to this project too', async () => {
+    await fragments.PATCH(req('PATCH', '/api/project/p1/fragments', { ids: ['f-theirs'], reviewed: true }), p1)
+    expect(mocks.fragmentUpdateMany.mock.calls[0][0].where).toEqual({ id: { in: ['f-theirs'] }, projectId: 'p1' })
+  })
 })
