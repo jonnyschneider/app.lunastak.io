@@ -98,7 +98,7 @@ reports through `paywall_*` above.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| ~~`cta_start_initial_conversation`~~ | — | — | — | **Dead 2026-09-11.** Its only emitter was `InlineChat`, deleted in `94ef9f0`; the catalogue wasn't updated then. The first-chat door is now `cta_new_chat`. |
+| ~~`cta_start_initial_conversation`~~ | — | — | — | **Dead.** Its only emitter was `InlineChat`, reachable only through `FirstTimeEmptyState` — orphaned for months (see `cta_demo_peek`), deleted 2026-09-10 (`a4de399`); `InlineChat` itself went on 2026-09-11 (`94ef9f0`). So it has most likely been silent for months, not days. The first-chat door is now `cta_new_chat`. |
 | `cta_generate_strategy` | client | `inline-chat` \| `early-exit` | `projectId`, userType | User triggered strategy generation. Surface in `value`. (`extraction-confirm` retired 2026-09-08 with `ExtractionConfirm` — see `retired-extraction-run.md`.) |
 | `cta_update_direction` | client | **retired 2026-09-10** | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
