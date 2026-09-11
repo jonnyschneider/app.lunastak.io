@@ -28,6 +28,9 @@ we judge whether its reports beat Statsig's. The fan-out lives in the two wrappe
 
 - **`value`** has no PostHog column, so it arrives as a `value` property. `userType`, `app_version`
   and `tier` are on every event (`tier` = `production` | `preview` | `development` — filter on it).
+- **The marketing site (lunastak.io) shares the PostHog project**, tagging its events
+  `site: marketing` against the app's `site: app`. The cookie sits on `.lunastak.io`, so the pages a
+  visitor read before arriving in the app are on the same person.
 - **Distinct id = the database `User.id`**, guests included, same as Statsig. Anonymous visitors
   stay anonymous until they become a guest or sign up, and their earlier events join on that step.
 - **Guest → account is stitched server-side.** Signing up gives a guest a new id, and PostHog will

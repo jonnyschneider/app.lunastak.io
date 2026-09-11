@@ -27,6 +27,8 @@ export function initPostHog(): void {
     person_profiles: 'identified_only',
   })
   posthog.register({
+    // The marketing site shares this PostHog project (and cookie), and registers `site: marketing`.
+    site: 'app',
     app_version: packageJson.version,
     tier: process.env.NEXT_PUBLIC_VERCEL_ENV || 'development',
   })
