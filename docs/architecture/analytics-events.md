@@ -66,7 +66,7 @@ reports through `paywall_*` above.
 | `cta_update_direction` | client | **retired 2026-09-10** | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
 | `cta_draft_opportunities` | client | `opportunity-section` | `projectId`, userType | User triggered opportunity drafting. |
-| `confirm_refresh` | client | `generation-dialog` | `projectId`, `fragmentsSinceStrategy`, userType | User confirmed strategy refresh in the generation dialog. `fragmentsSinceStrategy` reveals whether they refreshed with new context (good) or re-rolled without changes. |
+| `confirm_refresh` | client | `generation-dialog` | `projectId`, `fragmentsSinceStrategy`, `removedSinceStrategy` (from 2026-09-11), userType | User confirmed strategy refresh in the generation dialog. Changed context = `fragmentsSinceStrategy` (ground truths added) **plus** `removedSinceStrategy` (discarded). **Before 2026-09-11 only additions were sent**, so a refresh after pure curation reads as a re-roll in older data — and until the same date the value could also be stale, because a discard or restore did not refresh the page's counts. |
 | `confirm_opportunities` | client | `generation-dialog` | `projectId`, userType | User confirmed opportunity generation. |
 
 ## Knowledge base & evidence
@@ -215,6 +215,17 @@ Design: `docs/_plans/2026-09-10-empty-state-consolidation-design.md`.
 | `review_deferred` | client | `ground-truth-review` | `projectId`, `fragmentCount`, `batchSource` (`document` \| `bundle` \| `conversation` \| `unscoped`), userType | **Per ingest since 2026-09-10** — defers the review of ONE document or bundle; any other ingest still waiting keeps its own. Before that it was per project, and one deferral silenced every later ingest's review (the 2.8.0 prod failure). User chose "Review these later" on the ground-truth review screen — moving on without building and without adding. **Deferring is data, not an absence of it**: paired with `cta_build_strategy` on the same surface it answers "does anyone read the extraction at the moment of highest context, or do they all move past it?" The predecessor of this button (deleted 2026-09-09) logged nothing at all, which is why that question had no answer. |
 | `cta_build_strategy` | client | `ground-truth-review` | `projectId`, userType | User pressed Build on the ground-truth review, in the knowledgebase. Re-homed 2026-09-10: the old `first-time` surface came from `FirstTimeEmptyState`, which was orphaned and is now deleted, so this event never fired in production. This is its first live emitter. |
 | `cta_complete_template` | client | `review` \| `early-exit` | `projectId`, userType | User completed (or early-exited) the template flow. (Template page is orphaned.) |
+
+## Guidance (the register, design §6)
+
+Each guidance register row gets an **exposure** event and an **action** event, so its follow rate can
+be read — the design's instruction for every row is "ship it, watch the event: a prompt nobody follows
+was wrong about the job". Rows share `guidance_shown`, split by `value`.
+
+| Event | Side | Value | Metadata | What it means |
+|---|---|---|---|---|
+| `guidance_shown` | client | `stack-behind` | `projectId`, `added`, `removed`, userType | A guidance row was on screen. **`stack-behind`** (row 4, added 2026-09-11): the stack's version control showed *"N changes since vN"* — the knowledgebase has gained or lost ground truths since this version was built. Logged **once per project per version per page load**, only while the user is on the stack, so it is a denominator, not a heartbeat. |
+| `cta_view_changes` | client | `version-control` | `projectId`, `added`, `removed`, userType | User followed row 4 from the version control to the knowledgebase's *Changed since vN* filter. **Follow rate = this ÷ `guidance_shown`/`stack-behind`.** The next step they can take there is Rebuild, which emits `cta_refresh_strategy` / `knowledge-panel` then `confirm_refresh` — chain the three to see whether the pointer leads to rebuilt stacks. |
 
 ## Sharing
 

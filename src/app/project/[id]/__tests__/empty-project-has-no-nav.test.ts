@@ -108,6 +108,24 @@ describe('the ground-truth review is per ingest, and reached by address', () => 
     expect(source).toMatch(/projectData\?\.deepDives\?\.some\(dd => dd\.id === deepDiveParam\)/)
   })
 
+  it('row 4 (stack behind) owns a hook, so it must sit ABOVE the loading/error early returns', () => {
+    // Hooks after an early return change order between the loading render and the loaded one.
+    const hook = source.indexOf("logAndFlush('guidance_shown', 'stack-behind'")
+    const earlyReturn = source.indexOf("if (status === 'loading' || isLoading) {")
+    expect(hook).toBeGreaterThan(0)
+    expect(earlyReturn).toBeGreaterThan(0)
+    expect(hook).toBeLessThan(earlyReturn)
+  })
+
+  it('row 4 leads to the changed-since filter through setMode, not a hand-built URL', () => {
+    expect(source).toMatch(/setMode\('knowledge', \{ filter: \{ kind: 'changed' \} \}\)/)
+  })
+
+  it('setMode strips a knowledge filter from every move that does not ask for one', () => {
+    // An arrival instruction left on the URL would re-open a diff the user had cleared.
+    expect(source).toMatch(/url\.searchParams\.delete\('filter'\)\s*\n\s*url\.searchParams\.delete\('dimension'\)\s*\n\s*if \(next === 'knowledge' && opts\?\.filter\)/)
+  })
+
   it('after a strategy exists, a deep-dive ingest still goes straight back to its deep dive', () => {
     // There is no review post-strategy (it is first-contact framed) — so the deep dive is the answer.
     expect(source).toMatch(/if \(hasStrategyRef\.current \|\| projectData\?\.isDemo === true\) \{\s*\n\s*if \(deepDiveId\) \{\s*\n\s*setSelectedDeepDiveId\(deepDiveId\)/)

@@ -77,8 +77,10 @@ import type { ProjectMode } from '@/lib/navigation/resolve-mode'
 import { writeModeCookie } from '@/lib/navigation/mode-cookie'
 import { parseReviewBatchKey, reviewBatchKey, type ReviewBatchSource } from '@/lib/navigation/review-batch'
 import { writeLastProjectCookie } from '@/lib/navigation/last-project-cookie'
-import { parseKnowledgeFilter } from '@/lib/navigation/knowledge-filter'
+import { parseKnowledgeFilter, knowledgeFilterParams, type KnowledgeFilter } from '@/lib/navigation/knowledge-filter'
 import { projectHasStrategy } from '@/lib/navigation/has-strategy'
+import { stackBehind } from '@/lib/guidance/stack-behind'
+import { GuidanceLink } from '@/components/ui/guidance-link'
 import { ingestReviewWaiting } from '@/lib/ingest-messaging'
 import { toast } from 'sonner'
 
@@ -351,10 +353,24 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
    * later visit arrives with no `?mode` at all (`resolveProjectMode` row 5) — it is a hint, never
    * the authority. `review` is never written: it is a moment, not a place to return to.
    */
-  const setMode = useCallback((next: ProjectMode, opts?: { batch?: string; deepDive?: string }) => {
+  const setMode = useCallback((
+    next: ProjectMode,
+    opts?: { batch?: string; deepDive?: string; filter?: KnowledgeFilter },
+  ) => {
     if (next !== 'review') writeModeCookie(projectId, next)
     const url = new URL(window.location.href)
     url.searchParams.set('mode', next)
+    /*
+     * A knowledge filter is an ARRIVAL instruction — the panel reads it once, when it mounts. So it
+     * rides only on the move that asks for it, and every other move strips it: left on the URL, a
+     * later toggle back to the knowledgebase would silently re-open the diff the user had cleared.
+     * Built through `knowledgeFilterParams` so this and `knowledgeHref` cannot disagree.
+     */
+    url.searchParams.delete('filter')
+    url.searchParams.delete('dimension')
+    if (next === 'knowledge' && opts?.filter) {
+      for (const [k, v] of Object.entries(knowledgeFilterParams(opts.filter))) url.searchParams.set(k, v)
+    }
     // `batch` only means something on the review. Leaving it on another mode's URL would make that
     // address carry a scope it ignores — and a later jump to review would silently inherit it.
     if (next === 'review' && opts?.batch) url.searchParams.set('batch', opts.batch)
@@ -531,6 +547,34 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   // Inject tab nav + demo right slot into header
   const { setTabNav } = useHeaderTabNav()
   const isDemo = projectData?.isDemo === true
+  /**
+   * Guidance register row 4 — see the version control in the masthead. Computed up here, above the
+   * loading and error returns, because it owns a hook.
+   */
+  const behind = stackBehind({
+    sync: projectData?.stats?.strategySync,
+    hasStrategy,
+    isDemo,
+    generating: isRunning(projectId, 'generation'),
+  })
+  /*
+   * Exposure, once per project per version, so the follow rate (`cta_view_changes` ÷ this) can be
+   * read. The design's instruction for every register row: ship it, watch the event — a prompt
+   * nobody follows was wrong about the job.
+   */
+  const behindLoggedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!behind || activeTab !== 'decision-stack') return
+    const key = `${projectId}:${behind.version ?? '?'}`
+    if (behindLoggedRef.current === key) return
+    behindLoggedRef.current = key
+    logAndFlush('guidance_shown', 'stack-behind', {
+      projectId,
+      added: String(behind.added),
+      removed: String(behind.removed),
+    })
+  }, [behind, activeTab, projectId])
+
 
   const isSignedUp = !!session?.user?.id
 
@@ -699,6 +743,32 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
   const fetchProjectData = useCallback(() => {
     fetchProjectDataRef.current?.()
   }, [])
+
+  /*
+   * ═══ RE-READ THE COUNTS, WITHOUT THE LOADER ═══
+   *
+   * `fetchProjectData` sets `isLoading`, which swaps the whole page for a spinner and remounts it —
+   * fine for arriving, unusable mid-review. So a discard or restore used to refetch NOTHING, and the
+   * counts it moves stayed stale: the sync line, the changed-since ids, the stale flag, the version
+   * pointer, and the Rebuild dialog's "what changed" (on preview 2026-09-11, eight restores later the
+   * panel still read the old diff and the dialog said nothing had changed).
+   *
+   * This one only replaces the data. Debounced, so a run of discards is one read; a failure keeps
+   * what is on screen rather than raising the page's error state for a background refresh.
+   */
+  const refreshCountsRef = useRef<ReturnType<typeof debounce>>()
+  useEffect(() => {
+    refreshCountsRef.current = debounce(async () => {
+      try {
+        const response = await fetch(`/api/project/${projectId}`)
+        if (response.ok) setProjectData(await response.json())
+      } catch {
+        /* keep what is shown — the next full read will correct it */
+      }
+    }, 400)
+    return () => refreshCountsRef.current?.cancel()
+  }, [projectId])
+  const refreshCounts = useCallback(() => { refreshCountsRef.current?.() }, [])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -1035,6 +1105,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
 
   const opportunityCount = strategyData?.strategy?.opportunities?.length ?? 0
 
+
   return (
     <AppLayout>
       {/* Demo banner */}
@@ -1135,7 +1206,12 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                 ) : (
                   <div aria-hidden />
                 )}
-                <div className="order-last flex flex-wrap items-center justify-center gap-2 md:justify-end md:justify-self-end">
+                {/*
+                  The right cell is a column: the version control on top, and under it — only while
+                  true — the pointer that says this version is behind (guidance register row 4).
+                */}
+                <div className="order-last flex flex-col items-center gap-1.5 md:items-end md:justify-self-end">
+                <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
                   {isDemo ? (
                     (() => {
                       const episodeUrl = DEMO_EPISODE_URLS[projectId]
@@ -1230,6 +1306,29 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
                       )}
                     </>
                   )}
+                </div>
+                {/*
+                  ═══ GUIDANCE ROW 4: "MY STACK IS BEHIND MY KNOWLEDGE" ═══
+                  State, not a prompt (ruled 2026-09-11): it sits on the version it is about, shows
+                  for exactly as long as it is true, and has no dismissal. It leads to the
+                  knowledgebase's changed-since filter, where the ids behind the count are listed
+                  and Rebuild already lives — the stack gets no second Rebuild door.
+                  Trigger and words: `lib/guidance/stack-behind.ts`.
+                */}
+                {behind && (
+                  <GuidanceLink
+                    label={behind.label}
+                    detail={behind.detail}
+                    onClick={() => {
+                      logAndFlush('cta_view_changes', 'version-control', {
+                        projectId,
+                        added: String(behind.added),
+                        removed: String(behind.removed),
+                      })
+                      setMode('knowledge', { filter: { kind: 'changed' } })
+                    }}
+                  />
+                )}
                 </div>
                 </div>
                 <StrategyDisplay
@@ -1489,6 +1588,7 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
               projectId={projectId}
               initialFilter={initialFilter}
               initialDimension={initialDimension}
+              onGroundTruthsChanged={refreshCounts}
               onResumeConversation={(convId: string) => {
                 setChatResumeConversationId(convId)
                 setChatViewOnly(false)
@@ -1927,12 +2027,13 @@ export default function ProjectClient({ projectId, mode }: ProjectClientProps) {
         action={generationDialogAction}
         open={generationDialogOpen}
         onOpenChange={setGenerationDialogOpen}
-        fragmentsSinceStrategy={stats.fragmentsSinceStrategy}
+        changes={{ added: stats.strategySync?.added ?? stats.fragmentsSinceStrategy, removed: stats.strategySync?.removed ?? 0 }}
         isFirstTime={generationDialogAction === 'opportunities' && opportunityCount === 0}
         onConfirm={async () => {
           logAndFlush(`confirm_${generationDialogAction}`, 'generation-dialog', {
             projectId,
             fragmentsSinceStrategy: String(stats.fragmentsSinceStrategy),
+            removedSinceStrategy: String(stats.strategySync?.removed ?? 0),
           })
           if (generationDialogAction === 'refresh') {
             const res = await fetch(`/api/project/${projectId}/refresh-strategy`, { method: 'POST' })
