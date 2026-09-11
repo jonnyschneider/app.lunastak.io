@@ -18,7 +18,12 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
   'src/app/api/admin/eval/route.ts': { reason: 'local eval viewer, dev-only', mustContain: 'VERCEL_ENV' },
   'src/app/api/admin/eval/[evalId]/route.ts': { reason: 'local eval viewer, dev-only', mustContain: 'VERCEL_ENV' },
   'src/app/api/auth/[...nextauth]/route.ts': { reason: 'NextAuth itself' },
-  'src/app/api/auth/verify-marketing/route.ts': { reason: 'dev-only', mustContain: 'NODE_ENV' },
+  // NOT dev-only (the 2026-09-11 inventory said so, and its NODE_ENV "guard" was a secure-cookie
+  // flag): this is the production sign-in for marketing-site magic links. The signed JWT is the gate.
+  'src/app/api/auth/verify-marketing/route.ts': {
+    reason: 'marketing-site magic-link sign-in; the signed JWT is the credential',
+    mustContain: 'verifyMagicLinkToken',
+  },
   'src/app/api/guest/init/route.ts': { reason: 'mints the guest cookie — there is no requester yet' },
   'src/app/api/demo/strategy/route.ts': { reason: 'public demo content' },
   'src/app/api/dev-login/route.ts': { reason: 'dev-only', mustContain: 'NODE_ENV' },

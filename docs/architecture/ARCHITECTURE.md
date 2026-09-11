@@ -461,7 +461,8 @@ a demo is readable where it should be and never writable. See `src/app/api/__tes
 Add it to `PUBLIC` in `route-auth.test.ts` with a `reason`. If its safety depends on something in
 the file, such as an env guard (`VERCEL_ENV`, `NODE_ENV`, `ENABLE_TEST_ENDPOINTS`), a signature check
 (`svix`) or `getRequester`, also add `mustContain` with that string. The test then fails if that
-check is ever removed. Today's list: NextAuth, `guest/init` (it mints the guest cookie, so there is
+check is ever removed. Today's list: NextAuth, `auth/verify-marketing` (marketing-site magic-link
+sign-in: the signed JWT is the credential), `guest/init` (it mints the guest cookie, so there is
 no requester yet), dev- and test-only routes, the Resend webhook, public demo content, and
 `events` / `feedback` / `waitlist`, which are anonymous by design. Anonymous-capable still means
 identity comes from `getRequester()` or nowhere: `feedback` stored a body-supplied `userId` as given
