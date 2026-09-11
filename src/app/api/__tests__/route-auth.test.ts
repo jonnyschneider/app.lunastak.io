@@ -38,13 +38,6 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
 }
 
 /**
- * ⚠ SHRINK ONLY. Routes not yet on the guard (2026-09-11). Each task in the auth-gap plan removes
- * its entries; the last one deletes this list and the test below that reads it.
- */
-const KNOWN_UNGUARDED: string[] = [
-]
-
-/**
  * Tracked AND untracked (not ignored) route files, so a new route fails before it's committed.
  * The pathspec's `*` matches across `/` and the literal `[id]` segments are in the paths, not the
  * pattern — but a glob that silently matched nothing would make every test below vacuously pass,
@@ -67,7 +60,7 @@ describe('API route auth', () => {
   })
 
   it('every API route imports the guard or is explicitly public', () => {
-    const offenders = routeFiles().filter(f => !guarded(f) && !(f in PUBLIC) && !KNOWN_UNGUARDED.includes(f))
+    const offenders = routeFiles().filter(f => !guarded(f) && !(f in PUBLIC))
     expect(offenders, 'import @/lib/auth/guard, or add to PUBLIC with a reason').toEqual([])
   })
 
@@ -78,24 +71,16 @@ describe('API route auth', () => {
     expect(missing).toEqual([])
   })
 
-  it('the lists name only files that exist', () => {
-    const stale = [...Object.keys(PUBLIC), ...KNOWN_UNGUARDED].filter(f => !existsSync(f))
+  it('PUBLIC names only files that exist', () => {
+    const stale = Object.keys(PUBLIC).filter(f => !existsSync(f))
     expect(stale, 'remove entries for deleted routes').toEqual([])
-  })
-
-  it('KNOWN_UNGUARDED only shrinks — a guarded route must leave the list', () => {
-    expect(KNOWN_UNGUARDED.filter(guarded), 'now guarded — delete from KNOWN_UNGUARDED').toEqual([])
   })
 
   /** The fingerprint of a hand-rolled "who is this request" — 17 of them existed on 2026-09-11. */
   const HAND_ROLLED = [/const\s+GUEST_COOKIE_NAME\s*=/, /async\s+function\s+get\w*UserId\s*\(/]
 
   it('no route re-implements identity — import getRequester / GUEST_COOKIE_NAME instead', () => {
-    // Routes still on KNOWN_UNGUARDED are exempt while they wait their turn; the exemption goes
-    // when that list does (auth-gap plan Task 11, Step 3).
-    const offenders = routeFiles().filter(
-      f => !KNOWN_UNGUARDED.includes(f) && HAND_ROLLED.some(re => re.test(readFileSync(f, 'utf8'))),
-    )
+    const offenders = routeFiles().filter(f => HAND_ROLLED.some(re => re.test(readFileSync(f, 'utf8'))))
     expect(offenders).toEqual([])
   })
 

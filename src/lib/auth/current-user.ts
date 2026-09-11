@@ -6,15 +6,15 @@
  * checking the row exists AND that its email is a guest email, any id in a cookie would be accepted
  * as that user.
  *
- * ⚠ EIGHT ROUTES HAD THEIR OWN COPY of this when it was extracted (2026-09-10) — dismissal,
- * deep-dive ×2, strategy, strategy-version, content, template-entry, conversation star. All eight
- * were behaviourally identical and differed only in style, which is luck rather than design: they
- * are the security boundary for every guest request in the product, and eight copies is eight places
- * for one of them to quietly stop validating.
+ * API routes don't call this directly: they go through `./guard.ts` (`requireUser`,
+ * `require{Project,Conversation,Trace,Document}Access`), and `src/app/api/__tests__/route-auth.test.ts`
+ * fails for any route that neither does that nor sits on its public allowlist — or that hand-rolls
+ * its own copy of this function. History: when this was extracted (2026-09-10) eight routes had
+ * their own copy, and ~17 by the 2026-09-11 count; all were moved onto the guard. Scattered copies
+ * of the security boundary for every guest request are how one of them quietly stops validating.
  *
- * This module is where the navigation redirector reads from, so it is now also load-bearing for
- * which mode a user lands on. Repointing the remaining routes is tracked as a follow-up rather than
- * folded into a navigation change.
+ * The navigation redirector also reads from this module, so it is load-bearing for which mode a
+ * user lands on too.
  */
 
 import { cookies } from 'next/headers'
