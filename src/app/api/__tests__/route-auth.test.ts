@@ -44,10 +44,6 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
 const KNOWN_UNGUARDED: string[] = [
   'src/app/api/auth/prepare-transfer/route.ts',
   'src/app/api/conversation/[id]/detail/route.ts',
-  'src/app/api/conversation/[id]/star/route.ts',
-  'src/app/api/deep-dive/[id]/route.ts',
-  'src/app/api/deep-dive/route.ts',
-  'src/app/api/dismissal/route.ts',
   'src/app/api/paywall/prompt/route.ts',
   'src/app/api/project/[id]/share/route.ts',
   'src/app/api/projects/[id]/route.ts',

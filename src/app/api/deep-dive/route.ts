@@ -1,42 +1,17 @@
 // src/app/api/deep-dive/route.ts
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isGuestUser } from '@/lib/projects'
+import { requireUser, requireProjectAccess, isDenied } from '@/lib/auth/guard'
 import { validateDeepDiveCreateInput } from '@/lib/contracts/deep-dive'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
-
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-  if (session?.user?.id) return session.user.id
-
-  const cookieStore = await cookies()
-  const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-  if (guestCookie?.value) {
-    const guestUser = await prisma.user.findUnique({
-      where: { id: guestCookie.value },
-      select: { email: true },
-    })
-    if (guestUser && isGuestUser(guestUser.email)) {
-      return guestCookie.value
-    }
-  }
-  return null
-}
 
 /**
  * POST /api/deep-dive
  * Creates a new deep dive
  */
 export async function POST(request: Request) {
-  const userId = await getUserId()
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // The requester first, so an anonymous call is a 401 before the body or query is looked at.
+  const requester = await requireUser()
+  if (isDenied(requester)) return requester
 
   try {
     const body = await request.json()
@@ -50,16 +25,11 @@ export async function POST(request: Request) {
 
     const { projectId, topic, notes, origin } = body
 
-    // Verify user owns the project
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        userId,
-        status: 'active',
-      },
-    })
-
-    if (!project) {
+    // The project arrives in the request, so it goes through the guard: owner only, and an
+    // archived project is as not-found as someone else's.
+    const auth = await requireProjectAccess(projectId, { as: requester })
+    if (isDenied(auth)) return auth
+    if (auth.project.status !== 'active') {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
@@ -96,11 +66,9 @@ export async function POST(request: Request) {
  * Lists deep dives for a project
  */
 export async function GET(request: Request) {
-  const userId = await getUserId()
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // The requester first, so an anonymous call is a 401 before the body or query is looked at.
+  const requester = await requireUser()
+  if (isDenied(requester)) return requester
 
   try {
     const { searchParams } = new URL(request.url)
@@ -111,16 +79,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
     }
 
-    // Verify user owns the project
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        userId,
-        status: 'active',
-      },
-    })
-
-    if (!project) {
+    // The project arrives in the request, so it goes through the guard: owner only, and an
+    // archived project is as not-found as someone else's.
+    const auth = await requireProjectAccess(projectId, { as: requester })
+    if (isDenied(auth)) return auth
+    if (auth.project.status !== 'active') {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
