@@ -35,7 +35,7 @@ const GENERATION_CONFIGS: Record<GenerationAction, GenerationConfig> = {
     afterChanges: 'since the last update. Luna will rebuild your strategy from your ground truths as they stand now.',
     afterNoChanges:
       'in your ground truths since the last update. Luna will re-analyse the same knowledge and may produce a different result.',
-    preparingLabel: 'Updating syntheses with your latest insights',
+    preparingLabel: 'Updating syntheses with your latest ground truths',
   },
   opportunities: {
     title: 'Generate Opportunities',
