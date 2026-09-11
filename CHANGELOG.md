@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.1] - 2026-09-11
+
+### Fixed — dev-login signs you in again (dev server only)
+
+`/api/dev-login` hadn't signed anyone in since sessions moved to the database: it minted a JWT the
+PrismaAdapter never looks up, and the redirect made it look as if it had worked. It now writes a
+`Session` row, as `auth/verify-marketing` does. A new `?guest=<id>` makes you that guest, so
+`?guest=` followed by `?email=` tries a guest signup with no email, Resend, Slack or LLM spend. The
+route is unchanged outside `NODE_ENV === 'development'` — still a 403 on preview and production.
+
 ## [2.10.0] - 2026-09-11
 
 ### Added — PostHog alongside Statsig (2026-09-11)
