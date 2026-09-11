@@ -315,6 +315,10 @@ custom Statsig event and its metadata is listed there. Update it in the same com
 change to an event's name, value or metadata — dashboards on the "Lunastak v2" board are built
 from it, and drift means someone filters on a field that was never emitted.
 
+**PostHog runs alongside Statsig (spike, from 2026-09-11)** — see
+[analytics-events.md → PostHog](analytics-events.md#posthog-alongside-statsig). Every event goes to
+both through the same two wrappers; nothing changes at call sites.
+
 ### Identity model (read before touching any per-user counter)
 
 Every project has a `userId` — `Project.userId` is non-null. There is no anonymous path:
@@ -486,6 +490,12 @@ Minting a guest belongs to the two places that also **set the cookie**: `guest/i
 deep-link fallback in `project/[id]` GET. A route that mints a guest without setting a cookie makes
 a user nobody can come back as, and every call gets a fresh one, so nothing is metered.
 `conversation/start` did exactly that and was an open LLM proxy until it moved to `requireUser()`.
+
+`guest/init` is a POST, called from the browser by `GuestStart` when a cookieless visitor lands on
+`/`. Never make it the target of a server redirect again. When it was a GET that `/` redirected to,
+every crawler and link unfurler following `/` became a guest with a project. That was ~100 rows a
+week against ~70 real sessions across the app and marketing site combined (measured 2026-09-11),
+which made the guest funnel unreadable.
 
 ### What the test holds, and what it can't see
 

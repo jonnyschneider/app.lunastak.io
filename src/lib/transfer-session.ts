@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { isGuestUser } from '@/lib/projects'
+import { mergeGuestIntoUser } from '@/lib/analytics/posthog-server'
 
 /**
  * Transfer all guest data to an authenticated user.
@@ -116,5 +117,9 @@ export async function transferGuestToUser(
   })
 
   console.log(`[Transfer] Successfully transferred data from guest ${guestUserId} to user ${authenticatedUserId}`)
+
+  // The guest's analytics history follows its data. After the commit, never before: the merge is
+  // irreversible, and a rolled-back transfer must leave two people behind.
+  await mergeGuestIntoUser(guestUserId, authenticatedUserId)
   return true
 }

@@ -19,6 +19,49 @@ Reference list of every custom Statsig event emitted by the app. Dashboards buil
 - **Client events** fire from the browser via `logAndFlush(name, value?, metadata?)` in `src/components/StatsigProvider.tsx`. Auto-attach `userType`, flush immediately to survive UI transitions.
 - **Server events** fire from API routes / NextAuth callbacks via `logStatsigEvent(userId, name, value?, metadata?)` in `src/lib/statsig.ts`. Used when the truth lives server-side (signups, server-side resource creation, LLM token accounting).
 
+## PostHog alongside Statsig
+
+From 2026-09-11 every event in this catalogue also goes to **PostHog**, under the same name, while
+we judge whether its reports beat Statsig's. The fan-out lives in the two wrappers above
+(`src/lib/analytics/posthog-{client,server}.ts`), so call sites are untouched. Off unless
+`NEXT_PUBLIC_POSTHOG_KEY` is set.
+
+- **`value`** has no PostHog column, so it arrives as a `value` property. `userType`, `app_version`
+  and `tier` are on every event (`tier` = `production` | `preview` | `development` — filter on it).
+- **The marketing site (lunastak.io) shares the PostHog project**, tagging its events
+  `site: marketing` against the app's `site: app`. The cookie sits on `.lunastak.io`, so the pages a
+  visitor read before arriving in the app are on the same person.
+- **Distinct id = the database `User.id`**, guests included, same as Statsig. Anonymous visitors
+  stay anonymous until they become a guest or sign up, and their earlier events join on that step.
+- **Guest → account is stitched server-side.** Signing up gives a guest a new id, and PostHog will
+  not re-identify an identified person. So the browser starts afresh as the new account, and
+  `transferGuestToUser` sends `$merge_dangerously` once its transaction commits — the guest's
+  whole pre-signup journey lands on the account. This is the join Statsig never had, and the reason
+  the funnel below works.
+- **Limit:** a guest created mid-page (first conversation) is identified on the next full load,
+  not at once. Their device's anonymous events are merged when that happens.
+- Autocapture and pageviews (per client-side navigation) come from the SDK.
+- **No session replay, on either site (decision 2026-09-11).** Recordings would show strategy text,
+  and the data-security page says we don't record. PostHog's is disabled in `init` — so a project
+  setting can't turn it on — and Statsig's `@statsig/session-replay` is removed. Turning it back on
+  means changing that page first.
+
+**The funnel to judge it by** (Product analytics → Funnel, first-touch attribution, 14-day window):
+
+1. `$pageview`
+2. **Added context** — a PostHog *Action* matching any of `cta_new_chat`, `cta_upload_doc`,
+   `cta_import_bundle`. The three cold-start doors are equal routes to a stack (the build in the
+   first test run came from a document), so one of them alone undercounts.
+3. `strategy_generated` — server-side, fires when an initial stack is built
+4. `account_created`
+
+Funnels count people, not events, so the launchpad double-fire (see `cta_new_chat`) doesn't
+distort them — only raw event totals.
+
+Some people sign up before they build, so read it twice: step order *sequential* for the guest
+path, *any order* for "did they both build and sign up". Break down by `userType` at step 1 and by `$initial_referring_domain` to see which marketing
+sources deliver people who get to a stack.
+
 ---
 
 ## Account & conversion
@@ -61,7 +104,7 @@ reports through `paywall_*` above.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_start_initial_conversation` | client | `inline-chat` | `projectId`, userType | First message sent in a fresh project. |
+| ~~`cta_start_initial_conversation`~~ | — | — | — | **Dead.** Its only emitter was `InlineChat`, reachable only through `FirstTimeEmptyState` — orphaned for months (see `cta_demo_peek`), deleted 2026-09-10 (`a4de399`); `InlineChat` itself went on 2026-09-11 (`94ef9f0`). So it has most likely been silent for months, not days. The first-chat door is now `cta_new_chat`. |
 | `cta_generate_strategy` | client | `inline-chat` \| `early-exit` | `projectId`, userType | User triggered strategy generation. Surface in `value`. (`extraction-confirm` retired 2026-09-08 with `ExtractionConfirm` — see `retired-extraction-run.md`.) |
 | `cta_update_direction` | client | **retired 2026-09-10** | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
