@@ -166,6 +166,7 @@ not the Launchpad and not a stepper.
 | Masthead: Decision Stack mark (left) · company logo (centre, demo only) · version (right) | — | mark → attribution popover | `ProjectClient.tsx:1119` |
 | **`Version N \| ⋯`** split pill | real projects; demo shows *"Generated from Acquired podcast transcript"* instead | ⋯ → **Export** · **Past versions** (opens the sheet) | `:1176` |
 | **Share** | real projects with a strategy | share dialog, or sign-in gate for guests | `:1222` |
+| **"N changes since vN"** — guidance row 4, under the version control | real projects with a strategy, comparable snapshot, knowledgebase has moved on since this version; hidden while a build runs. State, not a prompt: no dismissal | → `?mode=knowledge&filter=changed`, where Rebuild lives | `GuidanceLink` · `lib/guidance/stack-behind.ts` |
 | **Vision** card | read · flipped-to-edit | edit inline | `FlipCard` · `StrategyDisplay` |
 | **Strategy** card | read · flipped-to-edit | edit inline | `StrategyDisplay` |
 | **Objectives** grid | read · flipped-to-edit · empty | edit inline, add | `StrategyDisplay` |

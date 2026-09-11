@@ -53,6 +53,7 @@ export function GroundTruthReview({
   idFilter,
   batch,
   readOnly = false,
+  onChanged,
 }: {
   projectId: string
   /**
@@ -107,6 +108,14 @@ export function GroundTruthReview({
    * optimistically removes the row, fails the write, and puts it back.
    */
   readOnly?: boolean
+  /**
+   * A discard or restore has been SAVED. The host's own counts — the sync line, the changed-since
+   * ids, the stale flag, the Rebuild dialog's "what changed" — come from the project read, and until
+   * 2026-09-11 nothing told it anything had moved: after restoring eight ground truths the panel
+   * still read the old diff, its filter listed nothing, and the dialog said nothing had changed.
+   * Fired after the write succeeds, never optimistically — a failed write changed nothing.
+   */
+  onChanged?: (change: 'discarded' | 'restored') => void
 }) {
   const [items, setItems] = useState<GateItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -206,6 +215,7 @@ export function GroundTruthReview({
       })
       if (!r.ok) throw new Error('patch failed')
       setError(null)
+      onChanged?.('discarded')
     } catch {
       setItems(cur => (cur ? [...cur, item] : cur))
       setArchivedCount(c => Math.max(0, c - 1))
@@ -214,7 +224,7 @@ export function GroundTruthReview({
     } finally {
       setPending(p => { const n = new Set(p); n.delete(item.id); return n })
     }
-  }, [projectId])
+  }, [projectId, onChanged])
 
   /** Put a discarded fragment back. Same PATCH as an undo, from a list the undo cannot reach. */
   // A controlled host toggles the disclosure without going through `openArchived`, so the fetch
@@ -247,12 +257,13 @@ export function GroundTruthReview({
       // Re-read rather than splice: the row belongs back in its dimension group, in sort order.
       setReloadKey(k => k + 1)
       setError(null)
+      onChanged?.('restored')
     } catch {
       setError('That didn’t restore — try again.')
     } finally {
       setPending(p => { const n = new Set(p); n.delete(item.id); return n })
     }
-  }, [projectId])
+  }, [projectId, onChanged])
 
   const openArchived = useCallback(async () => {
     if (controlled) onArchivedOpenChange?.(!archivedOpen)

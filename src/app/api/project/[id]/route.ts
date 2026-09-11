@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
 import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
+import { computeStrategySync } from '@/lib/ground-truth/strategy-sync'
 import { createGuestUser } from '@/lib/projects'
 import { computeDimensionSupport, type SupportLevel } from '@/lib/support/dimension-support'
 import { getRequester, GUEST_COOKIE_NAME } from '@/lib/auth/current-user'
@@ -269,27 +270,14 @@ export async function GET(
      * through to the timestamp heuristic is wrong in one direction, where treating null as an
      * empty set would report every ground truth as newly added.
      */
-    const snapshotIds = Array.isArray(latestSnapshot?.fragmentIds)
-      ? new Set(latestSnapshot!.fragmentIds as string[])
-      : null
-
-    const activeIds = new Set(groundTruths.map(f => f.id))
-
-    // The ids, not just the tally: "3 added, 2 discarded" is only useful if the user can then ask
-    // WHICH, and the answer is a filter over lists the panel already renders.
-    //
-    // Ground truths only, for the same reason as every other user-facing count: the diff is a
-    // clickable filter over the review, so an id the review will never render would be counted and
-    // then vanish when clicked.
-    const addedIds = snapshotIds
-      ? groundTruths.filter(f => !snapshotIds.has(f.id)).map(f => f.id)
-      : latestSnapshot
-        ? groundTruths.filter(f => f.createdAt > latestSnapshot.createdAt).map(f => f.id)
-        : groundTruths.map(f => f.id)
-
-    const removedIds = snapshotIds
-      ? Array.from(snapshotIds).filter(id => !activeIds.has(id))
-      : []
+    // What changed since the build, by id — `lib/ground-truth/strategy-sync.ts` (tested). Removal is
+    // measured against ALL active fragments, additions against ground truths only; see the module.
+    const { addedIds, removedIds, comparable } = computeStrategySync({
+      snapshotIds: Array.isArray(latestSnapshot?.fragmentIds) ? (latestSnapshot!.fragmentIds as string[]) : null,
+      snapshotAt: latestSnapshot?.createdAt ?? null,
+      activeFragments: project.fragments,
+      groundTruths,
+    })
 
     const addedSinceStrategy = addedIds.length
     const removedSinceStrategy = removedIds.length
@@ -336,7 +324,7 @@ export async function GET(
           version: postSnapshotCount || null,
           added: addedSinceStrategy,
           removed: removedSinceStrategy,
-          comparable: snapshotIds !== null,
+          comparable,
           // The one fact a pre-`fragmentIds` snapshot can still offer. Without it the degraded
           // label is a bare "v1", which says nothing a user could act on.
           builtAt: latestSnapshot?.createdAt.toISOString() ?? null,

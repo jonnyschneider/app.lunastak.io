@@ -39,10 +39,15 @@ export function parseKnowledgeFilter(params: ParamReader): KnowledgeFilter | nul
   return null
 }
 
+/** The query params that express a filter — shared by `knowledgeHref` and `setMode`. */
+export function knowledgeFilterParams(filter: KnowledgeFilter | null | undefined): Record<string, string> {
+  if (filter?.kind === 'changed') return { filter: 'changed' }
+  if (filter?.kind === 'dimension') return { dimension: filter.dimension }
+  return {}
+}
+
 /** The address of a project's knowledgebase, optionally opened on a filter. */
 export function knowledgeHref(projectId: string, filter?: KnowledgeFilter | null): string {
-  const query = new URLSearchParams({ mode: 'knowledge' })
-  if (filter?.kind === 'changed') query.set('filter', 'changed')
-  if (filter?.kind === 'dimension') query.set('dimension', filter.dimension)
+  const query = new URLSearchParams({ mode: 'knowledge', ...knowledgeFilterParams(filter) })
   return `/project/${encodeURIComponent(projectId)}?${query}`
 }
