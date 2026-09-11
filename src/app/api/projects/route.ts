@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server'
 import { GROUND_TRUTH_SELECT, onlyGroundTruths } from '@/lib/ground-truth/count'
-import { cookies } from 'next/headers'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { TIER_1_DIMENSIONS } from '@/lib/constants/dimensions'
-import { isGuestUser } from '@/lib/projects'
 import { isUserPro } from '@/lib/user'
-
-const GUEST_COOKIE_NAME = 'guestUserId'
+import { requireUser, isDenied } from '@/lib/auth/guard'
 
 /**
  * GET /api/projects
@@ -16,36 +11,15 @@ const GUEST_COOKIE_NAME = 'guestUserId'
  * Supports both authenticated users and guests (via cookie)
  */
 export async function GET() {
-  const session = await getServerSession(authOptions)
-
-  // Determine user ID from session or guest cookie
-  let userId: string | null = session?.user?.id || null
-
-  if (!userId) {
-    const cookieStore = await cookies()
-    const guestCookie = cookieStore.get(GUEST_COOKIE_NAME)
-
-    if (guestCookie?.value) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: guestCookie.value },
-        select: { email: true },
-      })
-
-      if (guestUser && isGuestUser(guestUser.email)) {
-        userId = guestCookie.value
-      }
-    }
-  }
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const requester = await requireUser()
+  if (isDenied(requester)) return requester
+  const { userId } = requester
 
   try {
     // Get all active projects for the user
     const projects = await prisma.project.findMany({
       where: {
-        userId: userId,
+        userId,
         status: 'active',
       },
       include: {
@@ -101,23 +75,23 @@ async function initializeSynthesisRecords(projectId: string): Promise<void> {
  * Creates a new project (checks paywall limits)
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  // Signed-up users only: a guest works in the project they were given, and creating more is what
+  // the paywall below meters.
+  const requester = await requireUser({ guests: false })
+  if (isDenied(requester)) return requester
+  const { userId } = requester
 
   // Check existing non-demo projects
   const existingProjects = await prisma.project.count({
     where: {
-      userId: session.user.id,
+      userId,
       isDemo: false,
       status: 'active',
     },
   })
 
   // Free users limited to 1 non-demo project
-  const isPro = await isUserPro(session.user.id)
+  const isPro = await isUserPro(userId)
   if (!isPro && existingProjects >= 1) {
     return NextResponse.json({
       error: 'Project limit reached',
@@ -140,14 +114,14 @@ export async function POST(request: Request) {
     let name = body.name
     if (!name) {
       const totalProjects = await prisma.project.count({
-        where: { userId: session.user.id },
+        where: { userId: userId },
       })
       name = `My Project ${totalProjects + 1}`
     }
 
     const project = await prisma.project.create({
       data: {
-        userId: session.user.id,
+        userId,
         name,
         status: 'active',
         isDemo: false,

@@ -42,16 +42,13 @@ const PUBLIC: Record<string, { reason: string; mustContain?: string }> = {
  * its entries; the last one deletes this list and the test below that reads it.
  */
 const KNOWN_UNGUARDED: string[] = [
-  'src/app/api/auth/prepare-transfer/route.ts',
   'src/app/api/conversation/[id]/detail/route.ts',
   'src/app/api/paywall/prompt/route.ts',
   'src/app/api/project/[id]/share/route.ts',
   'src/app/api/projects/[id]/route.ts',
-  'src/app/api/projects/route.ts',
   'src/app/api/strategies/[id]/route.ts',
   'src/app/api/strategies/route.ts',
   'src/app/api/transfer-session/route.ts',
-  'src/app/api/user/account/route.ts',
   'src/app/api/user/upgrade/route.ts',
 ]
 
