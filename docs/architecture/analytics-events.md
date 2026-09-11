@@ -42,10 +42,15 @@ we judge whether its reports beat Statsig's. The fan-out lives in the two wrappe
 
 **The funnel to judge it by** (Product analytics → Funnel, first-touch attribution, 14-day window):
 
-1. `$pageview` (or `cta_start_initial_conversation` to count only people who began)
-2. `cta_start_initial_conversation`
+1. `$pageview`
+2. **Added context** — a PostHog *Action* matching any of `cta_new_chat`, `cta_upload_doc`,
+   `cta_import_bundle`. The three cold-start doors are equal routes to a stack (the build in the
+   first test run came from a document), so one of them alone undercounts.
 3. `strategy_generated` — server-side, fires when an initial stack is built
 4. `account_created`
+
+Funnels count people, not events, so the launchpad double-fire (see `cta_new_chat`) doesn't
+distort them — only raw event totals.
 
 Some people sign up before they build, so read it twice: step order *sequential* for the guest
 path, *any order* for "did they both build and sign up". Break down by `userType` at step 1 and by `$initial_referring_domain` to see which marketing
@@ -93,7 +98,7 @@ reports through `paywall_*` above.
 
 | Event | Side | Value | Metadata | What it means |
 |---|---|---|---|---|
-| `cta_start_initial_conversation` | client | `inline-chat` | `projectId`, userType | First message sent in a fresh project. |
+| ~~`cta_start_initial_conversation`~~ | — | — | — | **Dead 2026-09-11.** Its only emitter was `InlineChat`, deleted in `94ef9f0`; the catalogue wasn't updated then. The first-chat door is now `cta_new_chat`. |
 | `cta_generate_strategy` | client | `inline-chat` \| `early-exit` | `projectId`, userType | User triggered strategy generation. Surface in `value`. (`extraction-confirm` retired 2026-09-08 with `ExtractionConfirm` — see `retired-extraction-run.md`.) |
 | `cta_update_direction` | client | **retired 2026-09-10** | `projectId`, userType | User opened the strategy refresh flow. |
 | `cta_refresh_strategy` | client | `knowledge-panel` | userType | "Create strategy from KB" header CTA. |
