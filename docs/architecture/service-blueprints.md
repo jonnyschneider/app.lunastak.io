@@ -99,11 +99,11 @@ quality?*
 
 | # | | phase | Step | Governed by |
 |---|---|---|---|---|
-| 1 | ▲ | — | Stack shows as **changed** — the knowledge panel's sync line, *"Stack v3 · 4 added, 1 discarded since"*, from the latest snapshot's `fragmentIds` vs the active ground truths; **All / Changed since v3** chips filter the list to exactly those rows (`?filter=changed` opens it there) | `KnowledgeSummaryPanel` · `api/project/[id]/route.ts:308-322` |
+| 1 | ▲ | — | Stack shows as **changed** — the knowledge panel's sync line, *"Stack v3 · 4 added, 1 discarded since"*, from the latest snapshot's `fragmentIds` vs the active ground truths; **All / Changed since v3** chips filter the list to exactly those rows (`?filter=changed` opens it there) | `KnowledgeSummaryPanel` · `api/project/[id]/route.ts:284-298` |
 | 2 | ▲ | — | Clicks **Refresh** on the knowledge summary | `ProjectClient.tsx:1465` |
 | 3 | ⛔ | — | **Confirmation gate** — explains what will happen, asks to proceed | `GenerationConfirmDialog` (`action: 'refresh'`) |
 | 4 | ▼ | **ADMIT** | `POST /refresh-strategy` — auth, project lookup, already-generating guard (409) | `refresh-strategy/route.ts` |
-| 5 | ▼ | **ADMIT** | Returns immediately; work continues in `waitUntil` | `refresh-strategy/route.ts:80` |
+| 5 | ▼ | **ADMIT** | Returns immediately; work continues in `waitUntil` | `refresh-strategy/route.ts:49` |
 | 6 | ▼ | **ADMIT** | `planPipeline('refresh_requested')` → synthesis ✓, summary ✓, generation `refresh`. Pure function | `pipeline/plan.ts:61` |
 | 7 | ▲ | — | UI enters busy state, begins polling | `GET /generation-status` |
 | 8 | ▼ | **GATHER** | Load fragments, existing syntheses, previous stack | `pipeline/generation.ts:87-100` |
@@ -148,7 +148,7 @@ quality?*
 |---|---|---|---|---|
 | 1 | ▲ | — | Opens chat, converses. Messages persisted per turn | `chat-sheet.tsx` · `/api/conversation/*` |
 | 2 | ▲ | — | Luna offers an early exit; clicks **Generate Strategy** (green, deliberately not mulberry — see the comment, inside the transcript) — or ends the chat, or it completes on its own | `ChatInterface.tsx:134` · `chat-sheet.tsx` (`extractContext`) |
-| 3 | ▼ | **ADMIT** | **Two request shapes.** Ending on its own (or via *Generate Strategy*) with no strategy yet → `POST /api/extract {isInitial:true}` — `setGenerationStatus('generating')`, conversation → `extracting`. Pressing **End**, or any chat once a strategy exists → `{lightweight:true}`. Both return immediately, work in `waitUntil`. **No confirmation gate** on either | `extract/route.ts:189,286` · `chat-sheet.tsx` (`extractContext`) |
+| 3 | ▼ | **ADMIT** | **Two request shapes.** Ending on its own (or via *Generate Strategy*) with no strategy yet → `POST /api/extract {isInitial:true}` — `setGenerationStatus('generating')`, conversation → `extracting`. Pressing **End**, or any chat once a strategy exists → `{lightweight:true}`. Both return immediately, work in `waitUntil`. **No confirmation gate** on either | `extract/route.ts:195,292` · `chat-sheet.tsx` (`extractContext`) |
 | 4 | ▼ | **ADMIT** | `planPipeline({conversation_ended, isInitial:true})` → extraction ✓, persist ✓, **synthesis ✗**, **generation `null`** | `pipeline/plan.ts:14` |
 | 5 | ▲ | — | Sheet closes; toast; task polling begins — as a **`generation`** task for `isInitial`, an **`extraction`** task for `lightweight`. Only the second's completion event names the conversation, which is why the chat reports its own completion (`onIngestComplete`, from both) | `chat-sheet.tsx` |
 | 6 | ▼ | **REASON** | Emergent extraction → 3–7 themes + dimension tags, each with a verbatim span and a self-reported `verbatim \| interpretation` type | `extract/route.ts` · `lib/evidence/parse.ts` |
@@ -199,9 +199,9 @@ called by nothing but the dev pipeline harness. Two further changes since:
 | # | | phase | Step | Governed by |
 |---|---|---|---|---|
 | 1 | ▲ | — | Selects file (≤10MB, allowed types) | `DocumentUploadDialog` |
-| 2 | ▼ | **ADMIT** | `POST /documents/upload` — auth, size/type guards, project check | `documents/upload/route.ts:25-67` |
-| 3 | ▼ | **COMMIT** | `Document(status:'pending')` → `'processing'` | `upload/route.ts:79-89` |
-| 4 | ▼ | **ADMIT** | Returns immediately; work in `waitUntil` | `upload/route.ts:93` |
+| 2 | ▼ | **ADMIT** | `POST /documents/upload` — size/type guards, then the guard (signed-up owner, active project), and a `deepDiveId` must belong to the project | `documents/upload/route.ts:20-59` |
+| 3 | ▼ | **COMMIT** | `Document(status:'pending')` → `'processing'` | `upload/route.ts:62-80` |
+| 4 | ▼ | **ADMIT** | Returns immediately; work in `waitUntil` | `upload/route.ts:84` |
 | 5 | ▲ | — | Row appears with a processing spinner | `/documents/[id]/status` polling |
 | 6 | ▼ | **REASON** | Text extraction, then document extraction → 3–10 themes, each with a verbatim span and a self-reported `verbatim \| interpretation` type | `lib/extract-text.ts` · `lib/document-processing.ts` · `lib/evidence/parse.ts` |
 | 7 | ▼ | **COMMIT** | `createFragmentsFromDocument` → `Fragment(contentType:'theme', documentId)` + `Evidence` rows in the same transaction; spans verified at ingest against the document text | `lib/fragments.ts` · `lib/evidence/verify.ts` |
@@ -263,7 +263,7 @@ fragment.
 |---|---|---|---|---|
 | 1 | ▲ | — | Clicks **Draft opportunities** | `StrategyDisplay` → `setGenerationDialogAction('opportunities')` |
 | 2 | ⛔ | — | **Confirmation gate** — cost/intent only. **Skipped entirely on a first run** (`isFirstTime` auto-confirms: nothing to lose) | `GenerationConfirmDialog.tsx:98` |
-| 3 | ▼ | **GATHER** | Compute **coverage warnings** (`confidence === 'LOW' \|\| fragmentCount < 3`) — *after* the gate, and returned in the response, where **nothing reads them** | `generate-opportunities/route.ts:74-80,122` |
+| 3 | ▼ | **GATHER** | Compute **coverage warnings** (`confidence === 'LOW' \|\| fragmentCount < 3`) — *after* the gate, and returned in the response, where **nothing reads them** | `generate-opportunities/route.ts:45-51,93` |
 | 4 | ▼ | **ADMIT** | `planPipeline('generate_opportunities')` → synthesis ✓, generation `opportunities` | `pipeline/plan.ts:73` |
 | 5 | ▼ | **REASON** | `updateAllSyntheses` (foreground for this trigger's plan) | `executor.ts` |
 | 6 | ▼ | **GATHER** | Load fragments, synthesis **`summary` only**, current stack | `pipeline/generation.ts:499-528` |
@@ -291,7 +291,7 @@ there is no gate after it. This is the altitude the review-pass primitive was ac
 | 1 | ▼ | **GATHER** | Filter syntheses to `confidence === 'LOW' && gaps.length > 0`; take `gaps[0]` | `ExploreNextSection.tsx:116-124` |
 | 2 | ▲ | **REVEAL** | Gap title + description render as an **action card** | `ExploreNextSection` |
 | 3 | ▲ | — | Clicks it (or dismisses — `UserDismissal`) | `ProjectClient.tsx` (Explore Next `onItemClick`) · `/api/dismissal` |
-| 4 | ▼ | — | **No `DeepDive` is created.** A gap card opens the chat directly, seeded with `gapExploration` and no deep dive (`setChatDeepDiveId(undefined)`); a provocation card, likewise, with its question. `DeepDive` rows come only from *Add Deep Dive* (`deep-dive/route.ts:67`), and only a `deep-dive` card opens one | `ProjectClient.tsx` · `deep-dive/route.ts:67` |
+| 4 | ▼ | — | **No `DeepDive` is created.** A gap card opens the chat directly, seeded with `gapExploration` and no deep dive (`setChatDeepDiveId(undefined)`); a provocation card, likewise, with its question. `DeepDive` rows come only from *Add Deep Dive* (`deep-dive/route.ts:34`), and only a `deep-dive` card opens one | `ProjectClient.tsx` · `deep-dive/route.ts:34` |
 | 5 | ▲ | — | Chat sheet opens seeded with the gap — not via `DeepDiveSheet` | `chat-sheet.tsx` |
 | 6 | ▼ | — | From here it is task 2's extraction path (`isInitial:false`, no generation) — or task 3's, for a document uploaded into the deep dive | `extract/route.ts` |
 | 7 | ▲ | **REVEAL** | *Pre-strategy:* the chat's own review — a plain one, since a gap chat belongs to no deep dive. For an ingest inside a real deep dive (a *deep-dive* card, or Add Deep Dive), the review carries `&deepDive=<id>` and leaving it reopens that deep dive. *With a strategy:* no review; a deep-dive ingest goes straight back to its deep dive, which lists the chat or document but **none of its ground truths** | `ProjectClient.tsx:428` · `deep-dive-sheet.tsx` |
@@ -319,9 +319,9 @@ one list the knowledge panel renders, and the ground truths are on the page (`sc
 | 2 | ▼ | **GATHER** | Load active ground truths with their evidence; filter in place by dimension, or to the *changed since vN* ids | `/api/project/[id]/fragments` · `GroundTruthReview` |
 | 3 | ▲ | **REVEAL** | Ground truths grouped by dimension, interpretations first, each with the quote it rests on and its verification state. The rows shown are stamped `reviewedAt` — with a dimension or *changed* filter on, only those | `GroundTruthReview` · `ground-truth/derive.ts` · `EvidenceQuote` |
 | 4 | ▲ | — | Discards one — a single click, optimistic; a failed write puts it back; undo restores | `GroundTruthReview` |
-| 5 | ▼ | **COMMIT** | `PATCH /fragments` → `status:'archived'`, `archivedAt`, `archivedReason:'ground_truth_review'` | `fragments/route.ts:177-227` |
+| 5 | ▼ | **COMMIT** | `PATCH /fragments` → `status:'archived'`, `archivedAt`, `archivedReason:'ground_truth_review'` | `fragments/route.ts:140-180` |
 | 6 | ▲ | **REVEAL** | Row moves to the Archived list; counts update | `GroundTruthReview` |
-| 7 | ▼ | **GATHER** | On the next project read, the discarded id is in the latest snapshot's `fragmentIds` but no longer active → `removedIds` → `strategyIsStale` | `api/project/[id]/route.ts:308-322` |
+| 7 | ▼ | **GATHER** | On the next project read, the discarded id is in the latest snapshot's `fragmentIds` but no longer active → `removedIds` → `strategyIsStale` | `api/project/[id]/route.ts:284-298` |
 | 8 | ▲ | **REVEAL** | Sync line reads *"1 discarded since"*; the *Changed since vN* chip includes it | `KnowledgeSummaryPanel` |
 | 9 | ▼ | — | No re-synthesis, no `knowledgeUpdatedAt` bump, no regeneration **at discard time** — by ruling, see Dispositions. On the next refresh the dimension is **rebuilt without it** (task 1 step 9); until 2026-09-11 a discard-only change skipped the dimension, so the discarded truth survived into refresh's context | `synthesis/update-synthesis.ts` |
 
@@ -346,9 +346,9 @@ behaviour is now measurable (`archivedReason = 'ground_truth_review'`) and not y
 |---|---|---|---|---|
 | 1 | ▲ | — | Clicks **edit** on the card's disclosure strip | `StrategyDisplay` · `FlipCard` |
 | 2 | ▲ | — | Edits text inline, saves | `ObjectiveInlineEditor` / `ObjectiveEditor` |
-| 3 | ▼ | **ADMIT** | `POST /strategy-version` — auth, project check, `validateStrategyVersionInput` (**the only contract validator called in production**) | `strategy-version/route.ts:112` |
-| 4 | ▼ | **COMMIT** | `updateSingleton` (vision/strategy) or `updateComponent` (objective) → `DecisionStack` | `strategy-version/route.ts:117-126` |
-| 5 | ▼ | **COMMIT** | Mirror the same change into `Trace.output` so the admin trace view stays truthful | `strategy-version/route.ts:128-165` |
+| 3 | ▼ | **ADMIT** | `POST /strategy-version` — auth, project check, `validateStrategyVersionInput` (**the only contract validator called in production**) | `strategy-version/route.ts:59` |
+| 4 | ▼ | **COMMIT** | `updateSingleton` (vision/strategy) or `updateComponent` (objective) → `DecisionStack` | `strategy-version/route.ts:64-73` |
+| 5 | ▼ | **COMMIT** | Mirror the same change into `Trace.output` so the admin trace view stays truthful | `strategy-version/route.ts:75-112` |
 | 6 | ▲ | **REVEAL** | Optimistic local update | `StrategyDisplay` `onUpdate` |
 | 7 | ▼ | ⚠ **no snapshot** | No `captureSnapshot`. A user edit is **not** versioned, though every AI generation is | — |
 
@@ -366,7 +366,7 @@ design's own argument — are the only changes with no history. Also: the route 
 | # | | phase | Step | Governed by |
 |---|---|---|---|---|
 | 1 | ▲ | — | Fills vision / strategy / objectives by hand | `/project/[id]/template` |
-| 2 | ▼ | **ADMIT** | `POST /template-entry` — requires `statements.vision` | `template-entry/route.ts:60-62` |
+| 2 | ▼ | **ADMIT** | `POST /template-entry` — requires `statements.vision` | `template-entry/route.ts:22-24` |
 | 3 | ▼ | **ADMIT** | `planPipeline('template_submitted')` → **extraction: null, generation: `template`** — no LLM | `pipeline/plan.ts:49` |
 | 4 | ▼ | **COMMIT** | `runTemplateGeneration` → writes stack directly; `claudeThoughts: 'User-provided template entry'` | `executor.ts:137,240` |
 | 5 | ▲ | **REVEAL** | Strategy renders immediately | `StrategyDisplay` |
@@ -568,7 +568,7 @@ for no decision.
 `KnowledgeSummaryPanel.tsx:379` renders it (worded *"updates in N"* since 2026-09). Blueprint
 corrected.
 **Residual (minor):** `15` is hardcoded in the component, duplicating `SUMMARY_FRAGMENT_THRESHOLD`
-in `executor.ts:100`. Change the threshold and the UI lies. `cheap-win` when next in that file —
+in `executor.ts:101`. Change the threshold and the UI lies. `cheap-win` when next in that file —
 still open 2026-09-11.
 
 ### Bundle `insight` fragments carry no source link — `investigate`

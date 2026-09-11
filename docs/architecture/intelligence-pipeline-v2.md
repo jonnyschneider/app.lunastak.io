@@ -541,13 +541,13 @@ plan and one existing trigger:
   from fragments that exist, without extracting". The review needs no trigger of its own.
 - `executePipeline()` — a plan that generates nothing now clears the busy flag itself
   (`setGenerationStatus(projectId, null)`), but **only when this run set it** —
-  `opts.ownsGenerationStatus` (`executor.ts:258`). This fixes a real defect, not just the new path:
+  `opts.ownsGenerationStatus` (`executor.ts:256`). This fixes a real defect, not just the new path:
   that call lived only inside `pipeline/generation.ts`, so **any** plan with `generation: null` left
   the project polling `'generating'` forever. The ownership scope is the second half of the fix: the
   condition is on the plan but the write is on the project, so an unconditional clear reached a
   *concurrent* run's flag — a document upload finishing inside a `generate_from_knowledge` window
   nulled that run's status and lifted the `409 already_generating` guard at the same moment,
-  re-opening the double-generation the guard exists to prevent. Rationale at `executor.ts:248`.
+  re-opening the double-generation the guard exists to prevent. Rationale at `executor.ts:246`.
 - `POST /api/project/[id]/generate-strategy` returns **409 `already_generating`** when
   `decisionStack.generationStatus === 'generating'`, and exempts a first strategy from the guest
   quota (`project.decisionStack === null`) — the review now sits between the guest and the thing

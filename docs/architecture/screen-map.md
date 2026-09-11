@@ -64,11 +64,11 @@ redirector in front of a client, and its mode is in the URL (§3).
 | `/project/[id]/fragments` | **legacy redirect** | → `/project/[id]?evidence=1`, preserving `?dimension=` | `fragments/page.tsx` |
 | `/project/[id]/strategy` | **legacy redirect** | → latest trace view | `strategy/page.tsx` |
 | `/share/[token]` | public | Read-only stack, server-rendered, `noindex`. No knowledgebase | `share/[token]/page.tsx` |
-| `/strategy/[traceId]` | read-only | A single generation's output | `strategy/[traceId]/page.tsx` |
+| `/strategy/[traceId]` | read-only | A single generation's output — its owner's, or a demo's. No anonymous reads since 2026-09-11 | `strategy/[traceId]/page.tsx` |
 | `/account` | page | Account settings | `account/page.tsx` |
 | `/auth/signin` · `/auth/verify-request` | auth | Sign-in, magic-link confirmation | `auth/*` |
 | `/demo/strategy` | demo | Standalone demo page | `demo/strategy/*` |
-| `/admin/eval` · `/admin/eval/[evalId]` | admin | Evaluation runs | `admin/eval/*` |
+| `/admin/eval` · `/admin/eval/[evalId]` | admin | Evaluation runs. Local only: its API refuses production (`VERCEL_ENV`) since 2026-09-11 | `admin/eval/*` |
 | `/dev/playback` · `/dev/pipeline-test` | dev | Conversation playback, pipeline harness | `dev/*` |
 | `/prototype/graph` | prototype | Disposable. The three ground-truth prototypes are gone | `prototype/graph/*` |
 
@@ -198,7 +198,7 @@ are pinned to the import (chats and documents at 0, deliberately — see the com
 The Harvey ball reads **computed support** (`lib/support/dimension-support.ts`), five states —
 `empty · quarter · half · three-quarter · full`. The sync line and the *changed* diff read
 `stats.strategySync` (`addedIds` / `removedIds` against the latest snapshot's `fragmentIds`,
-`api/project/[id]/route.ts:308-322`); a snapshot that predates `fragmentIds` says only when it was
+`api/project/[id]/route.ts:284-298`); a snapshot that predates `fragmentIds` says only when it was
 built.
 
 ### 3.4 Mode: `review`

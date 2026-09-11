@@ -13,7 +13,10 @@
  *   if (isDenied(auth)) return auth
  *   const { requester, conversation } = auth
  *
- * Access levels (see ARCHITECTURE.md → Security & Access Control):
+ * Which guard for which route, the options, and the don'ts: ARCHITECTURE.md → "API Access — every
+ * route goes through the guard". The demo-access decisions behind `read`: its Security & Access Control.
+ *
+ * Access levels:
  *   write (default) — the requester owns it.
  *   read            — the requester owns it, OR it belongs to an `isDemo` project.
  * `write` is the default so that honouring demos has to be asked for: a write that honoured

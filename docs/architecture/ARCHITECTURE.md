@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-**Last Updated:** 2026-08-29
+**Last Updated:** 2026-09-11
 
 ---
 
@@ -198,7 +198,7 @@ state is [`screen-map.md`](screen-map.md) §3. This section is the **how to buil
 | "Does this project have a strategy?" | `projectHasStrategy({ hasVision, generationTraceCount })` + `hasStackVision(vision)` — `has-strategy.ts` | `!!decisionStack`, or `strategyOutputs.length` on its own. Server and client disagreeing on this stranded users on an unrenderable review |
 | Per-device memory | `writeModeCookie` / `readModeCookieValue` (`mode-cookie.ts`); `writeLastProjectCookie` / `readLastProjectCookie` / `readLastProjectCookieFromDocument` (`last-project-cookie.ts`) | `localStorage` for anything the server must read — the redirect runs before any client code |
 | Record that a review was deferred | `useDismissed(projectId, 'ground_truth_review', batchKey).dismiss` | a per-project key. Reviews are per ingest; one deferral must not silence the next ingest |
-| "Who is this request?" (server) | `getUserId()` — `src/lib/auth/current-user.ts` | reading the `guestUserId` cookie directly. The cookie is an id, not a proof — see [Security & Access Control](#security--access-control) |
+| "Who is this request?" (server) | `getUserId()` — `src/lib/auth/current-user.ts` in pages; the guard in API routes | reading the `guestUserId` cookie directly. The cookie is an id, not a proof — see [API Access](#api-access--every-route-goes-through-the-guard) |
 
 ### Invariants — each one has already cost a bug
 
@@ -394,22 +394,128 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 
 ---
 
+## API Access — every route goes through the guard
+
+*Added 2026-09-11.* **Every `src/app/api/**/route.ts` calls `@/lib/auth/guard`, or sits on the
+`PUBLIC` allowlist in `src/app/api/__tests__/route-auth.test.ts` with a reason — the test fails
+otherwise.** `src/middleware.ts` does **no** auth (it only rewrites `/demo/<slug>`), so a route that
+doesn't check is open to anyone with the URL. The gate replaced ~17 hand-rolled copies of "who is
+this request" and 14 routes that had no check at all. The inventory is
+`docs/_plans/2026-09-11-api-auth-gap.md` and the plan `…-plan.md` (both local). The decisions behind
+demo access are in [Security & Access Control](#security--access-control). This section is the
+**how to build on it** half.
+
+```
+route.ts ──▶ require<Resource>Access(id, opts) ──▶ getRequester()   session, else the guestUserId
+                 │                                                   cookie VALIDATED against the DB
+                 │  one findFirst whose `where` IS the ownership rule
+                 ▼
+     { requester, <resource> }   ·   401 no requester (or a guest on guests:false)
+                                 ·   404 not yours, or not there — never 403
+```
+
+**Identity.** `getRequester()` (`src/lib/auth/current-user.ts`) returns `{ userId, isGuest }`: the
+NextAuth session if there is one, otherwise the `guestUserId` cookie. It trusts the cookie only
+after checking the row exists and has a guest email. Guests are real `User` rows (see
+[Identity model](#identity-model-read-before-touching-any-per-user-counter)). Server pages and the
+navigation redirector use `getUserId()`, its one-line wrapper. API routes don't call either
+directly. They go through the guard.
+
+### Which guard
+
+| the route… | call |
+|---|---|
+| addresses a **project**: `project/[id]/*`, or a `projectId` in the body or query (`deep-dive`, `documents/upload`) | `requireProjectAccess(projectId, opts)` |
+| addresses a **conversation**: `conversation/[id]/*`, `extraction-status/[conversationId]`, or a `conversationId` in the body (`extract`, `conversation/continue`, `generate`) | `requireConversationAccess(conversationId, opts)`. Ownership is `conversation.userId` **or** `conversation.project.userId`, because `projectId` is nullable and a transferred guest's project can be deleted |
+| addresses a **trace** (a generated strategy) | `requireTraceAccess(traceId, opts)`. Owned directly, through its conversation, or through its project |
+| addresses a **document** | `requireDocumentAccess(documentId, opts)`, through its project |
+| addresses something owned **through a parent** (a deep dive belongs to a project) | load it, then call the **parent's** guard on its parent id (`deep-dive/[id]`) |
+| acts only on the requester's **own** rows (list, create, dismiss), or on no resource at all | `requireUser(opts)`, then scope every query by `requester.userId` |
+
+| option | on | means | default |
+|---|---|---|---|
+| `access: 'read'` | resource guards | the owner **or** anyone, when the resource sits in an `isDemo` project. Use it for GETs that a demo must show. **Never on a write.** | `'write'`: owner only |
+| `guests: false` | all | signed-up only. A guest cookie is a 401 | guests allowed |
+| `active: true` | `requireProjectAccess` only | an archived project is a 404, even to its owner. It is a filter in the query, not a check afterwards | archived projects found |
+| `as: requester` | all | use an already-resolved requester and skip the lookup. `project/[id]` GET passes the guest it just minted for a demo visitor, because a cookie set in this request can't be read back | looks it up |
+
+`isDemo` is honoured in exactly one place, `projectVisibleTo()` in `guard.ts`, and only at `read`.
+
+### A new route — the recipe
+
+```ts
+import { requireProjectAccess, isDenied } from '@/lib/auth/guard'
+
+const auth = await requireProjectAccess(projectId, { active: true })
+if (isDenied(auth)) return auth
+const { requester, project } = auth   // project is { id, userId, isDemo, status } — load the rest yourself
+```
+
+Put the guard **before** any `checkAndIncrementGuestApiCalls`, `createMessage`, pipeline call or
+`waitUntil`, so a denied caller spends neither LLM calls nor quota. When the id arrives in the body,
+parse the body first and then guard. Route tests pin each rule: anonymous 401, someone else's 404,
+a demo is readable where it should be and never writable. See `src/app/api/__tests__/*-auth.test.ts`.
+
+### A public route
+
+Add it to `PUBLIC` in `route-auth.test.ts` with a `reason`. If its safety depends on something in
+the file, such as an env guard (`VERCEL_ENV`, `NODE_ENV`, `ENABLE_TEST_ENDPOINTS`), a signature check
+(`svix`) or `getRequester`, also add `mustContain` with that string. The test then fails if that
+check is ever removed. Today's list: NextAuth, the two routes that mint a guest (`guest/init`,
+`conversation/start`), dev- and test-only routes, the Resend webhook, public demo content, and
+`events` / `feedback` / `waitlist`, which are anonymous by design.
+
+### What the test holds, and what it can't see
+
+`route-auth.test.ts` fails when:
+- a route neither imports the guard nor is on `PUBLIC`;
+- a `PUBLIC` entry has lost its `mustContain`, or names a deleted file;
+- a route re-implements identity (its own `GUEST_COOKIE_NAME` or `get*UserId()`);
+- a route whose **path** names a resource by id doesn't call that resource's guard.
+
+It can't see an id that arrives in the **body**, or a `read` used where `write` was meant.
+[`conventions-rubric.md`](conventions-rubric.md) C29/C30 cover those at audit.
+
+### Don'ts — each one is a bug that shipped
+
+| don't | what it caused | instead |
+|---|---|---|
+| Read the `guestUserId` cookie yourself | `conversation/start` passed the raw cookie to `getOrCreateDefaultProject`, so a cookie set to a signed-up user's id started chats in **their** projects | `getRequester()` or the guard. (`transfer-session` reads the cookie as the thing being handed over, and `transferGuestToUser` validates it) |
+| Trust a client-supplied id for a **second** resource | `documents/upload` checked the project but stored the form's `deepDiveId` as given, so a known deep-dive id from another project put a document (file name visible) in someone else's deep dive. `conversation/[id]` PATCH was the same bug through a second door | Scope it to the resource you guarded: `deepDiveInProject(deepDiveId, projectId)`, or a lookup with the parent id in its `where` |
+| `fetch` your own API route server-side | The executor fetched `/api/project/[id]/extract-from-template` with no cookies, so the route couldn't be guarded without breaking its only caller. Left unguarded, it let anyone write fragments into any project | Call the library directly (`src/lib/pipeline/extract-from-template.ts`). Routes are thin wrappers, so there is always a library to call |
+| `requireUser()` then load by id | Authenticated isn't authorised. A signed-in stranger gets your row | The resource's guard, whose `where` clause does the ownership check |
+| Honour `isDemo` on a write | `project/[id]/content` shared one access check across methods. When GET was opened to demos (`4ff4995`, 2026-03-27), POST/PUT/DELETE were opened too, so any guest could edit a showcase project for 5½ months | Leave writes on the default `write`. Ask for `read` per method |
+
+---
+
 ## Security & Access Control
 
-### Authentication Model
-
-- **Authenticated users:** NextAuth session → ownership check on all API routes
-- **Guest users:** `guestUserId` cookie → limited access to own guest project only
-- **Demo projects:** `isDemo` flag on Project model bypasses ownership checks
+Who can call which route is [API Access](#api-access--every-route-goes-through-the-guard), above.
+This section keeps the decisions behind it.
 
 ### Demo Project Access (Decision: 2026-03-27)
 
 **Context:** Acquired podcast demo Decision Stacks (Costco, TSMC, Nike) need to be viewable by any user — guests, logged-in users, and unauthenticated visitors.
 
 **Decision:** Server-side `isDemo` boolean on the Project model controls access. When `isDemo=true`:
-- Trace API skips ownership check (any user can view)
-- Content API (`/api/project/[id]/content`) allows read access for any authenticated/guest user
+- **`read` access admits demo projects** (`projectVisibleTo()` in `guard.ts`, the one place `isDemo` is honoured). The project, its conversations, traces, documents, content and fragments are readable by any requester
+- **Writes are owner-only, demo or not**. That includes the content API's POST/PUT/DELETE (see the 2026-09-11 note below)
+- A visitor with no session and no cookie who opens a demo gets a guest minted by `GET /api/project/[id]`, so every later read has a requester
 - UI renders in read-only mode (no edit/add affordances)
+
+**Amended 2026-09-11, trace reads (plan D6).** The trace API used to let a caller with **no session
+and no guest cookie** read any trace's full output. The reason given was that a guest who had just
+generated needed to read the result before the auth transfer. That no longer held: guests carry a
+validated cookie and pass as owners, and shared links go through `/share/[token]`, which never
+touches this route. So the allowance only served strangers who held a trace id. Removed: anonymous
+is now a 401 and someone else's non-demo trace a 404. The strategy page's 403 branch went with it.
+
+**Amended 2026-09-11, content writes honoured `isDemo`.** `4ff4995` (2026-03-27) opened content GET
+to demos by widening the single access check the whole route shared. That opened POST/PUT/DELETE
+too, so any signed-in user or guest could create, edit or delete opportunities and principles on a
+showcase project. Meanwhile this doc's route table said owner-only. No UI path relied on it (demos
+render `readOnly`). It was found when the route moved onto the guard, which forced each method to
+choose its access level, and it is owner-only now. Recorded as a lesson in `conventions-rubric.md`.
 
 **Why not a query param?** An earlier iteration used `?readonly=true` to bypass the trace API ownership check. This was a security hole — any user with a trace ID could bypass auth by appending the param. Reverted within the same session.
 
@@ -421,7 +527,7 @@ Runtime discoveries and conscious trade-offs. Each notes whether the fix is **du
 **Scaling considerations:**
 - If we add user-initiated sharing, it needs its own access model (viewer tokens, expiring links, or role-based access)
 - `isDemo` should remain admin-only — don't let users set their own projects to demo mode
-- The content API `OR: [{ userId }, { isDemo: true }]` pattern works for small numbers of demo projects but would need an index if demo count grows significantly
+- The guard's `read` filter, `OR: [{ userId }, { isDemo: true }]`, works for small numbers of demo projects but would need an index if demo count grows significantly
 
 ### Related Documents
 
@@ -455,10 +561,8 @@ We currently care about aggregate metrics, not per-user attribution or A/B test 
 
 ### API Route Auth Summary
 
-| Route | Auth Model |
-|-------|-----------|
-| `GET /api/trace/[traceId]` | Owner OR guest-with-traceId OR `isDemo` project |
-| `GET /api/project/[id]/content` | Owner OR guest-owner OR `isDemo` project |
-| `POST/PUT/DELETE /api/project/[id]/content` | Owner only (strict) |
-| `POST /api/project/[id]/strategy-version` | Owner only (strict) |
-| `GET /api/project/[id]/strategy` | Owner OR guest-owner |
+*Replaced 2026-09-11.* This used to be a hand-kept table covering five of ~55 routes, and it had
+drifted: it still said the trace API admitted "guest-with-traceId". Each route's rule is now its
+guard call (`grep -rn "requireUser\|require[A-Z][a-z]*Access" src/app/api`), and
+`src/app/api/__tests__/route-auth.test.ts` fails on any route that has none. See
+[API Access](#api-access--every-route-goes-through-the-guard).
